@@ -98,6 +98,7 @@ export default function Eleves() {
     }
     if (filterClasse) d = d.filter(r => r.classe === filterClasse)
     if (filterSolde === 'Négatif') d = d.filter(r => Number(r.solde || 0) < 0)
+    if (filterSolde === 'Neutre')  d = d.filter(r => Number(r.solde || 0) === 0)
     if (filterSolde === 'Positif') d = d.filter(r => Number(r.solde || 0) > 0)
     const { col, dir } = sort
     return [...d].sort((a, b) => {
@@ -151,7 +152,7 @@ export default function Eleves() {
         <FilterPill
           label="Solde"
           value={filterSolde}
-          options={['Négatif', 'Positif']}
+          options={['Négatif', 'Neutre', 'Positif']}
           onChange={setFilterSolde}
         />
         <FilterPill
