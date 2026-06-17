@@ -1,14 +1,16 @@
 /**
  * netlify/functions/smartschool-sync.mjs
  *
- * Synchronise les élèves et le personnel depuis Smartschool (WS V3)
+ * Synchronise élèves et personnel depuis Smartschool WS V3
  * vers les tables `eleves` et `personnel` de Supabase.
  *
- * Variables d'environnement requises :
- *   SUPABASE_URL            (ex: https://iubxalsakqljilydnqss.supabase.co)
+ * Env vars requises :
  *   SUPABASE_SERVICE_ROLE_KEY
- *   SMARTSCHOOL_API_URL     (ex: https://espmaritime.smartschool.be/webservices/V3)
- *   SMARTSCHOOL_ACCESS_CODE (code d'accès API Smartschool)
+ *   SMARTSCHOOL_ACCESS_CODE   (mot de passe du profil WS)
+ *
+ * Env vars optionnelles (valeurs par défaut codées en dur) :
+ *   SUPABASE_URL              (https://iubxalsakqljilydnqss.supabase.co)
+ *   SMARTSCHOOL_API_URL       (https://espmaritime.smartschool.be/webservices/V3)
  */
 
 const ALLOWED_ORIGINS = [
@@ -27,20 +29,20 @@ function corsHeaders(origin) {
   }
 }
 
-async function supabaseRpc(url, key, table, method, body) {
+async function supabaseUpsert(url, key, table, rows) {
   const res = await fetch(`${url}/rest/v1/${table}`, {
-    method,
+    method: 'POST',
     headers: {
-      apikey:          key,
-      Authorization:   `Bearer ${key}`,
-      'Content-Type':  'application/json',
-      Prefer:          'resolution=merge-duplicates,return=minimal',
+      apikey:         key,
+      Authorization:  `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      Prefer:         'resolution=merge-duplicates,return=minimal',
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: JSON.stringify(rows),
   })
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`Supabase ${method} ${table}: ${res.status} ${text}`)
+    throw new Error(`Supabase upsert ${table}: ${res.status} ${text.slice(0,200)}`)
   }
 }
 
@@ -54,157 +56,143 @@ async function insertSyncLog(url, key, data) {
       Prefer:         'return=minimal',
     },
     body: JSON.stringify(data),
-  })
+  }).catch(() => {})
 }
 
-// ── Smartschool SOAP helper ────────────────────────────────────────────────
+// ── SOAP helper ─────────────────────────────────────────────────────────────
 
-async function soapCall(apiUrl, accessCode, methodName, extraParams = '') {
-  const body = `<?xml version="1.0" encoding="UTF-8"?>
+async function soapCall(apiUrl, accessCode, method) {
+  const envelope = `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
                   xmlns:soa="http://www.smartschool.be/webservices">
   <soapenv:Header/>
   <soapenv:Body>
-    <soa:${methodName}>
+    <soa:${method}>
       <soa:accesscode>${accessCode}</soa:accesscode>
-      ${extraParams}
-    </soa:${methodName}>
+    </soa:${method}>
   </soapenv:Body>
 </soapenv:Envelope>`
 
   const res = await fetch(apiUrl, {
-    method: 'POST',
+    method:  'POST',
     headers: {
       'Content-Type': 'text/xml; charset=utf-8',
-      SOAPAction:     `"${methodName}"`,
+      SOAPAction:     `"urn:${method}"`,
     },
-    body,
+    body: envelope,
   })
-  if (!res.ok) throw new Error(`Smartschool SOAP ${methodName}: HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`SOAP ${method}: HTTP ${res.status}`)
   return res.text()
 }
 
-// Minimal XML parser for Smartschool responses (returns inner text of first match)
-function extractTag(xml, tag) {
-  const m = xml.match(new RegExp(`<(?:[^:>]+:)?${tag}[^>]*>([\\s\\S]*?)<\/(?:[^:>]+:)?${tag}>`, 'i'))
-  return m ? m[1].trim() : ''
+// Extract JSON payload from SOAP <return> tag (handles CDATA)
+function extractJson(xml) {
+  const m = xml.match(/<[^:>]+:return[^>]*>([\s\S]*?)<\/[^:>]+:return>/i)
+      || xml.match(/<return[^>]*>([\s\S]*?)<\/return>/i)
+  if (!m) return []
+  let raw = m[1].trim()
+  const cdata = raw.match(/<!\[CDATA\[([\s\S]*?)\]\]>/)
+  if (cdata) raw = cdata[1].trim()
+  // Smartschool sometimes returns error codes as plain integers
+  if (/^-?\d+$/.test(raw)) throw new Error(`Smartschool error code: ${raw}`)
+  try { return JSON.parse(raw) } catch { return [] }
 }
 
-// Parse getAllAccountsExtended / getAllStudents response
-// Returns array of objects from <param1> JSON payload
-function parseAccountsResponse(xml) {
-  const raw = extractTag(xml, 'return')
-  // Smartschool returns JSON inside the SOAP response
-  try {
-    return JSON.parse(raw)
-  } catch {
-    // Sometimes it's wrapped in <![CDATA[...]]>
-    const cdataMatch = raw.match(/<!\[CDATA\[([\s\S]*?)\]\]>/)
-    if (cdataMatch) {
-      try { return JSON.parse(cdataMatch[1]) } catch { return [] }
-    }
-    return []
-  }
-}
-
-// ── Main handler ───────────────────────────────────────────────────────────
+// ── Main ────────────────────────────────────────────────────────────────────
 
 export default async function handler(req) {
-  const origin = req.headers.get('origin') || ''
+  const origin  = req.headers.get('origin') || ''
   const headers = { ...corsHeaders(origin), 'Content-Type': 'application/json' }
 
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers })
   if (req.method !== 'POST')    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers })
 
-  const SUPABASE_URL  = process.env.SUPABASE_URL  || 'https://iubxalsakqljilydnqss.supabase.co'
-  const SUPABASE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const SS_API_URL    = process.env.SMARTSCHOOL_API_URL    || 'https://espmaritime.smartschool.be/webservices/V3'
-  const SS_CODE       = process.env.SMARTSCHOOL_ACCESS_CODE
+  const SUPABASE_URL = process.env.SUPABASE_URL || 'https://iubxalsakqljilydnqss.supabase.co'
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const SS_URL       = process.env.SMARTSCHOOL_API_URL || 'https://espmaritime.smartschool.be/webservices/V3'
+  const SS_CODE      = process.env.SMARTSCHOOL_ACCESS_CODE
 
   if (!SUPABASE_KEY) return new Response(JSON.stringify({ error: 'SUPABASE_SERVICE_ROLE_KEY manquant' }), { status: 500, headers })
   if (!SS_CODE)      return new Response(JSON.stringify({ error: 'SMARTSCHOOL_ACCESS_CODE manquant' }), { status: 500, headers })
 
-  let elevesCount     = 0
-  let personnelCount  = 0
-  let errorMessage    = null
+  let elevesCount    = 0
+  let personnelCount = 0
 
   try {
-    // ── 1. Fetch all students ──────────────────────────────────────────────
-    const studentsXml  = await soapCall(SS_API_URL, SS_CODE, 'getAllStudents')
-    const studentsRaw  = parseAccountsResponse(studentsXml)
-    const students     = Array.isArray(studentsRaw) ? studentsRaw : Object.values(studentsRaw)
+    // ── Fetch all accounts via getAllAccountsExtended ───────────────────────
+    const xml      = await soapCall(SS_URL, SS_CODE, 'getAllAccountsExtended')
+    const accounts = extractJson(xml)
+    const list     = Array.isArray(accounts) ? accounts : Object.values(accounts)
 
-    const elevesRows = students.map(s => ({
-      smartschool_id:  String(s.internnumber || s.username || s.id || ''),
-      nom:             s.surname || s.name || '',
-      prenom:          s.firstname || s.givenname || '',
-      email:           s.email || null,
-      classe:          s.class || s.classname || null,
-      actif:           true,
-    })).filter(r => r.smartschool_id)
+    if (!list.length) throw new Error('Aucun compte retourné par Smartschool')
 
+    // ── Split by type ──────────────────────────────────────────────────────
+    // Smartschool types: 'leerling' = élève, everything else = personnel
+    const elevesRows    = []
+    const personnelRows = []
+
+    for (const a of list) {
+      const type = (a.basisrol || a.type || a.role || '').toLowerCase()
+      const isEleve = type === 'leerling' || type === 'student' || type === 'pupil'
+
+      const smartschool_id = String(a.internnumber || a.username || a.id || '').trim()
+      if (!smartschool_id) continue
+
+      const nom    = (a.surname   || a.name      || '').trim()
+      const prenom = (a.firstname || a.givenname || '').trim()
+      const email  = a.email || null
+      const classe = a.class || a.officialclass || a.classname || null
+
+      if (isEleve) {
+        elevesRows.push({ smartschool_id, nom, prenom, email, classe, actif: true })
+      } else {
+        personnelRows.push({ smartschool_id, nom, prenom, email, actif: true })
+      }
+    }
+
+    // ── Upsert élèves ──────────────────────────────────────────────────────
     if (elevesRows.length > 0) {
-      await supabaseRpc(SUPABASE_URL, SUPABASE_KEY, 'eleves', 'POST', elevesRows)
-      // Mark students not in Smartschool as inactive
-      const activeIds = elevesRows.map(r => r.smartschool_id)
-      await fetch(`${SUPABASE_URL}/rest/v1/eleves?smartschool_id=not.in.(${activeIds.map(id => `"${id}"`).join(',')})`, {
-        method: 'PATCH',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=minimal',
-        },
-        body: JSON.stringify({ actif: false }),
-      })
+      await supabaseUpsert(SUPABASE_URL, SUPABASE_KEY, 'eleves', elevesRows)
+      // Désactiver les élèves absents de Smartschool
+      const ids = elevesRows.map(r => r.smartschool_id)
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/eleves?smartschool_id=not.in.(${ids.map(i => `"${i}"`).join(',')})&actif=eq.true`,
+        {
+          method: 'PATCH',
+          headers: {
+            apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json', Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({ actif: false }),
+        }
+      )
+      elevesCount = elevesRows.length
     }
-    elevesCount = elevesRows.length
 
-    // ── 2. Fetch all staff ────────────────────────────────────────────────
-    const staffXml   = await soapCall(SS_API_URL, SS_CODE, 'getAllPersonnel')
-    const staffRaw   = parseAccountsResponse(staffXml)
-    const staff      = Array.isArray(staffRaw) ? staffRaw : Object.values(staffRaw)
-
-    const personnelRows = staff.map(p => ({
-      smartschool_id: String(p.internnumber || p.username || p.id || ''),
-      nom:            p.surname || p.name || '',
-      prenom:         p.firstname || p.givenname || '',
-      email:          p.email || null,
-      actif:          true,
-    })).filter(r => r.smartschool_id)
-
+    // ── Upsert personnel ───────────────────────────────────────────────────
     if (personnelRows.length > 0) {
-      await supabaseRpc(SUPABASE_URL, SUPABASE_KEY, 'personnel', 'POST', personnelRows)
+      await supabaseUpsert(SUPABASE_URL, SUPABASE_KEY, 'personnel', personnelRows)
+      personnelCount = personnelRows.length
     }
-    personnelCount = personnelRows.length
 
-    // ── 3. Log success ────────────────────────────────────────────────────
     await insertSyncLog(SUPABASE_URL, SUPABASE_KEY, {
       type:               'sync',
       status:             'success',
       eleves_upserted:    elevesCount,
       personnel_upserted: personnelCount,
-      details:            `Synchronisation réussie — ${elevesCount} élèves, ${personnelCount} personnel`,
+      details:            `OK — ${elevesCount} élèves, ${personnelCount} personnel`,
     })
 
-    return new Response(JSON.stringify({
-      success: true,
-      eleves:  elevesCount,
-      personnel: personnelCount,
-    }), { status: 200, headers })
+    return new Response(JSON.stringify({ success: true, eleves: elevesCount, personnel: personnelCount }), { status: 200, headers })
 
   } catch (err) {
-    errorMessage = err.message || String(err)
-    console.error('[smartschool-sync] Error:', errorMessage)
-
+    const msg = err.message || String(err)
+    console.error('[smartschool-sync]', msg)
     await insertSyncLog(SUPABASE_URL, SUPABASE_KEY, {
-      type:               'sync',
-      status:             'error',
-      eleves_upserted:    elevesCount,
-      personnel_upserted: personnelCount,
-      details:            errorMessage,
-    }).catch(() => {})
-
-    return new Response(JSON.stringify({ error: errorMessage }), { status: 500, headers })
+      type: 'sync', status: 'error',
+      eleves_upserted: elevesCount, personnel_upserted: personnelCount,
+      details: msg,
+    })
+    return new Response(JSON.stringify({ error: msg }), { status: 500, headers })
   }
 }
