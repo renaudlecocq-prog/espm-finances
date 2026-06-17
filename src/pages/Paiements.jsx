@@ -73,7 +73,7 @@ const parseBelfiusCSV = (text, eleves) => {
 
     return {
       date: dateCompta,
-      paye_par: payerName,
+      paye_par: 'Responsable',
       communication,
       montant,
       mode,
@@ -212,7 +212,15 @@ function ImportModal({ eleves, existingRefs, onClose, onImported }) {
                       return (
                         <tr key={i} className={`border-b border-gray-50 ${already ? 'opacity-40' : r.isWorldline && !hideWorldline ? 'bg-orange-50/50' : ''}`}>
                           <td className="px-3 py-2 whitespace-nowrap text-gray-600">{fmtDate(r.date)}</td>
-                          <td className="px-3 py-2 text-gray-700 max-w-[140px] truncate">{r.paye_par}</td>
+                          <td className="px-3 py-2 min-w-[120px]">
+                            {already ? <span className="text-gray-400">{r.paye_par}</span> : (
+                              <select className="text-xs border border-gray-200 rounded-lg px-2 py-1 w-full bg-white outline-none focus:border-primary"
+                                value={r.paye_par}
+                                onChange={e => setRows(prev => prev.map((row, i) => i === origIdx ? { ...row, paye_par: e.target.value } : row))}>
+                                {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            )}
+                          </td>
                           <td className="px-3 py-2 text-gray-500 max-w-[180px] truncate">{r.communication}</td>
                           <td className="px-3 py-2 text-right font-semibold text-green-600 whitespace-nowrap">{r.montant.toFixed(2)} €</td>
                           <td className="px-3 py-2 min-w-[160px]">
@@ -277,7 +285,7 @@ function EditModal({ paiement, eleves, onClose, onSaved }) {
     eleve_id: paiement.eleve_id || '',
     date: paiement.date || '',
     montant: paiement.montant || '',
-    paye_par: paiement.paye_par || '',
+    paye_par: paiement.paye_par || 'Responsable',
     mode: paiement.mode || 'virement',
     communication: paiement.communication || '',
     remarque: paiement.remarque || '',
@@ -317,7 +325,9 @@ function EditModal({ paiement, eleves, onClose, onSaved }) {
           </div>
           <div>
             <label className="label">Payé par</label>
-            <input className="input" value={form.paye_par} onChange={e => setForm(f => ({ ...f, paye_par: e.target.value }))} />
+            <select className="input" value={form.paye_par} onChange={e => setForm(f => ({ ...f, paye_par: e.target.value }))}>
+              {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
           </div>
           <div>
             <label className="label">Mode</label>
@@ -350,6 +360,7 @@ function EditModal({ paiement, eleves, onClose, onSaved }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────
 const MODE_LABELS = { virement: 'Virement', versement: 'Versement', bancontact: 'Bancontact', autre: 'Autre' }
+const PAYE_PAR_OPTIONS = ['Responsable', 'CPAS', 'ULB', 'SPJ', 'Autre']
 
 export default function Paiements() {
   const { isFinancier } = useAuth()
@@ -365,7 +376,7 @@ export default function Paiements() {
   const [ficheId, setFicheId] = useState(null)
   const [form, setForm] = useState({
     eleve_id: '', date: new Date().toISOString().slice(0, 10),
-    montant: '', paye_par: '', mode: 'virement', communication: '', remarque: '',
+    montant: '', paye_par: 'Responsable', mode: 'virement', communication: '', remarque: '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -474,7 +485,9 @@ export default function Paiements() {
               <input className="input" type="number" step="0.01" value={form.montant} onChange={e => setForm(f => ({ ...f, montant: e.target.value }))} />
             </div>
             <div><label className="label">Payé par</label>
-              <input className="input" value={form.paye_par} onChange={e => setForm(f => ({ ...f, paye_par: e.target.value }))} />
+              <select className="input" value={form.paye_par} onChange={e => setForm(f => ({ ...f, paye_par: e.target.value }))}>
+                {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
             </div>
             <div><label className="label">Mode</label>
               <select className="input" value={form.mode} onChange={e => setForm(f => ({ ...f, mode: e.target.value }))}>
