@@ -94,7 +94,7 @@ function SortIcon({ col, sort }) {
 }
 
 // ── Import modal ───────────────────────────────────────────────────────────
-function ImportModal({ eleves, existingRefs, onClose, onImported }) {
+function ImportModal({ eleves, existingRefs, existingSignatures, onClose, onImported }) {
   const [rows, setRows] = useState([])        // parsed rows
   const [hideWorldline, setHideWorldline] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -116,8 +116,13 @@ function ImportModal({ eleves, existingRefs, onClose, onImported }) {
   const onFileInput = e => parseFile(e.target.files[0])
 
   const visibleRows = rows.filter(r => hideWorldline ? !r.isWorldline : true)
-  const newRows = visibleRows.filter(r => !existingRefs.has(r.reference_belfius))
-  const alreadyRows = visibleRows.filter(r => existingRefs.has(r.reference_belfius))
+  const isAlready = r => {
+    if (existingRefs.has(r.reference_belfius)) return true
+    const sig = r.eleve_id ? `${r.date}|${r.montant}|${r.eleve_id}` : null
+    return sig ? (existingSignatures?.has(sig) ?? false) : false
+  }
+  const newRows = visibleRows.filter(r => !isAlready(r))
+  const alreadyRows = visibleRows.filter(r => isAlready(r))
   const worldlineCount = rows.filter(r => r.isWorldline).length
 
   const updateEleve = (idx, eleve_id) => {
@@ -412,6 +417,7 @@ export default function Paiements() {
   }, [reload])
 
   const existingRefs = useMemo(() => new Set(data.map(r => r.reference_belfius).filter(Boolean)), [data])
+  const existingSignatures = useMemo(() => new Set(data.map(r => `${r.date}|${r.montant}|${r.eleve_id}`).filter(s => !s.includes('undefined'))), [data])
 
   const toggleSort = col => setSort(s => s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'desc' })
 
@@ -628,7 +634,7 @@ export default function Paiements() {
 
       {/* Modals */}
       {showImport && (
-        <ImportModal eleves={eleves} existingRefs={existingRefs} onClose={() => setShowImport(false)} onImported={reload} />
+        <ImportModal eleves={eleves} existingRefs={existingRefs} existingSignatures={existingSignatures} onClose={() => setShowImport(false)} onImported={reload} />
       )}
       {editPaiement && (
         <EditModal paiement={editPaiement} eleves={eleves} onClose={() => setEditPaiement(null)} onSaved={reload} />
