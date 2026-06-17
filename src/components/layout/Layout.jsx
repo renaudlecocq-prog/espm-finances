@@ -8,7 +8,7 @@ export default function Layout() {
       <main className="max-w-screen-xl mx-auto px-4 py-8">
         <Outlet />
       </main>
-      <footer className="max-w-screen-xl mx-auto px-4 py-4 mt-8 border-t border-gray-100 flex justify-between items-center text-xs text-primary-lighter">
+      <footer className="max-w-screen-xl mx-auto px-4 py-4 mt-8 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
         <span>© 2026 École Secondaire Plurielle Maritime</span>
         <Link to="/mentions-legales" className="hover:text-primary transition-colors">Mentions légales</Link>
       </footer>
