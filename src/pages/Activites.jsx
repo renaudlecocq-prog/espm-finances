@@ -63,10 +63,11 @@ function ActivityModal({ editRow, isFinancier, userId, onClose, onSaved }) {
     const miss = validate(form)
     if (miss.length > 0) { setErrors(miss); return }
     setSaving(true); setSaveError(null)
-    const payload = {
-      ...form,
-      montant_par_eleve: montantParEleve ? montantParEleve.toFixed(2) : null,
-    }
+    // Convert empty strings → null for date/time/number DB columns
+    const payload = Object.fromEntries(
+      Object.entries({ ...form, montant_par_eleve: montantParEleve ? montantParEleve.toFixed(2) : null })
+        .map(([k, v]) => [k, v === '' ? null : v])
+    )
     if (!isFinancier) delete payload.pop
     let error
     if (editRow) {
