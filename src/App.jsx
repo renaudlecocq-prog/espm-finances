@@ -11,6 +11,7 @@ import Factures from './pages/Factures'
 import Activites from './pages/Activites'
 import Articles from './pages/Articles'
 import Echelonnements from './pages/Echelonnements'
+import AssistantSocial from './pages/AssistantSocial'
 import OrganismesTiers from './pages/OrganismesTiers'
 import Admin from './pages/Admin'
 import MentionsLegales from './pages/MentionsLegales'
@@ -54,8 +55,9 @@ function AppRoutes() {
       <Route path="/factures" element={<RequireAuth require="financier"><Layout><Factures /></Layout></RequireAuth>} />
       <Route path="/activites" element={<RequireAuth require="mdp"><Layout><Activites /></Layout></RequireAuth>} />
       <Route path="/articles" element={<RequireAuth require="financier"><Layout><Articles /></Layout></RequireAuth>} />
-      <Route path="/echelonnements" element={<RequireAuth require="mdp"><Layout><Echelonnements /></Layout></RequireAuth>} />
-      <Route path="/organismes" element={<RequireAuth require="mdp"><Layout><OrganismesTiers /></Layout></RequireAuth>} />
+      <Route path="/assistant-social" element={<RequireAuth require="mdp"><Layout><AssistantSocial /></Layout></RequireAuth>} />
+      <Route path="/echelonnements" element={<Navigate to="/assistant-social" replace />} />
+      <Route path="/organismes" element={<Navigate to="/assistant-social" replace />} />
       <Route path="/admin" element={<RequireAuth require="admin"><Layout><Admin /></Layout></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
