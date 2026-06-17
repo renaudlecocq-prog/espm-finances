@@ -66,7 +66,7 @@ const parseBelfiusCSV = (text, eleves) => {
     const payerName = (cols[5] || '').replace(/\s+/g, ' ').trim()
     const communication = (cols[8] || '').replace(/\s+/g, ' ').trim()
     const dateCompta = parseBelfiusDate(cols[3])
-    const refBelfius = cols[1] ? cols[1].trim() : `${dateCompta}|${montant}|${communication.slice(0, 20)}`
+    const refBelfius = cols[1]?.trim() || `${dateCompta}|${(montant+'').replace('.','_')}|${norm(communication).slice(0, 25)}`
     const modeRaw = (cols[12] || '').toLowerCase()
     const mode = modeRaw.includes('virement') ? 'virement' : modeRaw.includes('versement') ? 'versement' : 'autre'
     const isWorldline = payerName.toUpperCase().includes('WORLDLINE') || (cols[4] || '').includes('666-0000000')
@@ -135,7 +135,7 @@ function ImportModal({ eleves, existingRefs, onClose, onImported }) {
     setImportError(null)
     const toInsert = newRows.filter(r => r.eleve_id).map(({ isWorldline, matchedEleve, ...r }) => r)
     if (toInsert.length > 0) {
-      const { error } = await supabase.from('paiements').insert(toInsert)
+      const { error } = await supabase.from('paiements').upsert(toInsert, { onConflict: 'reference_belfius', ignoreDuplicates: true })
       if (error) {
         setImportError(error.message)
         setImporting(false)
