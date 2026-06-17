@@ -46,7 +46,14 @@ export default function Header() {
                   ? 'bg-white/20 text-white font-semibold'
                   : 'text-white/70 hover:text-white hover:bg-white/10'}`}
             >
-              {l.label}
+              {l.to === '/admin' ? (
+                <span className="flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                  </svg>
+                  {l.label}
+                </span>
+              ) : l.label}
             </Link>
           ))}
         </nav>
