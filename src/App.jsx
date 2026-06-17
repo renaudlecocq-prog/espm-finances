@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Header from './components/layout/Header'
 import Login from './pages/Login'
@@ -29,6 +29,10 @@ function Layout({ children }) {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">{children}</main>
+      <footer className="max-w-screen-xl mx-auto w-full px-4 py-4 mt-8 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
+        <span>© 2026 École Secondaire Plurielle Maritime</span>
+        <Link to="/mentions-legales" className="hover:text-primary transition-colors">Mentions légales</Link>
+      </footer>
     </div>
   )
 }
