@@ -13,6 +13,7 @@ import Articles from './pages/Articles'
 import Echelonnements from './pages/Echelonnements'
 import OrganismesTiers from './pages/OrganismesTiers'
 import Admin from './pages/Admin'
+import MentionsLegales from './pages/MentionsLegales'
 
 function RequireAuth({ children, require = 'user' }) {
   const { user, loading, isAdmin, isFinancier, isMdp } = useAuth()
@@ -45,6 +46,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/mentions-legales" element={<MentionsLegales />} />
       <Route path="/" element={<RequireAuth><Layout><Home /></Layout></RequireAuth>} />
       <Route path="/eleves" element={<RequireAuth require="mdp"><Layout><Eleves /></Layout></RequireAuth>} />
       <Route path="/groupes" element={<RequireAuth require="mdp"><Layout><Groupes /></Layout></RequireAuth>} />
