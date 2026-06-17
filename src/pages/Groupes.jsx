@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import FicheEleve from '../components/ui/FicheEleve'
+import FilterPill from '../components/ui/FilterPill'
 import { Search, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react'
 
 // ── Column config ──────────────────────────────────────────────────────────
