@@ -198,18 +198,18 @@ function HomeFinancier() {
           <div>
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Échelonnements</h3>
             <div className="grid grid-cols-3 gap-3">
-              <MiniStat label="En cours" value={echStats.en_cours} to="/echelonnements" color="blue" />
-              <MiniStat label="Non respecté" value={echStats.non_respecte} to="/echelonnements" color="red" />
-              <MiniStat label="Terminé" value={echStats.termine} to="/echelonnements" color="green" />
+              <MiniStat label="En cours" value={echStats.en_cours} to="/assistant-social" color="blue" />
+              <MiniStat label="Non respecté" value={echStats.non_respecte} to="/assistant-social" color="red" />
+              <MiniStat label="Terminé" value={echStats.termine} to="/assistant-social" color="green" />
             </div>
           </div>
           <div>
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Organismes tiers (actifs)</h3>
             <div className="grid grid-cols-4 gap-3">
-              <MiniStat label="CPAS" value={orgStats.CPAS} to="/echelonnements" color="blue" />
-              <MiniStat label="ULB" value={orgStats.ULB} to="/echelonnements" color="indigo" />
-              <MiniStat label="SPJ" value={orgStats.SPJ} to="/echelonnements" color="purple" />
-              <MiniStat label="Autre" value={orgStats.Autre} to="/echelonnements" color="gray" />
+              <MiniStat label="CPAS" value={orgStats.CPAS} to="/assistant-social" color="blue" />
+              <MiniStat label="ULB" value={orgStats.ULB} to="/assistant-social" color="indigo" />
+              <MiniStat label="SPJ" value={orgStats.SPJ} to="/assistant-social" color="purple" />
+              <MiniStat label="Autre" value={orgStats.Autre} to="/assistant-social" color="gray" />
             </div>
           </div>
         </div>
