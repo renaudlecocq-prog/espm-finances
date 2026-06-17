@@ -73,7 +73,7 @@ const parseBelfiusCSV = (text, eleves) => {
 
     return {
       date: dateCompta,
-      paye_par: 'Responsable',
+      paye_par: 'responsable',
       communication,
       montant,
       mode,
@@ -221,11 +221,11 @@ function ImportModal({ eleves, existingRefs, onClose, onImported }) {
                         <tr key={i} className={`border-b border-gray-50 ${already ? 'opacity-40' : r.isWorldline && !hideWorldline ? 'bg-orange-50/50' : ''}`}>
                           <td className="px-3 py-2 whitespace-nowrap text-gray-600">{fmtDate(r.date)}</td>
                           <td className="px-3 py-2 min-w-[120px]">
-                            {already ? <span className="text-gray-400">{r.paye_par}</span> : (
+                            {already ? <span className="text-gray-400">{PAYE_PAR_LABELS[r.paye_par] || r.paye_par}</span> : (
                               <select className="text-xs border border-gray-200 rounded-lg px-2 py-1 w-full bg-white outline-none focus:border-primary"
                                 value={r.paye_par}
                                 onChange={e => setRows(prev => prev.map((row, i) => i === origIdx ? { ...row, paye_par: e.target.value } : row))}>
-                                {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                                {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{PAYE_PAR_LABELS[o]}</option>)}
                               </select>
                             )}
                           </td>
@@ -340,7 +340,7 @@ function EditModal({ paiement, eleves, onClose, onSaved }) {
           <div>
             <label className="label">Payé par</label>
             <select className="input" value={form.paye_par} onChange={e => setForm(f => ({ ...f, paye_par: e.target.value }))}>
-              {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{PAYE_PAR_LABELS[o]}</option>)}
             </select>
           </div>
           <div>
@@ -374,7 +374,8 @@ function EditModal({ paiement, eleves, onClose, onSaved }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────
 const MODE_LABELS = { virement: 'Virement', versement: 'Versement', bancontact: 'Bancontact', autre: 'Autre' }
-const PAYE_PAR_OPTIONS = ['Responsable', 'CPAS', 'ULB', 'SPJ', 'Autre']
+const PAYE_PAR_OPTIONS = ['responsable', 'cpas', 'ulb', 'spj', 'autre']
+const PAYE_PAR_LABELS  = { responsable: 'Responsable', cpas: 'CPAS', ulb: 'ULB', spj: 'SPJ', autre: 'Autre' }
 
 export default function Paiements() {
   const { isFinancier } = useAuth()
@@ -391,7 +392,7 @@ export default function Paiements() {
   const [inlineEdit, setInlineEdit] = useState({}) // { [id]: { field, value } }
   const [form, setForm] = useState({
     eleve_id: '', date: new Date().toISOString().slice(0, 10),
-    montant: '', paye_par: 'Responsable', mode: 'virement', communication: '', remarque: '',
+    montant: '', paye_par: 'responsable', mode: 'virement', communication: '', remarque: '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -513,7 +514,7 @@ export default function Paiements() {
             </div>
             <div><label className="label">Payé par</label>
               <select className="input" value={form.paye_par} onChange={e => setForm(f => ({ ...f, paye_par: e.target.value }))}>
-                {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{PAYE_PAR_LABELS[o]}</option>)}
               </select>
             </div>
             <div><label className="label">Mode</label>
@@ -604,10 +605,10 @@ export default function Paiements() {
                       onChange={e => patchField(r.id, 'paye_par', e.target.value)}
                       onBlur={() => setInlineEdit(p => { const n={...p}; delete n[r.id]; return n })}
                       onClick={e => e.stopPropagation()}>
-                      {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{PAYE_PAR_LABELS[o]}</option>)}
                     </select>
                   ) : (
-                    <span className={`${isFinancier ? 'cursor-pointer hover:underline decoration-dotted' : ''}`}>{r.paye_par || '—'}</span>
+                    <span className={`${isFinancier ? 'cursor-pointer hover:underline decoration-dotted' : ''}`}>{PAYE_PAR_LABELS[r.paye_par] || r.paye_par || '—'}</span>
                   )}
                 </td>
                 <td className="px-3 py-2.5 text-gray-400 text-xs max-w-[220px] truncate">{r.remarque || r.communication || '—'}</td>
