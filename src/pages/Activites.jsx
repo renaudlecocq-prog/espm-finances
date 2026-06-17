@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import FilterPill from '../components/ui/FilterPill'
-import { Search, X, FileText, Pencil, Archive } from 'lucide-react'
+import { Search, X, FileText, Pencil, Archive, Receipt } from 'lucide-react'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
@@ -267,25 +267,33 @@ function ActivityModal({ editRow, isFinancier, userId, onClose, onSaved }) {
   )
 }
 
-// ── Docs modal (unchanged logic, new style) ────────────────────────────────
-function DocsModal({ row, onClose }) {
+// ── Docs / Factures modal ─────────────────────────────────────────────────
+function DocsModal({ row, categorie, onClose }) {
+  const isFacture = categorie === 'facture'
+  const label = isFacture ? 'Factures' : 'Documents'
   const [docs, setDocs] = useState([])
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef()
 
   useEffect(() => {
-    supabase.from('activite_documents').select('*').eq('activite_id', row.id).then(({ data }) => setDocs(data || []))
-  }, [row.id])
+    supabase.from('activite_documents').select('*')
+      .eq('activite_id', row.id).eq('categorie', categorie)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setDocs(data || []))
+  }, [row.id, categorie])
 
-  const reload = () => supabase.from('activite_documents').select('*').eq('activite_id', row.id).then(({ data }) => setDocs(data || []))
+  const reload = () => supabase.from('activite_documents').select('*')
+    .eq('activite_id', row.id).eq('categorie', categorie)
+    .order('created_at', { ascending: false })
+    .then(({ data }) => setDocs(data || []))
 
   const upload = async e => {
     const file = e.target.files[0]; if (!file) return
     setUploading(true)
-    const path = `${row.id}/${Date.now()}_${file.name}`
+    const path = `${categorie}/${row.id}/${Date.now()}_${file.name}`
     const { error } = await supabase.storage.from('activite-factures').upload(path, file)
     if (!error) {
-      await supabase.from('activite_documents').insert({ activite_id: row.id, nom: file.name, chemin: path, taille: file.size })
+      await supabase.from('activite_documents').insert({ activite_id: row.id, nom: file.name, chemin: path, taille: file.size, categorie })
       await reload()
     }
     setUploading(false); e.target.value = ''
@@ -306,14 +314,14 @@ function DocsModal({ row, onClose }) {
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="font-bold text-gray-800">Documents — {row.intitule}</h2>
+          <h2 className="font-bold text-gray-800">{label} — {row.intitule}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
         </div>
         <div className="px-6 py-4">
           <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={upload} />
           <button onClick={() => fileRef.current.click()} disabled={uploading}
             className="btn-primary w-full justify-center text-sm py-1.5 mb-4">
-            {uploading ? 'Upload…' : '+ Ajouter un PDF'}
+            {uploading ? 'Upload…' : `+ Ajouter un ${isFacture ? 'PDF de facture' : 'document PDF'}`}
           </button>
           {docs.length === 0 && <p className="text-sm text-gray-400 text-center py-4">Aucun document</p>}
           {docs.map(d => (
@@ -339,6 +347,7 @@ export default function Activites() {
   const [showModal, setShowModal] = useState(false)
   const [editRow, setEditRow] = useState(null)
   const [docsRow, setDocsRow] = useState(null)
+  const [docsCategorie, setDocsCategorie] = useState('document')
   const [showArchived, setShowArchived] = useState(false)
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('')
@@ -352,6 +361,7 @@ export default function Activites() {
   useEffect(() => { reload().then(() => setLoading(false)) }, [reload])
 
   const openNew = () => { setEditRow(null); setShowModal(true) }
+  const openDocs = (row, cat) => { setDocsRow(row); setDocsCategorie(cat) }
   const openEdit = row => { setEditRow(row); setShowModal(true) }
 
   const archive = async id => {
@@ -446,9 +456,13 @@ export default function Activites() {
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0 items-center">
-              <button onClick={() => setDocsRow(row)}
+              <button onClick={() => openDocs(row, 'document')}
                 className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
                 <FileText size={12} /> Docs
+              </button>
+              <button onClick={() => openDocs(row, 'facture')}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
+                <Receipt size={12} /> Factures
               </button>
               {canEdit(row) && (
                 <button onClick={() => openEdit(row)}
@@ -477,7 +491,7 @@ export default function Activites() {
           onSaved={reload}
         />
       )}
-      {docsRow && <DocsModal row={docsRow} onClose={() => setDocsRow(null)} />}
+      {docsRow && <DocsModal row={docsRow} categorie={docsCategorie} onClose={() => setDocsRow(null)} />}
     </div>
   )
 }
