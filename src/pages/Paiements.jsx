@@ -128,14 +128,22 @@ function ImportModal({ eleves, existingRefs, onClose, onImported }) {
     }))
   }
 
+  const [importError, setImportError] = useState(null)
+
   const doImport = async () => {
     setImporting(true)
+    setImportError(null)
     const toInsert = newRows.filter(r => r.eleve_id).map(({ isWorldline, matchedEleve, ...r }) => r)
     if (toInsert.length > 0) {
-      await supabase.from('paiements').insert(toInsert)
+      const { error } = await supabase.from('paiements').insert(toInsert)
+      if (error) {
+        setImportError(error.message)
+        setImporting(false)
+        return
+      }
     }
     setImporting(false)
-    onImported()
+    await onImported()   // await reload so table is fresh before modal closes
     onClose()
   }
 
@@ -262,10 +270,16 @@ function ImportModal({ eleves, existingRefs, onClose, onImported }) {
         {/* Footer */}
         {rows.length > 0 && (
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              <span className="font-semibold text-primary">{importable}</span> paiement{importable > 1 ? 's' : ''} à importer
-              {unmatched > 0 && <span className="text-amber-600 ml-2">({unmatched} sans élève — ignoré{unmatched > 1 ? 's' : ''})</span>}
-            </p>
+            <div className="text-sm text-gray-500">
+              {importError ? (
+                <span className="text-red-500 font-medium">Erreur : {importError}</span>
+              ) : (
+                <>
+                  <span className="font-semibold text-primary">{importable}</span> paiement{importable > 1 ? 's' : ''} à importer
+                  {unmatched > 0 && <span className="text-amber-600 ml-2">({unmatched} sans élève — ignoré{unmatched > 1 ? 's' : ''})</span>}
+                </>
+              )}
+            </div>
             <div className="flex gap-2">
               <button onClick={onClose} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
               <button onClick={doImport} disabled={importing || importable === 0} className="btn-primary py-1.5 px-4 text-sm disabled:opacity-50">
