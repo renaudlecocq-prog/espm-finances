@@ -115,6 +115,12 @@ function TabEchelonnements({ isFinancier }) {
           <FilterPill label="Statut" value={filterStatut}
             options={Object.entries(STATUT_ECH).map(([k, v]) => v.label)}
             onChange={v => setFilterStatut(Object.entries(STATUT_ECH).find(([, m]) => m.label === v)?.[0] || '')} />
+          {(search || filterStatut) && (
+            <button onClick={() => { setSearch(''); setFilterStatut('') }}
+              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors whitespace-nowrap">
+              <span className="text-sm leading-none">✕</span> Tout effacer
+            </button>
+          )}
           <span className="text-xs text-gray-400">{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
         </div>
         {isFinancier && (
@@ -283,6 +289,12 @@ function TabOrganismesTiers({ isFinancier }) {
           <FilterPill label="Statut" value={filterStatut}
             options={Object.entries(STATUT_OT).map(([k, v]) => v.label)}
             onChange={v => setFilterStatut(Object.entries(STATUT_OT).find(([, m]) => m.label === v)?.[0] || '')} />
+          {(search || filterStatut || filterOrganisme) && (
+            <button onClick={() => { setSearch(''); setFilterStatut(''); setFilterOrganisme('') }}
+              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors whitespace-nowrap">
+              <span className="text-sm leading-none">✕</span> Tout effacer
+            </button>
+          )}
           <span className="text-xs text-gray-400">{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
         </div>
         {isFinancier && (
