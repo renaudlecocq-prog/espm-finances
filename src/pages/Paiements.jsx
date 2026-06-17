@@ -374,6 +374,7 @@ export default function Paiements() {
   const [showForm, setShowForm] = useState(false)
   const [editPaiement, setEditPaiement] = useState(null)
   const [ficheId, setFicheId] = useState(null)
+  const [inlineEdit, setInlineEdit] = useState({}) // { [id]: { field, value } }
   const [form, setForm] = useState({
     eleve_id: '', date: new Date().toISOString().slice(0, 10),
     montant: '', paye_par: 'Responsable', mode: 'virement', communication: '', remarque: '',
@@ -424,6 +425,18 @@ export default function Paiements() {
     await supabase.from('paiements').insert(form)
     await reload(); setSaving(false); setShowForm(false)
     setForm({ eleve_id: '', date: new Date().toISOString().slice(0, 10), montant: '', paye_par: '', mode: 'virement', communication: '', remarque: '' })
+  }
+
+  // Inline patch a single field
+  const patchField = async (id, field, value) => {
+    await supabase.from('paiements').update({ [field]: value }).eq('id', id)
+    setData(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r))
+    setInlineEdit(e => { const n = { ...e }; delete n[id]; return n })
+  }
+
+  const startInline = (e, id, field, value) => {
+    e.stopPropagation()
+    setInlineEdit(prev => ({ ...prev, [id]: { field, value } }))
   }
 
   const del = async id => {
@@ -554,8 +567,35 @@ export default function Paiements() {
                 <td className="px-3 py-2.5 text-gray-500 text-xs whitespace-nowrap">{fmtDate(r.date)}</td>
                 <td className="px-3 py-2.5 font-semibold text-gray-800 whitespace-nowrap">{r.eleve?.nom} {r.eleve?.prenom}</td>
                 <td className="px-3 py-2.5 text-gray-500 text-xs">{r.eleve?.classe || '—'}</td>
-                <td className="px-3 py-2.5 text-right font-semibold text-green-600 whitespace-nowrap">{fmt(r.montant)}</td>
-                <td className="px-3 py-2.5 text-gray-600 max-w-[180px] truncate">{r.paye_par || '—'}</td>
+                {/* Montant — inline editable */}
+                <td className="px-3 py-2.5 text-right font-semibold text-green-600 whitespace-nowrap" onClick={e => isFinancier && startInline(e, r.id, 'montant', r.montant)}>
+                  {isFinancier && inlineEdit[r.id]?.field === 'montant' ? (
+                    <input autoFocus type="number" step="0.01"
+                      className="w-24 text-right border border-primary rounded px-1.5 py-0.5 text-xs font-semibold text-green-600 outline-none"
+                      value={inlineEdit[r.id].value}
+                      onChange={e => setInlineEdit(prev => ({ ...prev, [r.id]: { ...prev[r.id], value: e.target.value } }))}
+                      onBlur={() => patchField(r.id, 'montant', inlineEdit[r.id]?.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') patchField(r.id, 'montant', inlineEdit[r.id]?.value); if (e.key === 'Escape') setInlineEdit(p => { const n={...p}; delete n[r.id]; return n }) }}
+                      onClick={e => e.stopPropagation()} />
+                  ) : (
+                    <span className={isFinancier ? 'cursor-pointer hover:underline decoration-dotted' : ''}>{fmt(r.montant)}</span>
+                  )}
+                </td>
+                {/* Payé par — inline editable select */}
+                <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap" onClick={e => isFinancier && startInline(e, r.id, 'paye_par', r.paye_par || 'Responsable')}>
+                  {isFinancier && inlineEdit[r.id]?.field === 'paye_par' ? (
+                    <select autoFocus
+                      className="border border-primary rounded px-1.5 py-0.5 text-xs outline-none bg-white"
+                      value={inlineEdit[r.id].value}
+                      onChange={e => patchField(r.id, 'paye_par', e.target.value)}
+                      onBlur={() => setInlineEdit(p => { const n={...p}; delete n[r.id]; return n })}
+                      onClick={e => e.stopPropagation()}>
+                      {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <span className={`${isFinancier ? 'cursor-pointer hover:underline decoration-dotted' : ''}`}>{r.paye_par || '—'}</span>
+                  )}
+                </td>
                 <td className="px-3 py-2.5 text-gray-400 text-xs max-w-[220px] truncate">{r.remarque || r.communication || '—'}</td>
                 <td className="px-3 py-2.5">
                   <div className="flex gap-2 justify-center" onClick={e => e.stopPropagation()}>
