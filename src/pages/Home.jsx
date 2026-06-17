@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -18,8 +17,6 @@ function anneeScolaire() {
   const y = now.getFullYear()
   return m >= 8 ? `${y}-${y + 1}` : `${y - 1}-${y}`
 }
-
-const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
 
 // ── Composants ───────────────────────────────────────────────────────────────
 function StatCard({ label, value, sub, to, color = 'primary', icon }) {
@@ -59,7 +56,7 @@ function SectionTitle({ icon, title, subtitle }) {
 }
 
 function MiniStat({ label, value, to, color = 'gray' }) {
-  const colors = { gray: 'bg-gray-50 text-gray-700', blue: 'bg-blue-50 text-blue-700', red: 'bg-red-50 text-red-700', green: 'bg-green-50 text-green-700', orange: 'bg-orange-50 text-orange-700', yellow: 'bg-yellow-50 text-yellow-700' }
+  const colors = { gray: 'bg-gray-50 text-gray-700', blue: 'bg-blue-50 text-blue-700', red: 'bg-red-50 text-red-700', green: 'bg-green-50 text-green-700', orange: 'bg-orange-50 text-orange-700', yellow: 'bg-yellow-50 text-yellow-700', indigo: 'bg-indigo-50 text-indigo-700', purple: 'bg-purple-50 text-purple-700' }
   const inner = (
     <div className={`rounded-xl p-4 ${colors[color]} ${to ? 'cursor-pointer hover:shadow-sm transition-shadow' : ''}`}>
       <div className="text-xl font-bold">{value}</div>
@@ -67,18 +64,6 @@ function MiniStat({ label, value, to, color = 'gray' }) {
     </div>
   )
   return to ? <Link to={to}>{inner}</Link> : inner
-}
-
-function CustomTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs">
-      <p className="font-semibold text-gray-700 mb-1">{label}</p>
-      {payload.map(p => (
-        <p key={p.name} style={{ color: p.color }}>{p.name} : {fmt(p.value)}</p>
-      ))}
-    </div>
-  )
 }
 
 // ── Vue MdP ──────────────────────────────────────────────────────────────────
@@ -143,7 +128,6 @@ function HomeFinancier() {
   const [loading, setLoading] = useState(true)
   const [impayes, setImpayes] = useState(0)
   const [enReserve, setEnReserve] = useState(0)
-  const [monthlyData, setMonthlyData] = useState([])
   const [aFacturer, setAFacturer] = useState({ frais: 0, materiel: 0, activites: 0, autres: 0 })
   const [facture, setFacture] = useState({ frais: 0, materiel: 0, activites: 0, autres: 0 })
   const [echStats, setEchStats] = useState({ en_cours: 0, non_respecte: 0, termine: 0 })
@@ -152,38 +136,16 @@ function HomeFinancier() {
 
   useEffect(() => {
     Promise.all([
-      // Soldes élèves
       supabase.from('eleves').select('solde').eq('actif', true),
-      // Paiements mensuels (12 derniers mois)
-      supabase.from('paiements').select('montant, date_paiement'),
-      // Attributions d'articles
       supabase.from('article_attributions').select('prix_unitaire_applique, quantite, statut_facturation, article:article_id(categorie, prix_unitaire)'),
-      // Activités
       supabase.from('activites').select('montant_total, statut, statut_facturation'),
-      // Échelonnements
       supabase.from('echelonnements').select('statut'),
-      // Organismes tiers
       supabase.from('organismes_tiers').select('organisme, statut'),
-    ]).then(([eleves, paiements, attrs, activites, echs, orgs]) => {
-      // Impayés / En réserve
+    ]).then(([eleves, attrs, activites, echs, orgs]) => {
       const soldes = (eleves.data || []).map(e => Number(e.solde || 0))
       setImpayes(Math.abs(soldes.filter(s => s < 0).reduce((a, b) => a + b, 0)))
       setEnReserve(soldes.filter(s => s > 0).reduce((a, b) => a + b, 0))
 
-      // Graphique 12 mois
-      const now = new Date()
-      const months = Array.from({ length: 12 }, (_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1)
-        return { mois: MOIS[d.getMonth()], year: d.getFullYear(), month: d.getMonth(), encaisse: 0 }
-      })
-      ;(paiements.data || []).forEach(p => {
-        const d = new Date(p.date_paiement)
-        const idx = months.findIndex(m => m.year === d.getFullYear() && m.month === d.getMonth())
-        if (idx >= 0) months[idx].encaisse += Number(p.montant || 0)
-      })
-      setMonthlyData(months.map(m => ({ name: m.mois, Encaissé: Math.round(m.encaisse) })))
-
-      // Éléments à facturer / facturés
       const compute = (stat) => {
         const rows = (attrs.data || []).filter(a => a.statut_facturation === stat)
         const sum = (cat) => rows.filter(a => a.article?.categorie === cat).reduce((s, a) => {
@@ -200,12 +162,10 @@ function HomeFinancier() {
       setAFacturer(compute('a_facturer'))
       setFacture(compute('facture'))
 
-      // Échelonnements
       const ec = {}
       ;(echs.data || []).forEach(e => { ec[e.statut] = (ec[e.statut] || 0) + 1 })
       setEchStats({ en_cours: ec.en_cours || 0, non_respecte: ec.non_respecte || 0, termine: ec.termine || 0 })
 
-      // Organismes
       const og = {}
       ;(orgs.data || []).filter(o => ['en_cours','valide'].includes(o.statut)).forEach(o => {
         const k = ['CPAS','ULB','SPJ'].includes(o.organisme) ? o.organisme : 'Autre'
@@ -224,7 +184,6 @@ function HomeFinancier() {
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto space-y-10">
-      {/* En-tête */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Tableau de bord</h1>
@@ -232,28 +191,14 @@ function HomeFinancier() {
         </div>
       </div>
 
-      {/* ── 1. Vue financière ── */}
       <section>
         <SectionTitle icon="💶" title="Vue financière" subtitle={`Année scolaire ${as}`} />
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4">
           <StatCard icon="⚠️" label="Impayés" value={fmtShort(impayes)} sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" />
           <StatCard icon="🏦" label="En réserve" value={fmtShort(enReserve)} sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" />
         </div>
-        <div className="card p-5">
-          <h3 className="text-sm font-semibold text-gray-600 mb-4">Encaissements — 12 derniers mois</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={monthlyData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="Encaissé" fill="#3b82f6" radius={[4,4,0,0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
       </section>
 
-      {/* ── 2. Éléments à facturer ── */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <SectionTitle icon="📤" title="Éléments à facturer" subtitle="Articles et activités avec statut « à facturer »" />
@@ -267,7 +212,6 @@ function HomeFinancier() {
         </div>
       </section>
 
-      {/* ── 3. Assistant social ── */}
       <section>
         <SectionTitle icon="🤝" title="Assistant social" subtitle="Situations financières particulières en cours" />
         <div className="grid grid-cols-2 gap-6">
@@ -291,7 +235,6 @@ function HomeFinancier() {
         </div>
       </section>
 
-      {/* ── 4. Éléments facturés ── */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <SectionTitle icon="✅" title="Éléments facturés" subtitle="Articles et activités déjà facturés cette année" />
@@ -305,7 +248,6 @@ function HomeFinancier() {
         </div>
       </section>
 
-      {/* ── 5. Administration ── */}
       {isAdmin && (
         <section>
           <SectionTitle icon="⚙️" title="Administration" />
@@ -314,16 +256,6 @@ function HomeFinancier() {
               <div className="text-2xl mb-2">👥</div>
               <div className="font-semibold text-gray-800">Gérer les utilisateurs</div>
               <div className="text-sm text-gray-500 mt-1">Rôles, invitations, accès</div>
-            </Link>
-            <Link to="/eleves" className="card p-5 hover:shadow-md hover:border-primary-200 transition-all cursor-pointer border border-gray-100">
-              <div className="text-2xl mb-2">🎓</div>
-              <div className="font-semibold text-gray-800">Tous les élèves</div>
-              <div className="text-sm text-gray-500 mt-1">Liste complète, fiche individuelle</div>
-            </Link>
-            <Link to="/groupes" className="card p-5 hover:shadow-md hover:border-primary-200 transition-all cursor-pointer border border-gray-100">
-              <div className="text-2xl mb-2">📊</div>
-              <div className="font-semibold text-gray-800">Groupes</div>
-              <div className="text-sm text-gray-500 mt-1">RLMO, options, cours</div>
             </Link>
           </div>
         </section>
@@ -341,7 +273,6 @@ export default function Home() {
   if (isFinancier) return <HomeFinancier />
   if (isMdp) return <HomeMdp />
 
-  // Responsable ou autre
   return (
     <div className="p-8 text-center">
       <div className="text-4xl mb-4">🏫</div>
