@@ -157,7 +157,7 @@ function ImportModal({ eleves, existingRefs, existingSignatures, onClose, onImpo
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
@@ -234,7 +234,7 @@ function ImportModal({ eleves, existingRefs, existingSignatures, onClose, onImpo
                               </select>
                             )}
                           </td>
-                          <td className="px-3 py-2 text-gray-500 max-w-[180px] truncate">{r.communication}</td>
+                          <td className="px-3 py-2 text-gray-500 max-w-xs break-words whitespace-normal leading-snug">{r.communication}</td>
                           <td className="px-3 py-2 text-right font-semibold text-green-600 whitespace-nowrap">{r.montant.toFixed(2)} €</td>
                           <td className="px-3 py-2 min-w-[160px]">
                             {already ? (
@@ -617,7 +617,7 @@ export default function Paiements() {
                     <span className={`${isFinancier ? 'cursor-pointer hover:underline decoration-dotted' : ''}`}>{PAYE_PAR_LABELS[r.paye_par] || r.paye_par || '—'}</span>
                   )}
                 </td>
-                <td className="px-3 py-2.5 text-gray-400 text-xs max-w-[220px] truncate">{r.remarque || r.communication || '—'}</td>
+                <td className="px-3 py-2.5 text-gray-400 text-xs max-w-[220px] truncate">{r.remarque || '—'}</td>
                 <td className="px-3 py-2.5">
                   <div className="flex gap-2 justify-center" onClick={e => e.stopPropagation()}>
                     {isFinancier && <>
