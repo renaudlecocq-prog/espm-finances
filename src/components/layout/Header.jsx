@@ -16,7 +16,6 @@ export default function Header() {
     { to: '/activites',       label: 'Activités',     show: isMdp },
     { to: '/articles',        label: 'Articles',      show: isFinancier },
     { to: '/echelonnements',  label: 'Assist. social',show: isMdp },
-    { to: '/admin',           label: 'Admin',         show: isAdmin },
   ]
 
   const logout = async () => { await supabase.auth.signOut(); navigate('/login') }
