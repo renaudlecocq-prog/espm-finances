@@ -12,25 +12,25 @@ export default function Paiements() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
-  const [form, setForm] = useState({ eleve_id: '', montant: '', date_paiement: new Date().toISOString().slice(0,10), communication: '', mode: 'virement', remarque: '' })
+  const [form, setForm] = useState({ eleve_id: '', montant: '', date: new Date().toISOString().slice(0,10), communication: '', mode: 'virement', remarque: '' })
   const [saving, setSaving] = useState(false)
   const [csvLoading, setCsvLoading] = useState(false)
   const fileRef = useRef()
 
   useEffect(() => {
     Promise.all([
-      supabase.from('paiements').select('*, eleve:eleve_id(nom,prenom,classe)').order('date_paiement', { ascending: false }),
+      supabase.from('paiements').select('*, eleve:eleve_id(nom,prenom,classe)').order('date', { ascending: false }),
       supabase.from('eleves').select('id,nom,prenom,classe').eq('actif', true).order('nom'),
     ]).then(([p, e]) => { setData(p.data || []); setEleves(e.data || []); setLoading(false) })
   }, [])
 
-  const reload = () => supabase.from('paiements').select('*, eleve:eleve_id(nom,prenom,classe)').order('date_paiement', { ascending: false }).then(({ data }) => setData(data || []))
+  const reload = () => supabase.from('paiements').select('*, eleve:eleve_id(nom,prenom,classe)').order('date', { ascending: false }).then(({ data }) => setData(data || []))
 
   const save = async () => {
     setSaving(true)
     await supabase.from('paiements').insert(form)
     await reload(); setSaving(false); setShowForm(false)
-    setForm({ eleve_id: '', montant: '', date_paiement: new Date().toISOString().slice(0,10), communication: '', mode: 'virement', remarque: '' })
+    setForm({ eleve_id: '', montant: '', date: new Date().toISOString().slice(0,10), communication: '', mode: 'virement', remarque: '' })
   }
 
   const handleCsv = async e => {
@@ -38,9 +38,12 @@ export default function Paiements() {
     setCsvLoading(true)
     const text = await file.text()
     const lines = text.split('\n').filter(l => l.trim())
+    // Format Belfius : Date;Numéro de compte;Nom;Contrepartie;Nom contrepartie;Communication 1;Communication 2;Communication 3;Montant;Devise;...
     const rows = lines.slice(1).map(l => {
       const cols = l.split(';').map(c => c.replace(/"/g,'').trim())
-      return { date_paiement: cols[0], communication: cols[1], montant: parseFloat(cols[2]?.replace(',','.')||0), mode: 'csv_import' }
+      const montant = parseFloat((cols[8] || cols[2] || '0').replace(',','.') || 0)
+      const communication = [cols[5], cols[6], cols[7]].filter(Boolean).join(' ').trim() || cols[1] || ''
+      return { date: cols[0], communication, montant, mode: 'virement' }
     }).filter(r => r.montant > 0)
     if (rows.length > 0) { await supabase.from('paiements').insert(rows); await reload() }
     setCsvLoading(false); e.target.value = ''
@@ -60,7 +63,7 @@ export default function Paiements() {
         {isFinancier && (
           <div className="flex gap-2">
             <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleCsv} />
-            <button onClick={() => fileRef.current.click()} className="btn-secondary" disabled={csvLoading}>{csvLoading ? 'Import…' : 'Import CSV'}</button>
+            <button onClick={() => fileRef.current.click()} className="btn-secondary" disabled={csvLoading}>{csvLoading ? 'Import…' : 'Import CSV Belfius'}</button>
             <button onClick={() => setShowForm(true)} className="btn-primary">+ Paiement</button>
           </div>
         )}
@@ -83,7 +86,7 @@ export default function Paiements() {
             </div>
             <div>
               <label className="label">Date</label>
-              <input className="input" type="date" value={form.date_paiement} onChange={e => setForm(f => ({...f, date_paiement: e.target.value}))} />
+              <input className="input" type="date" value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} />
             </div>
             <div>
               <label className="label">Mode</label>
@@ -124,7 +127,7 @@ export default function Paiements() {
             <tbody>
               {rows.length===0?<tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Aucun paiement</td></tr>:rows.map(r=>(
                 <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-4 py-3">{fmtDate(r.date_paiement)}</td>
+                  <td className="px-4 py-3">{fmtDate(r.date)}</td>
                   <td className="px-4 py-3">{r.eleve?.nom} {r.eleve?.prenom}</td>
                   <td className="px-4 py-3">{r.eleve?.classe}</td>
                   <td className="px-4 py-3 font-medium text-green-600">{fmt(r.montant)}</td>
