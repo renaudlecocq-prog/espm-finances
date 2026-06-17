@@ -8,15 +8,15 @@ export default function Header() {
   const navigate = useNavigate()
 
   const links = [
-    { to: '/',               label: 'Accueil',        show: true },
-    { to: '/eleves',         label: 'Élèves',         show: isMdp },
-    { to: '/groupes',        label: 'Groupes',        show: isMdp },
-    { to: '/factures',       label: 'Factures',       show: isFinancier },
-    { to: '/paiements',      label: 'Paiements',      show: isFinancier },
-    { to: '/activites',      label: 'Activités',      show: isMdp },
-    { to: '/articles',       label: 'Articles',       show: isFinancier },
-    { to: '/echelonnements', label: 'Assist. social', show: isMdp },
-    { to: '/admin',          label: 'Admin',          show: isAdmin },
+    { to: '/',                label: 'Accueil',       show: true },
+    { to: '/eleves',          label: 'Élèves',        show: isMdp },
+    { to: '/groupes',         label: 'Groupes',       show: isMdp },
+    { to: '/factures',        label: 'Factures',      show: isFinancier },
+    { to: '/paiements',       label: 'Paiements',     show: isFinancier },
+    { to: '/activites',       label: 'Activités',     show: isMdp },
+    { to: '/articles',        label: 'Articles',      show: isFinancier },
+    { to: '/echelonnements',  label: 'Assist. social',show: isMdp },
+    { to: '/admin',           label: 'Admin',         show: isAdmin },
   ]
 
   const logout = async () => { await supabase.auth.signOut(); navigate('/login') }
@@ -32,7 +32,7 @@ export default function Header() {
 
         {/* Logo */}
         <Link to="/" className="shrink-0">
-          <img src="/logo-espm.png" alt="ESPM" className="h-9 w-auto" />
+          <img src="/logo-espm.png" alt="ESPM" className="h-9 w-auto brightness-0 invert" />
         </Link>
 
         {/* Nav */}
@@ -46,14 +46,7 @@ export default function Header() {
                   ? 'bg-white/20 text-white font-semibold'
                   : 'text-white/70 hover:text-white hover:bg-white/10'}`}
             >
-              {l.to === '/admin' ? (
-                <span className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
-                  </svg>
-                  {l.label}
-                </span>
-              ) : l.label}
+              {l.label}
             </Link>
           ))}
         </nav>
@@ -69,16 +62,25 @@ export default function Header() {
             style={{ backgroundColor: '#E86C00' }}
           >
             <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5" stroke="currentColor" strokeWidth="2">
-              <path d="M6 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3M9 2h5m0 0v5m0-5L7 10"/>
+              <path d="M6 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3M9 2h5m0 0v5m0-5L8 9" />
             </svg>
             Smartschool
           </a>
 
-          {/* Utilisateur */}
-          <div className="hidden sm:flex flex-col items-end leading-tight">
-            <span className="text-white text-sm font-semibold">{displayName || 'Renaud'}</span>
+          {/* Nom + rôle */}
+          <div className="text-right leading-tight">
+            <span className="text-white text-sm font-semibold block">{displayName || 'Renaud'}</span>
             <span className="text-white/60 text-xs">{roleLabel}</span>
           </div>
+
+          {/* Bouclier Admin */}
+          {isAdmin && (
+            <Link to="/admin" className="text-white/60 hover:text-white transition-colors" title="Administration">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+              </svg>
+            </Link>
+          )}
 
           {/* Cloche */}
           <button className="text-white/60 hover:text-white transition-colors" title="Notifications">
@@ -88,9 +90,9 @@ export default function Header() {
           </button>
 
           {/* Déconnexion */}
-          <button onClick={logout} className="text-white/60 hover:text-white transition-colors" title="Déconnexion">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l4 3m0 0l-4 3m4-3H7m3 6H5a2 2 0 01-2-2V6a2 2 0 012-2h5"/>
+          <button onClick={logout} className="text-white/60 hover:text-white transition-colors" title="Se déconnecter">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h5a1 1 0 010 2H3a3 3 0 01-3-3V4a3 3 0 013-3h5a1 1 0 010 2H3zm10.293 4.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L14.586 11H7a1 1 0 110-2h7.586l-1.293-1.293a1 1 0 010-1.414z" clipRule="evenodd"/>
             </svg>
           </button>
         </div>
