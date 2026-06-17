@@ -116,6 +116,12 @@ export default function Groupes() {
           />
         ))}
 
+        {(search || Object.keys(filters).length > 0) && (
+          <button onClick={() => { setSearch(''); setFilters({}) }}
+            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors whitespace-nowrap">
+            <span className="text-sm leading-none">✕</span> Tout effacer
+          </button>
+        )}
         <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">
           {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
         </span>
