@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Mail, Lock, Eye, EyeOff, ChevronDown } from 'lucide-react'
 
-const SMARTSCHOOL_BASE = 'https://espmaritime.smartschool.be/OAuth'
 const SMARTSCHOOL_OAUTH_URL =
-  SMARTSCHOOL_BASE +
+  'https://espmaritime.smartschool.be/OAuth' +
   '?client_id=4668f1e85fa4' +
-  '&redirect_uri=' + encodeURIComponent(window.location.origin + '/auth/callback') +
+  '&redirect_uri=' + encodeURIComponent('https://espmaritime.netlify.app/auth/callback') +
   '&response_type=code' +
   '&scope=' + encodeURIComponent('fulluserinfo groupinfo')
 
