@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const PLATFORM     = 'https://espmaritime.smartschool.be'
 const CLIENT_ID    = process.env.SMARTSCHOOL_CLIENT_ID || '4668f1e85fa4'
+const REDIRECT_URI = 'https://espmaritime.netlify.app/auth/callback'  // URL whitelistée dans Smartschool OAuth
 const SUPABASE_URL = process.env.SUPABASE_URL          || 'https://iubxalsakqljilydnqss.supabase.co'
 const ALLOWED_ORIGINS = [
   'https://espmaritime.netlify.app',
@@ -31,9 +32,7 @@ export const handler = async (event) => {
   if (event.httpMethod !== 'POST')    return json(405, { error: 'Method not allowed' })
 
   try {
-    const { code, origin: bodyOrigin } = JSON.parse(event.body || '{}')
-    const siteOrigin = ALLOWED_ORIGINS.includes(bodyOrigin) ? bodyOrigin : reqOrigin
-    const REDIRECT_URI = siteOrigin + '/auth/callback'
+    const { code } = JSON.parse(event.body || '{}')
     if (!code) return json(400, { error: 'Missing code parameter' })
 
     const CLIENT_SECRET    = process.env.SMARTSCHOOL_CLIENT_SECRET
@@ -126,7 +125,7 @@ export const handler = async (event) => {
     // 5. Générer un magic link → token_hash
     const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
       type: 'magiclink', email,
-      options: { redirectTo: siteOrigin },
+      options: { redirectTo: 'https://espmaritime.netlify.app' },
     })
     if (linkErr) throw linkErr
 
