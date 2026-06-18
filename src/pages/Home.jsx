@@ -13,19 +13,26 @@ function anneeScolaire() {
   const now = new Date(), m = now.getMonth() + 1, y = now.getFullYear()
   return m >= 8 ? y + '-' + (y + 1) : (y - 1) + '-' + y
 }
-function Sparkline({ data }) {
+function Sparkline({ data, labels }) {
   if (!data || data.length < 2) return null
   const max = Math.max(...data, 1), min = Math.min(...data, 0), range = max - min || 1, W = 200, H = 36
   const pts = data.map((v, i) => ((i / (data.length - 1)) * W).toFixed(1) + ',' + (H - ((v - min) / range) * (H - 6) - 3).toFixed(1))
   const line = 'M' + pts.join(' L'), area = line + ' L' + W + ',' + H + ' L0,' + H + ' Z'
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full mt-3 opacity-25" preserveAspectRatio="none" style={{ height: 36 }}>
-      <path d={area} fill="white" />
-      <path d={line} fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <div className="mt-3">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full opacity-30" preserveAspectRatio="none" style={{ height: 36 }}>
+        <path d={area} fill="white" />
+        <path d={line} fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {labels && labels.length >= 2 && (
+        <div className="flex justify-between text-white opacity-50 mt-0.5" style={{ fontSize: '0.52rem' }}>
+          {labels.map((l, i) => <span key={i}>{l}</span>)}
+        </div>
+      )}
+    </div>
   )
 }
-function StatCard({ label, value, sub, to, color = 'primary', icon, chart }) {
+function StatCard({ label, value, sub, to, color = 'primary', icon, chart, chartLabels }) {
   const colors = {
     primary: 'from-purple-700 to-purple-900',
     red: 'from-red-500 to-red-600',
@@ -47,7 +54,7 @@ function StatCard({ label, value, sub, to, color = 'primary', icon, chart }) {
       <div className="text-2xl font-bold leading-tight">{value}</div>
       <div className="text-sm font-medium opacity-90 mt-0.5">{label}</div>
       {sub && <div className="text-xs opacity-70 mt-0.5">{sub}</div>}
-      {chart && chart.length >= 2 && <Sparkline data={chart} />}
+      {chart && chart.length >= 2 && <Sparkline data={chart} labels={chartLabels} />}
     </div>
   )
   return to ? <Link to={to}>{inner}</Link> : inner
@@ -116,12 +123,11 @@ function HomeFinancier() {
   const [facture, setFacture] = useState({ frais: 0, materiel: 0, activites: 0, autres: 0 })
   const [echStats, setEchStats] = useState({ en_cours: 0, non_respecte: 0, termine: 0 })
   const [orgStats, setOrgStats] = useState({ CPAS: 0, ULB: 0, SPJ: 0, Autre: 0 })
-  const [sparkData, setSparkData] = useState([])
-  const [impChart, setImpChart]   = useState([])
-  const [resChart, setResChart]   = useState([])
+  const [impChart, setImpChart]     = useState([])
+  const [resChart, setResChart]     = useState([])
+  const [chartLabels, setChartLabels] = useState([])
   const as = anneeScolaire()
   useEffect(() => {
-    const d6 = new Date(); d6.setMonth(d6.getMonth() - 5); d6.setDate(1)
     Promise.all([
       supabase.from('paiements').select('eleve_id, montant, date').not('eleve_id', 'is', null),
       supabase.from('factures').select('eleve_id, montant').not('eleve_id', 'is', null),
@@ -129,8 +135,7 @@ function HomeFinancier() {
       supabase.from('activites').select('montant_total, pop, statut, statut_facturation'),
       supabase.from('echelonnements').select('statut'),
       supabase.from('organismes_tiers').select('organisme, statut'),
-      supabase.from('paiements').select('date, montant').gte('date', d6.toISOString().split('T')[0]),
-    ]).then(([paiesAll, factAll, attrs, activites, echs, orgs, paies6m]) => {
+    ]).then(([paiesAll, factAll, attrs, activites, echs, orgs]) => {
       // Impayés / En réserve — calculés dynamiquement (paiements − factures par élève)
       const sumByEleve = rows => {
         const m = new Map()
@@ -151,17 +156,21 @@ function HomeFinancier() {
       setImpayes(imp)
       setEnReserve(res)
 
-      // Sparkline — tendance impayés / réserve mois par mois
+      // Sparkline — évolution sur l'année scolaire (août → mois courant)
       const now = new Date()
-      const monthEnds = []
-      for (let i = 5; i >= 0; i--) {
-        // dernier jour du mois (now.getMonth() - i + 1, jour 0 = dernier du mois précédent)
-        const d = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
+      const FR_MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
+      const startYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1
+      const currentPos = now.getMonth() >= 7 ? now.getMonth() - 7 : now.getMonth() + 5
+      const monthEnds = [], monthLabels = []
+      for (let i = 0; i <= currentPos; i++) {
+        const m0 = (7 + i) % 12
+        const y = m0 >= 7 ? startYear : startYear + 1
+        const d = new Date(y, m0 + 1, 0) // dernier jour du mois
         monthEnds.push(d.toISOString().split('T')[0])
+        monthLabels.push(FR_MONTHS[m0])
       }
       const impTrend = [], resTrend = []
       monthEnds.forEach(endDate => {
-        // Paiements cumulés jusqu'à cette date
         const mPm = new Map()
         for (const r of (paiesAll.data || [])) {
           if (r.eleve_id && r.date && r.date <= endDate)
@@ -179,14 +188,7 @@ function HomeFinancier() {
       })
       setImpChart(impTrend)
       setResChart(resTrend)
-      // Sparkline secondaire — paiements bruts 6 mois (gardé pour référence)
-      const byM = {}
-      monthEnds.forEach(e => { byM[e.substring(0, 7)] = 0 })
-      ;(paies6m.data || []).forEach(p => {
-        const k = p.date?.substring(0, 7)
-        if (k && byM[k] !== undefined) byM[k] += Number(p.montant || 0)
-      })
-      setSparkData(Object.values(byM))
+      setChartLabels(monthLabels)
 
       // Éléments à facturer / facturés
       function compute(stat) {
@@ -229,9 +231,9 @@ function HomeFinancier() {
         <SectionTitle icon="💰" title="Vue financière" subtitle={`Année scolaire ${as}`} />
         <div className="grid grid-cols-2 gap-4">
           <StatCard icon="⚠️" label="Impayés" value={fmtShort(impayes)}
-            sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" chart={impChart} />
+            sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" chart={impChart} chartLabels={chartLabels} />
           <StatCard icon="🏦" label="En réserve" value={fmtShort(enReserve)}
-            sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" chart={resChart} />
+            sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" chart={resChart} chartLabels={chartLabels} />
         </div>
       </section>
       <section>
