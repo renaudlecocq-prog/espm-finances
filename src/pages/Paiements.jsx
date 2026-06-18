@@ -489,8 +489,8 @@ export default function Paiements() {
 
   const filterDefs = useMemo(() => [
     { key: 'paye_par', label: 'Payé par', options: Object.entries(PAYE_PAR_LABELS).map(([v, l]) => ({ value: v, label: l })) },
-    { key: 'classe',   label: 'Classe',   options: [...new Set(rows.map(r => r.eleve?.classe).filter(Boolean))].sort() },
-  ], [rows])
+    { key: 'classe',   label: 'Classe',   options: [...new Set(data.map(r => r.eleve?.classe).filter(Boolean))].sort() },
+  ], [data])
 
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
