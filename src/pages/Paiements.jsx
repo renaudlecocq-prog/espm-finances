@@ -583,7 +583,7 @@ export default function Paiements() {
       </div>
       <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
 
-      {/* Table */
+      {/* Table */}
       <div className="card p-0 flex-1 overflow-auto min-h-0">
         <table className="w-full text-sm">
           <thead style={{ position: 'sticky', top: 0, zIndex: 20 }} className="bg-gray-50 border-b border-gray-100">
