@@ -647,8 +647,14 @@ export default function Activites() {
   const [showArchived, setShowArchived]   = useState(false)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({})
-  const setFilter = useCallback((key, val) =>
-    setFilters(f => val ? { ...f, [key]: val } : Object.fromEntries(Object.entries(f).filter(([k]) => k !== key)))
+  const toggleFilter = useCallback((key, val) =>
+    setFilters(f => {
+      const cur  = Array.isArray(f[key]) ? f[key] : []
+      const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
+      return next.length === 0
+        ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== key))
+        : { ...f, [key]: next }
+    })
   , [])
 
   // Données pour le formulaire
@@ -711,11 +717,11 @@ export default function Activites() {
     .filter(r => showArchived ? true : r.statut !== 'archive')
     .filter(r => isAdmin || isFinancier || r.created_by === user?.id || r.statut === 'publie')
     .filter(r => !search || `${r.intitule} ${r.description || ''} ${r.responsable || ''}`.toLowerCase().includes(search.toLowerCase()))
-    .filter(r => !filters.type || r.type === filters.type)
-    .filter(r => !filters.statut_facturation || r.statut_facturation === filters.statut_facturation)
-    .filter(r => !filters.classe || (r.classes_incluses || []).includes(filters.classe))
+    .filter(r => !filters.type?.length || filters.type.includes(r.type))
+    .filter(r => !filters.statut_facturation?.length || filters.statut_facturation.includes(r.statut_facturation))
+    .filter(r => !filters.classe?.length || filters.classe.some(c => (r.classes_incluses || []).includes(c)))
 
-  const hasFilters = search || Object.keys(filters).length > 0
+  const hasFilters = search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
 
   const filterDefs = useMemo(() => [
     { key: 'type', label: 'Type', options: Object.entries(TYPE_LABELS).map(([v, l]) => ({ value: v, label: l })) },
@@ -754,7 +760,7 @@ export default function Activites() {
         <MasterFilter
           filters={filters}
           filterDefs={filterDefs}
-          onChange={setFilter}
+          onChange={toggleFilter}
           onClearAll={() => setFilters({})}
         />
         {hasFilters && (
@@ -765,7 +771,7 @@ export default function Activites() {
         )}
         <span className="ml-auto text-xs text-gray-400">{displayed.length} résultat{displayed.length !== 1 ? 's' : ''}</span>
       </div>
-      <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={setFilter} />
+      <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
 
       <div className="grid gap-3">
         {displayed.length === 0 && <div className="card p-8 text-center text-gray-400">Aucune activité</div>}
