@@ -292,7 +292,7 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
-          <h2 className="font-bold text-gray-800 text-lg">{editRow ? 'Modifier l'attribution' : 'Nouvelle attribution'}</h2>
+          <h2 className="font-bold text-gray-800 text-lg">{editRow ? "Modifier l'attribution" : 'Nouvelle attribution'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
         </div>
 
