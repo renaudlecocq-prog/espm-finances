@@ -389,8 +389,14 @@ export default function Paiements() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({})
-  const setFilter = useCallback((key, val) =>
-    setFilters(f => val ? { ...f, [key]: val } : Object.fromEntries(Object.entries(f).filter(([k]) => k !== key)))
+  const toggleFilter = useCallback((key, val) =>
+    setFilters(f => {
+      const cur  = Array.isArray(f[key]) ? f[key] : []
+      const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
+      return next.length === 0
+        ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== key))
+        : { ...f, [key]: next }
+    })
   , [])
   const [sort, setSort] = useState({ col: 'date', dir: 'desc' })
   const [showImport, setShowImport] = useState(false)
@@ -432,7 +438,7 @@ export default function Paiements() {
         `${r.eleve?.nom || ''} ${r.eleve?.prenom || ''} ${r.paye_par || ''} ${r.communication || ''} ${r.remarque || ''}`.toLowerCase().includes(q)
       )
     }
-    if (filters.mode) d = d.filter(r => r.mode === filters.mode)
+    if (filters.mode?.length) d = d.filter(r => filters.mode.includes(r.mode))
     const { col, dir } = sort
     return [...d].sort((a, b) => {
       let va, vb
@@ -478,7 +484,7 @@ export default function Paiements() {
     </th>
   )
 
-  const hasFilters = search || Object.keys(filters).length > 0
+  const hasFilters = search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
 
   const filterDefs = useMemo(() => [
     { key: 'mode', label: 'Mode', options: Object.entries(MODE_LABELS).map(([v, l]) => ({ value: v, label: l })) },
@@ -562,7 +568,7 @@ export default function Paiements() {
         <MasterFilter
           filters={filters}
           filterDefs={filterDefs}
-          onChange={setFilter}
+          onChange={toggleFilter}
           onClearAll={() => setFilters({})}
         />
         {hasFilters && (
@@ -575,8 +581,9 @@ export default function Paiements() {
           {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
         </span>
       </div>
+      <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
 
-      {/* Table */}
+      {/* Table */
       <div className="card p-0 flex-1 overflow-auto min-h-0">
         <table className="w-full text-sm">
           <thead style={{ position: 'sticky', top: 0, zIndex: 20 }} className="bg-gray-50 border-b border-gray-100">
