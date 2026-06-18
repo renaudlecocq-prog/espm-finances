@@ -845,48 +845,56 @@ function TabOrganismesTiers({ isAllowed }) {
       </div>
 
       {showForm && (
-        <div className="card p-5 mb-4 bg-gray-50">
-          <h3 className="font-semibold text-gray-700 mb-3">Nouvel organisme tiers</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <div className="col-span-2 md:col-span-3">
-              <label className="label">Élève</label>
-              <select className="input" value={form.eleve_id}
-                onChange={e => setForm(f => ({ ...f, eleve_id: e.target.value }))}>
-                <option value="">— Choisir —</option>
-                {eleves.map(e => <option key={e.id} value={e.id}>{e.nom} {e.prenom} — {e.classe}</option>)}
-              </select>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
+          onClick={e => e.target === e.currentTarget && setShowForm(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl my-8 flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
+              <h2 className="font-bold text-gray-800 text-lg">Nouvel organisme tiers</h2>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
-            <div>
-              <label className="label">Organisme</label>
-              <select className="input" value={form.organisme}
-                onChange={e => setForm(f => ({ ...f, organisme: e.target.value }))}>
-                {['CPAS', 'ULB', 'SPJ', 'Autre'].map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
+            <div className="px-6 py-5 space-y-4 overflow-y-auto">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="col-span-2 md:col-span-3">
+                  <label className="label">Élève</label>
+                  <select className="input" value={form.eleve_id}
+                    onChange={e => setForm(f => ({ ...f, eleve_id: e.target.value }))}>
+                    <option value="">— Choisir —</option>
+                    {eleves.map(e => <option key={e.id} value={e.id}>{e.nom} {e.prenom} — {e.classe}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Organisme</label>
+                  <select className="input" value={form.organisme}
+                    onChange={e => setForm(f => ({ ...f, organisme: e.target.value }))}>
+                    {['CPAS', 'ULB', 'SPJ', 'Autre'].map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Statut</label>
+                  <select className="input" value={form.statut}
+                    onChange={e => setForm(f => ({ ...f, statut: e.target.value }))}>
+                    {Object.entries(STATUT_OT).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Montant accordé (€)</label>
+                  <input className="input" type="number" step="0.01" value={form.montant_accorde}
+                    onChange={e => setForm(f => ({ ...f, montant_accorde: e.target.value }))} />
+                </div>
+                <div className="col-span-2 md:col-span-3">
+                  <label className="label">Remarque</label>
+                  <input className="input" value={form.remarque}
+                    onChange={e => setForm(f => ({ ...f, remarque: e.target.value }))} />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={save} disabled={saving || !form.eleve_id}
+                  className="btn-primary py-1.5 px-4 text-sm disabled:opacity-50">
+                  {saving ? 'Enregistrement…' : 'Enregistrer'}
+                </button>
+                <button onClick={() => setShowForm(false)} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
+              </div>
             </div>
-            <div>
-              <label className="label">Statut</label>
-              <select className="input" value={form.statut}
-                onChange={e => setForm(f => ({ ...f, statut: e.target.value }))}>
-                {Object.entries(STATUT_OT).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="label">Montant accordé (€)</label>
-              <input className="input" type="number" step="0.01" value={form.montant_accorde}
-                onChange={e => setForm(f => ({ ...f, montant_accorde: e.target.value }))} />
-            </div>
-            <div className="col-span-2 md:col-span-3">
-              <label className="label">Remarque</label>
-              <input className="input" value={form.remarque}
-                onChange={e => setForm(f => ({ ...f, remarque: e.target.value }))} />
-            </div>
-          </div>
-          <div className="flex gap-2 mt-3">
-            <button onClick={save} disabled={saving || !form.eleve_id}
-              className="btn-primary py-1.5 px-4 text-sm disabled:opacity-50">
-              {saving ? 'Enregistrement…' : 'Enregistrer'}
-            </button>
-            <button onClick={() => setShowForm(false)} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
           </div>
         </div>
       )}

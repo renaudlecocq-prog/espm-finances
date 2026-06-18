@@ -69,11 +69,12 @@ export default function Eleves() {
 
   const loadData = useCallback(async () => {
     setLoading(true)
-    const [elevesRes, facturesRes, paiementsRes, echRes] = await Promise.all([
+    const [elevesRes, facturesRes, paiementsRes, echRes, otRes] = await Promise.all([
       supabase.from('eleves').select('*').eq('actif', true).order('nom'),
       supabase.from('factures').select('eleve_id, montant'),
       supabase.from('paiements').select('eleve_id, montant'),
       supabase.from('echelonnements').select('eleve_id, montant'),
+      supabase.from('organismes_tiers').select('eleve_id, organisme, statut').in('statut', ['en_cours', 'valide']),
     ])
     const sumBy = (data) => {
       const m = new Map()
@@ -81,6 +82,12 @@ export default function Eleves() {
       return m
     }
     const mF = sumBy(facturesRes.data), mP = sumBy(paiementsRes.data), mE = sumBy(echRes.data)
+    // Map eleve_id → liste d'organismes actifs (en_cours ou valide)
+    const mAS = new Map()
+    for (const r of (otRes.data || [])) {
+      if (!mAS.has(r.eleve_id)) mAS.set(r.eleve_id, [])
+      mAS.get(r.eleve_id).push(r.organisme)
+    }
     setRows((elevesRes.data || []).map(e => {
       const factures  = mF.get(e.id) || 0
       const paiements = mP.get(e.id) || 0
@@ -91,6 +98,7 @@ export default function Eleves() {
         _factures:  factures,
         _paiements: paiements,
         _ech:       ech,
+        _asOrganismes: mAS.get(e.id) || [],
       }
     }))
     setLoading(false)
@@ -226,7 +234,14 @@ export default function Eleves() {
                   else if (c.key === '_factures') cell = fmtMoney(row._factures)
                   else if (c.key === '_paiements') cell = fmtMoney(row._paiements)
                   else if (c.key === '_ech')   cell = fmtMoney(row._ech)
-                  else if (c.key === '_as')    cell = row.assistant_social ? <span className="inline-block w-2 h-2 rounded-full bg-blue-400" /> : null
+                  else if (c.key === '_as') {
+                    const orgs = row._asOrganismes || []
+                    cell = orgs.length > 0
+                      ? <span className="inline-flex flex-wrap gap-1">{orgs.map(o => (
+                          <span key={o} className="inline-block rounded-full bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 font-medium leading-none">{o}</span>
+                        ))}</span>
+                      : null
+                  }
                   else if (c.key === '_actions') cell = (
                     <div className="flex items-center justify-center gap-1" onClick={e => e.stopPropagation()}>
                       {canEdit && <button onClick={() => setEditRow(row)} className="text-gray-400 hover:text-primary p-1"><Pencil size={13} /></button>}
