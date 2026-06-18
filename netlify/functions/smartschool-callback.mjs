@@ -1,27 +1,39 @@
 import { createClient } from '@supabase/supabase-js'
 
 const PLATFORM     = 'https://espmaritime.smartschool.be'
-const CLIENT_ID    = process.env.SMARTSCHOOL_CLIENT_ID    || '4668f1e85fa4'
-const REDIRECT_URI = process.env.SMARTSCHOOL_REDIRECT_URI || 'https://espmaritime.netlify.app/auth/callback'
-const SUPABASE_URL = process.env.SUPABASE_URL             || 'https://iubxalsakqljilydnqss.supabase.co'
+const CLIENT_ID    = process.env.SMARTSCHOOL_CLIENT_ID || '4668f1e85fa4'
+const SUPABASE_URL = process.env.SUPABASE_URL          || 'https://iubxalsakqljilydnqss.supabase.co'
+const ALLOWED_ORIGINS = [
+  'https://espmaritime.netlify.app',
+  'https://develop--espmaritime.netlify.app',
+]
 
-const CORS = {
-  'Access-Control-Allow-Origin':  'https://espmaritime.netlify.app',
-  'Access-Control-Allow-Headers': 'content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Type': 'application/json',
+function makeCors(origin) {
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+  return {
+    'Access-Control-Allow-Origin':  allowed,
+    'Access-Control-Allow-Headers': 'content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  }
 }
 
-function json(statusCode, body) {
-  return { statusCode, headers: CORS, body: JSON.stringify(body) }
+function jsonResp(statusCode, body, cors) {
+  return { statusCode, headers: cors, body: JSON.stringify(body) }
 }
 
 export const handler = async (event) => {
+  const reqOrigin = event.headers.origin || event.headers.Origin || ALLOWED_ORIGINS[0]
+  const CORS = makeCors(reqOrigin)
+  const json = (s, b) => jsonResp(s, b, CORS)
+
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' }
   if (event.httpMethod !== 'POST')    return json(405, { error: 'Method not allowed' })
 
   try {
-    const { code } = JSON.parse(event.body || '{}')
+    const { code, origin: bodyOrigin } = JSON.parse(event.body || '{}')
+    const siteOrigin = ALLOWED_ORIGINS.includes(bodyOrigin) ? bodyOrigin : reqOrigin
+    const REDIRECT_URI = siteOrigin + '/auth/callback'
     if (!code) return json(400, { error: 'Missing code parameter' })
 
     const CLIENT_SECRET    = process.env.SMARTSCHOOL_CLIENT_SECRET
@@ -114,7 +126,7 @@ export const handler = async (event) => {
     // 5. Générer un magic link → token_hash
     const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
       type: 'magiclink', email,
-      options: { redirectTo: 'https://espmaritime.netlify.app' },
+      options: { redirectTo: siteOrigin },
     })
     if (linkErr) throw linkErr
 
