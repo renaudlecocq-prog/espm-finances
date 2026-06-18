@@ -68,7 +68,7 @@ export const handler = async (event) => {
       basisrolRaw.includes('beheerder')  || basisrolRaw.includes('administratief') ||
       basisrolRaw === '0' || basisrolRaw === '13' || basisrolRaw === '30'
     )
-    const defaultRole = isStaff ? 'mdp' : 'responsable'
+    // Personnel → mdp ; non-staff (parents) → aucun rôle auto (l'admin assigne responsable manuellement)
 
     const email = (userInfo.email && userInfo.email.includes('@'))
       ? userInfo.email : `${userInfo.username}@espmaritime.be`
@@ -92,7 +92,10 @@ export const handler = async (event) => {
       })
       if (createErr) throw createErr
       userId = newUser.user.id
-      await supabase.from('profiles').update({ nom, prenom, role: defaultRole }).eq('id', userId)
+      const profilePatch = { nom, prenom }
+      if (isStaff) profilePatch.role = 'mdp'
+      else         profilePatch.role = null  // pas de rôle automatique pour les parents
+      await supabase.from('profiles').update(profilePatch).eq('id', userId)
     }
 
     // 4. Lier le responsable à ses élèves (co-accounts = parents)
