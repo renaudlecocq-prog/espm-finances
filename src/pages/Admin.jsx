@@ -165,7 +165,7 @@ export default function Admin() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  {['Email','Nom','Rôle','Depuis','Changer le rôle'].map(h => (
+                  {['Email','Nom','Rôle','Dernière connexion','Changer le rôle'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
                   ))}
                 </tr>
@@ -189,8 +189,8 @@ export default function Admin() {
                       <td className="px-4 py-3">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${m.color}`}>{m.label}</span>
                       </td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">
-                        {u.created_at ? new Date(u.created_at).toLocaleDateString('fr-BE') : '—'}
+                      <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
+                        {u.last_connexion ? new Date(u.last_connexion).toLocaleString('fr-BE', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'}
                       </td>
                       <td className="px-4 py-3">
                         <select className="input text-sm max-w-[140px] py-1"
