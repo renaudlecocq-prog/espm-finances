@@ -507,11 +507,13 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
               <div><label className="label">Montant total (€)</label>
                 <input className="input" type="number" step="0.01" value={form.montant_total} onChange={e => f('montant_total', e.target.value)} />
               </div>
-              {isFinancier && (
-                <div><label className="label">POP (€)</label>
-                  <input className="input" type="number" step="0.01" value={form.pop} onChange={e => f('pop', e.target.value)} />
-                </div>
-              )}
+              <div>
+                <label className="label">POP (€)</label>
+                {isFinancier
+                  ? <input className="input" type="number" step="0.01" value={form.pop} onChange={e => f('pop', e.target.value)} />
+                  : <div className="input bg-gray-50 text-gray-600">{form.pop ? fmt(parseFloat(form.pop)) : '—'}</div>
+                }
+              </div>
               <div><label className="label">Montant par élève (calculé)</label>
                 <div className="input bg-gray-50 text-gray-600">{montantParEleve !== null ? fmt(montantParEleve) : '—'}</div>
               </div>
@@ -779,7 +781,7 @@ export default function Activites() {
                   {row.lieu && <span>📍 {row.lieu}</span>}
                   {row.nb_eleves && <span>👥 {row.nb_eleves} élève{row.nb_eleves !== 1 ? 's' : ''}</span>}
                   {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
-                  {isFinancier && row.pop && <span className="text-orange-500">🏛 POP : {fmt(row.pop)}</span>}
+                  {row.pop && <span className="text-orange-500">🏛 POP : {fmt(row.pop)}</span>}
                   {responsableLabel && <span>👤 {responsableLabel}</span>}
                 </div>
               </div>
