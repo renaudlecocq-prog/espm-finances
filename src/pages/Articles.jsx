@@ -227,7 +227,7 @@ function ArticleModal({ editRow, onClose, onSaved }) {
 }
 
 // ── Modal Attribution ─────────────────────────────────────────────────────
-function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleveOptions, onClose, onSaved }) {
+function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleveOptions, editRow, onClose, onSaved }) {
   const EMPTY = {
     article_id: '', type_attribution: 'groupe',
     classes_incluses: [], groupes_inclus: [],
@@ -235,7 +235,17 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
     eleves_exclus: [], eleve_id: null,
     quantite: 1, prix_unitaire_applique: '', notes: '',
   }
-  const [form, setForm] = useState(EMPTY)
+  const [form, setForm] = useState(editRow
+    ? { ...EMPTY, ...editRow,
+        article_id: editRow.article_id || '',
+        classes_incluses: editRow.classes_incluses || [],
+        groupes_inclus: editRow.groupes_inclus || [],
+        classes_exclues: editRow.classes_exclues || [],
+        groupes_exclus: editRow.groupes_exclus || [],
+        eleves_exclus: editRow.eleves_exclus || [],
+        prix_unitaire_applique: editRow.prix_unitaire_applique || '',
+      }
+    : EMPTY)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
@@ -263,7 +273,9 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
       date_attribution: new Date().toISOString().slice(0, 10),
       statut_facturation: 'a_facturer',
     }
-    const { error: err } = await supabase.from('article_attributions').insert(payload)
+    const { error: err } = editRow
+      ? await supabase.from('article_attributions').update(payload).eq('id', editRow.id)
+      : await supabase.from('article_attributions').insert(payload)
     setSaving(false)
     if (err) { setError(err.message); return }
     onSaved(); onClose()
@@ -280,7 +292,7 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
-          <h2 className="font-bold text-gray-800 text-lg">Nouvelle attribution</h2>
+          <h2 className="font-bold text-gray-800 text-lg">{editRow ? 'Modifier l'attribution' : 'Nouvelle attribution'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
         </div>
 
@@ -397,6 +409,7 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
   const [data, setData]           = useState([])
   const [loading, setLoading]     = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [editRow, setEditRow]     = useState(null)
   const [search, setSearch]       = useState('')
 
   const reload = useCallback(() =>
@@ -407,6 +420,14 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
   , [])
 
   useEffect(() => { reload() }, [reload])
+
+  const openNew  = () => { setEditRow(null); setShowModal(true) }
+  const openEdit = r => { setEditRow(r); setShowModal(true) }
+  const deleteAttribution = async r => {
+    if (!confirm('Supprimer cette attribution ? Cette action est irréversible.')) return
+    await supabase.from('article_attributions').delete().eq('id', r.id)
+    reload()
+  }
 
   const filtered = useMemo(() => {
     if (!search) return data
@@ -435,7 +456,7 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
       {/* Toolbar */}
       <div className="flex items-center gap-3 mb-4">
         {isFinancier && (
-          <button onClick={() => setShowModal(true)} className="btn-primary text-sm py-1.5 px-4">+ Attribution</button>
+          <button onClick={openNew} className="btn-primary text-sm py-1.5 px-4">+ Attribution</button>
         )}
         <div className="relative">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -480,7 +501,26 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
                     <td className="px-4 py-3 text-center text-gray-600">{r.quantite || 1}</td>
                     <td className="px-4 py-3 text-gray-700">{fmt(prix)}</td>
                     <td className="px-4 py-3 font-medium text-gray-800">{r.nb_eleves ? fmt(total) : '—'}</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs max-w-[140px] truncate">{r.notes || '—'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${r.statut_facturation === 'facture' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {r.statut_facturation === 'facture' ? 'Facturé' : 'À facturer'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 text-xs max-w-[120px] truncate">{r.notes || '—'}</td>
+                    <td className="px-4 py-3 text-right">
+                      {isFinancier && (
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button onClick={() => openEdit(r)}
+                            className="text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-2.5 py-0.5 transition-colors">
+                            Modifier
+                          </button>
+                          <button onClick={() => deleteAttribution(r)}
+                            className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-0.5 transition-colors">
+                            Supprimer
+                          </button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 )
               })}
@@ -493,6 +533,7 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
         <AttributionModal
           articles={articles} allEleves={allEleves}
           allClasses={allClasses} groupOptions={groupOptions} eleveOptions={eleveOptions}
+          editRow={editRow}
           onClose={() => setShowModal(false)} onSaved={reload}
         />
       )}
@@ -514,6 +555,14 @@ function CatalogueTab({ isFinancier }) {
   , [])
 
   useEffect(() => { reload() }, [reload])
+
+  const openNew  = () => { setEditRow(null); setShowModal(true) }
+  const openEdit = r => { setEditRow(r); setShowModal(true) }
+  const deleteAttribution = async r => {
+    if (!confirm('Supprimer cette attribution ? Cette action est irréversible.')) return
+    await supabase.from('article_attributions').delete().eq('id', r.id)
+    reload()
+  }
 
   const filtered = useMemo(() => {
     if (!search) return data
