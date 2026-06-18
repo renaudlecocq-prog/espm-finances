@@ -117,11 +117,13 @@ function HomeFinancier() {
   const [echStats, setEchStats] = useState({ en_cours: 0, non_respecte: 0, termine: 0 })
   const [orgStats, setOrgStats] = useState({ CPAS: 0, ULB: 0, SPJ: 0, Autre: 0 })
   const [sparkData, setSparkData] = useState([])
+  const [impChart, setImpChart]   = useState([])
+  const [resChart, setResChart]   = useState([])
   const as = anneeScolaire()
   useEffect(() => {
     const d6 = new Date(); d6.setMonth(d6.getMonth() - 5); d6.setDate(1)
     Promise.all([
-      supabase.from('paiements').select('eleve_id, montant').not('eleve_id', 'is', null),
+      supabase.from('paiements').select('eleve_id, montant, date').not('eleve_id', 'is', null),
       supabase.from('factures').select('eleve_id, montant').not('eleve_id', 'is', null),
       supabase.from('article_attributions').select('prix_unitaire_applique, quantite, nb_eleves, statut_facturation, article:article_id(categorie, prix_unitaire)'),
       supabase.from('activites').select('montant_total, pop, statut, statut_facturation'),
@@ -149,12 +151,37 @@ function HomeFinancier() {
       setImpayes(imp)
       setEnReserve(res)
 
-      // Sparkline — paiements des 6 derniers mois
-      const byM = {}, now = new Date()
+      // Sparkline — tendance impayés / réserve mois par mois
+      const now = new Date()
+      const monthEnds = []
       for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-        byM[d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')] = 0
+        // dernier jour du mois (now.getMonth() - i + 1, jour 0 = dernier du mois précédent)
+        const d = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
+        monthEnds.push(d.toISOString().split('T')[0])
       }
+      const impTrend = [], resTrend = []
+      monthEnds.forEach(endDate => {
+        // Paiements cumulés jusqu'à cette date
+        const mPm = new Map()
+        for (const r of (paiesAll.data || [])) {
+          if (r.eleve_id && r.date && r.date <= endDate)
+            mPm.set(r.eleve_id, (mPm.get(r.eleve_id) || 0) + Number(r.montant || 0))
+        }
+        const ids = new Set([...mPm.keys(), ...mF.keys()])
+        let im = 0, re = 0
+        ids.forEach(id => {
+          const s = (mPm.get(id) || 0) - (mF.get(id) || 0)
+          if (s < 0) im += Math.abs(s)
+          else if (s > 0) re += s
+        })
+        impTrend.push(im)
+        resTrend.push(re)
+      })
+      setImpChart(impTrend)
+      setResChart(resTrend)
+      // Sparkline secondaire — paiements bruts 6 mois (gardé pour référence)
+      const byM = {}
+      monthEnds.forEach(e => { byM[e.substring(0, 7)] = 0 })
       ;(paies6m.data || []).forEach(p => {
         const k = p.date?.substring(0, 7)
         if (k && byM[k] !== undefined) byM[k] += Number(p.montant || 0)
@@ -202,9 +229,9 @@ function HomeFinancier() {
         <SectionTitle icon="💰" title="Vue financière" subtitle={`Année scolaire ${as}`} />
         <div className="grid grid-cols-2 gap-4">
           <StatCard icon="⚠️" label="Impayés" value={fmtShort(impayes)}
-            sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" chart={sparkData} />
+            sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" chart={impChart} />
           <StatCard icon="🏦" label="En réserve" value={fmtShort(enReserve)}
-            sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" chart={sparkData} />
+            sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" chart={resChart} />
         </div>
       </section>
       <section>
