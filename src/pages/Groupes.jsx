@@ -123,7 +123,7 @@ export default function Groupes() {
           onClearAll={() => setFilters({})}
         />
 
-        {(search || activeFilters.length > 0) && (
+        {(search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)) && (
           <button
             onClick={() => { setSearch(''); setFilters({}) }}
             className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600
