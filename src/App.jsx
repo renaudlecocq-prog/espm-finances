@@ -17,24 +17,38 @@ import Admin from './pages/Admin'
 import MentionsLegales from './pages/MentionsLegales'
 
 function RequireAuth({ children, require = 'user' }) {
-  const { user, loading, isAdmin, isFinancier, isMdp } = useAuth()
+  const { user, loading, role } = useAuth()
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
   if (!user) return <Navigate to="/login" replace />
-  if (require === 'admin' && !isAdmin) return <Navigate to="/" replace />
-  if (require === 'financier' && !isFinancier) return <Navigate to="/" replace />
-  if (require === 'mdp' && !isMdp) return <Navigate to="/" replace />
+  if (require === 'admin'     && role !== 'admin')                               return <Navigate to="/" replace />
+  if (require === 'financier' && !['admin','financier'].includes(role))          return <Navigate to="/" replace />
+  if (require === 'mdp'       && !['admin','financier','mdp'].includes(role))    return <Navigate to="/" replace />
   return children
 }
 
+const PREVIEW_LABELS = { financier: 'Financier', mdp: 'Membre du personnel', responsable: 'Responsable' }
 function Layout({ children }) {
+  const { previewRole, setPreviewRole } = useAuth()
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pb-safe">{children}</main>
       <footer className="max-w-screen-xl mx-auto w-full px-4 py-4 mt-8 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
         <span>© 2026 École Secondaire Plurielle Maritime</span>
         <Link to="/mentions-legales" className="hover:text-primary transition-colors">Mentions légales</Link>
       </footer>
+      {previewRole && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-orange-500 text-white px-4 py-2.5 flex items-center justify-between text-sm shadow-[0_-4px_12px_rgba(0,0,0,0.15)]">
+          <span className="flex items-center gap-2">
+            <span>👁</span>
+            <span>Aperçu en tant que <strong>{PREVIEW_LABELS[previewRole] || previewRole}</strong> — les menus et accès reflètent ce rôle</span>
+          </span>
+          <button onClick={() => setPreviewRole(null)}
+            className="bg-white text-orange-600 font-semibold px-3 py-1 rounded-lg text-xs hover:bg-orange-50 transition-colors ml-4 shrink-0">
+            Quitter l'aperçu
+          </button>
+        </div>
+      )}
     </div>
   )
 }
