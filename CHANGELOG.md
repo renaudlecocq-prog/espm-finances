@@ -11,6 +11,8 @@ Format : `[Date] Commit — Description — Rollback`
 | Commit | Fichier / Périmètre | Changement | Rollback |
 |--------|---------------------|------------|----------|
 | `0e98a41` | `AssistantSocial.jsx` | `EchelonnementForm` converti en modal overlay (fond semi-transparent, carte blanche arrondie, header sticky + bouton ✕, clic dehors pour fermer) — même pattern qu'Activités | `git revert 0e98a41` |
+| `21bb81b` | `AssistantSocial.jsx` | Formulaire Organismes Tiers converti en modal overlay (même pattern qu'Échelonnements) | `git revert 21bb81b` |
+| `21bb81b` | `Eleves.jsx` | Colonne AS : affiche le ou les organismes actifs (En cours / Validé) sous forme de badges bleus au lieu d'un simple point | `git revert 21bb81b` |
 | `797c237` | `AssistantSocial.jsx` | Date de début éditable dans le panneau détail — recalcul auto de toutes les dates d'échéances + date de fin en temps réel | `git revert 797c237` |
 | `9ed4590` | `AssistantSocial.jsx` | Bandeau d'alerte ambré quand la somme des mensualités ≠ montant total de l'échelonnement. Indique le montant à répartir ou le dépassement. | `git revert 9ed4590` |
 
@@ -64,7 +66,7 @@ git push origin main
 | Après filtres multi-select | `274b3b4` | ~2026-06-16 |
 | Après header + AssistantSocial | `81d4cba` | 2026-06-17 |
 | Début session 2 (stable) | `1956e81` | 2026-06-18 |
-| Actuel | `797c237` | 2026-06-18 |
+| Actuel | `21bb81b` | 2026-06-18 |
 
 ---
 
