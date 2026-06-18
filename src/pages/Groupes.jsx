@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import FicheEleve from '../components/ui/FicheEleve'
-import { Search, ChevronDown, ChevronUp, ChevronsUpDown, SlidersHorizontal, X } from 'lucide-react'
+import { Search, ChevronDown, ChevronUp, ChevronsUpDown, X } from 'lucide-react'
+import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 
 // ── Column config ──────────────────────────────────────────────────────────
 const COLS = [
@@ -20,6 +21,7 @@ const COLS = [
 ]
 
 const FILTER_COLS = COLS.filter(c => c.filter)
+const FILTER_DEFS = FILTER_COLS.map(c => ({ key: c.key, label: c.label, options: [] })) // options filled dynamically
 
 // ── Sort icon ──────────────────────────────────────────────────────────────
 function SortIcon({ col, sort }) {
@@ -27,130 +29,6 @@ function SortIcon({ col, sort }) {
   return sort.dir === 'asc'
     ? <ChevronUp   size={11} className="text-primary ml-0.5 shrink-0" />
     : <ChevronDown size={11} className="text-primary ml-0.5 shrink-0" />
-}
-
-// ── Master filter dropdown ─────────────────────────────────────────────────
-function MasterFilter({ filters, opts, setFilter, setFilters }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    if (!open) return
-    const close = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [open])
-
-  const activeCount = Object.keys(filters).length
-
-  return (
-    <div ref={ref} className="relative shrink-0">
-      {/* Trigger button */}
-      <button
-        onClick={() => setOpen(o => !o)}
-        className={`inline-flex items-center gap-1.5 rounded-full border text-xs font-medium
-          px-3 py-1.5 whitespace-nowrap transition-colors select-none
-          ${activeCount > 0
-            ? 'border-primary bg-primary/10 text-primary'
-            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-800'
-          }`}
-      >
-        <SlidersHorizontal size={12} />
-        Filtres
-        {activeCount > 0 && (
-          <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full
-            bg-primary text-white text-[10px] font-bold leading-none">
-            {activeCount}
-          </span>
-        )}
-        <ChevronDown
-          size={11}
-          className={`transition-transform duration-150 ${open ? 'rotate-180' : ''} ${activeCount > 0 ? 'text-primary' : 'text-gray-400'}`}
-        />
-      </button>
-
-      {/* Dropdown panel */}
-      {open && (
-        <div className="absolute top-full left-0 mt-2 z-50 bg-white border border-gray-200
-          rounded-2xl shadow-xl overflow-hidden"
-          style={{ width: 440 }}>
-
-          {/* Panel header */}
-          <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-gray-100">
-            <span className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-              <SlidersHorizontal size={12} className="text-gray-400" />
-              Filtrer par colonne
-            </span>
-            {activeCount > 0 && (
-              <button
-                onClick={() => { setFilters({}); setOpen(false) }}
-                className="text-xs text-red-400 hover:text-red-600 transition-colors font-medium flex items-center gap-1"
-              >
-                <X size={11} /> Tout effacer
-              </button>
-            )}
-          </div>
-
-          {/* Filter grid */}
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-4">
-            {FILTER_COLS.map(c => {
-              const active = !!filters[c.key]
-              return (
-                <div key={c.key}>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wide mb-1.5
-                    transition-colors"
-                    style={{ color: active ? 'var(--color-primary, #4f46e5)' : '#9ca3af' }}
-                  >
-                    {c.label}
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={filters[c.key] || ''}
-                      onChange={e => setFilter(c.key, e.target.value)}
-                      className={`w-full rounded-lg border text-xs px-2.5 py-1.5 pr-6 outline-none
-                        cursor-pointer appearance-none bg-white transition-all
-                        ${active
-                          ? 'border-primary/40 text-primary bg-primary/5 font-semibold'
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}
-                    >
-                      <option value="">Tous</option>
-                      {(opts[c.key] || []).map(v => (
-                        <option key={v} value={v}>{v}</option>
-                      ))}
-                    </select>
-                    <ChevronDown
-                      size={11}
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none
-                        ${active ? 'text-primary' : 'text-gray-400'}`}
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Panel footer */}
-          <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-[11px] text-gray-400">
-              {activeCount === 0
-                ? 'Aucun filtre actif'
-                : `${activeCount} filtre${activeCount > 1 ? 's' : ''} actif${activeCount > 1 ? 's' : ''}`}
-            </span>
-            <button
-              onClick={() => setOpen(false)}
-              className="text-xs text-gray-500 hover:text-gray-800 font-medium transition-colors
-                bg-white border border-gray-200 hover:border-gray-300 rounded-lg px-3 py-1"
-            >
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────
@@ -208,7 +86,6 @@ export default function Groupes() {
 
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
-  const activeFilters = Object.entries(filters)
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 80px)' }}>
@@ -232,12 +109,12 @@ export default function Groupes() {
           />
         </div>
 
-        {/* Master filter button */}
+        {/* Master filter */}
         <MasterFilter
           filters={filters}
-          opts={opts}
-          setFilter={setFilter}
-          setFilters={setFilters}
+          filterDefs={FILTER_COLS.map(c => ({ key: c.key, label: c.label, options: opts[c.key] || [] }))}
+          onChange={setFilter}
+          onClearAll={() => setFilters({})}
         />
 
         {(search || activeFilters.length > 0) && (
@@ -256,29 +133,11 @@ export default function Groupes() {
       </div>
 
       {/* Active filter chips */}
-      {activeFilters.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3 shrink-0">
-          {activeFilters.map(([key, val]) => {
-            const col = COLS.find(c => c.key === key)
-            return (
-              <span
-                key={key}
-                className="inline-flex items-center gap-1 rounded-full bg-primary/8 border border-primary/20
-                  text-primary text-xs px-2.5 py-1 font-medium"
-              >
-                <span className="opacity-60 font-normal">{col?.label} ·</span> {val}
-                <button
-                  onClick={() => setFilter(key, '')}
-                  className="ml-0.5 opacity-50 hover:opacity-100 transition-opacity leading-none"
-                  aria-label={`Retirer le filtre ${col?.label}`}
-                >
-                  <X size={10} />
-                </button>
-              </span>
-            )
-          })}
-        </div>
-      )}
+      <ActiveFilterChips
+        filters={filters}
+        filterDefs={FILTER_COLS.map(c => ({ key: c.key, label: c.label, options: opts[c.key] || [] }))}
+        onChange={setFilter}
+      />
 
       {/* Scrollable table container — fills remaining height */}
       <div className="card p-0 flex-1 overflow-auto min-h-0">
