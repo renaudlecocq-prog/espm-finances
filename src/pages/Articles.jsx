@@ -267,12 +267,21 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
     if (form.type_attribution === 'individuel' && !form.eleve_id) { setError('Choisir un élève'); return }
     if (form.type_attribution === 'groupe' && !hasSelection) { setError('Sélectionner au moins une classe ou un groupe'); return }
     setSaving(true); setError(null)
-    const payload = {
-      ...Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v === '' ? null : v])),
-      nb_eleves: nbEleves,
-      date_attribution: new Date().toISOString().slice(0, 10),
-      statut_facturation: 'a_facturer',
-    }
+    // Exclure les jointures Supabase (article, eleve) du payload DB
+    const DB_COLS = ['id','article_id','type_attribution','classes_incluses','groupes_inclus',
+      'classes_exclues','groupes_exclus','eleves_exclus','eleve_id','quantite',
+      'prix_unitaire_applique','notes','nb_eleves','date_attribution','statut_facturation',
+      'created_by','created_at']
+    const payload = Object.fromEntries(
+      Object.entries({
+        ...form,
+        nb_eleves: nbEleves,
+        date_attribution: editRow?.date_attribution || new Date().toISOString().slice(0, 10),
+        statut_facturation: editRow?.statut_facturation || 'a_facturer',
+      })
+      .filter(([k]) => DB_COLS.includes(k))
+      .map(([k, v]) => [k, v === '' ? null : v])
+    )
     const { error: err } = editRow
       ? await supabase.from('article_attributions').update(payload).eq('id', editRow.id)
       : await supabase.from('article_attributions').insert(payload)
