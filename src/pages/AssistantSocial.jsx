@@ -139,6 +139,24 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
     onUpdated()
   }
 
+  const [editDateDebut, setEditDateDebut] = useState(null) // valeur ISO en cours d'édition
+
+  const saveDateDebut = async (newDate) => {
+    if (!newDate) return
+    // Mettre à jour la date de début sur l'échelonnement
+    await supabase.from('echelonnements').update({ date_debut: newDate }).eq('id', ech.id)
+    // Recalculer toutes les dates d'échéance
+    const updates = sorted.map(e => ({
+      id: e.id,
+      date_echeance: addMonths(newDate, e.numero_mois - 1),
+    }))
+    for (const u of updates) {
+      await supabase.from('echeances').update({ date_echeance: u.date_echeance }).eq('id', u.id)
+    }
+    setEditDateDebut(null)
+    onUpdated()
+  }
+
   const dateFin = ech.date_debut && ech.nombre_echeances
     ? addMonths(ech.date_debut, Number(ech.nombre_echeances) - 1) : ''
 
@@ -209,11 +227,33 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
           {/* Dates */}
           <div className="flex items-center gap-5 text-sm text-gray-500 flex-wrap">
             <span className="flex items-center gap-1.5">
-              <Calendar size={13} />Début&nbsp;: <strong className="text-gray-700">{fmtDate(ech.date_debut)}</strong>
+              <Calendar size={13} />Début&nbsp;:&nbsp;
+              {isAllowed && editDateDebut !== null ? (
+                <span className="flex items-center gap-1">
+                  <input
+                    type="date" autoFocus
+                    className="border border-primary rounded px-1.5 py-0.5 text-xs text-gray-700 outline-none"
+                    value={editDateDebut}
+                    onChange={e => setEditDateDebut(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') saveDateDebut(editDateDebut)
+                      if (e.key === 'Escape') setEditDateDebut(null)
+                    }}
+                  />
+                  <button onClick={() => saveDateDebut(editDateDebut)} className="text-green-500 hover:text-green-700 text-xs font-bold">✓</button>
+                  <button onClick={() => setEditDateDebut(null)} className="text-gray-400 hover:text-gray-600 text-xs font-bold">✗</button>
+                </span>
+              ) : (
+                <strong
+                  className={`text-gray-700 ${isAllowed ? 'cursor-pointer hover:underline decoration-dotted' : ''}`}
+                  title={isAllowed ? 'Cliquer pour modifier' : undefined}
+                  onClick={() => isAllowed && setEditDateDebut(ech.date_debut)}
+                >{fmtDate(ech.date_debut)}</strong>
+              )}
             </span>
             {dateFin && (
               <span className="flex items-center gap-1.5">
-                <Calendar size={13} />Fin&nbsp;: <strong className="text-gray-700">{fmtDate(dateFin)}</strong>
+                <Calendar size={13} />Fin&nbsp;: <strong className="text-gray-700">{fmtDate(editDateDebut !== null ? addMonths(editDateDebut || ech.date_debut, Number(ech.nombre_echeances) - 1) : dateFin)}</strong>
               </span>
             )}
           </div>
