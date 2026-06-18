@@ -470,7 +470,7 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
                 const prix = r.prix_unitaire_applique ?? r.article?.prix_unitaire ?? 0
                 const total = (r.nb_eleves || 0) * Number(prix) * (r.quantite || 1)
                 return (
-                  <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <tr key={r.id} className="border-b border-gray-200 odd:bg-white even:bg-gray-50/60 hover:bg-primary/5 transition-colors">
                     <td className="px-4 py-3 font-medium text-gray-800">{r.article?.nom || '—'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{r.article?.categorie || '—'}</td>
                     <td className="px-4 py-3 text-gray-600 max-w-[200px] truncate" title={getAttributionLabel(r)}>{getAttributionLabel(r)}</td>
@@ -556,48 +556,61 @@ function CatalogueTab({ isFinancier }) {
         <span className="ml-auto text-xs text-gray-400">{filtered.length} article{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
-      {byCategorie.length === 0 && (
+      {filtered.length === 0 && (
         <div className="card p-8 text-center text-gray-400">Aucun article trouvé</div>
       )}
 
-      {byCategorie.map(({ cat, items }) => (
-        <div key={cat} className="mb-6">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{cat}</h3>
-          <div className="card p-0 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  {['Nom', 'Description', 'Prix unit.', 'Statut', ''].map(h => (
-                    <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {items.map(a => (
-                  <tr key={a.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-2.5 font-medium text-gray-800">{a.nom}</td>
-                    <td className="px-4 py-2.5 text-gray-400 text-xs">{a.description || '—'}</td>
-                    <td className="px-4 py-2.5 text-gray-700">{fmt(a.prix_unitaire)}</td>
-                    <td className="px-4 py-2.5">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${a.statut === 'actif' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {a.statut}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      {isFinancier && (
-                        <button onClick={() => openEdit(a)}
-                          className="text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1 transition-colors">
-                          Modifier
-                        </button>
-                      )}
+      {filtered.length > 0 && (
+        <div className="card p-0 overflow-hidden">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              <col style={{width:'30%'}} />
+              <col style={{width:'30%'}} />
+              <col style={{width:'12%'}} />
+              <col style={{width:'12%'}} />
+              <col style={{width:'16%'}} />
+            </colgroup>
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+              <tr>
+                {['Nom', 'Description', 'Prix unit.', 'Statut', ''].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {byCategorie.map(({ cat, items }) => (
+                <>
+                  <tr key={`cat-${cat}`}>
+                    <td colSpan={5} className="px-4 pt-4 pb-1.5">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{cat}</span>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  {items.map((a, idx) => (
+                    <tr key={a.id} className={`border-b border-gray-200 transition-colors hover:bg-primary/5 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}`}>
+                      <td className="px-4 py-2.5 font-medium text-gray-800 truncate">{a.nom}</td>
+                      <td className="px-4 py-2.5 text-gray-400 text-xs truncate">{a.description || '—'}</td>
+                      <td className="px-4 py-2.5 text-gray-700 font-mono">{fmt(a.prix_unitaire)}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${a.statut === 'actif' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {a.statut}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        {isFinancier && (
+                          <button onClick={() => openEdit(a)}
+                            className="text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1 transition-colors">
+                            Modifier
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ))}
+      )}
 
       {showModal && (
         <ArticleModal editRow={editRow} onClose={() => setShowModal(false)} onSaved={reload} />
