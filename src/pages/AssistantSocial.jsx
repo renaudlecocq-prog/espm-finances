@@ -40,8 +40,14 @@ function TabEchelonnements({ isFinancier }) {
   const [ficheId, setFicheId]   = useState(null)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({})
-  const setFilter = useCallback((key, val) =>
-    setFilters(f => val ? { ...f, [key]: val } : Object.fromEntries(Object.entries(f).filter(([k]) => k !== key)))
+  const toggleFilter = useCallback((key, val) =>
+    setFilters(f => {
+      const cur  = Array.isArray(f[key]) ? f[key] : []
+      const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
+      return next.length === 0
+        ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== key))
+        : { ...f, [key]: next }
+    })
   , [])
   const filterDefsEch = [
     { key: 'statut', label: 'Statut', options: Object.entries(STATUT_ECH).map(([v, m]) => ({ value: v, label: m.label })) },
@@ -86,7 +92,7 @@ function TabEchelonnements({ isFinancier }) {
       const q = search.toLowerCase()
       d = d.filter(r => (r.eleve?.nom || '').toLowerCase().includes(q) || (r.eleve?.prenom || '').toLowerCase().includes(q))
     }
-    if (filters.statut) d = d.filter(r => r.statut === filters.statut)
+    if (filters.statut?.length) d = d.filter(r => filters.statut.includes(r.statut))
     const { col, dir } = sort
     return [...d].sort((a, b) => {
       const va = col === 'nom' ? (a.eleve?.nom || '') : col === 'prenom' ? (a.eleve?.prenom || '') : col === 'classe' ? (a.eleve?.classe || '') : (a[col] ?? '')
@@ -118,8 +124,8 @@ function TabEchelonnements({ isFinancier }) {
             <input className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5 outline-none w-48 focus:border-primary transition-colors"
               placeholder="Rechercher par nom, prénom…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <MasterFilter filters={filters} filterDefs={filterDefsEch} onChange={setFilter} onClearAll={() => setFilters({})} />
-          {(search || Object.keys(filters).length > 0) && (
+          <MasterFilter filters={filters} filterDefs={filterDefsEch} onChange={toggleFilter} onClearAll={() => setFilters({})} />
+          {(search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)) && (
             <button onClick={() => { setSearch(''); setFilters({}) }}
               className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors whitespace-nowrap">
               <X size={11} /> Tout effacer
@@ -127,7 +133,7 @@ function TabEchelonnements({ isFinancier }) {
           )}
           <span className="text-xs text-gray-400">{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
         </div>
-        <ActiveFilterChips filters={filters} filterDefs={filterDefsEch} onChange={setFilter} />
+        <ActiveFilterChips filters={filters} filterDefs={filterDefsEch} onChange={toggleFilter} />
         {isFinancier && (
           <button onClick={() => setShowForm(true)} className="btn-primary text-sm py-1.5 px-4">
             + Échelonnement
@@ -225,8 +231,14 @@ function TabOrganismesTiers({ isFinancier }) {
   const [ficheId, setFicheId]   = useState(null)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({})
-  const setFilter = useCallback((key, val) =>
-    setFilters(f => val ? { ...f, [key]: val } : Object.fromEntries(Object.entries(f).filter(([k]) => k !== key)))
+  const toggleFilter = useCallback((key, val) =>
+    setFilters(f => {
+      const cur  = Array.isArray(f[key]) ? f[key] : []
+      const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
+      return next.length === 0
+        ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== key))
+        : { ...f, [key]: next }
+    })
   , [])
   const filterDefsOT = [
     { key: 'organisme', label: 'Organisme', options: ['CPAS', 'ULB', 'SPJ', 'Autre'] },
@@ -268,8 +280,8 @@ function TabOrganismesTiers({ isFinancier }) {
       const q = search.toLowerCase()
       d = d.filter(r => (r.eleve?.nom || '').toLowerCase().includes(q) || (r.eleve?.prenom || '').toLowerCase().includes(q))
     }
-    if (filters.statut)    d = d.filter(r => r.statut === filters.statut)
-    if (filters.organisme) d = d.filter(r => r.organisme === filters.organisme)
+    if (filters.statut?.length)    d = d.filter(r => filters.statut.includes(r.statut))
+    if (filters.organisme?.length) d = d.filter(r => filters.organisme.includes(r.organisme))
     const { col, dir } = sort
     return [...d].sort((a, b) => {
       const va = col === 'nom' ? (a.eleve?.nom || '') : col === 'prenom' ? (a.eleve?.prenom || '') : col === 'classe' ? (a.eleve?.classe || '') : (a[col] ?? '')
@@ -296,19 +308,16 @@ function TabOrganismesTiers({ isFinancier }) {
             <input className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5 outline-none w-48 focus:border-primary transition-colors"
               placeholder="Rechercher par nom, prénom…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <FilterPill label="Organisme" value={filterOrganisme} options={['CPAS','ULB','SPJ','Autre']} onChange={setFilterOrganisme} />
-          <FilterPill label="Statut" value={filterStatut}
-            options={Object.entries(STATUT_OT).map(([k, v]) => v.label)}
-            onChange={v => setFilterStatut(Object.entries(STATUT_OT).find(([, m]) => m.label === v)?.[0] || '')} />
-          {(search || filterStatut || filterOrganisme) && (
-            <button onClick={() => { setSearch(''); setFilterStatut(''); setFilterOrganisme('') }}
+          <MasterFilter filters={filters} filterDefs={filterDefsOT} onChange={toggleFilter} onClearAll={() => setFilters({})} />
+          {(search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)) && (
+            <button onClick={() => { setSearch(''); setFilters({}) }}
               className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors whitespace-nowrap">
               <X size={11} /> Tout effacer
             </button>
           )}
           <span className="text-xs text-gray-400">{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
         </div>
-        <ActiveFilterChips filters={filters} filterDefs={filterDefsOT} onChange={setFilter} />
+        <ActiveFilterChips filters={filters} filterDefs={filterDefsOT} onChange={toggleFilter} />
         {isFinancier && (
           <button onClick={() => setShowForm(true)} className="btn-primary text-sm py-1.5 px-4">
             + Organisme
