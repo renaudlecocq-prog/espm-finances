@@ -69,7 +69,7 @@ function AppRoutes() {
       <Route path="/factures" element={<RequireAuth require="financier"><Layout><Factures /></Layout></RequireAuth>} />
       <Route path="/activites" element={<RequireAuth require="mdp"><Layout><Activites /></Layout></RequireAuth>} />
       <Route path="/articles" element={<RequireAuth require="financier"><Layout><Articles /></Layout></RequireAuth>} />
-      <Route path="/assistant-social" element={<RequireAuth require="mdp"><Layout><AssistantSocial /></Layout></RequireAuth>} />
+      <Route path="/assistant-social" element={<RequireAuth require="financier"><Layout><AssistantSocial /></Layout></RequireAuth>} />
       <Route path="/echelonnements" element={<Navigate to="/assistant-social" replace />} />
       <Route path="/organismes" element={<Navigate to="/assistant-social" replace />} />
       <Route path="/admin" element={<RequireAuth require="admin"><Layout><Admin /></Layout></RequireAuth>} />
