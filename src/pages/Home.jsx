@@ -121,37 +121,64 @@ function HomeFinancier() {
   useEffect(() => {
     const d6 = new Date(); d6.setMonth(d6.getMonth() - 5); d6.setDate(1)
     Promise.all([
-      supabase.from('eleves').select('solde').eq('actif', true),
-      supabase.from('article_attributions').select('prix_unitaire_applique, quantite, statut_facturation, article:article_id(categorie, prix_unitaire)'),
-      supabase.from('activites').select('montant_total, statut, statut_facturation'),
+      supabase.from('paiements').select('eleve_id, montant').not('eleve_id', 'is', null),
+      supabase.from('factures').select('eleve_id, montant').not('eleve_id', 'is', null),
+      supabase.from('article_attributions').select('prix_unitaire_applique, quantite, nb_eleves, statut_facturation, article:article_id(categorie, prix_unitaire)'),
+      supabase.from('activites').select('montant_total, pop, statut, statut_facturation'),
       supabase.from('echelonnements').select('statut'),
       supabase.from('organismes_tiers').select('organisme, statut'),
       supabase.from('paiements').select('date, montant').gte('date', d6.toISOString().split('T')[0]),
-    ]).then(([eleves, attrs, activites, echs, orgs, paies]) => {
-      const soldes = (eleves.data || []).map(e => Number(e.solde || 0))
-      setImpayes(Math.abs(soldes.filter(s => s < 0).reduce((a, b) => a + b, 0)))
-      setEnReserve(soldes.filter(s => s > 0).reduce((a, b) => a + b, 0))
+    ]).then(([paiesAll, factAll, attrs, activites, echs, orgs, paies6m]) => {
+      // Impayés / En réserve — calculés dynamiquement (paiements − factures par élève)
+      const sumByEleve = rows => {
+        const m = new Map()
+        for (const r of (rows || [])) {
+          if (r.eleve_id) m.set(r.eleve_id, (m.get(r.eleve_id) || 0) + Number(r.montant || 0))
+        }
+        return m
+      }
+      const mP = sumByEleve(paiesAll.data)
+      const mF = sumByEleve(factAll.data)
+      const allIds = new Set([...mP.keys(), ...mF.keys()])
+      let imp = 0, res = 0
+      allIds.forEach(id => {
+        const s = (mP.get(id) || 0) - (mF.get(id) || 0)
+        if (s < 0) imp += Math.abs(s)
+        else if (s > 0) res += s
+      })
+      setImpayes(imp)
+      setEnReserve(res)
+
+      // Sparkline — paiements des 6 derniers mois
       const byM = {}, now = new Date()
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
         byM[d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')] = 0
       }
-      ;(paies.data || []).forEach(p => {
+      ;(paies6m.data || []).forEach(p => {
         const k = p.date?.substring(0, 7)
         if (k && byM[k] !== undefined) byM[k] += Number(p.montant || 0)
       })
       setSparkData(Object.values(byM))
+
+      // Éléments à facturer / facturés
       function compute(stat) {
         const rows = (attrs.data || []).filter(a => a.statut_facturation === stat)
+        // Articles : prix × quantité × nb_élèves
         const sum = cat => rows.filter(a => a.article?.categorie === cat)
-          .reduce((s, a) => s + Number(a.prix_unitaire_applique || a.article?.prix_unitaire || 0) * Number(a.quantite || 1), 0)
+          .reduce((s, a) => s
+            + Number(a.prix_unitaire_applique || a.article?.prix_unitaire || 0)
+            * Number(a.quantite || 1)
+            * Number(a.nb_eleves || 1), 0)
+        // Activités : montant_total − intervention POP
         const act = (activites.data || [])
           .filter(a => a.statut_facturation === stat && a.statut !== 'archive')
-          .reduce((s, a) => s + Number(a.montant_total || 0), 0)
+          .reduce((s, a) => s + Math.max(0, Number(a.montant_total || 0) - Number(a.pop || 0)), 0)
         return { frais: sum('Frais obligatoires'), materiel: sum('Fournitures scolaires'), activites: act, autres: sum('Vêtements') + sum('Divers') }
       }
       setAFacturer(compute('a_facturer'))
       setFacture(compute('facture'))
+
       const ec = {}
       ;(echs.data || []).forEach(e => { ec[e.statut] = (ec[e.statut] || 0) + 1 })
       setEchStats({ en_cours: ec.en_cours || 0, non_respecte: ec.non_respecte || 0, termine: ec.termine || 0 })
