@@ -4,11 +4,11 @@ import { supabase } from '../lib/supabase'
 const AuthContext = createContext({})
 
 export function AuthProvider({ children }) {
-  const [user,    setUser]    = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [role,    setRole]    = useState(null)
-  const [previewRole, setPreviewRole] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user,       setUser]       = useState(null)
+  const [profile,    setProfile]    = useState(null)
+  const [role,       setRole]       = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [viewAsRole, setViewAsRole] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -29,8 +29,6 @@ export function AuthProvider({ children }) {
       const { data } = await supabase.from('profiles').select('role, nom, prenom, email').eq('id', userId).single()
       setProfile(data ?? null)
       setRole(data?.role ?? null)
-      // Horodatage de connexion
-      supabase.from('profiles').update({ last_connexion: new Date().toISOString() }).eq('id', userId)
     } catch (e) {
       console.error('fetchRole error:', e)
     } finally {
@@ -38,13 +36,19 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const viewRole    = previewRole || role
-  const isAdmin     = viewRole === 'admin'
-  const isFinancier = ['admin', 'financier'].includes(viewRole)
-  const isMdp       = ['admin', 'financier', 'mdp'].includes(viewRole)
+  const effectiveRole = viewAsRole || role
+  const isAdmin     = effectiveRole === 'admin'
+  const isFinancier = ['admin', 'financier'].includes(effectiveRole)
+  const isMdp       = ['admin', 'financier', 'mdp'].includes(effectiveRole)
+  const isMdpOnly   = effectiveRole === 'mdp'
 
   return (
-    <AuthContext.Provider value={{ user, profile, role, previewRole, setPreviewRole, loading, isAdmin, isFinancier, isMdp, signIn: (e, p) => supabase.auth.signInWithPassword({ email: e, password: p }).then(({ error }) => error) }}>
+    <AuthContext.Provider value={{
+      user, profile, role, loading,
+      isAdmin, isFinancier, isMdp, isMdpOnly,
+      viewAsRole, setViewAsRole, effectiveRole,
+      signIn: (e, p) => supabase.auth.signInWithPassword({ email: e, password: p }).then(({ error }) => error)
+    }}>
       {children}
     </AuthContext.Provider>
   )
