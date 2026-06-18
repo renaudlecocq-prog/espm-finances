@@ -59,8 +59,14 @@ export default function Groupes() {
     return o
   }, [rows])
 
-  const setFilter = useCallback((col, val) =>
-    setFilters(f => val ? { ...f, [col]: val } : Object.fromEntries(Object.entries(f).filter(([k]) => k !== col)))
+  const toggleFilter = useCallback((col, val) =>
+    setFilters(f => {
+      const cur  = Array.isArray(f[col]) ? f[col] : []
+      const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
+      return next.length === 0
+        ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== col))
+        : { ...f, [col]: next }
+    })
   , [])
 
   const toggleSort = col =>
@@ -75,8 +81,8 @@ export default function Groupes() {
         (r.prenom || '').toLowerCase().includes(q)
       )
     }
-    Object.entries(filters).forEach(([col, val]) => {
-      d = d.filter(r => r[col] === val)
+    Object.entries(filters).forEach(([col, vals]) => {
+      if (Array.isArray(vals) && vals.length > 0) d = d.filter(r => vals.includes(r[col]))
     })
     const { col, dir } = sort
     return [...d].sort((a, b) =>
@@ -113,7 +119,7 @@ export default function Groupes() {
         <MasterFilter
           filters={filters}
           filterDefs={FILTER_COLS.map(c => ({ key: c.key, label: c.label, options: opts[c.key] || [] }))}
-          onChange={setFilter}
+          onChange={toggleFilter}
           onClearAll={() => setFilters({})}
         />
 
@@ -136,7 +142,7 @@ export default function Groupes() {
       <ActiveFilterChips
         filters={filters}
         filterDefs={FILTER_COLS.map(c => ({ key: c.key, label: c.label, options: opts[c.key] || [] }))}
-        onChange={setFilter}
+        onChange={toggleFilter}
       />
 
       {/* Scrollable table container — fills remaining height */}
