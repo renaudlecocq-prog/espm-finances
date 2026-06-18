@@ -94,7 +94,7 @@ export const handler = async (event) => {
       userId = newUser.user.id
       const profilePatch = { nom, prenom }
       if (isStaff) profilePatch.role = 'mdp'
-      else         profilePatch.role = null  // pas de rôle automatique pour les parents
+      else         profilePatch.role = 'responsable'  // parents (co-accounts) → responsable dès le 1er login
       await supabase.from('profiles').update(profilePatch).eq('id', userId)
     }
 
