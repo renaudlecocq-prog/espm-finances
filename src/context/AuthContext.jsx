@@ -29,6 +29,8 @@ export function AuthProvider({ children }) {
       const { data } = await supabase.from('profiles').select('role, nom, prenom, email').eq('id', userId).single()
       setProfile(data ?? null)
       setRole(data?.role ?? null)
+      // Horodatage de connexion
+      supabase.from('profiles').update({ last_connexion: new Date().toISOString() }).eq('id', userId)
     } catch (e) {
       console.error('fetchRole error:', e)
     } finally {
