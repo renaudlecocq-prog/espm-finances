@@ -160,7 +160,7 @@ function HomeFinancier() {
       supabase.from('factures').select('eleve_id, montant, date'),
       supabase.from('paiements').select('eleve_id, montant, date'),
       supabase.from('article_attributions').select('prix_unitaire_applique, quantite, nb_eleves, statut_facturation, article:article_id(categorie, prix_unitaire)'),
-      supabase.from('activites').select('montant_total, statut, statut_facturation'),
+      supabase.from('activites').select('montant_total, pop, statut, statut_facturation'),
       supabase.from('echelonnements').select('statut'),
       supabase.from('organismes_tiers').select('organisme, statut'),
     ]).then(([eleves, factures, paiements, attrs, activites, echs, orgs]) => {
@@ -196,7 +196,7 @@ function HomeFinancier() {
           .reduce((s, a) => s + Number(a.prix_unitaire_applique || a.article?.prix_unitaire || 0) * Number(a.nb_eleves || 1) * Number(a.quantite || 1), 0)
         const act = (activites.data || [])
           .filter(a => a.statut_facturation === stat && a.statut !== 'archive')
-          .reduce((s, a) => s + Number(a.montant_total || 0), 0)
+          .reduce((s, a) => s + Number(a.montant_total || 0) - Number(a.pop || 0), 0)
         return { frais: sum('Frais obligatoires'), materiel: sum('Fournitures scolaires'), activites: act, autres: sum('Vêtements') + sum('Divers') }
       }
       setAFacturer(compute('a_facturer'))
