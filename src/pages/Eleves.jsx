@@ -11,7 +11,7 @@ const fmt = n => Number(n || 0).toFixed(2) + ' €'
 const fmtSolde = v => {
   const n = Number(v || 0)
   if (n < 0) return <span className="font-semibold text-red-600">{fmt(n)}</span>
-  if (n > 0) return <span className="font-semibold text-orange-500">{fmt(n)}</span>
+  if (n > 0) return <span className="font-semibold text-green-600">{fmt(n)}</span>
   return <span className="text-gray-400">{fmt(0)}</span>
 }
 
@@ -72,12 +72,18 @@ export default function Eleves() {
       return m
     }
     const mF = sumBy(facturesRes.data), mP = sumBy(paiementsRes.data), mE = sumBy(echRes.data)
-    setRows((elevesRes.data || []).map(e => ({
-      ...e,
-      _factures: mF.get(e.id) || 0,
-      _paiements: mP.get(e.id) || 0,
-      _ech: mE.get(e.id) || 0,
-    })))
+    setRows((elevesRes.data || []).map(e => {
+      const factures  = mF.get(e.id) || 0
+      const paiements = mP.get(e.id) || 0
+      const ech       = mE.get(e.id) || 0
+      return {
+        ...e,
+        solde: paiements - factures,   // calculé dynamiquement
+        _factures:  factures,
+        _paiements: paiements,
+        _ech:       ech,
+      }
+    }))
     setLoading(false)
   }, [])
 
