@@ -57,8 +57,14 @@ export default function Eleves() {
   const [filters, setFilters] = useState({})
   const [sort, setSort]     = useState({ col: 'nom', dir: 'asc' })
 
-  const setFilter = useCallback((key, val) =>
-    setFilters(f => val ? { ...f, [key]: val } : Object.fromEntries(Object.entries(f).filter(([k]) => k !== key)))
+  const toggleFilter = useCallback((key, val) =>
+    setFilters(f => {
+      const cur  = Array.isArray(f[key]) ? f[key] : []
+      const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
+      return next.length === 0
+        ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== key))
+        : { ...f, [key]: next }
+    })
   , [])
 
   const loadData = useCallback(async () => {
@@ -92,8 +98,8 @@ export default function Eleves() {
 
   useEffect(() => {
     const solde = searchParams.get('solde')
-    if (solde === 'negatif') setFilter('solde', 'Négatif')
-    else if (solde === 'positif') setFilter('solde', 'Positif')
+    if (solde === 'negatif') setFilters(f => ({ ...f, solde: ['Négatif'] }))
+    else if (solde === 'positif') setFilters(f => ({ ...f, solde: ['Positif'] }))
     loadData()
   }, [loadData, searchParams])  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -110,10 +116,13 @@ export default function Eleves() {
       const q = search.toLowerCase()
       d = d.filter(r => (r.nom || '').toLowerCase().includes(q) || (r.prenom || '').toLowerCase().includes(q))
     }
-    if (filters.classe) d = d.filter(r => r.classe === filters.classe)
-    if (filters.solde === 'Négatif') d = d.filter(r => Number(r.solde || 0) < 0)
-    if (filters.solde === 'Neutre')  d = d.filter(r => Number(r.solde || 0) === 0)
-    if (filters.solde === 'Positif') d = d.filter(r => Number(r.solde || 0) > 0)
+    if (filters.classe?.length) d = d.filter(r => filters.classe.includes(r.classe))
+    if (filters.solde?.length) {
+      d = d.filter(r => {
+        const n = Number(r.solde || 0)
+        return filters.solde.some(s => s === 'Négatif' ? n < 0 : s === 'Neutre' ? n === 0 : n > 0)
+      })
+    }
     const { col, dir } = sort
     return [...d].sort((a, b) => {
       const va = a[col], vb = b[col]
@@ -128,7 +137,7 @@ export default function Eleves() {
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
   const totalW = COLS.reduce((s, c) => s + c.w, 0)
-  const hasFilters = search || Object.keys(filters).length > 0
+  const hasFilters = search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 80px)' }}>
@@ -157,7 +166,7 @@ export default function Eleves() {
         <MasterFilter
           filters={filters}
           filterDefs={filterDefs}
-          onChange={setFilter}
+          onChange={toggleFilter}
           onClearAll={() => setFilters({})}
         />
 
@@ -174,7 +183,7 @@ export default function Eleves() {
       </div>
 
       {/* Active filter chips */}
-      <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={setFilter} />
+      <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
 
       {/* Table */}
       <div className="card p-0 flex-1 overflow-auto min-h-0">
