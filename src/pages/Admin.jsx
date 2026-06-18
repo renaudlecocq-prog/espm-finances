@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { RefreshCw, UserPlus, Shield } from 'lucide-react'
@@ -34,7 +35,8 @@ const fmtDate = d => d ? new Date(d).toLocaleString('fr-BE', {
 
 export default function Admin() {
   const { isAdmin, role: myRole } = useAuth()
-  const [tab, setTab]             = useState('utilisateurs')
+  const [searchParams] = useSearchParams()
+  const [tab, setTab]             = useState(searchParams.get('onglet') || 'utilisateurs')
   const [users, setUsers]         = useState([])
   const [syncLogs, setSyncLogs]   = useState([])
   const [loading, setLoading]     = useState(true)
