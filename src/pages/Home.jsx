@@ -15,20 +15,28 @@ function anneeScolaire() {
 }
 function Sparkline({ data, labels }) {
   if (!data || data.length < 2) return null
-  const max = Math.max(...data, 1), min = Math.min(...data, 0), range = max - min || 1
-  const W = 200, H = 36, LH = 14
-  const pts = data.map((v, i) => ((i / (data.length - 1)) * W).toFixed(1) + ',' + (H - ((v - min) / range) * (H - 6) - 3).toFixed(1))
-  const line = 'M' + pts.join(' L'), area = line + ' L' + W + ',' + H + ' L0,' + H + ' Z'
+  const max = Math.max(...data, 0.01), min = 0, range = max - min || 0.01
+  const W = 200, H = 34
+  const pts = data.map((v, i) =>
+    ((i / (data.length - 1)) * W).toFixed(1) + ',' +
+    (H - ((v - min) / range) * (H - 4) - 2).toFixed(1)
+  )
+  const line = 'M' + pts.join(' L')
+  const area = line + ` L${W},${H} L0,${H} Z`
   return (
-    <svg viewBox={`0 0 ${W} ${H + LH}`} className="w-full mt-3 opacity-70" preserveAspectRatio="none" style={{ height: 48 }}>
-      <path d={area} fill="white" fillOpacity="0.2" />
-      <path d={line} fill="none" stroke="white" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-      {labels && labels.map((l, i) => (
-        <text key={i} x={(i / (labels.length - 1)) * W} y={H + LH - 2}
-          textAnchor={i === 0 ? 'start' : i === labels.length - 1 ? 'end' : 'middle'}
-          fontSize="8" fill="white" fillOpacity="0.7">{l}</text>
-      ))}
-    </svg>
+    <div className="mt-3">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="none" style={{ height: 30 }}>
+        <path d={area} fill="white" fillOpacity="0.15" />
+        <path d={line} fill="none" stroke="white" strokeWidth={1.5}
+          strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.85" />
+      </svg>
+      {labels && (
+        <div className="flex justify-between mt-1"
+          style={{ fontSize: '9px', color: 'rgba(255,255,255,0.6)', letterSpacing: '-0.01em' }}>
+          {labels.map((l, i) => <span key={i}>{l}</span>)}
+        </div>
+      )}
+    </div>
   )
 }
 function StatCard({ label, value, sub, to, color = 'primary', icon, chart, chartLabels }) {
