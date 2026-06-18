@@ -92,6 +92,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
   , [paiements, ech.date_debut, ech.debut]) // eslint-disable-line
 
   const totalPrevu = useMemo(() => sorted.reduce((s, e) => s + Number(e.montant_prevu), 0), [sorted])
+  const ecartTotal = useMemo(() => Math.round((Number(ech.montant) - totalPrevu) * 100) / 100, [ech.montant, totalPrevu])
 
   const totalExpectedToDate = useMemo(() =>
     sorted.filter(e => new Date(e.date_echeance + 'T00:00:00') <= today)
@@ -185,6 +186,25 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
               </div>
             </div>
           </div>
+
+          {/* Alerte déséquilibre mensualités */}
+          {Math.abs(ecartTotal) > 0.01 && (
+            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
+              <AlertTriangle size={15} className="text-amber-500 mt-0.5 shrink-0" />
+              <div className="text-amber-800">
+                <span className="font-semibold">La somme des mensualités ne correspond pas au total.</span>
+                <div className="mt-1 text-amber-700">
+                  Total déclaré&nbsp;: <strong>{fmtEur(Number(ech.montant))}</strong>
+                  {' · '}Somme des mensualités&nbsp;: <strong>{fmtEur(totalPrevu)}</strong>
+                  {' · '}
+                  {ecartTotal > 0
+                    ? <span>Il reste <strong className="text-amber-900">{fmtEur(ecartTotal)}</strong> à répartir sur les mensualités.</span>
+                    : <span>Les mensualités dépassent le total de <strong className="text-amber-900">{fmtEur(-ecartTotal)}</strong>.</span>
+                  }
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Dates */}
           <div className="flex items-center gap-5 text-sm text-gray-500 flex-wrap">
