@@ -212,36 +212,47 @@ function calcNbEleves(allEleves, form) {
   return count
 }
 
-// ── Staged file upload ──────────────────────────────────────────────────────
+// ── Staged file upload avec drag & drop ────────────────────────────────────
 function FileStage({ label, files, setFiles }) {
   const ref = useRef()
+  const [dragging, setDragging] = useState(false)
+
+  const addFiles = newFiles => {
+    setFiles(prev => [...prev, ...newFiles.filter(nf => !prev.some(pf => pf.name === nf.name))])
+  }
+
+  const onDrop = e => {
+    e.preventDefault(); setDragging(false)
+    addFiles(Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf'))
+  }
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <label className="label mb-0">{label}</label>
-        <button type="button" onClick={() => ref.current.click()}
-          className="text-xs text-primary hover:underline flex items-center gap-1">
-          <Plus size={11} /> Ajouter
-        </button>
+      <label className="label">{label}</label>
+      <div
+        className={`rounded-xl border-2 border-dashed transition-colors cursor-pointer p-3 text-center
+          ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
+        onDragOver={e => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        onClick={() => ref.current.click()}
+      >
+        <input ref={ref} type="file" accept="application/pdf" multiple className="hidden"
+          onChange={e => { addFiles(Array.from(e.target.files)); e.target.value = '' }} />
+        {files.length === 0
+          ? <p className="text-xs text-gray-400">Glisser-déposer ou <span className="text-primary underline">parcourir</span></p>
+          : <div className="flex flex-wrap gap-1.5 justify-center" onClick={e => e.stopPropagation()}>
+              {files.map(f => (
+                <span key={f.name} className="flex items-center gap-1 text-xs bg-white border border-gray-200 rounded-full px-2.5 py-1">
+                  {f.name}
+                  <button type="button"
+                    onClick={e => { e.stopPropagation(); setFiles(p => p.filter(x => x.name !== f.name)) }}
+                    className="text-gray-400 hover:text-red-500 ml-0.5">×</button>
+                </span>
+              ))}
+            </div>
+        }
       </div>
-      <input ref={ref} type="file" accept="application/pdf" multiple className="hidden"
-        onChange={e => {
-          const f = Array.from(e.target.files)
-          setFiles(prev => [...prev, ...f.filter(nf => !prev.some(pf => pf.name === nf.name))])
-          e.target.value = ''
-        }} />
-      {files.length === 0
-        ? <p className="text-xs text-gray-400 italic">Aucun fichier</p>
-        : <div className="flex flex-wrap gap-1.5 mt-1">
-            {files.map(f => (
-              <span key={f.name} className="flex items-center gap-1 text-xs bg-gray-100 rounded-full px-2.5 py-1">
-                {f.name}
-                <button type="button" onClick={() => setFiles(p => p.filter(x => x.name !== f.name))}
-                  className="text-gray-400 hover:text-red-500 ml-0.5">×</button>
-              </span>
-            ))}
-          </div>
-      }
     </div>
   )
 }
@@ -508,17 +519,10 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
                 <select className="input" value={form.statut} onChange={e => f('statut', e.target.value)}>
                   <option value="brouillon">Brouillon</option>
                   <option value="publie">Publié</option>
-                  {isFinancier && <option value="archive">Archivé</option>}
+                  {editRow && isFinancier && <option value="archive">Archivé</option>}
                 </select>
               </div>
-              {isFinancier && (
-                <div><label className="label">Statut facturation</label>
-                  <select className="input" value={form.statut_facturation} onChange={e => f('statut_facturation', e.target.value)}>
-                    <option value="a_facturer">À facturer</option>
-                    <option value="facture">Facturé</option>
-                  </select>
-                </div>
-              )}
+
             </div>
           </div>
 
@@ -554,6 +558,7 @@ function DocsModal({ row, categorie, onClose }) {
   const label = isFacture ? 'Factures' : 'Documents'
   const [docs, setDocs] = useState([])
   const [uploading, setUploading] = useState(false)
+  const [dragging, setDragging] = useState(false)
   const fileRef = useRef()
 
   const reload = useCallback(() =>
@@ -565,8 +570,8 @@ function DocsModal({ row, categorie, onClose }) {
 
   useEffect(() => { reload() }, [reload])
 
-  const upload = async e => {
-    const file = e.target.files[0]; if (!file) return
+  const uploadFile = async file => {
+    if (!file || file.type !== 'application/pdf') return
     setUploading(true)
     const path = `${categorie}/${row.id}/${Date.now()}_${file.name}`
     const { error } = await supabase.storage.from('activite-factures').upload(path, file)
@@ -574,8 +579,9 @@ function DocsModal({ row, categorie, onClose }) {
       await supabase.from('activite_documents').insert({ activite_id: row.id, nom: file.name, chemin: path, taille: file.size, categorie })
       await reload()
     }
-    setUploading(false); e.target.value = ''
+    setUploading(false)
   }
+  const upload = async e => { await uploadFile(e.target.files[0]); e.target.value = '' }
 
   const view = async doc => {
     const { data } = await supabase.storage.from('activite-factures').createSignedUrl(doc.chemin, 60)
@@ -598,10 +604,19 @@ function DocsModal({ row, categorie, onClose }) {
         </div>
         <div className="px-6 py-4">
           <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={upload} />
-          <button onClick={() => fileRef.current.click()} disabled={uploading}
-            className="btn-primary w-full justify-center text-sm py-1.5 mb-4">
-            {uploading ? 'Upload…' : `+ Ajouter un ${isFacture ? 'PDF de facture' : 'document PDF'}`}
-          </button>
+          <div
+            className={`rounded-xl border-2 border-dashed mb-4 p-4 text-center cursor-pointer transition-colors
+              ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
+            onDragOver={e => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={e => { e.preventDefault(); setDragging(false); uploadFile(e.dataTransfer.files[0]) }}
+            onClick={() => fileRef.current.click()}
+          >
+            {uploading
+              ? <p className="text-sm text-primary">Upload en cours…</p>
+              : <p className="text-sm text-gray-400">Glisser-déposer ou <span className="text-primary underline">parcourir</span></p>
+            }
+          </div>
           {docs.length === 0 && <p className="text-sm text-gray-400 text-center py-4">Aucun document</p>}
           {docs.map(d => (
             <div key={d.id} className="flex items-center justify-between py-2 border-b border-gray-100 text-sm">
@@ -764,6 +779,7 @@ export default function Activites() {
                   {row.lieu && <span>📍 {row.lieu}</span>}
                   {row.nb_eleves && <span>👥 {row.nb_eleves} élève{row.nb_eleves !== 1 ? 's' : ''}</span>}
                   {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
+                  {isFinancier && row.pop && <span className="text-orange-500">🏛 POP : {fmt(row.pop)}</span>}
                   {responsableLabel && <span>👤 {responsableLabel}</span>}
                 </div>
               </div>
