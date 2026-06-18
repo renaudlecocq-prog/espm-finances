@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import FilterPill from '../components/ui/FilterPill'
+import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 import FicheEleve from '../components/ui/FicheEleve'
 import { Search, Upload, ChevronUp, ChevronDown, ChevronsUpDown, Pencil, Trash2, X, AlertTriangle } from 'lucide-react'
 
@@ -388,7 +388,10 @@ export default function Paiements() {
   const [eleves, setEleves] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [filterMode, setFilterMode] = useState('')
+  const [filters, setFilters] = useState({})
+  const setFilter = useCallback((key, val) =>
+    setFilters(f => val ? { ...f, [key]: val } : Object.fromEntries(Object.entries(f).filter(([k]) => k !== key)))
+  , [])
   const [sort, setSort] = useState({ col: 'date', dir: 'desc' })
   const [showImport, setShowImport] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -429,7 +432,7 @@ export default function Paiements() {
         `${r.eleve?.nom || ''} ${r.eleve?.prenom || ''} ${r.paye_par || ''} ${r.communication || ''} ${r.remarque || ''}`.toLowerCase().includes(q)
       )
     }
-    if (filterMode) d = d.filter(r => r.mode === filterMode)
+    if (filters.mode) d = d.filter(r => r.mode === filters.mode)
     const { col, dir } = sort
     return [...d].sort((a, b) => {
       let va, vb
@@ -439,7 +442,7 @@ export default function Paiements() {
       else { va = a[col] || ''; vb = b[col] || '' }
       return String(va).localeCompare(String(vb), 'fr') * (dir === 'asc' ? 1 : -1)
     })
-  }, [data, search, filterMode, sort])
+  }, [data, search, filters, sort])
 
   const saveManual = async () => {
     setSaving(true)
@@ -475,7 +478,11 @@ export default function Paiements() {
     </th>
   )
 
-  const hasFilters = search || filterMode
+  const hasFilters = search || Object.keys(filters).length > 0
+
+  const filterDefs = useMemo(() => [
+    { key: 'mode', label: 'Mode', options: Object.entries(MODE_LABELS).map(([v, l]) => ({ value: v, label: l })) },
+  ], [])
 
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
@@ -552,13 +559,16 @@ export default function Paiements() {
             placeholder="Rechercher par nom, prénom, payeur…"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <FilterPill label="Mode" value={filterMode}
-          options={Object.values(MODE_LABELS)}
-          onChange={v => setFilterMode(Object.entries(MODE_LABELS).find(([, lbl]) => lbl === v)?.[0] || '')} />
+        <MasterFilter
+          filters={filters}
+          filterDefs={filterDefs}
+          onChange={setFilter}
+          onClearAll={() => setFilters({})}
+        />
         {hasFilters && (
-          <button onClick={() => { setSearch(''); setFilterMode('') }}
+          <button onClick={() => { setSearch(''); setFilters({}) }}
             className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors whitespace-nowrap">
-            <span className="text-sm leading-none">✕</span> Tout effacer
+            <X size={11} /> Tout effacer
           </button>
         )}
         <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">
