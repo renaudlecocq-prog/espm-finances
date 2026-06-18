@@ -532,6 +532,11 @@ function CatalogueTab({ isFinancier }) {
 
   const openEdit = row => { setEditRow(row); setShowModal(true) }
   const openNew  = () => { setEditRow(null); setShowModal(true) }
+  const deleteArticle = async a => {
+    if (!confirm(`Supprimer « ${a.nom} » ? Cette action est irréversible.`)) return
+    await supabase.from('articles').delete().eq('id', a.id)
+    reload()
+  }
 
   if (loading) return <div className="py-8 text-center text-gray-400">Chargement…</div>
 
@@ -597,10 +602,16 @@ function CatalogueTab({ isFinancier }) {
                       </td>
                       <td className="px-4 py-2.5 text-right">
                         {isFinancier && (
-                          <button onClick={() => openEdit(a)}
-                            className="text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1 transition-colors">
-                            Modifier
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => openEdit(a)}
+                              className="text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1 transition-colors">
+                              Modifier
+                            </button>
+                            <button onClick={() => deleteArticle(a)}
+                              className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-3 py-1 transition-colors">
+                              Supprimer
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
