@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import FilterPill from '../components/ui/FilterPill'
-import { Search, X, FileText, Pencil, Archive, Receipt } from 'lucide-react'
+import { Search, X, FileText, Pencil, Archive, Receipt, ChevronDown, Plus, Loader2 } from 'lucide-react'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
@@ -24,13 +24,19 @@ const EMPTY = {
   lieu: '', heure_rdv: '', heure_depart: '', heure_retour: '',
   lieu_rdv: '', lieu_retour: '', type_transport: '', tel_organisateur: '', tel_sejour: '',
   local: '', heure_debut: '', heure_fin: '',
-  nb_eleves: '', pop: '', montant_total: '',
-  responsable: '', accompagnateurs: '',
+  montant_total: '', pop: '',
   statut: 'brouillon', statut_facturation: 'a_facturer',
+  // new fields
+  responsable_id: null,
+  accompagnateur_ids: [],
+  classes_incluses: [],
+  groupes_inclus: [],
+  classes_exclues: [],
+  groupes_exclus: [],
 }
 
 function validate(form) {
-  const miss = ['intitule', 'type', 'date_debut', 'nb_eleves', 'responsable'].filter(k => !form[k])
+  const miss = ['intitule', 'type', 'date_debut'].filter(k => !form[k])
   if (form.type === 'extramuros' || form.type === 'voyage') {
     if (!form.lieu) miss.push('lieu')
     if (!form.heure_depart) miss.push('heure_depart')
@@ -47,48 +53,294 @@ function validate(form) {
   return miss
 }
 
+// ── Composant générique multi-select avec recherche ────────────────────────
+function MultiSearchSelect({ options, value, onChange, placeholder, labelKey = 'label', valueKey = 'value', single = false }) {
+  const [open, setOpen] = useState(false)
+  const [q, setQ] = useState('')
+  const ref = useRef()
+
+  useEffect(() => {
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filtered = useMemo(() =>
+    options.filter(o => {
+      const lbl = typeof o === 'string' ? o : o[labelKey]
+      return lbl.toLowerCase().includes(q.toLowerCase())
+    }), [options, q, labelKey])
+
+  const getVal = o => typeof o === 'string' ? o : o[valueKey]
+  const getLbl = o => typeof o === 'string' ? o : o[labelKey]
+
+  const isSelected = v => single
+    ? value === v
+    : (Array.isArray(value) && value.includes(v))
+
+  const toggle = v => {
+    if (single) {
+      onChange(value === v ? null : v)
+      setOpen(false)
+    } else {
+      const arr = Array.isArray(value) ? value : []
+      onChange(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v])
+    }
+  }
+
+  const selectedOptions = options.filter(o => isSelected(getVal(o)))
+
+  return (
+    <div ref={ref} className="relative">
+      {/* Tags / selected */}
+      <div
+        className="input cursor-pointer flex flex-wrap gap-1 items-center min-h-[38px]"
+        onClick={() => setOpen(o => !o)}
+      >
+        {selectedOptions.length === 0 && (
+          <span className="text-gray-400 text-sm">{placeholder}</span>
+        )}
+        {single && selectedOptions.length > 0 && (
+          <span className="text-gray-700 text-sm">{getLbl(selectedOptions[0])}</span>
+        )}
+        {!single && selectedOptions.map(o => (
+          <span key={getVal(o)} className="flex items-center gap-1 bg-primary/10 text-primary text-xs rounded-full px-2 py-0.5">
+            {getLbl(o)}
+            <button type="button" onClick={e => { e.stopPropagation(); toggle(getVal(o)) }}
+              className="hover:text-red-500">×</button>
+          </span>
+        ))}
+        <ChevronDown size={14} className="ml-auto text-gray-400 shrink-0" />
+      </div>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-56 flex flex-col">
+          <div className="p-2 border-b border-gray-100">
+            <div className="relative">
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input autoFocus
+                className="w-full pl-6 pr-2 py-1 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary"
+                placeholder="Rechercher…"
+                value={q} onChange={e => setQ(e.target.value)}
+                onClick={e => e.stopPropagation()}
+              />
+            </div>
+          </div>
+          <div className="overflow-y-auto">
+            {filtered.length === 0 && <p className="text-xs text-gray-400 text-center py-3">Aucun résultat</p>}
+            {filtered.map(o => {
+              const v = getVal(o); const l = getLbl(o)
+              const sel = isSelected(v)
+              return (
+                <button key={v} type="button"
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${sel ? 'text-primary font-medium' : 'text-gray-700'}`}
+                  onClick={() => toggle(v)}>
+                  <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${sel ? 'bg-primary border-primary' : 'border-gray-300'}`}>
+                    {sel && <span className="text-white text-xs">✓</span>}
+                  </span>
+                  {l}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Section sélection classes + groupes ────────────────────────────────────
+function SelectionEleves({ label, classes, setClasses, groupes, setGroupes, allClasses, allGroupes, badge }) {
+  return (
+    <div className={`rounded-xl border-2 p-4 space-y-3 ${badge === 'add' ? 'border-green-200 bg-green-50/30' : 'border-red-200 bg-red-50/30'}`}>
+      <div className="flex items-center gap-2">
+        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge === 'add' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+          {badge === 'add' ? '+ Ajouter élèves de' : '− Retirer élèves de'}
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label">Classes</label>
+          <MultiSearchSelect
+            options={allClasses}
+            value={classes}
+            onChange={setClasses}
+            placeholder="Choisir des classes…"
+          />
+        </div>
+        <div>
+          <label className="label">Groupes</label>
+          <MultiSearchSelect
+            options={allGroupes}
+            value={groupes}
+            onChange={setGroupes}
+            placeholder="Choisir des groupes…"
+            labelKey="nom" valueKey="id"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Calcul nb élèves ────────────────────────────────────────────────────────
+function calcNbEleves(allEleves, elevesParGroupe, form) {
+  const { classes_incluses, groupes_inclus, classes_exclues, groupes_exclus } = form
+  if (!allEleves.length) return 0
+
+  const hasAddClasses = classes_incluses.length > 0
+  const hasAddGroupes = groupes_inclus.length > 0
+
+  if (!hasAddClasses && !hasAddGroupes) return 0
+
+  // Build add set
+  let addSet = new Set()
+  if (hasAddClasses && hasAddGroupes) {
+    // Intersection : élèves dans les classes ET dans les groupes
+    const inClasses = new Set(allEleves.filter(e => classes_incluses.includes(e.classe)).map(e => e.id))
+    const inGroupes = new Set()
+    groupes_inclus.forEach(gid => (elevesParGroupe[gid] || []).forEach(eid => inGroupes.add(eid)))
+    inClasses.forEach(id => inGroupes.has(id) && addSet.add(id))
+  } else if (hasAddClasses) {
+    allEleves.filter(e => classes_incluses.includes(e.classe)).forEach(e => addSet.add(e.id))
+  } else {
+    groupes_inclus.forEach(gid => (elevesParGroupe[gid] || []).forEach(eid => addSet.add(eid)))
+  }
+
+  // Build remove set (union)
+  const removeSet = new Set()
+  allEleves.filter(e => classes_exclues.includes(e.classe)).forEach(e => removeSet.add(e.id))
+  groupes_exclus.forEach(gid => (elevesParGroupe[gid] || []).forEach(eid => removeSet.add(eid)))
+
+  // Final count
+  let count = 0
+  addSet.forEach(id => !removeSet.has(id) && count++)
+  return count
+}
+
+// ── Staged file upload ──────────────────────────────────────────────────────
+function FileStage({ label, files, setFiles, accept = 'application/pdf' }) {
+  const ref = useRef()
+  const add = e => {
+    const f = Array.from(e.target.files)
+    setFiles(prev => [...prev, ...f.filter(nf => !prev.some(pf => pf.name === nf.name))])
+    e.target.value = ''
+  }
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <label className="label mb-0">{label}</label>
+        <button type="button" onClick={() => ref.current.click()}
+          className="text-xs text-primary hover:underline flex items-center gap-1">
+          <Plus size={11} /> Ajouter
+        </button>
+      </div>
+      <input ref={ref} type="file" accept={accept} multiple className="hidden" onChange={add} />
+      {files.length === 0
+        ? <p className="text-xs text-gray-400 italic">Aucun fichier sélectionné</p>
+        : <div className="flex flex-wrap gap-1.5 mt-1">
+            {files.map(f => (
+              <span key={f.name} className="flex items-center gap-1 text-xs bg-gray-100 rounded-full px-2.5 py-1">
+                {f.name}
+                <button type="button" onClick={() => setFiles(p => p.filter(x => x.name !== f.name))}
+                  className="text-gray-400 hover:text-red-500 ml-0.5">×</button>
+              </span>
+            ))}
+          </div>
+      }
+    </div>
+  )
+}
+
 // ── Activity form modal ────────────────────────────────────────────────────
-function ActivityModal({ editRow, isFinancier, userId, onClose, onSaved }) {
-  const [form, setForm] = useState(editRow ? { ...EMPTY, ...editRow } : { ...EMPTY })
+function ActivityModal({ editRow, isFinancier, userId, allEleves, allGroupes, elevesParGroupe, onClose, onSaved }) {
+  const allClasses = useMemo(() => [...new Set(allEleves.map(e => e.classe).filter(Boolean))].sort(), [allEleves])
+  const staffOptions = useMemo(() => allGroupes.__staff__ || [], [allGroupes])
+
+  const initForm = editRow ? {
+    ...EMPTY, ...editRow,
+    accompagnateur_ids: editRow.accompagnateur_ids || [],
+    classes_incluses: editRow.classes_incluses || [],
+    groupes_inclus: editRow.groupes_inclus || [],
+    classes_exclues: editRow.classes_exclues || [],
+    groupes_exclus: editRow.groupes_exclus || [],
+  } : { ...EMPTY }
+
+  const [form, setForm] = useState(initForm)
   const [errors, setErrors] = useState([])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
+  const [pendingDocs, setPendingDocs] = useState([])
+  const [pendingFactures, setPendingFactures] = useState([])
+
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
-  const montantParEleve = form.nb_eleves && form.montant_total
-    ? ((parseFloat(form.montant_total || 0) - parseFloat(form.pop || 0)) / Math.max(parseInt(form.nb_eleves || 1), 1))
-    : null
+  const nbEleves = useMemo(() =>
+    calcNbEleves(allEleves, elevesParGroupe, form),
+    [allEleves, elevesParGroupe, form.classes_incluses, form.groupes_inclus, form.classes_exclues, form.groupes_exclus]
+  )
+  const hasSelection = form.classes_incluses.length > 0 || form.groupes_inclus.length > 0
+
+  const montantParEleve = hasSelection && nbEleves > 0 && form.montant_total
+    ? ((parseFloat(form.montant_total || 0) - parseFloat(form.pop || 0)) / nbEleves)
+    : (form.montant_total && form.nb_eleves
+        ? ((parseFloat(form.montant_total || 0) - parseFloat(form.pop || 0)) / Math.max(parseInt(form.nb_eleves || 1), 1))
+        : null)
+
+  const displayedNbEleves = hasSelection ? nbEleves : (form.nb_eleves || '')
+
+  const FIELD_LABELS = {
+    intitule: 'Intitulé', type: 'Type', date_debut: 'Date de début',
+    lieu: 'Lieu', heure_depart: 'Heure de départ', heure_retour: 'Heure de retour',
+    lieu_rdv: 'Lieu de RDV', type_transport: 'Type de transport',
+    date_fin: 'Date de retour', local: 'Local',
+    heure_debut: 'Heure de début', heure_fin: 'Heure de fin',
+  }
+
+  const uploadStagedFiles = async (activiteId) => {
+    const uploadFiles = async (files, categorie) => {
+      for (const file of files) {
+        const path = `${categorie}/${activiteId}/${Date.now()}_${file.name}`
+        const { error } = await supabase.storage.from('activite-factures').upload(path, file)
+        if (!error) {
+          await supabase.from('activite_documents').insert({
+            activite_id: activiteId, nom: file.name, chemin: path, taille: file.size, categorie
+          })
+        }
+      }
+    }
+    await uploadFiles(pendingDocs, 'document')
+    await uploadFiles(pendingFactures, 'facture')
+  }
 
   const save = async () => {
     const miss = validate(form)
     if (miss.length > 0) { setErrors(miss); return }
     setSaving(true); setSaveError(null)
-    // Convert empty strings → null for date/time/number DB columns
+
     const payload = Object.fromEntries(
-      Object.entries({ ...form, montant_par_eleve: montantParEleve ? montantParEleve.toFixed(2) : null })
-        .map(([k, v]) => [k, v === '' ? null : v])
+      Object.entries({
+        ...form,
+        nb_eleves: hasSelection ? nbEleves : (form.nb_eleves || null),
+        montant_par_eleve: montantParEleve ? montantParEleve.toFixed(2) : null,
+      }).map(([k, v]) => [k, v === '' ? null : v])
     )
     if (!isFinancier) delete payload.pop
-    let error
+
+    let error, data
     if (editRow) {
-      ({ error } = await supabase.from('activites').update(payload).eq('id', editRow.id))
+      ;({ error } = await supabase.from('activites').update(payload).eq('id', editRow.id))
+      if (!error) await uploadStagedFiles(editRow.id)
     } else {
       payload.created_by = userId
-      ;({ error } = await supabase.from('activites').insert(payload))
+      ;({ error, data } = await supabase.from('activites').insert(payload).select('id').single())
+      if (!error && data?.id) await uploadStagedFiles(data.id)
     }
     setSaving(false)
     if (error) { setSaveError(error.message); return }
     onSaved()
     onClose()
-  }
-
-  const FIELD_LABELS = {
-    intitule: 'Intitulé', type: 'Type', date_debut: 'Date de début',
-    nb_eleves: "Nb d'élèves", responsable: 'Responsable',
-    lieu: 'Lieu', heure_depart: 'Heure de départ', heure_retour: 'Heure de retour',
-    lieu_rdv: 'Lieu de RDV', type_transport: 'Type de transport',
-    date_fin: 'Date de retour', local: 'Local',
-    heure_debut: 'Heure de début', heure_fin: 'Heure de fin',
   }
 
   return (
@@ -114,6 +366,7 @@ function ActivityModal({ editRow, isFinancier, userId, onClose, onSaved }) {
             </div>
           )}
 
+          {/* Infos générales */}
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="label">Intitulé *</label>
@@ -132,10 +385,6 @@ function ActivityModal({ editRow, isFinancier, userId, onClose, onSaved }) {
               </select>
             </div>
             <div>
-              <label className="label">Responsable *</label>
-              <input className="input" value={form.responsable} onChange={e => f('responsable', e.target.value)} />
-            </div>
-            <div>
               <label className="label">{form.type === 'voyage' ? 'Date de départ' : 'Date'} *</label>
               <input className="input" type="date" value={form.date_debut} onChange={e => f('date_debut', e.target.value)} />
             </div>
@@ -145,6 +394,67 @@ function ActivityModal({ editRow, isFinancier, userId, onClose, onSaved }) {
                 <input className="input" type="date" value={form.date_fin} onChange={e => f('date_fin', e.target.value)} />
               </div>
             )}
+          </div>
+
+          {/* Responsable + Accompagnateurs */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Personnel</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label">Responsable</label>
+                <MultiSearchSelect
+                  options={staffOptions}
+                  value={form.responsable_id}
+                  onChange={v => f('responsable_id', v)}
+                  placeholder="Choisir un·e responsable…"
+                  labelKey="label" valueKey="id"
+                  single
+                />
+              </div>
+              <div>
+                <label className="label">Accompagnateur·rice·s</label>
+                <MultiSearchSelect
+                  options={staffOptions}
+                  value={form.accompagnateur_ids}
+                  onChange={v => f('accompagnateur_ids', v)}
+                  placeholder="Choisir des accompagnateur·rices…"
+                  labelKey="label" valueKey="id"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Participants */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Participants</h3>
+            <div className="space-y-3">
+              <SelectionEleves
+                label="add" badge="add"
+                classes={form.classes_incluses} setClasses={v => f('classes_incluses', v)}
+                groupes={form.groupes_inclus} setGroupes={v => f('groupes_inclus', v)}
+                allClasses={allClasses} allGroupes={allGroupes.__groupes__ || []}
+              />
+              <SelectionEleves
+                label="remove" badge="remove"
+                classes={form.classes_exclues} setClasses={v => f('classes_exclues', v)}
+                groupes={form.groupes_exclus} setGroupes={v => f('groupes_exclus', v)}
+                allClasses={allClasses} allGroupes={allGroupes.__groupes__ || []}
+              />
+
+              {/* Nb élèves */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">
+                    Nb d'élèves
+                    {hasSelection && <span className="ml-2 text-xs text-green-600 font-normal">(calculé automatiquement)</span>}
+                  </label>
+                  {hasSelection
+                    ? <div className="input bg-green-50 text-green-700 font-semibold">{nbEleves} élève{nbEleves !== 1 ? 's' : ''}</div>
+                    : <input className="input" type="number" value={form.nb_eleves || ''} onChange={e => f('nb_eleves', e.target.value)} />
+                  }
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Logistique extramuros / voyage */}
@@ -188,9 +498,6 @@ function ActivityModal({ editRow, isFinancier, userId, onClose, onSaved }) {
                     <input className="input" value={form.tel_sejour || ''} onChange={e => f('tel_sejour', e.target.value)} />
                   </div>
                 )}
-                <div className="col-span-2"><label className="label">Accompagnateur·rice·s</label>
-                  <input className="input" value={form.accompagnateurs} onChange={e => f('accompagnateurs', e.target.value)} />
-                </div>
               </div>
             </div>
           )}
@@ -209,9 +516,6 @@ function ActivityModal({ editRow, isFinancier, userId, onClose, onSaved }) {
                 <div><label className="label">Heure de fin *</label>
                   <input className="input" type="time" value={form.heure_fin} onChange={e => f('heure_fin', e.target.value)} />
                 </div>
-                <div className="col-span-2"><label className="label">Personnel mobilisé·e</label>
-                  <input className="input" value={form.accompagnateurs} onChange={e => f('accompagnateurs', e.target.value)} />
-                </div>
               </div>
             </div>
           )}
@@ -220,9 +524,6 @@ function ActivityModal({ editRow, isFinancier, userId, onClose, onSaved }) {
           <div>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Finances</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="label">Nb d'élèves *</label>
-                <input className="input" type="number" value={form.nb_eleves} onChange={e => f('nb_eleves', e.target.value)} />
-              </div>
               <div><label className="label">Montant total (€)</label>
                 <input className="input" type="number" step="0.01" value={form.montant_total} onChange={e => f('montant_total', e.target.value)} />
               </div>
@@ -253,11 +554,24 @@ function ActivityModal({ editRow, isFinancier, userId, onClose, onSaved }) {
               )}
             </div>
           </div>
+
+          {/* Documents & Factures */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Documents & Factures</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <FileStage label="Documents (PDF)" files={pendingDocs} setFiles={setPendingDocs} />
+              <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} />
+            </div>
+            {(pendingDocs.length > 0 || pendingFactures.length > 0) && (
+              <p className="text-xs text-gray-400 mt-2">Les fichiers seront uploadés après la sauvegarde de l'activité.</p>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
         <div className="flex gap-2 px-6 py-4 border-t border-gray-100">
-          <button onClick={save} disabled={saving} className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50">
+          <button onClick={save} disabled={saving} className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
+            {saving && <Loader2 size={14} className="animate-spin" />}
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
           <button onClick={onClose} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
@@ -353,6 +667,43 @@ export default function Activites() {
   const [filterType, setFilterType] = useState('')
   const [filterFact, setFilterFact] = useState('')
 
+  // Data for form
+  const [allEleves, setAllEleves] = useState([])
+  const [groupesList, setGroupesList] = useState([])
+  const [elevesParGroupe, setElevesParGroupe] = useState({})
+  const [staffList, setStaffList] = useState([])
+
+  // Combined object for ActivityModal
+  const formData = useMemo(() => ({
+    __groupes__: groupesList,
+    __staff__: staffList,
+  }), [groupesList, staffList])
+
+  useEffect(() => {
+    // Load eleves, groupes, staff in parallel
+    Promise.all([
+      supabase.from('eleves').select('id, classe').eq('actif', true),
+      supabase.from('groupes').select('id, nom').order('nom'),
+      supabase.from('eleve_groupes').select('groupe_id, eleve_id'),
+      supabase.from('profiles').select('id, nom, prenom, role').in('role', ['mdp', 'admin', 'financier']).order('nom'),
+    ]).then(([elevesRes, groupesRes, egRes, staffRes]) => {
+      setAllEleves(elevesRes.data || [])
+      setGroupesList((groupesRes.data || []).map(g => ({ ...g, label: g.nom })))
+      // Build elevesParGroupe map
+      const map = {}
+      ;(egRes.data || []).forEach(({ groupe_id, eleve_id }) => {
+        if (!map[groupe_id]) map[groupe_id] = []
+        map[groupe_id].push(eleve_id)
+      })
+      setElevesParGroupe(map)
+      setStaffList((staffRes.data || []).map(p => ({
+        ...p,
+        id: p.id,
+        label: `${p.prenom} ${p.nom}`.trim() || p.email || p.id,
+      })))
+    })
+  }, [])
+
   const reload = useCallback(() =>
     supabase.from('activites').select('*').order('date_debut', { ascending: false })
       .then(({ data }) => setData(data || []))
@@ -361,8 +712,8 @@ export default function Activites() {
   useEffect(() => { reload().then(() => setLoading(false)) }, [reload])
 
   const openNew = () => { setEditRow(null); setShowModal(true) }
-  const openDocs = (row, cat) => { setDocsRow(row); setDocsCategorie(cat) }
   const openEdit = row => { setEditRow(row); setShowModal(true) }
+  const openDocs = (row, cat) => { setDocsRow(row); setDocsCategorie(cat) }
 
   const archive = async id => {
     if (!confirm('Archiver cette activité ?')) return
@@ -372,6 +723,9 @@ export default function Activites() {
 
   const canEdit = row => isAdmin || isFinancier || (isMdp && row.created_by === user?.id && row.statut !== 'archive')
   const canCreate = isAdmin || isFinancier || isMdp
+
+  // Resolve responsable name from staffList
+  const staffById = useMemo(() => Object.fromEntries(staffList.map(s => [s.id, s.label])), [staffList])
 
   const displayed = data
     .filter(r => showArchived ? true : r.statut !== 'archive')
@@ -429,7 +783,10 @@ export default function Activites() {
         {displayed.length === 0 && (
           <div className="card p-8 text-center text-gray-400">Aucune activité</div>
         )}
-        {displayed.map(row => (
+        {displayed.map(row => {
+          const responsableLabel = row.responsable_id ? staffById[row.responsable_id] : row.responsable
+          const nbEl = row.nb_eleves
+          return (
           <div key={row.id} className="card p-5 flex items-start justify-between gap-4 hover:shadow-md transition-shadow">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1.5">
@@ -450,9 +807,9 @@ export default function Activites() {
               <div className="flex flex-wrap gap-4 text-xs text-gray-400">
                 <span>📅 {fmtDate(row.date_debut)}{row.date_fin ? ` → ${fmtDate(row.date_fin)}` : ''}</span>
                 {row.lieu && <span>📍 {row.lieu}</span>}
-                {row.nb_eleves && <span>👥 {row.nb_eleves} élèves</span>}
+                {nbEl && <span>👥 {nbEl} élève{nbEl !== 1 ? 's' : ''}</span>}
                 {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
-                {row.responsable && <span>👤 {row.responsable}</span>}
+                {responsableLabel && <span>👤 {responsableLabel}</span>}
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0 items-center">
@@ -478,7 +835,8 @@ export default function Activites() {
               )}
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Modals */}
@@ -487,6 +845,9 @@ export default function Activites() {
           editRow={editRow}
           isFinancier={isFinancier || isAdmin}
           userId={user?.id}
+          allEleves={allEleves}
+          allGroupes={formData}
+          elevesParGroupe={elevesParGroupe}
           onClose={() => setShowModal(false)}
           onSaved={reload}
         />
