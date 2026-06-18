@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)
   const [profile, setProfile] = useState(null)
   const [role,    setRole]    = useState(null)
+  const [previewRole, setPreviewRole] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -35,12 +36,13 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const isAdmin     = role === 'admin'
-  const isFinancier = ['admin', 'financier'].includes(role)
-  const isMdp       = ['admin', 'financier', 'mdp'].includes(role)
+  const viewRole    = previewRole || role
+  const isAdmin     = viewRole === 'admin'
+  const isFinancier = ['admin', 'financier'].includes(viewRole)
+  const isMdp       = ['admin', 'financier', 'mdp'].includes(viewRole)
 
   return (
-    <AuthContext.Provider value={{ user, profile, role, loading, isAdmin, isFinancier, isMdp, signIn: (e, p) => supabase.auth.signInWithPassword({ email: e, password: p }).then(({ error }) => error) }}>
+    <AuthContext.Provider value={{ user, profile, role, previewRole, setPreviewRole, loading, isAdmin, isFinancier, isMdp, signIn: (e, p) => supabase.auth.signInWithPassword({ email: e, password: p }).then(({ error }) => error) }}>
       {children}
     </AuthContext.Provider>
   )
