@@ -13,19 +13,25 @@ function anneeScolaire() {
   const now = new Date(), m = now.getMonth() + 1, y = now.getFullYear()
   return m >= 8 ? y + '-' + (y + 1) : (y - 1) + '-' + y
 }
-function Sparkline({ data }) {
+function Sparkline({ data, labels }) {
   if (!data || data.length < 2) return null
-  const max = Math.max(...data, 1), min = Math.min(...data, 0), range = max - min || 1, W = 200, H = 36
+  const max = Math.max(...data, 1), min = Math.min(...data, 0), range = max - min || 1
+  const W = 200, H = 36, LH = 14
   const pts = data.map((v, i) => ((i / (data.length - 1)) * W).toFixed(1) + ',' + (H - ((v - min) / range) * (H - 6) - 3).toFixed(1))
   const line = 'M' + pts.join(' L'), area = line + ' L' + W + ',' + H + ' L0,' + H + ' Z'
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full mt-3 opacity-25" preserveAspectRatio="none" style={{ height: 36 }}>
-      <path d={area} fill="white" />
-      <path d={line} fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox={`0 0 ${W} ${H + LH}`} className="w-full mt-3 opacity-70" preserveAspectRatio="none" style={{ height: 48 }}>
+      <path d={area} fill="white" fillOpacity="0.2" />
+      <path d={line} fill="none" stroke="white" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      {labels && labels.map((l, i) => (
+        <text key={i} x={(i / (labels.length - 1)) * W} y={H + LH - 2}
+          textAnchor={i === 0 ? 'start' : i === labels.length - 1 ? 'end' : 'middle'}
+          fontSize="8" fill="white" fillOpacity="0.7">{l}</text>
+      ))}
     </svg>
   )
 }
-function StatCard({ label, value, sub, to, color = 'primary', icon, chart }) {
+function StatCard({ label, value, sub, to, color = 'primary', icon, chart, chartLabels }) {
   const colors = {
     primary: 'from-purple-700 to-purple-900',
     red: 'from-red-500 to-red-600',
@@ -47,7 +53,7 @@ function StatCard({ label, value, sub, to, color = 'primary', icon, chart }) {
       <div className="text-2xl font-bold leading-tight">{value}</div>
       <div className="text-sm font-medium opacity-90 mt-0.5">{label}</div>
       {sub && <div className="text-xs opacity-70 mt-0.5">{sub}</div>}
-      {chart && chart.length >= 2 && <Sparkline data={chart} />}
+      {chart && chart.length >= 2 && <Sparkline data={chart} labels={chartLabels} />}
     </div>
   )
   return to ? <Link to={to}>{inner}</Link> : inner
@@ -116,35 +122,70 @@ function HomeFinancier() {
   const [facture, setFacture] = useState({ frais: 0, materiel: 0, activites: 0, autres: 0 })
   const [echStats, setEchStats] = useState({ en_cours: 0, non_respecte: 0, termine: 0 })
   const [orgStats, setOrgStats] = useState({ CPAS: 0, ULB: 0, SPJ: 0, Autre: 0 })
-  const [sparkData, setSparkData] = useState([])
+  const [sparkPaie, setSparkPaie] = useState([])
+  const [sparkFact, setSparkFact] = useState([])
+  const [sparkMonths, setSparkMonths] = useState([])
   const as = anneeScolaire()
+
   useEffect(() => {
-    const d6 = new Date(); d6.setMonth(d6.getMonth() - 5); d6.setDate(1)
+    const now = new Date()
+    const startYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1
+    const syStart = `${startYear}-08-01`
+
+    // Générer les mois de l'année scolaire (août → mois courant)
+    const monthLabels = []
+    const monthKeys = []
+    const FR_MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
+    let m = 7 // août = index 7
+    let y = startYear
+    while (true) {
+      monthLabels.push(FR_MONTHS[m])
+      monthKeys.push(`${y}-${String(m + 1).padStart(2, '0')}`)
+      if (y === now.getFullYear() && m === now.getMonth()) break
+      m++
+      if (m > 11) { m = 0; y++ }
+    }
+    setSparkMonths(monthLabels)
+
     Promise.all([
-      supabase.from('eleves').select('solde').eq('actif', true),
-      supabase.from('article_attributions').select('prix_unitaire_applique, quantite, statut_facturation, article:article_id(categorie, prix_unitaire)'),
+      supabase.from('eleves').select('id').eq('actif', true),
+      supabase.from('factures').select('eleve_id, montant, date'),
+      supabase.from('paiements').select('eleve_id, montant, date'),
+      supabase.from('article_attributions').select('prix_unitaire_applique, quantite, nb_eleves, statut_facturation, article:article_id(categorie, prix_unitaire)'),
       supabase.from('activites').select('montant_total, statut, statut_facturation'),
       supabase.from('echelonnements').select('statut'),
       supabase.from('organismes_tiers').select('organisme, statut'),
-      supabase.from('paiements').select('date, montant').gte('date', d6.toISOString().split('T')[0]),
-    ]).then(([eleves, attrs, activites, echs, orgs, paies]) => {
-      const soldes = (eleves.data || []).map(e => Number(e.solde || 0))
+    ]).then(([eleves, factures, paiements, attrs, activites, echs, orgs]) => {
+      // Calcul soldes par élève
+      const mPaie = {}, mFact = {}
+      for (const p of (paiements.data || [])) {
+        mPaie[p.eleve_id] = (mPaie[p.eleve_id] || 0) + Number(p.montant || 0)
+      }
+      for (const f of (factures.data || [])) {
+        mFact[f.eleve_id] = (mFact[f.eleve_id] || 0) + Number(f.montant || 0)
+      }
+      const soldes = (eleves.data || []).map(e => (mPaie[e.id] || 0) - (mFact[e.id] || 0))
       setImpayes(Math.abs(soldes.filter(s => s < 0).reduce((a, b) => a + b, 0)))
       setEnReserve(soldes.filter(s => s > 0).reduce((a, b) => a + b, 0))
-      const byM = {}, now = new Date()
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-        byM[d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')] = 0
-      }
-      ;(paies.data || []).forEach(p => {
+
+      // Sparklines par mois depuis début année scolaire
+      const byMPaie = {}, byMFact = {}
+      for (const k of monthKeys) { byMPaie[k] = 0; byMFact[k] = 0 }
+      ;(paiements.data || []).filter(p => p.date >= syStart).forEach(p => {
         const k = p.date?.substring(0, 7)
-        if (k && byM[k] !== undefined) byM[k] += Number(p.montant || 0)
+        if (k && byMPaie[k] !== undefined) byMPaie[k] += Number(p.montant || 0)
       })
-      setSparkData(Object.values(byM))
+      ;(factures.data || []).filter(f => f.date >= syStart).forEach(f => {
+        const k = f.date?.substring(0, 7)
+        if (k && byMFact[k] !== undefined) byMFact[k] += Number(f.montant || 0)
+      })
+      setSparkPaie(monthKeys.map(k => byMPaie[k] || 0))
+      setSparkFact(monthKeys.map(k => byMFact[k] || 0))
+
       function compute(stat) {
         const rows = (attrs.data || []).filter(a => a.statut_facturation === stat)
         const sum = cat => rows.filter(a => a.article?.categorie === cat)
-          .reduce((s, a) => s + Number(a.prix_unitaire_applique || a.article?.prix_unitaire || 0) * Number(a.quantite || 1), 0)
+          .reduce((s, a) => s + Number(a.prix_unitaire_applique || a.article?.prix_unitaire || 0) * Number(a.nb_eleves || 1) * Number(a.quantite || 1), 0)
         const act = (activites.data || [])
           .filter(a => a.statut_facturation === stat && a.statut !== 'archive')
           .reduce((s, a) => s + Number(a.montant_total || 0), 0)
@@ -152,16 +193,20 @@ function HomeFinancier() {
       }
       setAFacturer(compute('a_facturer'))
       setFacture(compute('facture'))
+
       const ec = {}
       ;(echs.data || []).forEach(e => { ec[e.statut] = (ec[e.statut] || 0) + 1 })
       setEchStats({ en_cours: ec.en_cours || 0, non_respecte: ec.non_respecte || 0, termine: ec.termine || 0 })
+
       const og = {}
       ;(orgs.data || []).filter(o => ['en_cours', 'valide'].includes(o.statut))
         .forEach(o => { const k = ['CPAS', 'ULB', 'SPJ'].includes(o.organisme) ? o.organisme : 'Autre'; og[k] = (og[k] || 0) + 1 })
       setOrgStats({ CPAS: og.CPAS || 0, ULB: og.ULB || 0, SPJ: og.SPJ || 0, Autre: og.Autre || 0 })
+
       setLoading(false)
     })
   }, [])
+
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement...</div>
   const totA = aFacturer.frais + aFacturer.materiel + aFacturer.activites + aFacturer.autres
   const totF = facture.frais + facture.materiel + facture.activites + facture.autres
@@ -175,9 +220,9 @@ function HomeFinancier() {
         <SectionTitle icon="💰" title="Vue financière" subtitle={`Année scolaire ${as}`} />
         <div className="grid grid-cols-2 gap-4">
           <StatCard icon="⚠️" label="Impayés" value={fmtShort(impayes)}
-            sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" chart={sparkData} />
+            sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" chart={sparkFact} chartLabels={sparkMonths} />
           <StatCard icon="🏦" label="En réserve" value={fmtShort(enReserve)}
-            sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" chart={sparkData} />
+            sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" chart={sparkPaie} chartLabels={sparkMonths} />
         </div>
       </section>
       <section>
@@ -235,12 +280,12 @@ function HomeFinancier() {
               <div className="font-semibold">Gérer les utilisateurs</div>
               <div className="text-sm opacity-80 mt-1">Rôles, invitations, accès</div>
             </Link>
-            <Link to="/admin" className="card p-5 hover:shadow-md transition-all bg-gradient-to-br from-amber-400 to-orange-500 text-white">
+            <Link to="/admin?onglet=droits" className="card p-5 hover:shadow-md transition-all bg-gradient-to-br from-amber-400 to-orange-500 text-white">
               <div className="text-2xl mb-2">🔒</div>
               <div className="font-semibold">Gérer les droits</div>
               <div className="text-sm opacity-80 mt-1">Permissions par rôle</div>
             </Link>
-            <Link to="/admin" className="card p-5 hover:shadow-md transition-all bg-gradient-to-br from-orange-500 to-red-500 text-white">
+            <Link to="/admin?onglet=synchronisation" className="card p-5 hover:shadow-md transition-all bg-gradient-to-br from-orange-500 to-red-500 text-white">
               <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/20 font-bold text-xl mb-2">S</div>
               <div className="font-semibold">Synchronisation Smartschool</div>
               <div className="text-sm opacity-80 mt-1">Importer élèves et personnel</div>
