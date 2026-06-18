@@ -34,7 +34,7 @@ const fmtDate = d => d ? new Date(d).toLocaleString('fr-BE', {
 }).replace(',','') : '—'
 
 export default function Admin() {
-  const { isAdmin, role: myRole, previewRole, setPreviewRole } = useAuth()
+  const { user, isAdmin, role: myRole, previewRole, setPreviewRole } = useAuth()
   const [searchParams] = useSearchParams()
   const [tab, setTab]             = useState(searchParams.get('onglet') || 'utilisateurs')
   const [users, setUsers]         = useState([])
@@ -45,6 +45,8 @@ export default function Admin() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole]   = useState('mdp')
   const [inviteMsg, setInviteMsg]     = useState('')
+  const [roleFilter, setRoleFilter]   = useState(null)
+  const [protectModal, setProtectModal] = useState(null) // {type:'blocked'|'confirm', newRole, targetId, otherEmail}
 
   const loadUsers = useCallback(() =>
     supabase.from('profiles').select('*').order('created_at').then(({ data }) => setUsers(data || []))
@@ -60,8 +62,25 @@ export default function Admin() {
     Promise.all([loadUsers(), loadSyncLogs()]).then(() => setLoading(false))
   }, [isAdmin, loadUsers, loadSyncLogs])
 
-  const updateRole = async (id, role) => {
-    await supabase.from('profiles').update({ role }).eq('id', id)
+  const confirmUpdateRole = async () => {
+    if (!protectModal) return
+    await supabase.from('profiles').update({ role: protectModal.newRole }).eq('id', protectModal.targetId)
+    await loadUsers()
+    setProtectModal(null)
+  }
+
+  const updateRole = async (id, newRole) => {
+    // Protection : empêcher de se retirer son propre rôle admin
+    if (id === user?.id && myRole === 'admin' && newRole !== 'admin') {
+      const otherAdmins = users.filter(u => u.role === 'admin' && u.id !== id)
+      if (otherAdmins.length === 0) {
+        setProtectModal({ type: 'blocked', newRole, targetId: id })
+        return
+      }
+      setProtectModal({ type: 'confirm', newRole, targetId: id, otherEmail: otherAdmins[0].email })
+      return
+    }
+    await supabase.from('profiles').update({ role: newRole }).eq('id', id)
     await loadUsers()
   }
 
@@ -111,54 +130,33 @@ export default function Admin() {
       {tab === 'utilisateurs' && (
         <div className="space-y-6">
 
-          {/* Role cards */}
+          {/* Role cards — cliquables pour filtrer */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {ROLES.map(r => {
               const m = ROLE_META[r]
+              const active = roleFilter === r
               return (
-                <div key={r} className="card p-4">
+                <button key={r} onClick={() => setRoleFilter(active ? null : r)}
+                  className={`card p-4 text-left transition-all ${active ? 'ring-2 ring-primary shadow-md' : 'hover:shadow-sm'}`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${m.color}`}>{m.label}</span>
                     <span className="text-2xl font-bold text-primary">{countByRole(r)}</span>
                   </div>
                   <p className="text-xs text-gray-400 leading-snug">{m.desc}</p>
-                </div>
+                  {active && <p className="text-xs text-primary font-semibold mt-1">▲ filtre actif</p>}
+                </button>
               )
             })}
-          </div>
-
-          {/* Aperçu */}
-          <div className="card p-4 bg-orange-50 border border-orange-100">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-2 h-2 rounded-full bg-orange-500" />
-              <span className="text-xs font-semibold text-orange-700 uppercase tracking-wide">
-                Aperçu — Voir le site en tant que
-              </span>
-            </div>
-            <div className="flex gap-2 flex-wrap items-center">
-              {['financier','mdp','responsable'].map(r => {
-                const m = ROLE_META[r]
-                return (
-                  <button key={r} onClick={() => setPreviewRole(previewRole === r ? null : r)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors
-                      ${previewRole === r ? m.color : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                    {m.label}
-                  </button>
-                )
-              })}
-              {previewRole && (
-                <span className="text-xs text-orange-600 ml-2">
-                  Mode aperçu actif —{' '}
-                  <button onClick={() => setPreviewRole(null)} className="underline">Quitter</button>
-                </span>
-              )}
-            </div>
           </div>
 
           {/* Users table */}
           <div className="card p-0">
             <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="font-semibold text-gray-700">Tous les utilisateurs ({users.length})</h2>
+              <h2 className="font-semibold text-gray-700">
+                {roleFilter
+                  ? <>Utilisateurs — <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ROLE_META[roleFilter].color}`}>{ROLE_META[roleFilter].label}</span> ({users.filter(u => u.role === roleFilter).length})</>
+                  : <>Tous les utilisateurs ({users.length})</>}
+              </h2>
               <button onClick={() => setInviteModal(true)}
                 className="btn-primary flex items-center gap-2 text-sm py-1.5 px-3">
                 <UserPlus size={15} /> + Inviter
@@ -173,9 +171,9 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {users.length === 0 ? (
+                {(roleFilter ? users.filter(u => u.role === roleFilter) : users).length === 0 ? (
                   <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">Aucun utilisateur</td></tr>
-                ) : users.map(u => {
+                ) : (roleFilter ? users.filter(u => u.role === roleFilter) : users).map(u => {
                   const m = ROLE_META[u.role] || ROLE_META.responsable
                   return (
                     <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50">
@@ -211,7 +209,35 @@ export default function Admin() {
 
       {/* ── DROITS ───────────────────────────────────── */}
       {tab === 'droits' && (
-        <div className="card p-0">
+        <div className="space-y-6">
+          {/* Aperçu — déplacé ici car lié aux droits */}
+          <div className="card p-4 bg-orange-50 border border-orange-100">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full bg-orange-500" />
+              <span className="text-xs font-semibold text-orange-700 uppercase tracking-wide">
+                Aperçu — Voir le site en tant que
+              </span>
+            </div>
+            <div className="flex gap-2 flex-wrap items-center">
+              {['financier','mdp','responsable'].map(r => {
+                const m = ROLE_META[r]
+                return (
+                  <button key={r} onClick={() => setPreviewRole(previewRole === r ? null : r)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors
+                      ${previewRole === r ? m.color : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                    {m.label}
+                  </button>
+                )
+              })}
+              {previewRole && (
+                <span className="text-xs text-orange-600 ml-2">
+                  Mode aperçu actif —{' '}
+                  <button onClick={() => setPreviewRole(null)} className="underline">Quitter</button>
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="card p-0">
           <div className="p-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-700 flex items-center gap-2">
               <Shield size={16} /> Matrice des droits d'accès
@@ -246,6 +272,7 @@ export default function Admin() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -316,6 +343,43 @@ export default function Admin() {
       )}
 
       {/* ── MODAL INVITATION ─────────────────────────── */}
+      {/* ── MODAL PROTECTION ADMIN ─────────────────── */}
+      {protectModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            {protectModal.type === 'blocked' ? (
+              <>
+                <div className="text-3xl mb-3 text-center">🔒</div>
+                <h3 className="font-bold text-red-600 mb-2 text-center">Action impossible</h3>
+                <p className="text-sm text-gray-600 text-center mb-4">
+                  Vous êtes le seul administrateur. Vous ne pouvez pas retirer votre propre rôle Admin tant qu'aucun autre admin n'existe.
+                </p>
+                <button onClick={() => setProtectModal(null)} className="btn-primary w-full py-2">Compris</button>
+              </>
+            ) : (
+              <>
+                <div className="text-3xl mb-3 text-center">⚠️</div>
+                <h3 className="font-bold text-orange-600 mb-2 text-center">Confirmer le changement</h3>
+                <p className="text-sm text-gray-600 mb-1 text-center">
+                  Vous allez retirer votre propre rôle <strong>Admin</strong>.
+                </p>
+                <p className="text-xs text-gray-400 text-center mb-4">
+                  Un autre admin existe ({protectModal.otherEmail}) — l'accès admin sera préservé.
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={confirmUpdateRole} className="btn-primary flex-1 py-2 bg-red-500 hover:bg-red-600">
+                    Confirmer
+                  </button>
+                  <button onClick={() => setProtectModal(null)} className="btn-secondary flex-1 py-2">
+                    Annuler
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {inviteModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
