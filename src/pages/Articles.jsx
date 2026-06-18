@@ -556,14 +556,6 @@ function CatalogueTab({ isFinancier }) {
 
   useEffect(() => { reload() }, [reload])
 
-  const openNew  = () => { setEditRow(null); setShowModal(true) }
-  const openEdit = r => { setEditRow(r); setShowModal(true) }
-  const deleteAttribution = async r => {
-    if (!confirm('Supprimer cette attribution ? Cette action est irréversible.')) return
-    await supabase.from('article_attributions').delete().eq('id', r.id)
-    reload()
-  }
-
   const filtered = useMemo(() => {
     if (!search) return data
     const q = search.toLowerCase()
