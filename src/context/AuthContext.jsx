@@ -47,6 +47,7 @@ export function AuthProvider({ children }) {
       user, profile, role, loading,
       isAdmin, isFinancier, isMdp, isMdpOnly,
       viewAsRole, setViewAsRole, effectiveRole,
+      previewRole: viewAsRole, setPreviewRole: setViewAsRole,
       signIn: (e, p) => supabase.auth.signInWithPassword({ email: e, password: p }).then(({ error }) => error)
     }}>
       {children}
