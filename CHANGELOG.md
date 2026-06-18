@@ -66,7 +66,7 @@ git push origin main
 | Après filtres multi-select | `274b3b4` | ~2026-06-16 |
 | Après header + AssistantSocial | `81d4cba` | 2026-06-17 |
 | Début session 2 (stable) | `1956e81` | 2026-06-18 |
-| Actuel     | 727e7f5 | fix(Home): tableau de bord dynamique |
+| Actuel     | 27b1c49 | fix(Home): activités nettes de POP |
 
 ---
 
