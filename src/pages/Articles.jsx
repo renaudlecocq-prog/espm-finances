@@ -1,93 +1,596 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { Search, X, ChevronDown, Loader2 } from 'lucide-react'
 
-const CATEGORIES = ['Frais obligatoires','Fournitures scolaires','Vêtements','Divers']
-const fmt = n => Number(n||0).toFixed(2) + ' €'
+const CATEGORIES = ['Frais obligatoires', 'Fournitures scolaires', 'Vêtements', 'Divers']
+const fmt = n => Number(n || 0).toFixed(2) + ' €'
 
-function CatalogueTab() {
-  const { isFinancier } = useAuth()
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editRow, setEditRow] = useState(null)
-  const [form, setForm] = useState({ nom:'', description:'', categorie:'Frais obligatoires', prix_unitaire:'', statut:'actif' })
-  const [saving, setSaving] = useState(false)
+// Colonnes groupes — identique à Activites.jsx
+const GROUP_COLS = [
+  { key: 'rlmo',            label: 'RLMO' },
+  { key: 'obs_d2',          label: 'OBS D2' },
+  { key: 'ac_d2',           label: 'AC D2' },
+  { key: 'math_d3',         label: 'Math D3' },
+  { key: 'sciences_d3',     label: 'Sciences D3' },
+  { key: 'bio_physique_d3', label: 'Bio/Physique' },
+  { key: 'obs1_d3',         label: 'OBS 1 D3' },
+  { key: 'obs2_d3',         label: 'OBS 2 D3' },
+  { key: 'ac_d3',           label: 'AC D3' },
+]
+const getRlmo = e => [e.philosophie, e.groupe_choix_philo].filter(Boolean).join(' ') || null
 
-  const reload = () => supabase.from('articles').select('*').order('categorie').order('nom').then(({data}) => { setData(data||[]); setLoading(false) })
-  useEffect(() => { reload() }, [])
+// ── Calcul nb élèves (même logique qu'Activites) ────────────────────────────
+function calcNbEleves(allEleves, { classes_incluses, groupes_inclus, classes_exclues, groupes_exclus, eleves_exclus }) {
+  if (!allEleves.length) return 0
+  const hasAddC = classes_incluses.length > 0
+  const hasAddG = groupes_inclus.length > 0
+  if (!hasAddC && !hasAddG) return 0
 
-  const openForm = (row=null) => { setEditRow(row); setForm(row ? {...row} : { nom:'', description:'', categorie:'Frais obligatoires', prix_unitaire:'', statut:'actif' }); setShowForm(true) }
-  const save = async () => {
-    setSaving(true)
-    if (editRow) await supabase.from('articles').update(form).eq('id', editRow.id)
-    else await supabase.from('articles').insert(form)
-    await reload(); setSaving(false); setShowForm(false)
+  const matchesGroups = (e, keys) => keys.some(key => {
+    const [col, val] = key.split(':')
+    return (col === 'rlmo' ? getRlmo(e) : e[col]) === val
+  })
+
+  let addSet = new Set()
+  if (hasAddC && hasAddG) {
+    const inC = new Set(allEleves.filter(e => classes_incluses.includes(e.classe)).map(e => e.id))
+    allEleves.filter(e => inC.has(e.id) && matchesGroups(e, groupes_inclus)).forEach(e => addSet.add(e.id))
+  } else if (hasAddC) {
+    allEleves.filter(e => classes_incluses.includes(e.classe)).forEach(e => addSet.add(e.id))
+  } else {
+    allEleves.filter(e => matchesGroups(e, groupes_inclus)).forEach(e => addSet.add(e.id))
   }
 
-  const byCategorie = CATEGORIES.map(cat => ({ cat, items: data.filter(d => d.categorie === cat) })).filter(g => g.items.length > 0)
+  const removeSet = new Set()
+  allEleves.filter(e => classes_exclues.includes(e.classe)).forEach(e => removeSet.add(e.id))
+  if (groupes_exclus.length > 0) allEleves.filter(e => matchesGroups(e, groupes_exclus)).forEach(e => removeSet.add(e.id))
+  ;(eleves_exclus || []).forEach(id => removeSet.add(id))
 
-  if (loading) return <div className="py-8 text-center text-gray-400">Chargement…</div>
+  let count = 0
+  addSet.forEach(id => !removeSet.has(id) && count++)
+  return count
+}
+
+// ── MultiSearchSelect ───────────────────────────────────────────────────────
+function MultiSearchSelect({ options, value, onChange, placeholder, single = false }) {
+  const [open, setOpen] = useState(false)
+  const [q, setQ] = useState('')
+  const ref = useRef()
+
+  useEffect(() => {
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+
+  const getVal = o => typeof o === 'string' ? o : o.value
+  const getLbl = o => typeof o === 'string' ? o : o.label
+
+  const filtered = useMemo(() =>
+    options.filter(o => getLbl(o).toLowerCase().includes(q.toLowerCase())), [options, q])
+
+  const isSelected = v => single ? value === v : (Array.isArray(value) && value.includes(v))
+
+  const toggle = v => {
+    if (single) { onChange(value === v ? null : v); setOpen(false) }
+    else {
+      const arr = Array.isArray(value) ? value : []
+      onChange(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v])
+    }
+  }
+
+  const selectedOptions = options.filter(o => isSelected(getVal(o)))
 
   return (
-    <div>
-      {isFinancier && <button onClick={() => openForm()} className="btn-primary mb-4">+ Article</button>}
-
-      {showForm && (
-        <div className="card p-5 mb-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="label">Nom</label>
-              <input className="input" value={form.nom} onChange={e => setForm(f=>({...f,nom:e.target.value}))} />
+    <div ref={ref} className="relative">
+      <div className="input cursor-pointer flex flex-wrap gap-1 items-center min-h-[38px]"
+        onClick={() => setOpen(o => !o)}>
+        {selectedOptions.length === 0 && <span className="text-gray-400 text-sm">{placeholder}</span>}
+        {single && selectedOptions.length > 0 && <span className="text-gray-700 text-sm">{getLbl(selectedOptions[0])}</span>}
+        {!single && selectedOptions.map(o => (
+          <span key={getVal(o)} className="flex items-center gap-1 bg-primary/10 text-primary text-xs rounded-full px-2 py-0.5">
+            {getLbl(o)}
+            <button type="button" onClick={e => { e.stopPropagation(); toggle(getVal(o)) }} className="hover:text-red-500">×</button>
+          </span>
+        ))}
+        <ChevronDown size={14} className="ml-auto text-gray-400 shrink-0" />
+      </div>
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 flex flex-col">
+          <div className="p-2 border-b border-gray-100">
+            <div className="relative">
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input autoFocus className="w-full pl-6 pr-2 py-1 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary"
+                placeholder="Rechercher…" value={q} onChange={e => setQ(e.target.value)}
+                onClick={e => e.stopPropagation()} />
             </div>
+          </div>
+          <div className="overflow-y-auto">
+            {filtered.length === 0 && <p className="text-xs text-gray-400 text-center py-3">Aucun résultat</p>}
+            {filtered.map(o => {
+              const v = getVal(o); const l = getLbl(o); const sel = isSelected(v)
+              return (
+                <button key={v} type="button"
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${sel ? 'text-primary font-medium' : 'text-gray-700'}`}
+                  onClick={() => toggle(v)}>
+                  {single
+                    ? <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${sel ? 'border-primary' : 'border-gray-300'}`}>
+                        {sel && <span className="w-2 h-2 rounded-full bg-primary block" />}
+                      </span>
+                    : <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${sel ? 'bg-primary border-primary' : 'border-gray-300'}`}>
+                        {sel && <span className="text-white text-xs leading-none">✓</span>}
+                      </span>
+                  }
+                  {l}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Section sélection classes + groupes ────────────────────────────────────
+function SelectionEleves({ badge, classes, setClasses, groupes, setGroupes, allClasses, groupOptions }) {
+  return (
+    <div className={`rounded-xl border-2 p-4 space-y-3 ${badge === 'add' ? 'border-green-200 bg-green-50/30' : 'border-red-200 bg-red-50/30'}`}>
+      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge === 'add' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+        {badge === 'add' ? '+ Ajouter élèves de' : '− Retirer élèves de'}
+      </span>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label">Classes</label>
+          <MultiSearchSelect options={allClasses} value={classes} onChange={setClasses} placeholder="Choisir des classes…" />
+        </div>
+        <div>
+          <label className="label">Groupes</label>
+          <MultiSearchSelect options={groupOptions} value={groupes} onChange={setGroupes} placeholder="Choisir des groupes…" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal Article ─────────────────────────────────────────────────────────
+function ArticleModal({ editRow, onClose, onSaved }) {
+  const [form, setForm] = useState(editRow
+    ? { ...editRow }
+    : { nom: '', description: '', categorie: 'Frais obligatoires', prix_unitaire: '', statut: 'actif' })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
+
+  const save = async () => {
+    if (!form.nom.trim()) { setError('Le nom est requis'); return }
+    setSaving(true); setError(null)
+    const payload = { ...form, prix_unitaire: form.prix_unitaire || 0 }
+    const { error: err } = editRow
+      ? await supabase.from('articles').update(payload).eq('id', editRow.id)
+      : await supabase.from('articles').insert(payload)
+    setSaving(false)
+    if (err) { setError(err.message); return }
+    onSaved(); onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-8">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="font-bold text-gray-800 text-lg">{editRow ? 'Modifier' : 'Nouvel'} article</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          {error && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{error}</div>}
+          <div>
+            <label className="label">Nom *</label>
+            <input className="input" value={form.nom} onChange={e => f('nom', e.target.value)} autoFocus />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Catégorie</label>
-              <select className="input" value={form.categorie} onChange={e => setForm(f=>({...f,categorie:e.target.value}))}>
+              <select className="input" value={form.categorie} onChange={e => f('categorie', e.target.value)}>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
               <label className="label">Prix unitaire (€)</label>
-              <input className="input" type="number" step="0.01" value={form.prix_unitaire} onChange={e => setForm(f=>({...f,prix_unitaire:e.target.value}))} />
-            </div>
-            <div className="col-span-2">
-              <label className="label">Description</label>
-              <input className="input" value={form.description} onChange={e => setForm(f=>({...f,description:e.target.value}))} />
-            </div>
-            <div>
-              <label className="label">Statut</label>
-              <select className="input" value={form.statut} onChange={e => setForm(f=>({...f,statut:e.target.value}))}>
-                <option value="actif">Actif</option>
-                <option value="inactif">Inactif</option>
-              </select>
+              <input className="input" type="number" step="0.01" value={form.prix_unitaire} onChange={e => f('prix_unitaire', e.target.value)} />
             </div>
           </div>
-          <div className="flex gap-2 mt-4">
-            <button className="btn-primary" onClick={save} disabled={saving}>{saving?'Sauvegarde…':'Enregistrer'}</button>
-            <button className="btn-secondary" onClick={() => setShowForm(false)}>Annuler</button>
+          <div>
+            <label className="label">Description</label>
+            <input className="input" value={form.description || ''} onChange={e => f('description', e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Statut</label>
+            <select className="input" value={form.statut} onChange={e => f('statut', e.target.value)}>
+              <option value="actif">Actif</option>
+              <option value="inactif">Inactif</option>
+            </select>
           </div>
         </div>
+        <div className="flex gap-2 px-6 py-4 border-t border-gray-100">
+          <button onClick={save} disabled={saving} className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
+            {saving && <Loader2 size={14} className="animate-spin" />}
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+          <button onClick={onClose} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal Attribution ─────────────────────────────────────────────────────
+function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleveOptions, onClose, onSaved }) {
+  const EMPTY = {
+    article_id: '', type_attribution: 'groupe',
+    classes_incluses: [], groupes_inclus: [],
+    classes_exclues: [], groupes_exclus: [],
+    eleves_exclus: [], eleve_id: null,
+    quantite: 1, prix_unitaire_applique: '', notes: '',
+  }
+  const [form, setForm] = useState(EMPTY)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
+
+  const selectedArticle = articles.find(a => a.id === form.article_id)
+  const hasSelection = form.classes_incluses.length > 0 || form.groupes_inclus.length > 0
+  const nbEleves = useMemo(() =>
+    form.type_attribution === 'individuel' ? (form.eleve_id ? 1 : 0)
+    : calcNbEleves(allEleves, form),
+    [allEleves, form.type_attribution, form.eleve_id,
+     form.classes_incluses, form.groupes_inclus, form.classes_exclues, form.groupes_exclus, form.eleves_exclus]
+  )
+
+  const prixApplique = form.prix_unitaire_applique || selectedArticle?.prix_unitaire || 0
+  const montantTotal = nbEleves * Number(prixApplique) * Number(form.quantite || 1)
+
+  const save = async () => {
+    if (!form.article_id) { setError('Choisir un article'); return }
+    if (form.type_attribution === 'individuel' && !form.eleve_id) { setError('Choisir un élève'); return }
+    if (form.type_attribution === 'groupe' && !hasSelection) { setError('Sélectionner au moins une classe ou un groupe'); return }
+    setSaving(true); setError(null)
+    const payload = {
+      ...Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v === '' ? null : v])),
+      nb_eleves: nbEleves,
+      date_attribution: new Date().toISOString().slice(0, 10),
+      statut_facturation: 'a_facturer',
+    }
+    const { error: err } = await supabase.from('article_attributions').insert(payload)
+    setSaving(false)
+    if (err) { setError(err.message); return }
+    onSaved(); onClose()
+  }
+
+  // Article options grouped
+  const articleOptions = articles.map(a => ({
+    value: a.id,
+    label: `${a.nom} — ${a.categorie} (${fmt(a.prix_unitaire)})`,
+  }))
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
+          <h2 className="font-bold text-gray-800 text-lg">Nouvelle attribution</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5 overflow-y-auto">
+          {error && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{error}</div>}
+
+          {/* Article */}
+          <div>
+            <label className="label">Article *</label>
+            <MultiSearchSelect options={articleOptions} value={form.article_id}
+              onChange={v => { f('article_id', v); if (v) { const a = articles.find(x => x.id === v); if (a) f('prix_unitaire_applique', '') } }}
+              placeholder="Rechercher un article…" single />
+          </div>
+
+          {/* Type */}
+          <div>
+            <label className="label">Mode d'attribution</label>
+            <div className="flex gap-3">
+              {[['groupe', 'Par classes / groupes'], ['individuel', 'Élève individuel']].map(([v, l]) => (
+                <button key={v} type="button"
+                  onClick={() => f('type_attribution', v)}
+                  className={`flex-1 rounded-xl border-2 py-2.5 text-sm font-medium transition-colors
+                    ${form.type_attribution === v ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sélection groupe */}
+          {form.type_attribution === 'groupe' && (
+            <div className="space-y-3">
+              <SelectionEleves badge="add"
+                classes={form.classes_incluses} setClasses={v => f('classes_incluses', v)}
+                groupes={form.groupes_inclus}   setGroupes={v => f('groupes_inclus', v)}
+                allClasses={allClasses} groupOptions={groupOptions} />
+              <SelectionEleves badge="remove"
+                classes={form.classes_exclues} setClasses={v => f('classes_exclues', v)}
+                groupes={form.groupes_exclus}  setGroupes={v => f('groupes_exclus', v)}
+                allClasses={allClasses} groupOptions={groupOptions} />
+              {/* Exclure des élèves spécifiques */}
+              <div className="rounded-xl border-2 border-amber-200 bg-amber-50/30 p-4">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                  − Retirer spécifiquement
+                </span>
+                <div className="mt-3">
+                  <label className="label">Élèves à exclure</label>
+                  <MultiSearchSelect options={eleveOptions} value={form.eleves_exclus}
+                    onChange={v => f('eleves_exclus', v)}
+                    placeholder="Rechercher des élèves à exclure…" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sélection individuelle */}
+          {form.type_attribution === 'individuel' && (
+            <div>
+              <label className="label">Élève *</label>
+              <MultiSearchSelect options={eleveOptions} value={form.eleve_id}
+                onChange={v => f('eleve_id', v)}
+                placeholder="Rechercher un élève…" single />
+            </div>
+          )}
+
+          {/* Nb élèves calculé */}
+          <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl">
+            <span className="text-sm text-gray-500">Élèves concernés :</span>
+            <span className={`font-bold text-lg ${nbEleves > 0 ? 'text-primary' : 'text-gray-300'}`}>{nbEleves}</span>
+          </div>
+
+          {/* Quantité + prix */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="label">Quantité / élève</label>
+              <input className="input" type="number" min="1" value={form.quantite}
+                onChange={e => f('quantite', e.target.value)} />
+            </div>
+            <div>
+              <label className="label">
+                Prix appliqué (€)
+                {selectedArticle && <span className="ml-1 text-gray-400 font-normal">— article : {fmt(selectedArticle.prix_unitaire)}</span>}
+              </label>
+              <input className="input" type="number" step="0.01" value={form.prix_unitaire_applique}
+                placeholder={selectedArticle ? String(selectedArticle.prix_unitaire) : '0'}
+                onChange={e => f('prix_unitaire_applique', e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Montant total estimé</label>
+              <div className="input bg-gray-50 text-gray-700 font-semibold">{nbEleves > 0 ? fmt(montantTotal) : '—'}</div>
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Notes</label>
+            <input className="input" value={form.notes} onChange={e => f('notes', e.target.value)} />
+          </div>
+        </div>
+
+        <div className="flex gap-2 px-6 py-4 border-t border-gray-100">
+          <button onClick={save} disabled={saving} className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
+            {saving && <Loader2 size={14} className="animate-spin" />}
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+          <button onClick={onClose} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Onglet Attributions ─────────────────────────────────────────────────────
+function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveOptions, isFinancier }) {
+  const [data, setData]           = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [search, setSearch]       = useState('')
+
+  const reload = useCallback(() =>
+    supabase.from('article_attributions')
+      .select('*, article:article_id(nom, categorie, prix_unitaire), eleve:eleve_id(nom, prenom, classe)')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setData(data || []); setLoading(false) })
+  , [])
+
+  useEffect(() => { reload() }, [reload])
+
+  const filtered = useMemo(() => {
+    if (!search) return data
+    const q = search.toLowerCase()
+    return data.filter(r =>
+      (r.article?.nom || '').toLowerCase().includes(q) ||
+      (r.article?.categorie || '').toLowerCase().includes(q) ||
+      (r.eleve ? `${r.eleve.nom} ${r.eleve.prenom}`.toLowerCase().includes(q) : false) ||
+      (r.notes || '').toLowerCase().includes(q)
+    )
+  }, [data, search])
+
+  const getAttributionLabel = r => {
+    if (r.type_attribution === 'individuel' && r.eleve)
+      return `${r.eleve.nom} ${r.eleve.prenom} (${r.eleve.classe})`
+    const parts = []
+    if (r.classes_incluses?.length) parts.push(r.classes_incluses.join(', '))
+    if (r.groupes_inclus?.length) parts.push(r.groupes_inclus.map(g => g.split(':')[1]).join(', '))
+    return parts.join(' + ') || (r.classes?.join(', ') || '—')
+  }
+
+  if (loading) return <div className="py-8 text-center text-gray-400">Chargement…</div>
+
+  return (
+    <div>
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 mb-4">
+        {isFinancier && (
+          <button onClick={() => setShowModal(true)} className="btn-primary text-sm py-1.5 px-4">+ Attribution</button>
+        )}
+        <div className="relative">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5 outline-none w-56 focus:border-primary transition-colors"
+            placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        {search && (
+          <button onClick={() => setSearch('')}
+            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 rounded-full px-2.5 py-1">
+            <span className="text-sm leading-none">✕</span> Tout effacer
+          </button>
+        )}
+        <span className="ml-auto text-xs text-gray-400">{filtered.length} attribution{filtered.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {/* Table */}
+      <div className="card p-0 overflow-hidden">
+        <div style={{ height: 'calc(100vh - 260px)', overflowY: 'auto' }}>
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+              <tr>
+                {['Article', 'Catégorie', 'Attribution', 'Nb élèves', 'Qté', 'Prix / élève', 'Total', 'Notes'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">Aucune attribution</td></tr>
+              )}
+              {filtered.map(r => {
+                const prix = r.prix_unitaire_applique ?? r.article?.prix_unitaire ?? 0
+                const total = (r.nb_eleves || 0) * Number(prix) * (r.quantite || 1)
+                return (
+                  <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-800">{r.article?.nom || '—'}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{r.article?.categorie || '—'}</td>
+                    <td className="px-4 py-3 text-gray-600 max-w-[200px] truncate" title={getAttributionLabel(r)}>{getAttributionLabel(r)}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="font-semibold text-primary">{r.nb_eleves ?? '—'}</span>
+                    </td>
+                    <td className="px-4 py-3 text-center text-gray-600">{r.quantite || 1}</td>
+                    <td className="px-4 py-3 text-gray-700">{fmt(prix)}</td>
+                    <td className="px-4 py-3 font-medium text-gray-800">{r.nb_eleves ? fmt(total) : '—'}</td>
+                    <td className="px-4 py-3 text-gray-400 text-xs max-w-[140px] truncate">{r.notes || '—'}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showModal && (
+        <AttributionModal
+          articles={articles} allEleves={allEleves}
+          allClasses={allClasses} groupOptions={groupOptions} eleveOptions={eleveOptions}
+          onClose={() => setShowModal(false)} onSaved={reload}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── Onglet Catalogue ────────────────────────────────────────────────────────
+function CatalogueTab({ isFinancier }) {
+  const [data, setData]         = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [editRow, setEditRow]   = useState(null)
+  const [search, setSearch]     = useState('')
+
+  const reload = useCallback(() =>
+    supabase.from('articles').select('*').order('categorie').order('nom')
+      .then(({ data }) => { setData(data || []); setLoading(false) })
+  , [])
+
+  useEffect(() => { reload() }, [reload])
+
+  const filtered = useMemo(() => {
+    if (!search) return data
+    const q = search.toLowerCase()
+    return data.filter(r =>
+      (r.nom || '').toLowerCase().includes(q) ||
+      (r.description || '').toLowerCase().includes(q) ||
+      (r.categorie || '').toLowerCase().includes(q)
+    )
+  }, [data, search])
+
+  const byCategorie = CATEGORIES.map(cat => ({
+    cat,
+    items: filtered.filter(d => d.categorie === cat),
+  })).filter(g => g.items.length > 0)
+
+  const openEdit = row => { setEditRow(row); setShowModal(true) }
+  const openNew  = () => { setEditRow(null); setShowModal(true) }
+
+  if (loading) return <div className="py-8 text-center text-gray-400">Chargement…</div>
+
+  return (
+    <div>
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 mb-4">
+        {isFinancier && (
+          <button onClick={openNew} className="btn-primary text-sm py-1.5 px-4">+ Article</button>
+        )}
+        <div className="relative">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5 outline-none w-56 focus:border-primary transition-colors"
+            placeholder="Rechercher par nom, catégorie…" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        {search && (
+          <button onClick={() => setSearch('')}
+            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 rounded-full px-2.5 py-1">
+            <span className="text-sm leading-none">✕</span> Tout effacer
+          </button>
+        )}
+        <span className="ml-auto text-xs text-gray-400">{filtered.length} article{filtered.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {byCategorie.length === 0 && (
+        <div className="card p-8 text-center text-gray-400">Aucun article trouvé</div>
       )}
 
       {byCategorie.map(({ cat, items }) => (
         <div key={cat} className="mb-6">
-          <h3 className="font-semibold text-gray-600 text-sm uppercase tracking-wide mb-2">{cat}</h3>
-          <div className="card p-0">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{cat}</h3>
+          <div className="card p-0 overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  {['Nom','Description','Prix unit.','Statut',''].map(h => <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>)}
+                  {['Nom', 'Description', 'Prix unit.', 'Statut', ''].map(h => (
+                    <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {items.map(a => (
-                  <tr key={a.id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium">{a.nom}</td>
-                    <td className="px-4 py-3 text-gray-500">{a.description||'—'}</td>
-                    <td className="px-4 py-3">{fmt(a.prix_unitaire)}</td>
-                    <td className="px-4 py-3"><span className={`badge ${a.statut==='actif'?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500'}`}>{a.statut}</span></td>
-                    <td className="px-4 py-3">{isFinancier && <button onClick={() => openForm(a)} className="btn btn-secondary btn-sm">Modifier</button>}</td>
+                  <tr key={a.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-2.5 font-medium text-gray-800">{a.nom}</td>
+                    <td className="px-4 py-2.5 text-gray-400 text-xs">{a.description || '—'}</td>
+                    <td className="px-4 py-2.5 text-gray-700">{fmt(a.prix_unitaire)}</td>
+                    <td className="px-4 py-2.5">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${a.statut === 'actif' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {a.statut}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      {isFinancier && (
+                        <button onClick={() => openEdit(a)}
+                          className="text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1 transition-colors">
+                          Modifier
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -95,156 +598,76 @@ function CatalogueTab() {
           </div>
         </div>
       ))}
+
+      {showModal && (
+        <ArticleModal editRow={editRow} onClose={() => setShowModal(false)} onSaved={reload} />
+      )}
     </div>
   )
 }
 
-function AttributionsTab() {
-  const { isFinancier } = useAuth()
-  const [articles, setArticles] = useState([])
-  const [eleves, setEleves] = useState([])
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ article_id:'', type_attribution:'classe', classes:[], eleve_id:'', quantite:1, quantite_par:'par_eleve', prix_unitaire_applique:'', statut_facturation:'a_facturer', notes:'' })
-  const [saving, setSaving] = useState(false)
+// ── Page principale ─────────────────────────────────────────────────────────
+export default function Articles() {
+  const { isFinancier, isAdmin } = useAuth()
+  const fin = isFinancier || isAdmin
+  const [tab, setTab] = useState('attributions')
+  const [searchParams] = useSearchParams()
 
-  const reload = () => supabase.from('article_attributions').select('*, article:article_id(nom,categorie,prix_unitaire)').order('created_at',{ascending:false}).then(({data}) => setData(data||[]))
+  // Données partagées entre les onglets
+  const [articles, setArticles]       = useState([])
+  const [allEleves, setAllEleves]     = useState([])
+  const [allClasses, setAllClasses]   = useState([])
+  const [groupOptions, setGroupOptions] = useState([])
+  const [eleveOptions, setEleveOptions] = useState([])
+
+  useEffect(() => {
+    if (searchParams.get('onglet') === 'catalogue') setTab('catalogue')
+  }, [searchParams])
 
   useEffect(() => {
     Promise.all([
-      supabase.from('articles').select('id,nom,categorie,prix_unitaire').eq('statut','actif').order('categorie').order('nom'),
-      supabase.from('eleves').select('id,nom,prenom,classe').eq('actif',true).order('nom'),
-      reload(),
-    ]).then(([a,e]) => { setArticles(a.data||[]); setEleves(e.data||[]); setLoading(false) })
+      supabase.from('articles').select('id, nom, categorie, prix_unitaire').eq('statut', 'actif').order('categorie').order('nom'),
+      supabase.from('eleves').select(
+        'id, nom, prenom, classe, obs_d2, ac_d2, math_d3, sciences_d3, bio_physique_d3, obs1_d3, obs2_d3, ac_d3, philosophie, groupe_choix_philo'
+      ).eq('actif', true).order('nom'),
+    ]).then(([artRes, elevRes]) => {
+      setArticles(artRes.data || [])
+      const eleves = (elevRes.data || []).map(e => ({ ...e, rlmo: getRlmo(e) }))
+      setAllEleves(eleves)
+      setAllClasses([...new Set(eleves.map(e => e.classe).filter(Boolean))].sort())
+      setEleveOptions(eleves.map(e => ({
+        value: e.id,
+        label: `${e.nom} ${e.prenom} (${e.classe})`,
+      })))
+      const opts = []
+      GROUP_COLS.forEach(({ key, label }) => {
+        const vals = [...new Set(eleves.map(e => e[key]).filter(Boolean))].sort()
+        vals.forEach(val => opts.push({ value: `${key}:${val}`, label: `${label} : ${val}` }))
+      })
+      setGroupOptions(opts)
+    })
   }, [])
-
-  const byCategorie = CATEGORIES.reduce((acc, cat) => { acc[cat] = articles.filter(a => a.categorie === cat); return acc }, {})
-  const save = async () => {
-    setSaving(true)
-    await supabase.from('article_attributions').insert({ ...form, date_attribution: new Date().toISOString().slice(0,10) })
-    await reload(); setSaving(false); setShowForm(false)
-  }
-
-  if (loading) return <div className="py-8 text-center text-gray-400">Chargement…</div>
-
-  return (
-    <div>
-      {isFinancier && <button onClick={() => setShowForm(true)} className="btn-primary mb-4">+ Attribution</button>}
-
-      {showForm && (
-        <div className="card p-5 mb-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="label">Article</label>
-              <select className="input" value={form.article_id} onChange={e => setForm(f=>({...f,article_id:e.target.value}))}>
-                <option value="">— Choisir —</option>
-                {CATEGORIES.map(cat => byCategorie[cat]?.length > 0 && (
-                  <optgroup key={cat} label={cat}>
-                    {byCategorie[cat].map(a => <option key={a.id} value={a.id}>{a.nom} ({fmt(a.prix_unitaire)})</option>)}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Type d'attribution</label>
-              <select className="input" value={form.type_attribution} onChange={e => setForm(f=>({...f,type_attribution:e.target.value}))}>
-                <option value="classe">Par classe</option>
-                <option value="individuel">Individuel</option>
-              </select>
-            </div>
-            {form.type_attribution === 'individuel' ? (
-              <div>
-                <label className="label">Élève</label>
-                <select className="input" value={form.eleve_id} onChange={e => setForm(f=>({...f,eleve_id:e.target.value}))}>
-                  <option value="">— Choisir —</option>
-                  {eleves.map(el => <option key={el.id} value={el.id}>{el.nom} {el.prenom} ({el.classe})</option>)}
-                </select>
-              </div>
-            ) : (
-              <div>
-                <label className="label">Classe(s)</label>
-                <input className="input" placeholder="ex: 5A, 5B" value={form.classes?.join(', ')} onChange={e => setForm(f=>({...f,classes:e.target.value.split(',').map(x=>x.trim()).filter(Boolean)}))} />
-              </div>
-            )}
-            <div>
-              <label className="label">Quantité</label>
-              <input className="input" type="number" min="1" value={form.quantite} onChange={e => setForm(f=>({...f,quantite:e.target.value}))} />
-            </div>
-            <div>
-              <label className="label">Quantité par</label>
-              <select className="input" value={form.quantite_par} onChange={e => setForm(f=>({...f,quantite_par:e.target.value}))}>
-                <option value="par_eleve">Par élève</option>
-                <option value="groupe">Par groupe</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Prix appliqué (laisser vide = prix article)</label>
-              <input className="input" type="number" step="0.01" value={form.prix_unitaire_applique} onChange={e => setForm(f=>({...f,prix_unitaire_applique:e.target.value}))} />
-            </div>
-            <div>
-              <label className="label">Statut facturation</label>
-              <select className="input" value={form.statut_facturation} onChange={e => setForm(f=>({...f,statut_facturation:e.target.value}))}>
-                <option value="a_facturer">À facturer</option>
-                <option value="facture">Facturé</option>
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="label">Notes</label>
-              <input className="input" value={form.notes} onChange={e => setForm(f=>({...f,notes:e.target.value}))} />
-            </div>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <button className="btn-primary" onClick={save} disabled={saving}>{saving?'Sauvegarde…':'Enregistrer'}</button>
-            <button className="btn-secondary" onClick={() => setShowForm(false)}>Annuler</button>
-          </div>
-        </div>
-      )}
-
-      <div className="card p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                {['Article','Catégorie','Attribution','Qté','Prix appliqué','Facturation','Notes'].map(h=><th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {data.length===0?<tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Aucune attribution</td></tr>:data.map(r=>(
-                <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{r.article?.nom}</td>
-                  <td className="px-4 py-3 text-gray-500">{r.article?.categorie}</td>
-                  <td className="px-4 py-3 text-gray-600">{r.type_attribution==='individuel'?`Élève ${r.eleve_id?.slice(0,8)}…`:(r.classes||[]).join(', ')}</td>
-                  <td className="px-4 py-3">{r.quantite} / {r.quantite_par?.replace('_',' ')}</td>
-                  <td className="px-4 py-3">{r.prix_unitaire_applique ? fmt(r.prix_unitaire_applique) : fmt(r.article?.prix_unitaire)}</td>
-                  <td className="px-4 py-3"><span className={`badge ${r.statut_facturation==='facture'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}`}>{r.statut_facturation?.replace('_',' ')}</span></td>
-                  <td className="px-4 py-3 text-gray-500">{r.notes||'—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default function Articles() {
-  const [tab, setTab] = useState('catalogue')
-  const [searchParams] = useSearchParams()
-
-  useEffect(() => {
-    if (searchParams.get('onglet') === 'attributions') setTab('attributions')
-  }, [searchParams])
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Articles</h1>
+      <h1 className="text-2xl font-bold text-primary mb-1">Articles</h1>
+      <p className="text-sm text-gray-400 mb-5">Catalogue et attributions aux élèves</p>
+
+      {/* Onglets — Attributions en premier */}
       <div className="flex gap-2 mb-6">
-        <button onClick={() => setTab('catalogue')} className={`btn ${tab==='catalogue'?'btn-primary':'btn-secondary'}`}>Catalogue</button>
-        <button onClick={() => setTab('attributions')} className={`btn ${tab==='attributions'?'btn-primary':'btn-secondary'}`}>Attributions</button>
+        {[['attributions', 'Attributions'], ['catalogue', 'Catalogue']].map(([v, l]) => (
+          <button key={v} onClick={() => setTab(v)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${tab === v ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            {l}
+          </button>
+        ))}
       </div>
-      {tab === 'catalogue' ? <CatalogueTab /> : <AttributionsTab />}
+
+      {tab === 'attributions'
+        ? <AttributionsTab articles={articles} allEleves={allEleves} allClasses={allClasses}
+            groupOptions={groupOptions} eleveOptions={eleveOptions} isFinancier={fin} />
+        : <CatalogueTab isFinancier={fin} />
+      }
     </div>
   )
 }
