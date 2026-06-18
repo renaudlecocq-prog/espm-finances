@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import FicheEleve from '../components/ui/FicheEleve'
-import FilterPill from '../components/ui/FilterPill'
+import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 import { Link2, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, Search, X } from 'lucide-react'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
@@ -53,10 +53,13 @@ export default function Eleves() {
   const [deleteRow, setDeleteRow] = useState(null)
   const [saving, setSaving]   = useState(false)
 
-  const [search, setSearch]         = useState('')
-  const [filterSolde, setFilterSolde]   = useState('')
-  const [filterClasse, setFilterClasse] = useState('')
-  const [sort, setSort]             = useState({ col: 'nom', dir: 'asc' })
+  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState({})
+  const [sort, setSort]     = useState({ col: 'nom', dir: 'asc' })
+
+  const setFilter = useCallback((key, val) =>
+    setFilters(f => val ? { ...f, [key]: val } : Object.fromEntries(Object.entries(f).filter(([k]) => k !== key)))
+  , [])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -78,7 +81,7 @@ export default function Eleves() {
       const ech       = mE.get(e.id) || 0
       return {
         ...e,
-        solde: paiements - factures,   // calculé dynamiquement
+        solde: paiements - factures,
         _factures:  factures,
         _paiements: paiements,
         _ech:       ech,
@@ -89,12 +92,17 @@ export default function Eleves() {
 
   useEffect(() => {
     const solde = searchParams.get('solde')
-    if (solde === 'negatif') setFilterSolde('Négatif')
-    else if (solde === 'positif') setFilterSolde('Positif')
+    if (solde === 'negatif') setFilter('solde', 'Négatif')
+    else if (solde === 'positif') setFilter('solde', 'Positif')
     loadData()
-  }, [loadData, searchParams])
+  }, [loadData, searchParams])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const classes = useMemo(() => [...new Set(rows.map(r => r.classe).filter(Boolean))].sort(), [rows])
+
+  const filterDefs = useMemo(() => [
+    { key: 'classe', label: 'Classe',  options: classes },
+    { key: 'solde',  label: 'Solde',   options: ['Négatif', 'Neutre', 'Positif'] },
+  ], [classes])
 
   const filtered = useMemo(() => {
     let d = rows
@@ -102,34 +110,25 @@ export default function Eleves() {
       const q = search.toLowerCase()
       d = d.filter(r => (r.nom || '').toLowerCase().includes(q) || (r.prenom || '').toLowerCase().includes(q))
     }
-    if (filterClasse) d = d.filter(r => r.classe === filterClasse)
-    if (filterSolde === 'Négatif') d = d.filter(r => Number(r.solde || 0) < 0)
-    if (filterSolde === 'Neutre')  d = d.filter(r => Number(r.solde || 0) === 0)
-    if (filterSolde === 'Positif') d = d.filter(r => Number(r.solde || 0) > 0)
+    if (filters.classe) d = d.filter(r => r.classe === filters.classe)
+    if (filters.solde === 'Négatif') d = d.filter(r => Number(r.solde || 0) < 0)
+    if (filters.solde === 'Neutre')  d = d.filter(r => Number(r.solde || 0) === 0)
+    if (filters.solde === 'Positif') d = d.filter(r => Number(r.solde || 0) > 0)
     const { col, dir } = sort
     return [...d].sort((a, b) => {
       const va = a[col], vb = b[col]
       if (typeof va === 'number' || col.startsWith('_')) return (Number(va || 0) - Number(vb || 0)) * (dir === 'asc' ? 1 : -1)
       return String(va || '').localeCompare(String(vb || ''), 'fr') * (dir === 'asc' ? 1 : -1)
     })
-  }, [rows, search, filterClasse, filterSolde, sort])
+  }, [rows, search, filters, sort])
 
-  const toggleSort = col => setSort(s => s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'asc' })
-
-  const saveEdit = async () => {
-    setSaving(true)
-    await supabase.from('eleves').update({ nom: editRow.nom, prenom: editRow.prenom, classe: editRow.classe }).eq('id', editRow.id)
-    setSaving(false); setEditRow(null); loadData()
-  }
-
-  const confirmDelete = async () => {
-    await supabase.from('eleves').update({ actif: false }).eq('id', deleteRow.id)
-    setDeleteRow(null); loadData()
-  }
+  const toggleSort = col =>
+    setSort(s => s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'asc' })
 
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
   const totalW = COLS.reduce((s, c) => s + c.w, 0)
+  const hasFilters = search || Object.keys(filters).length > 0
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 80px)' }}>
@@ -137,7 +136,7 @@ export default function Eleves() {
       <p className="text-sm text-gray-400 mb-4 shrink-0">Liste des élèves et leurs soldes</p>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-2 mb-3 shrink-0 flex-wrap">
+      <div className="flex items-center gap-2 mb-2 shrink-0">
         <div className="relative shrink-0">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input
@@ -155,29 +154,27 @@ export default function Eleves() {
           )}
         </div>
 
-        <FilterPill
-          label="Solde"
-          value={filterSolde}
-          options={['Négatif', 'Neutre', 'Positif']}
-          onChange={setFilterSolde}
-        />
-        <FilterPill
-          label="Classe"
-          value={filterClasse}
-          options={classes}
-          onChange={setFilterClasse}
+        <MasterFilter
+          filters={filters}
+          filterDefs={filterDefs}
+          onChange={setFilter}
+          onClearAll={() => setFilters({})}
         />
 
-        {(search || filterSolde || filterClasse) && (
-          <button onClick={() => { setSearch(''); setFilterSolde(''); setFilterClasse('') }}
-            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors whitespace-nowrap">
-            <span className="text-sm leading-none">✕</span> Tout effacer
+        {hasFilters && (
+          <button onClick={() => { setSearch(''); setFilters({}) }}
+            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600
+              border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors whitespace-nowrap">
+            <X size={11} /> Tout effacer
           </button>
         )}
         <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">
           {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
         </span>
       </div>
+
+      {/* Active filter chips */}
+      <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={setFilter} />
 
       {/* Table */}
       <div className="card p-0 flex-1 overflow-auto min-h-0">
@@ -199,8 +196,7 @@ export default function Eleves() {
                       ${!c.noSort ? 'cursor-pointer select-none hover:text-primary' : ''}`}
                   >
                     <span className={`flex items-center gap-0.5 ${c.align === 'right' ? 'justify-end' : c.align === 'center' ? 'justify-center' : ''}`}>
-                      {c.label}
-                      {!c.noSort && <SortIcon col={c.key} sort={sort} />}
+                      {c.label}{!c.noSort && <SortIcon col={c.key} sort={sort} />}
                     </span>
                   </th>
                 )
@@ -211,39 +207,37 @@ export default function Eleves() {
             {filtered.length === 0 ? (
               <tr><td colSpan={COLS.length} className="px-4 py-10 text-center text-gray-400">Aucun élève</td></tr>
             ) : filtered.map(row => (
-              <tr key={row.id} className="border-b border-gray-50 hover:bg-primary/5 cursor-pointer group">
+              <tr key={row.id}
+                onClick={() => setFicheId(row.id)}
+                className="border-b border-gray-50 hover:bg-primary/5 cursor-pointer group">
                 {COLS.map((c, i) => {
                   const isSticky = c.sticky !== undefined
-                  let content
-                  if (c.key === 'solde')      content = fmtSolde(row.solde)
-                  else if (c.key === '_factures')  content = fmtMoney(row._factures)
-                  else if (c.key === '_paiements') content = fmtMoney(row._paiements)
-                  else if (c.key === '_ech')       content = fmtMoney(row._ech)
-                  else if (c.key === '_as')        content = <span className="text-gray-300">—</span>
-                  else if (c.key === '_actions')   content = (
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button onClick={e => { e.stopPropagation(); setFicheId(row.id) }}
-                        title="Fiche" className="text-gray-400 hover:text-primary"><Link2 size={14} /></button>
-                      {canEdit && <button onClick={e => { e.stopPropagation(); setEditRow({ ...row }) }}
-                        title="Modifier" className="text-gray-400 hover:text-blue-500"><Pencil size={13} /></button>}
-                      {isAdmin && <button onClick={e => { e.stopPropagation(); setDeleteRow(row) }}
-                        title="Désactiver" className="text-gray-400 hover:text-red-500"><Trash2 size={13} /></button>}
+                  let cell
+                  if (c.key === 'solde')      cell = fmtSolde(row.solde)
+                  else if (c.key === '_factures') cell = fmtMoney(row._factures)
+                  else if (c.key === '_paiements') cell = fmtMoney(row._paiements)
+                  else if (c.key === '_ech')   cell = fmtMoney(row._ech)
+                  else if (c.key === '_as')    cell = row.assistant_social ? <span className="inline-block w-2 h-2 rounded-full bg-blue-400" /> : null
+                  else if (c.key === '_actions') cell = (
+                    <div className="flex items-center justify-center gap-1" onClick={e => e.stopPropagation()}>
+                      {canEdit && <button onClick={() => setEditRow(row)} className="text-gray-400 hover:text-primary p-1"><Pencil size={13} /></button>}
+                      <button onClick={() => setFicheId(row.id)} className="text-gray-400 hover:text-primary p-1"><Link2 size={13} /></button>
+                      {canEdit && <button onClick={() => setDeleteRow(row)} className="text-gray-400 hover:text-red-500 p-1"><Trash2 size={13} /></button>}
                     </div>
                   )
-                  else content = row[c.key] ?? <span className="text-gray-300">—</span>
-
+                  else cell = row[c.key]
                   return (
                     <td key={c.key}
                       style={{
-                        width: c.w, minWidth: c.w, textAlign: c.align || 'left',
+                        width: c.w, minWidth: c.w,
                         ...(isSticky ? { position: 'sticky', left: c.sticky, zIndex: 10 } : {}),
+                        textAlign: c.align || 'left',
                       }}
-                      className={`px-3 py-2 border-r border-gray-50 last:border-r-0
+                      className={`px-3 py-2 whitespace-nowrap border-r border-gray-50 last:border-r-0
                         bg-white group-hover:bg-primary/5
-                        ${i < 2 ? 'font-medium text-gray-800' : 'text-gray-600'}`}
-                      onClick={() => c.key !== '_actions' && setFicheId(row.id)}
+                        ${i < 2 ? 'font-medium text-gray-800' : 'text-gray-600 text-sm'}`}
                     >
-                      {content}
+                      {cell ?? <span className="text-gray-300 select-none">—</span>}
                     </td>
                   )
                 })}
@@ -255,41 +249,75 @@ export default function Eleves() {
 
       <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
 
+      {/* Edit modal */}
       {editRow && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-            <h3 className="font-bold text-primary mb-4">Modifier l'élève</h3>
-            <div className="space-y-3">
-              {['nom','prenom','classe'].map(k => (
-                <div key={k}><label className="label capitalize">{k}</label>
-                  <input className="input" value={editRow[k] || ''} onChange={e => setEditRow(r => ({ ...r, [k]: e.target.value }))} />
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2 mt-4">
-              <button onClick={saveEdit} disabled={saving} className="btn-primary flex-1 py-2 flex justify-center">
-                {saving ? 'Enregistrement…' : 'Enregistrer'}
-              </button>
-              <button onClick={() => setEditRow(null)} className="btn-secondary flex-1 py-2 flex justify-center">Annuler</button>
-            </div>
-          </div>
-        </div>
+        <EditEleveModal
+          row={editRow}
+          onClose={() => setEditRow(null)}
+          onSaved={() => { setEditRow(null); loadData() }}
+        />
       )}
 
+      {/* Delete confirm */}
       {deleteRow && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-            <h3 className="font-bold text-primary mb-2">Désactiver l'élève ?</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              <strong>{deleteRow.nom} {deleteRow.prenom}</strong> sera marqué comme inactif.
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+            <h3 className="font-semibold text-gray-800 mb-2">Supprimer l'élève ?</h3>
+            <p className="text-sm text-gray-500 mb-5">
+              {deleteRow.nom} {deleteRow.prenom} ({deleteRow.classe}) — cette action est irréversible.
             </p>
-            <div className="flex gap-2">
-              <button onClick={confirmDelete} className="btn-primary bg-red-600 hover:bg-red-700 flex-1 py-2 flex justify-center">Désactiver</button>
-              <button onClick={() => setDeleteRow(null)} className="btn-secondary flex-1 py-2 flex justify-center">Annuler</button>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setDeleteRow(null)} className="btn-secondary text-sm py-1.5 px-4">Annuler</button>
+              <button
+                disabled={saving}
+                onClick={async () => {
+                  setSaving(true)
+                  await supabase.from('eleves').update({ actif: false }).eq('id', deleteRow.id)
+                  setDeleteRow(null); setSaving(false); loadData()
+                }}
+                className="bg-red-500 hover:bg-red-600 text-white text-sm py-1.5 px-4 rounded-lg font-medium disabled:opacity-50"
+              >
+                {saving ? 'Suppression…' : 'Supprimer'}
+              </button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Edit modal (unchanged) ─────────────────────────────────────────────────
+function EditEleveModal({ row, onClose, onSaved }) {
+  const [form, setForm] = useState({ nom: row.nom || '', prenom: row.prenom || '', classe: row.classe || '' })
+  const [saving, setSaving] = useState(false)
+  const save = async () => {
+    setSaving(true)
+    await supabase.from('eleves').update(form).eq('id', row.id)
+    onSaved()
+  }
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+        <h3 className="font-semibold text-gray-800 mb-4">Modifier l'élève</h3>
+        <div className="space-y-3">
+          <div><label className="label">Nom</label>
+            <input className="input" value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} />
+          </div>
+          <div><label className="label">Prénom</label>
+            <input className="input" value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} />
+          </div>
+          <div><label className="label">Classe</label>
+            <input className="input" value={form.classe} onChange={e => setForm(f => ({ ...f, classe: e.target.value }))} />
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end mt-5">
+          <button onClick={onClose} className="btn-secondary text-sm py-1.5 px-4">Annuler</button>
+          <button onClick={save} disabled={saving} className="btn-primary text-sm py-1.5 px-4 disabled:opacity-50">
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
