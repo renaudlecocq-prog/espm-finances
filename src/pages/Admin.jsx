@@ -34,7 +34,7 @@ const fmtDate = d => d ? new Date(d).toLocaleString('fr-BE', {
 }).replace(',','') : '—'
 
 export default function Admin() {
-  const { isAdmin, role: myRole } = useAuth()
+  const { isAdmin, role: myRole, previewRole, setPreviewRole } = useAuth()
   const [searchParams] = useSearchParams()
   const [tab, setTab]             = useState(searchParams.get('onglet') || 'utilisateurs')
   const [users, setUsers]         = useState([])
@@ -45,7 +45,6 @@ export default function Admin() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole]   = useState('mdp')
   const [inviteMsg, setInviteMsg]     = useState('')
-  const [previewRole, setPreviewRole] = useState(null)
 
   const loadUsers = useCallback(() =>
     supabase.from('profiles').select('*').order('created_at').then(({ data }) => setUsers(data || []))
