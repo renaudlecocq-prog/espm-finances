@@ -438,7 +438,8 @@ export default function Paiements() {
         `${r.eleve?.nom || ''} ${r.eleve?.prenom || ''} ${r.paye_par || ''} ${r.communication || ''} ${r.remarque || ''}`.toLowerCase().includes(q)
       )
     }
-    if (filters.mode?.length) d = d.filter(r => filters.mode.includes(r.mode))
+    if (filters.paye_par?.length) d = d.filter(r => filters.paye_par.includes(r.paye_par))
+    if (filters.classe?.length)   d = d.filter(r => filters.classe.includes(r.eleve?.classe))
     const { col, dir } = sort
     return [...d].sort((a, b) => {
       let va, vb
@@ -487,8 +488,9 @@ export default function Paiements() {
   const hasFilters = search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
 
   const filterDefs = useMemo(() => [
-    { key: 'mode', label: 'Mode', options: Object.entries(MODE_LABELS).map(([v, l]) => ({ value: v, label: l })) },
-  ], [])
+    { key: 'paye_par', label: 'Payé par', options: Object.entries(PAYE_PAR_LABELS).map(([v, l]) => ({ value: v, label: l })) },
+    { key: 'classe',   label: 'Classe',   options: [...new Set(rows.map(r => r.eleve?.classe).filter(Boolean))].sort() },
+  ], [rows])
 
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
