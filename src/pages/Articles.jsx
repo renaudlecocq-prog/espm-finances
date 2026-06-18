@@ -22,9 +22,13 @@ const GROUP_COLS = [
 const getRlmo = e => [e.philosophie, e.groupe_choix_philo].filter(Boolean).join(' ') || null
 
 // ── Calcul nb élèves (même logique qu'Activites) ────────────────────────────
+const ALL_CLASSES_VALUE = '__ALL__'
+
 function calcNbEleves(allEleves, { classes_incluses, groupes_inclus, classes_exclues, groupes_exclus, eleves_exclus }) {
   if (!allEleves.length) return 0
-  const hasAddC = classes_incluses.length > 0
+  const allClassesMode = classes_incluses.includes('__ALL__')
+  const effectiveAddC = allClassesMode ? allEleves.map(e => e.classe).filter(Boolean) : classes_incluses
+  const hasAddC = effectiveAddC.length > 0 || allClassesMode
   const hasAddG = groupes_inclus.length > 0
   if (!hasAddC && !hasAddG) return 0
 
@@ -35,10 +39,10 @@ function calcNbEleves(allEleves, { classes_incluses, groupes_inclus, classes_exc
 
   let addSet = new Set()
   if (hasAddC && hasAddG) {
-    const inC = new Set(allEleves.filter(e => classes_incluses.includes(e.classe)).map(e => e.id))
+    const inC = new Set(allEleves.filter(e => allClassesMode || effectiveAddC.includes(e.classe)).map(e => e.id))
     allEleves.filter(e => inC.has(e.id) && matchesGroups(e, groupes_inclus)).forEach(e => addSet.add(e.id))
   } else if (hasAddC) {
-    allEleves.filter(e => classes_incluses.includes(e.classe)).forEach(e => addSet.add(e.id))
+    allEleves.filter(e => allClassesMode || effectiveAddC.includes(e.classe)).forEach(e => addSet.add(e.id))
   } else {
     allEleves.filter(e => matchesGroups(e, groupes_inclus)).forEach(e => addSet.add(e.id))
   }
@@ -136,6 +140,25 @@ function MultiSearchSelect({ options, value, onChange, placeholder, single = fal
 
 // ── Section sélection classes + groupes ────────────────────────────────────
 function SelectionEleves({ badge, classes, setClasses, groupes, setGroupes, allClasses, groupOptions }) {
+  const classOptions = [
+    { value: ALL_CLASSES_VALUE, label: '— Toutes les classes —' },
+    ...allClasses.map(c => ({ value: c, label: c })),
+  ]
+
+  const handleClassChange = vals => {
+    if (vals.includes(ALL_CLASSES_VALUE)) {
+      // Si "Toutes" vient d'être sélectionné, on remplace tout par la valeur spéciale
+      if (!classes.includes(ALL_CLASSES_VALUE)) {
+        setClasses([ALL_CLASSES_VALUE])
+      } else {
+        // On retire "Toutes" si l'utilisateur sélectionne une classe spécifique en plus
+        setClasses(vals.filter(v => v !== ALL_CLASSES_VALUE))
+      }
+    } else {
+      setClasses(vals)
+    }
+  }
+
   return (
     <div className={`rounded-xl border-2 p-4 space-y-3 ${badge === 'add' ? 'border-green-200 bg-green-50/30' : 'border-red-200 bg-red-50/30'}`}>
       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge === 'add' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
@@ -144,7 +167,7 @@ function SelectionEleves({ badge, classes, setClasses, groupes, setGroupes, allC
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label">Classes</label>
-          <MultiSearchSelect options={allClasses} value={classes} onChange={setClasses} placeholder="Choisir des classes…" />
+          <MultiSearchSelect options={classOptions} value={classes} onChange={handleClassChange} placeholder="Choisir des classes…" />
         </div>
         <div>
           <label className="label">Groupes</label>
@@ -290,11 +313,18 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
     onSaved(); onClose()
   }
 
-  // Article options grouped
-  const articleOptions = articles.map(a => ({
-    value: a.id,
-    label: `${a.nom} — ${a.categorie} (${fmt(a.prix_unitaire)})`,
-  }))
+  // Article options triés par ordre CATEGORIES puis par nom
+  const articleOptions = [...articles]
+    .sort((a, b) => {
+      const ci = CATEGORIES.indexOf(a.categorie)
+      const cj = CATEGORIES.indexOf(b.categorie)
+      if (ci !== cj) return ci - cj
+      return a.nom.localeCompare(b.nom)
+    })
+    .map(a => ({
+      value: a.id,
+      label: `${a.nom} — ${a.categorie} (${fmt(a.prix_unitaire)})`,
+    }))
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
