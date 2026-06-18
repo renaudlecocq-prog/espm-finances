@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import FilterPill from '../components/ui/FilterPill'
+import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 import { Search, X, FileText, Pencil, Archive, Receipt, ChevronDown, Plus, Loader2 } from 'lucide-react'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
@@ -645,9 +645,11 @@ export default function Activites() {
   const [docsRow, setDocsRow]     = useState(null)
   const [docsCategorie, setDocsCategorie] = useState('document')
   const [showArchived, setShowArchived]   = useState(false)
-  const [search, setSearch]       = useState('')
-  const [filterType, setFilterType]   = useState('')
-  const [filterFact, setFilterFact]   = useState('')
+  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState({})
+  const setFilter = useCallback((key, val) =>
+    setFilters(f => val ? { ...f, [key]: val } : Object.fromEntries(Object.entries(f).filter(([k]) => k !== key)))
+  , [])
 
   // Données pour le formulaire
   const [allEleves, setAllEleves]     = useState([])
@@ -709,10 +711,20 @@ export default function Activites() {
     .filter(r => showArchived ? true : r.statut !== 'archive')
     .filter(r => isAdmin || isFinancier || r.created_by === user?.id || r.statut === 'publie')
     .filter(r => !search || `${r.intitule} ${r.description || ''} ${r.responsable || ''}`.toLowerCase().includes(search.toLowerCase()))
-    .filter(r => !filterType || r.type === filterType)
-    .filter(r => !filterFact || r.statut_facturation === filterFact)
+    .filter(r => !filters.type || r.type === filters.type)
+    .filter(r => !filters.statut_facturation || r.statut_facturation === filters.statut_facturation)
+    .filter(r => !filters.classe || (r.classes_incluses || []).includes(filters.classe))
 
-  const hasFilters = search || filterType || filterFact
+  const hasFilters = search || Object.keys(filters).length > 0
+
+  const filterDefs = useMemo(() => [
+    { key: 'type', label: 'Type', options: Object.entries(TYPE_LABELS).map(([v, l]) => ({ value: v, label: l })) },
+    { key: 'statut_facturation', label: 'Facturation', options: [
+        { value: 'a_facturer', label: 'À facturer' },
+        { value: 'facture',    label: 'Facturé' },
+      ]},
+    { key: 'classe', label: 'Classe', options: allClasses },
+  ], [allClasses])
 
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
@@ -739,20 +751,21 @@ export default function Activites() {
             placeholder="Rechercher par intitulé, responsable…"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <FilterPill label="Type" value={filterType}
-          options={Object.values(TYPE_LABELS)}
-          onChange={v => setFilterType(Object.entries(TYPE_LABELS).find(([, l]) => l === v)?.[0] || '')} />
-        <FilterPill label="Facturation" value={filterFact}
-          options={['À facturer', 'Facturé']}
-          onChange={v => setFilterFact(v === 'À facturer' ? 'a_facturer' : v === 'Facturé' ? 'facture' : '')} />
+        <MasterFilter
+          filters={filters}
+          filterDefs={filterDefs}
+          onChange={setFilter}
+          onClearAll={() => setFilters({})}
+        />
         {hasFilters && (
-          <button onClick={() => { setSearch(''); setFilterType(''); setFilterFact('') }}
+          <button onClick={() => { setSearch(''); setFilters({}) }}
             className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors">
-            <span className="text-sm leading-none">✕</span> Tout effacer
+            <X size={11} /> Tout effacer
           </button>
         )}
         <span className="ml-auto text-xs text-gray-400">{displayed.length} résultat{displayed.length !== 1 ? 's' : ''}</span>
       </div>
+      <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={setFilter} />
 
       <div className="grid gap-3">
         {displayed.length === 0 && <div className="card p-8 text-center text-gray-400">Aucune activité</div>}
