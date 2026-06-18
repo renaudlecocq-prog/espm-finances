@@ -18,6 +18,21 @@ const FACT_COLORS = {
 }
 const TYPE_LABELS = { extramuros: 'Extramuros', intramuros: 'Intramuros', voyage: 'Voyage' }
 
+// Colonnes de groupes — synchronisé avec Groupes.jsx
+const GROUP_COLS = [
+  { key: 'rlmo',            label: 'RLMO' },
+  { key: 'obs_d2',          label: 'OBS D2' },
+  { key: 'ac_d2',           label: 'AC D2' },
+  { key: 'math_d3',         label: 'Math D3' },
+  { key: 'sciences_d3',     label: 'Sciences D3' },
+  { key: 'bio_physique_d3', label: 'Bio/Physique' },
+  { key: 'obs1_d3',         label: 'OBS 1 D3' },
+  { key: 'obs2_d3',         label: 'OBS 2 D3' },
+  { key: 'ac_d3',           label: 'AC D3' },
+]
+// Calcule la valeur RLMO exactement comme Groupes.jsx
+const getRlmo = e => [e.philosophie, e.groupe_choix_philo].filter(Boolean).join(' ') || null
+
 const EMPTY = {
   intitule: '', description: '', type: 'extramuros',
   date_debut: '', date_fin: '',
@@ -26,13 +41,12 @@ const EMPTY = {
   local: '', heure_debut: '', heure_fin: '',
   montant_total: '', pop: '',
   statut: 'brouillon', statut_facturation: 'a_facturer',
-  // new fields
   responsable_id: null,
   accompagnateur_ids: [],
   classes_incluses: [],
-  groupes_inclus: [],
+  groupes_inclus: [],   // text[] format "col:valeur"
   classes_exclues: [],
-  groupes_exclus: [],
+  groupes_exclus: [],   // text[] format "col:valeur"
 }
 
 function validate(form) {
@@ -53,36 +67,32 @@ function validate(form) {
   return miss
 }
 
-// ── Composant générique multi-select avec recherche ────────────────────────
-function MultiSearchSelect({ options, value, onChange, placeholder, labelKey = 'label', valueKey = 'value', single = false }) {
+// ── Multi-select avec recherche ────────────────────────────────────────────
+function MultiSearchSelect({ options, value, onChange, placeholder, single = false }) {
+  // options: [{ value, label }]  — ou string[]
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const ref = useRef()
 
   useEffect(() => {
-    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
   }, [])
 
+  const getVal = o => typeof o === 'string' ? o : o.value
+  const getLbl = o => typeof o === 'string' ? o : o.label
+
   const filtered = useMemo(() =>
-    options.filter(o => {
-      const lbl = typeof o === 'string' ? o : o[labelKey]
-      return lbl.toLowerCase().includes(q.toLowerCase())
-    }), [options, q, labelKey])
+    options.filter(o => getLbl(o).toLowerCase().includes(q.toLowerCase())),
+    [options, q]
+  )
 
-  const getVal = o => typeof o === 'string' ? o : o[valueKey]
-  const getLbl = o => typeof o === 'string' ? o : o[labelKey]
-
-  const isSelected = v => single
-    ? value === v
-    : (Array.isArray(value) && value.includes(v))
+  const isSelected = v => single ? value === v : (Array.isArray(value) && value.includes(v))
 
   const toggle = v => {
-    if (single) {
-      onChange(value === v ? null : v)
-      setOpen(false)
-    } else {
+    if (single) { onChange(value === v ? null : v); setOpen(false) }
+    else {
       const arr = Array.isArray(value) ? value : []
       onChange(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v])
     }
@@ -92,53 +102,47 @@ function MultiSearchSelect({ options, value, onChange, placeholder, labelKey = '
 
   return (
     <div ref={ref} className="relative">
-      {/* Tags / selected */}
-      <div
-        className="input cursor-pointer flex flex-wrap gap-1 items-center min-h-[38px]"
-        onClick={() => setOpen(o => !o)}
-      >
-        {selectedOptions.length === 0 && (
-          <span className="text-gray-400 text-sm">{placeholder}</span>
-        )}
-        {single && selectedOptions.length > 0 && (
-          <span className="text-gray-700 text-sm">{getLbl(selectedOptions[0])}</span>
-        )}
+      <div className="input cursor-pointer flex flex-wrap gap-1 items-center min-h-[38px]"
+        onClick={() => setOpen(o => !o)}>
+        {selectedOptions.length === 0 && <span className="text-gray-400 text-sm">{placeholder}</span>}
+        {single && selectedOptions.length > 0 && <span className="text-gray-700 text-sm">{getLbl(selectedOptions[0])}</span>}
         {!single && selectedOptions.map(o => (
           <span key={getVal(o)} className="flex items-center gap-1 bg-primary/10 text-primary text-xs rounded-full px-2 py-0.5">
             {getLbl(o)}
-            <button type="button" onClick={e => { e.stopPropagation(); toggle(getVal(o)) }}
-              className="hover:text-red-500">×</button>
+            <button type="button" onClick={e => { e.stopPropagation(); toggle(getVal(o)) }} className="hover:text-red-500">×</button>
           </span>
         ))}
         <ChevronDown size={14} className="ml-auto text-gray-400 shrink-0" />
       </div>
 
-      {/* Dropdown */}
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-56 flex flex-col">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 flex flex-col">
           <div className="p-2 border-b border-gray-100">
             <div className="relative">
               <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
               <input autoFocus
                 className="w-full pl-6 pr-2 py-1 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary"
-                placeholder="Rechercher…"
-                value={q} onChange={e => setQ(e.target.value)}
-                onClick={e => e.stopPropagation()}
-              />
+                placeholder="Rechercher…" value={q} onChange={e => setQ(e.target.value)}
+                onClick={e => e.stopPropagation()} />
             </div>
           </div>
           <div className="overflow-y-auto">
             {filtered.length === 0 && <p className="text-xs text-gray-400 text-center py-3">Aucun résultat</p>}
             {filtered.map(o => {
-              const v = getVal(o); const l = getLbl(o)
-              const sel = isSelected(v)
+              const v = getVal(o); const l = getLbl(o); const sel = isSelected(v)
               return (
                 <button key={v} type="button"
                   className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${sel ? 'text-primary font-medium' : 'text-gray-700'}`}
                   onClick={() => toggle(v)}>
-                  <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${sel ? 'bg-primary border-primary' : 'border-gray-300'}`}>
-                    {sel && <span className="text-white text-xs">✓</span>}
-                  </span>
+                  {/* Radio pour single, checkbox pour multi */}
+                  {single
+                    ? <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${sel ? 'border-primary' : 'border-gray-300'}`}>
+                        {sel && <span className="w-2 h-2 rounded-full bg-primary block" />}
+                      </span>
+                    : <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${sel ? 'bg-primary border-primary' : 'border-gray-300'}`}>
+                        {sel && <span className="text-white text-xs leading-none">✓</span>}
+                      </span>
+                  }
                   {l}
                 </button>
               )
@@ -151,33 +155,20 @@ function MultiSearchSelect({ options, value, onChange, placeholder, labelKey = '
 }
 
 // ── Section sélection classes + groupes ────────────────────────────────────
-function SelectionEleves({ label, classes, setClasses, groupes, setGroupes, allClasses, allGroupes, badge }) {
+function SelectionEleves({ badge, classes, setClasses, groupes, setGroupes, allClasses, groupOptions }) {
   return (
     <div className={`rounded-xl border-2 p-4 space-y-3 ${badge === 'add' ? 'border-green-200 bg-green-50/30' : 'border-red-200 bg-red-50/30'}`}>
-      <div className="flex items-center gap-2">
-        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge === 'add' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-          {badge === 'add' ? '+ Ajouter élèves de' : '− Retirer élèves de'}
-        </span>
-      </div>
+      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge === 'add' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+        {badge === 'add' ? '+ Ajouter élèves de' : '− Retirer élèves de'}
+      </span>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label">Classes</label>
-          <MultiSearchSelect
-            options={allClasses}
-            value={classes}
-            onChange={setClasses}
-            placeholder="Choisir des classes…"
-          />
+          <MultiSearchSelect options={allClasses} value={classes} onChange={setClasses} placeholder="Choisir des classes…" />
         </div>
         <div>
           <label className="label">Groupes</label>
-          <MultiSearchSelect
-            options={allGroupes}
-            value={groupes}
-            onChange={setGroupes}
-            placeholder="Choisir des groupes…"
-            labelKey="nom" valueKey="id"
-          />
+          <MultiSearchSelect options={groupOptions} value={groupes} onChange={setGroupes} placeholder="Choisir des groupes…" />
         </div>
       </div>
     </div>
@@ -185,48 +176,45 @@ function SelectionEleves({ label, classes, setClasses, groupes, setGroupes, allC
 }
 
 // ── Calcul nb élèves ────────────────────────────────────────────────────────
-function calcNbEleves(allEleves, elevesParGroupe, form) {
+function calcNbEleves(allEleves, form) {
   const { classes_incluses, groupes_inclus, classes_exclues, groupes_exclus } = form
   if (!allEleves.length) return 0
+  const hasAddC = classes_incluses.length > 0
+  const hasAddG = groupes_inclus.length > 0
+  if (!hasAddC && !hasAddG) return 0
 
-  const hasAddClasses = classes_incluses.length > 0
-  const hasAddGroupes = groupes_inclus.length > 0
-
-  if (!hasAddClasses && !hasAddGroupes) return 0
+  const matchesGroups = (eleve, groupKeys) =>
+    groupKeys.some(key => {
+      const [col, val] = key.split(':')
+      const eleveVal = col === 'rlmo' ? getRlmo(eleve) : eleve[col]
+      return eleveVal === val
+    })
 
   // Build add set
   let addSet = new Set()
-  if (hasAddClasses && hasAddGroupes) {
+  if (hasAddC && hasAddG) {
     // Intersection : élèves dans les classes ET dans les groupes
-    const inClasses = new Set(allEleves.filter(e => classes_incluses.includes(e.classe)).map(e => e.id))
-    const inGroupes = new Set()
-    groupes_inclus.forEach(gid => (elevesParGroupe[gid] || []).forEach(eid => inGroupes.add(eid)))
-    inClasses.forEach(id => inGroupes.has(id) && addSet.add(id))
-  } else if (hasAddClasses) {
+    const inC = new Set(allEleves.filter(e => classes_incluses.includes(e.classe)).map(e => e.id))
+    allEleves.filter(e => inC.has(e.id) && matchesGroups(e, groupes_inclus)).forEach(e => addSet.add(e.id))
+  } else if (hasAddC) {
     allEleves.filter(e => classes_incluses.includes(e.classe)).forEach(e => addSet.add(e.id))
   } else {
-    groupes_inclus.forEach(gid => (elevesParGroupe[gid] || []).forEach(eid => addSet.add(eid)))
+    allEleves.filter(e => matchesGroups(e, groupes_inclus)).forEach(e => addSet.add(e.id))
   }
 
   // Build remove set (union)
   const removeSet = new Set()
   allEleves.filter(e => classes_exclues.includes(e.classe)).forEach(e => removeSet.add(e.id))
-  groupes_exclus.forEach(gid => (elevesParGroupe[gid] || []).forEach(eid => removeSet.add(eid)))
+  if (groupes_exclus.length > 0) allEleves.filter(e => matchesGroups(e, groupes_exclus)).forEach(e => removeSet.add(e.id))
 
-  // Final count
   let count = 0
   addSet.forEach(id => !removeSet.has(id) && count++)
   return count
 }
 
 // ── Staged file upload ──────────────────────────────────────────────────────
-function FileStage({ label, files, setFiles, accept = 'application/pdf' }) {
+function FileStage({ label, files, setFiles }) {
   const ref = useRef()
-  const add = e => {
-    const f = Array.from(e.target.files)
-    setFiles(prev => [...prev, ...f.filter(nf => !prev.some(pf => pf.name === nf.name))])
-    e.target.value = ''
-  }
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
@@ -236,9 +224,14 @@ function FileStage({ label, files, setFiles, accept = 'application/pdf' }) {
           <Plus size={11} /> Ajouter
         </button>
       </div>
-      <input ref={ref} type="file" accept={accept} multiple className="hidden" onChange={add} />
+      <input ref={ref} type="file" accept="application/pdf" multiple className="hidden"
+        onChange={e => {
+          const f = Array.from(e.target.files)
+          setFiles(prev => [...prev, ...f.filter(nf => !prev.some(pf => pf.name === nf.name))])
+          e.target.value = ''
+        }} />
       {files.length === 0
-        ? <p className="text-xs text-gray-400 italic">Aucun fichier sélectionné</p>
+        ? <p className="text-xs text-gray-400 italic">Aucun fichier</p>
         : <div className="flex flex-wrap gap-1.5 mt-1">
             {files.map(f => (
               <span key={f.name} className="flex items-center gap-1 text-xs bg-gray-100 rounded-full px-2.5 py-1">
@@ -254,41 +247,34 @@ function FileStage({ label, files, setFiles, accept = 'application/pdf' }) {
 }
 
 // ── Activity form modal ────────────────────────────────────────────────────
-function ActivityModal({ editRow, isFinancier, userId, allEleves, allGroupes, elevesParGroupe, onClose, onSaved }) {
-  const allClasses = useMemo(() => [...new Set(allEleves.map(e => e.classe).filter(Boolean))].sort(), [allEleves])
-  const staffOptions = useMemo(() => allGroupes.__staff__ || [], [allGroupes])
-
+function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, groupOptions, allClasses, onClose, onSaved }) {
   const initForm = editRow ? {
     ...EMPTY, ...editRow,
     accompagnateur_ids: editRow.accompagnateur_ids || [],
     classes_incluses: editRow.classes_incluses || [],
-    groupes_inclus: editRow.groupes_inclus || [],
-    classes_exclues: editRow.classes_exclues || [],
-    groupes_exclus: editRow.groupes_exclus || [],
+    groupes_inclus:   editRow.groupes_inclus   || [],
+    classes_exclues:  editRow.classes_exclues  || [],
+    groupes_exclus:   editRow.groupes_exclus   || [],
   } : { ...EMPTY }
 
-  const [form, setForm] = useState(initForm)
-  const [errors, setErrors] = useState([])
-  const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState(null)
-  const [pendingDocs, setPendingDocs] = useState([])
+  const [form, setForm]             = useState(initForm)
+  const [errors, setErrors]         = useState([])
+  const [saving, setSaving]         = useState(false)
+  const [saveError, setSaveError]   = useState(null)
+  const [pendingDocs, setPendingDocs]         = useState([])
   const [pendingFactures, setPendingFactures] = useState([])
 
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
-  const nbEleves = useMemo(() =>
-    calcNbEleves(allEleves, elevesParGroupe, form),
-    [allEleves, elevesParGroupe, form.classes_incluses, form.groupes_inclus, form.classes_exclues, form.groupes_exclus]
-  )
   const hasSelection = form.classes_incluses.length > 0 || form.groupes_inclus.length > 0
+  const nbEleves = useMemo(() => calcNbEleves(allEleves, form),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allEleves, form.classes_incluses, form.groupes_inclus, form.classes_exclues, form.groupes_exclus])
 
-  const montantParEleve = hasSelection && nbEleves > 0 && form.montant_total
-    ? ((parseFloat(form.montant_total || 0) - parseFloat(form.pop || 0)) / nbEleves)
-    : (form.montant_total && form.nb_eleves
-        ? ((parseFloat(form.montant_total || 0) - parseFloat(form.pop || 0)) / Math.max(parseInt(form.nb_eleves || 1), 1))
-        : null)
-
-  const displayedNbEleves = hasSelection ? nbEleves : (form.nb_eleves || '')
+  const nb = hasSelection ? nbEleves : (parseInt(form.nb_eleves) || 0)
+  const montantParEleve = nb > 0 && form.montant_total
+    ? ((parseFloat(form.montant_total || 0) - parseFloat(form.pop || 0)) / nb)
+    : null
 
   const FIELD_LABELS = {
     intitule: 'Intitulé', type: 'Type', date_debut: 'Date de début',
@@ -299,19 +285,17 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, allGroupes, el
   }
 
   const uploadStagedFiles = async (activiteId) => {
-    const uploadFiles = async (files, categorie) => {
+    const up = async (files, categorie) => {
       for (const file of files) {
         const path = `${categorie}/${activiteId}/${Date.now()}_${file.name}`
         const { error } = await supabase.storage.from('activite-factures').upload(path, file)
-        if (!error) {
-          await supabase.from('activite_documents').insert({
-            activite_id: activiteId, nom: file.name, chemin: path, taille: file.size, categorie
-          })
-        }
+        if (!error) await supabase.from('activite_documents').insert({
+          activite_id: activiteId, nom: file.name, chemin: path, taille: file.size, categorie
+        })
       }
     }
-    await uploadFiles(pendingDocs, 'document')
-    await uploadFiles(pendingFactures, 'facture')
+    await up(pendingDocs, 'document')
+    await up(pendingFactures, 'facture')
   }
 
   const save = async () => {
@@ -339,21 +323,18 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, allGroupes, el
     }
     setSaving(false)
     if (error) { setSaveError(error.message); return }
-    onSaved()
-    onClose()
+    onSaved(); onClose()
   }
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8 flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
           <h2 className="font-bold text-gray-800 text-lg">{editRow ? 'Modifier' : 'Nouvelle'} activité</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-4 overflow-y-auto">
           {errors.length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
@@ -396,30 +377,23 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, allGroupes, el
             )}
           </div>
 
-          {/* Responsable + Accompagnateurs */}
+          {/* Personnel */}
           <div>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Personnel</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="label">Responsable</label>
                 <MultiSearchSelect
-                  options={staffOptions}
-                  value={form.responsable_id}
+                  options={staffList} value={form.responsable_id}
                   onChange={v => f('responsable_id', v)}
-                  placeholder="Choisir un·e responsable…"
-                  labelKey="label" valueKey="id"
-                  single
-                />
+                  placeholder="Choisir un·e responsable…" single />
               </div>
               <div>
                 <label className="label">Accompagnateur·rice·s</label>
                 <MultiSearchSelect
-                  options={staffOptions}
-                  value={form.accompagnateur_ids}
+                  options={staffList} value={form.accompagnateur_ids}
                   onChange={v => f('accompagnateur_ids', v)}
-                  placeholder="Choisir des accompagnateur·rices…"
-                  labelKey="label" valueKey="id"
-                />
+                  placeholder="Choisir des accompagnateur·rices…" />
               </div>
             </div>
           </div>
@@ -428,25 +402,20 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, allGroupes, el
           <div>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Participants</h3>
             <div className="space-y-3">
-              <SelectionEleves
-                label="add" badge="add"
+              <SelectionEleves badge="add"
                 classes={form.classes_incluses} setClasses={v => f('classes_incluses', v)}
-                groupes={form.groupes_inclus} setGroupes={v => f('groupes_inclus', v)}
-                allClasses={allClasses} allGroupes={allGroupes.__groupes__ || []}
-              />
-              <SelectionEleves
-                label="remove" badge="remove"
+                groupes={form.groupes_inclus}  setGroupes={v => f('groupes_inclus', v)}
+                allClasses={allClasses} groupOptions={groupOptions} />
+              <SelectionEleves badge="remove"
                 classes={form.classes_exclues} setClasses={v => f('classes_exclues', v)}
-                groupes={form.groupes_exclus} setGroupes={v => f('groupes_exclus', v)}
-                allClasses={allClasses} allGroupes={allGroupes.__groupes__ || []}
-              />
+                groupes={form.groupes_exclus}  setGroupes={v => f('groupes_exclus', v)}
+                allClasses={allClasses} groupOptions={groupOptions} />
 
-              {/* Nb élèves */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 pt-1">
                 <div>
                   <label className="label">
                     Nb d'élèves
-                    {hasSelection && <span className="ml-2 text-xs text-green-600 font-normal">(calculé automatiquement)</span>}
+                    {hasSelection && <span className="ml-2 text-xs text-green-600 font-normal">(calculé auto.)</span>}
                   </label>
                   {hasSelection
                     ? <div className="input bg-green-50 text-green-700 font-semibold">{nbEleves} élève{nbEleves !== 1 ? 's' : ''}</div>
@@ -533,9 +502,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, allGroupes, el
                 </div>
               )}
               <div><label className="label">Montant par élève (calculé)</label>
-                <div className="input bg-gray-50 text-gray-600">
-                  {montantParEleve !== null ? fmt(montantParEleve) : '—'}
-                </div>
+                <div className="input bg-gray-50 text-gray-600">{montantParEleve !== null ? fmt(montantParEleve) : '—'}</div>
               </div>
               <div><label className="label">Statut</label>
                 <select className="input" value={form.statut} onChange={e => f('statut', e.target.value)}>
@@ -563,14 +530,14 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, allGroupes, el
               <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} />
             </div>
             {(pendingDocs.length > 0 || pendingFactures.length > 0) && (
-              <p className="text-xs text-gray-400 mt-2">Les fichiers seront uploadés après la sauvegarde de l'activité.</p>
+              <p className="text-xs text-gray-400 mt-2">Uploadés automatiquement après sauvegarde.</p>
             )}
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex gap-2 px-6 py-4 border-t border-gray-100">
-          <button onClick={save} disabled={saving} className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
+          <button onClick={save} disabled={saving}
+            className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
             {saving && <Loader2 size={14} className="animate-spin" />}
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
@@ -589,17 +556,14 @@ function DocsModal({ row, categorie, onClose }) {
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef()
 
-  useEffect(() => {
+  const reload = useCallback(() =>
     supabase.from('activite_documents').select('*')
       .eq('activite_id', row.id).eq('categorie', categorie)
       .order('created_at', { ascending: false })
       .then(({ data }) => setDocs(data || []))
-  }, [row.id, categorie])
+  , [row.id, categorie])
 
-  const reload = () => supabase.from('activite_documents').select('*')
-    .eq('activite_id', row.id).eq('categorie', categorie)
-    .order('created_at', { ascending: false })
-    .then(({ data }) => setDocs(data || []))
+  useEffect(() => { reload() }, [reload])
 
   const upload = async e => {
     const file = e.target.files[0]; if (!file) return
@@ -625,7 +589,8 @@ function DocsModal({ row, categorie, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+      onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-800">{label} — {row.intitule}</h2>
@@ -656,50 +621,47 @@ function DocsModal({ row, categorie, onClose }) {
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function Activites() {
   const { user, isAdmin, isFinancier, isMdp } = useAuth()
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [data, setData]           = useState([])
+  const [loading, setLoading]     = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [editRow, setEditRow] = useState(null)
-  const [docsRow, setDocsRow] = useState(null)
+  const [editRow, setEditRow]     = useState(null)
+  const [docsRow, setDocsRow]     = useState(null)
   const [docsCategorie, setDocsCategorie] = useState('document')
-  const [showArchived, setShowArchived] = useState(false)
-  const [search, setSearch] = useState('')
-  const [filterType, setFilterType] = useState('')
-  const [filterFact, setFilterFact] = useState('')
+  const [showArchived, setShowArchived]   = useState(false)
+  const [search, setSearch]       = useState('')
+  const [filterType, setFilterType]   = useState('')
+  const [filterFact, setFilterFact]   = useState('')
 
-  // Data for form
-  const [allEleves, setAllEleves] = useState([])
-  const [groupesList, setGroupesList] = useState([])
-  const [elevesParGroupe, setElevesParGroupe] = useState({})
-  const [staffList, setStaffList] = useState([])
-
-  // Combined object for ActivityModal
-  const formData = useMemo(() => ({
-    __groupes__: groupesList,
-    __staff__: staffList,
-  }), [groupesList, staffList])
+  // Données pour le formulaire
+  const [allEleves, setAllEleves]     = useState([])
+  const [staffList, setStaffList]     = useState([])
+  const [groupOptions, setGroupOptions] = useState([])
+  const [allClasses, setAllClasses]   = useState([])
 
   useEffect(() => {
-    // Load eleves, groupes, staff in parallel
     Promise.all([
-      supabase.from('eleves').select('id, classe').eq('actif', true),
-      supabase.from('groupes').select('id, nom').order('nom'),
-      supabase.from('eleve_groupes').select('groupe_id, eleve_id'),
+      // Eleves avec toutes les colonnes de groupes
+      supabase.from('eleves').select(
+        'id, classe, obs_d2, ac_d2, math_d3, sciences_d3, bio_physique_d3, obs1_d3, obs2_d3, ac_d3, philosophie, groupe_choix_philo'
+      ).eq('actif', true),
+      // Staff
       supabase.from('profiles').select('id, nom, prenom, role').in('role', ['mdp', 'admin', 'financier']).order('nom'),
-    ]).then(([elevesRes, groupesRes, egRes, staffRes]) => {
-      setAllEleves(elevesRes.data || [])
-      setGroupesList((groupesRes.data || []).map(g => ({ ...g, label: g.nom })))
-      // Build elevesParGroupe map
-      const map = {}
-      ;(egRes.data || []).forEach(({ groupe_id, eleve_id }) => {
-        if (!map[groupe_id]) map[groupe_id] = []
-        map[groupe_id].push(eleve_id)
+    ]).then(([elevesRes, staffRes]) => {
+      const eleves = (elevesRes.data || []).map(e => ({ ...e, rlmo: getRlmo(e) }))
+      setAllEleves(eleves)
+      setAllClasses([...new Set(eleves.map(e => e.classe).filter(Boolean))].sort())
+
+      // Générer les options de groupes depuis les colonnes
+      const opts = []
+      GROUP_COLS.forEach(({ key, label }) => {
+        const vals = [...new Set(eleves.map(e => e[key]).filter(Boolean))].sort()
+        vals.forEach(val => opts.push({ value: `${key}:${val}`, label: `${label} : ${val}` }))
       })
-      setElevesParGroupe(map)
+      setGroupOptions(opts)
+
       setStaffList((staffRes.data || []).map(p => ({
-        ...p,
-        id: p.id,
-        label: `${p.prenom} ${p.nom}`.trim() || p.email || p.id,
+        value: p.id,
+        label: `${p.prenom || ''} ${p.nom || ''}`.trim() || p.id,
       })))
     })
   }, [])
@@ -711,7 +673,7 @@ export default function Activites() {
 
   useEffect(() => { reload().then(() => setLoading(false)) }, [reload])
 
-  const openNew = () => { setEditRow(null); setShowModal(true) }
+  const openNew  = () => { setEditRow(null); setShowModal(true) }
   const openEdit = row => { setEditRow(row); setShowModal(true) }
   const openDocs = (row, cat) => { setDocsRow(row); setDocsCategorie(cat) }
 
@@ -721,11 +683,10 @@ export default function Activites() {
     await reload()
   }
 
-  const canEdit = row => isAdmin || isFinancier || (isMdp && row.created_by === user?.id && row.statut !== 'archive')
+  const canEdit   = row => isAdmin || isFinancier || (isMdp && row.created_by === user?.id && row.statut !== 'archive')
   const canCreate = isAdmin || isFinancier || isMdp
 
-  // Resolve responsable name from staffList
-  const staffById = useMemo(() => Object.fromEntries(staffList.map(s => [s.id, s.label])), [staffList])
+  const staffById = useMemo(() => Object.fromEntries(staffList.map(s => [s.value, s.label])), [staffList])
 
   const displayed = data
     .filter(r => showArchived ? true : r.statut !== 'archive')
@@ -740,7 +701,6 @@ export default function Activites() {
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
-      {/* Header */}
       <div className="flex items-start justify-between mb-5">
         <div>
           <h1 className="text-2xl font-bold text-primary">Activités</h1>
@@ -755,7 +715,6 @@ export default function Activites() {
         </div>
       </div>
 
-      {/* Toolbar */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <div className="relative">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -778,76 +737,72 @@ export default function Activites() {
         <span className="ml-auto text-xs text-gray-400">{displayed.length} résultat{displayed.length !== 1 ? 's' : ''}</span>
       </div>
 
-      {/* Cards */}
       <div className="grid gap-3">
-        {displayed.length === 0 && (
-          <div className="card p-8 text-center text-gray-400">Aucune activité</div>
-        )}
+        {displayed.length === 0 && <div className="card p-8 text-center text-gray-400">Aucune activité</div>}
         {displayed.map(row => {
           const responsableLabel = row.responsable_id ? staffById[row.responsable_id] : row.responsable
-          const nbEl = row.nb_eleves
           return (
-          <div key={row.id} className="card p-5 flex items-start justify-between gap-4 hover:shadow-md transition-shadow">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                <span className="font-semibold text-gray-800">{row.intitule}</span>
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUT_COLORS[row.statut] || 'bg-gray-100 text-gray-600'}`}>
-                  {row.statut === 'brouillon' ? 'Brouillon' : row.statut === 'publie' ? 'Publié' : 'Archivé'}
-                </span>
-                {isFinancier && row.statut_facturation && (
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FACT_COLORS[row.statut_facturation] || 'bg-gray-100'}`}>
-                    {row.statut_facturation === 'a_facturer' ? 'À facturer' : 'Facturé'}
+            <div key={row.id} className="card p-5 flex items-start justify-between gap-4 hover:shadow-md transition-shadow">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                  <span className="font-semibold text-gray-800">{row.intitule}</span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUT_COLORS[row.statut] || 'bg-gray-100 text-gray-600'}`}>
+                    {row.statut === 'brouillon' ? 'Brouillon' : row.statut === 'publie' ? 'Publié' : 'Archivé'}
                   </span>
-                )}
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">
-                  {TYPE_LABELS[row.type] || row.type}
-                </span>
+                  {isFinancier && row.statut_facturation && (
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FACT_COLORS[row.statut_facturation] || 'bg-gray-100'}`}>
+                      {row.statut_facturation === 'a_facturer' ? 'À facturer' : 'Facturé'}
+                    </span>
+                  )}
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">
+                    {TYPE_LABELS[row.type] || row.type}
+                  </span>
+                </div>
+                {row.description && <p className="text-sm text-gray-500 mb-2 line-clamp-1">{row.description}</p>}
+                <div className="flex flex-wrap gap-4 text-xs text-gray-400">
+                  <span>📅 {fmtDate(row.date_debut)}{row.date_fin ? ` → ${fmtDate(row.date_fin)}` : ''}</span>
+                  {row.lieu && <span>📍 {row.lieu}</span>}
+                  {row.nb_eleves && <span>👥 {row.nb_eleves} élève{row.nb_eleves !== 1 ? 's' : ''}</span>}
+                  {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
+                  {responsableLabel && <span>👤 {responsableLabel}</span>}
+                </div>
               </div>
-              {row.description && <p className="text-sm text-gray-500 mb-2 line-clamp-1">{row.description}</p>}
-              <div className="flex flex-wrap gap-4 text-xs text-gray-400">
-                <span>📅 {fmtDate(row.date_debut)}{row.date_fin ? ` → ${fmtDate(row.date_fin)}` : ''}</span>
-                {row.lieu && <span>📍 {row.lieu}</span>}
-                {nbEl && <span>👥 {nbEl} élève{nbEl !== 1 ? 's' : ''}</span>}
-                {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
-                {responsableLabel && <span>👤 {responsableLabel}</span>}
-              </div>
-            </div>
-            <div className="flex gap-2 flex-shrink-0 items-center">
-              <button onClick={() => openDocs(row, 'document')}
-                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
-                <FileText size={12} /> Docs
-              </button>
-              <button onClick={() => openDocs(row, 'facture')}
-                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
-                <Receipt size={12} /> Factures
-              </button>
-              {canEdit(row) && (
-                <button onClick={() => openEdit(row)}
+              <div className="flex gap-2 flex-shrink-0 items-center flex-wrap justify-end">
+                <button onClick={() => openDocs(row, 'document')}
                   className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
-                  <Pencil size={12} /> Modifier
+                  <FileText size={12} /> Docs
                 </button>
-              )}
-              {isFinancier && row.statut !== 'archive' && (
-                <button onClick={() => archive(row.id)}
-                  className="flex items-center gap-1.5 text-xs text-orange-500 hover:text-orange-700 border border-orange-200 hover:border-orange-400 rounded-full px-3 py-1.5 transition-colors">
-                  <Archive size={12} /> Archiver
+                <button onClick={() => openDocs(row, 'facture')}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
+                  <Receipt size={12} /> Factures
                 </button>
-              )}
+                {canEdit(row) && (
+                  <button onClick={() => openEdit(row)}
+                    className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
+                    <Pencil size={12} /> Modifier
+                  </button>
+                )}
+                {isFinancier && row.statut !== 'archive' && (
+                  <button onClick={() => archive(row.id)}
+                    className="flex items-center gap-1.5 text-xs text-orange-500 hover:text-orange-700 border border-orange-200 hover:border-orange-400 rounded-full px-3 py-1.5 transition-colors">
+                    <Archive size={12} /> Archiver
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
           )
         })}
       </div>
 
-      {/* Modals */}
       {showModal && (
         <ActivityModal
           editRow={editRow}
           isFinancier={isFinancier || isAdmin}
           userId={user?.id}
           allEleves={allEleves}
-          allGroupes={formData}
-          elevesParGroupe={elevesParGroupe}
+          staffList={staffList}
+          groupOptions={groupOptions}
+          allClasses={allClasses}
           onClose={() => setShowModal(false)}
           onSaved={reload}
         />
