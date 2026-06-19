@@ -737,13 +737,18 @@ export default function Activites() {
   }
 
   const canEdit   = row => isAdmin || isFinancier || (isMdp && row.created_by === user?.id && row.statut !== 'archive')
+  const canView   = row => isAdmin || isFinancier || (isMdp && (
+    row.created_by === user?.id ||
+    row.responsable_id === user?.id ||
+    (row.accompagnateur_ids || []).includes(user?.id)
+  ))
   const canCreate = isAdmin || isFinancier || isMdp
 
   const staffById = useMemo(() => Object.fromEntries(staffList.map(s => [s.value, s.label])), [staffList])
 
   const displayed = data
     .filter(r => showArchived ? true : r.statut !== 'archive')
-    .filter(r => isAdmin || isFinancier || r.created_by === user?.id || r.statut === 'publie')
+    .filter(r => isAdmin || isFinancier || r.created_by === user?.id || r.responsable_id === user?.id || (r.accompagnateur_ids || []).includes(user?.id) || r.statut === 'publie')
     .filter(r => !search || `${r.intitule} ${r.description || ''} ${r.responsable || ''}`.toLowerCase().includes(search.toLowerCase()))
     .filter(r => !filters.type?.length || filters.type.includes(r.type))
     .filter(r => !filters.statut_facturation?.length || filters.statut_facturation.includes(r.statut_facturation))
@@ -817,8 +822,8 @@ export default function Activites() {
           const MAX_CHIPS = 6
           return (
             <div key={row.id}
-              className={`card p-5 hover:shadow-md transition-shadow ${canEdit(row) ? 'cursor-pointer' : ''}`}
-              onClick={() => canEdit(row) && openEdit(row)}>
+              className={`card p-5 hover:shadow-md transition-shadow ${canView(row) ? 'cursor-pointer' : ''}`}
+              onClick={() => canView(row) && openEdit(row)}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
 
