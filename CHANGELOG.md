@@ -11,6 +11,7 @@ Format : `[Date] Commit — Description — Rollback`
 |--------|-----------|-------------|---------|
 | `e1a5d42` | `NotificationBell.jsx`, `Activites.jsx` | Deep-link notification → ouvre le slide-in de l'activité concernée (`?open=<id>`). Badge rouge de messages non-lus sur les cartes. Marque lu à l'ouverture. | `git revert e1a5d42` |
 | `3e6fbec` | `NotificationBell.jsx` | Bouton "Vider" pour supprimer toutes les notifications | `git revert 3e6fbec` |
+| `ef6ed03` | `Activites.jsx` | Fix : afficher `local` (intramuros) sur la carte en plus de `lieu`. Pills de filtre rapide Passées/À venir/Mes activités. Signal visuel pastel vert/rouge + "Dans X jours" / "Il y a X jours". | `git revert ef6ed03` |
 
 ---
 
