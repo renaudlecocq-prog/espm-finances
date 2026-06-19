@@ -1,8 +1,10 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 import FicheEleve from '../components/ui/FicheEleve'
+import Commentaires from '../components/ui/Commentaires'
 import {
   Search, ChevronUp, ChevronDown, ChevronsUpDown, Trash2, X,
   AlertTriangle, CheckCircle2, Clock, Calendar,
@@ -388,6 +390,13 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
               {ech.remarque && <p className="text-xs text-gray-400 mt-2 italic">"{ech.remarque}"</p>}
             </div>
           )}
+
+          {/* Commentaires */}
+          <Commentaires
+            entityType="echelonnement"
+            entityId={ech.id}
+            entityLabel={`${ech.eleve?.prenom || ''} ${ech.eleve?.nom || ''}`.trim() || 'Échelonnement'}
+          />
         </div>
       </div>
     </div>
@@ -875,6 +884,13 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
             </div>
           </div>
 
+          {/* Commentaires */}
+          <Commentaires
+            entityType="organisme_tiers"
+            entityId={row.id}
+            entityLabel={`${(row.eleve?.prenom || '')} ${(row.eleve?.nom || '')}`.trim() || 'Organisme tiers'}
+          />
+
           {/* Footer */}
           {isAllowed && (
             <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
@@ -1124,7 +1140,9 @@ function TabOrganismesTiers({ isAllowed }) {
 export default function AssistantSocial() {
   const { isFinancier, isMdp } = useAuth()
   const isAllowed = isFinancier || isMdp
-  const [tab, setTab] = useState('echelonnements')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab = searchParams.get('tab') || 'echelonnements'
+  const setTab = t => setSearchParams({ tab: t }, { replace: true })
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">

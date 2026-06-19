@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
+import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 import { Search, X, FileText, Pencil, Archive, Receipt, ChevronDown, Plus, Loader2 } from 'lucide-react'
@@ -540,6 +541,15 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
             )}
           </div>
         </div>
+
+        {/* Commentaires — uniquement en mode édition */}
+        {editRow?.id && (
+          <Commentaires
+            entityType="activite"
+            entityId={editRow.id}
+            entityLabel={editRow.intitule || 'Activité'}
+          />
+        )}
 
         <div className="flex gap-2 px-6 py-4 border-t border-gray-100">
           <button onClick={save} disabled={saving}

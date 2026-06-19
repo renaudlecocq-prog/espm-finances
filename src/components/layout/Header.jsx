@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
+import NotificationBell from '../ui/NotificationBell'
 
 export default function Header() {
   const { profile, role, isAdmin, isFinancier, isMdp } = useAuth()
@@ -73,11 +74,7 @@ export default function Header() {
             </Link>
           )}
 
-          <button className="text-white/60 hover:text-white transition-colors">
-            <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor">
-              <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zm0 16a2 2 0 01-2-2h4a2 2 0 01-2 2z" />
-            </svg>
-          </button>
+          <NotificationBell />
 
           <button onClick={logout} className="text-white/60 hover:text-white transition-colors">
             <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor">
