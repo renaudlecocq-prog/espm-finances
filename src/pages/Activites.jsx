@@ -410,15 +410,20 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
           <div>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Personnel</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="min-w-0">
                 <label className="label">Responsable</label>
                 <MultiSearchSelect
-                  options={staffList.filter(s => !(form.accompagnateur_ids || []).includes(s.value))}
+                  options={staffList}
                   value={form.responsable_id}
-                  onChange={v => f('responsable_id', v)}
+                  onChange={v => {
+                    // Si la personne est déjà accompagnatrice, la retirer
+                    f('responsable_id', v)
+                    if (v && (form.accompagnateur_ids || []).includes(v))
+                      f('accompagnateur_ids', (form.accompagnateur_ids || []).filter(id => id !== v))
+                  }}
                   placeholder="Choisir un·e responsable…" single />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="label">Accompagnateur·rice·s</label>
                 <MultiSearchSelect
                   options={staffList.filter(s => s.value !== form.responsable_id)}
