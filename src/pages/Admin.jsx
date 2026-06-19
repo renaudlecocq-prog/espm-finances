@@ -95,7 +95,7 @@ export default function Admin() {
 
   const doInvite = async () => {
     setInviteMsg('')
-    const res  = await fetch('/.netlify/functions/invite-user', {
+    const res  = await fetch('/api/invite-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
