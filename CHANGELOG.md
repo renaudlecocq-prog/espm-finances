@@ -4,6 +4,22 @@ Format : `[Date] Commit — Description — Rollback`
 
 ---
 
+## 2026-06-19 — Session 4 (commentaires + UX slide-ins)
+
+### ✅ Ajouté / Corrigé
+
+| Commit | Fichier / Périmètre | Changement | Rollback |
+|--------|---------------------|------------|----------|
+| `10c7cff` | `Echelonnements.jsx` | Nouveau panneau slide-in éditable sur clic de ligne (statut, montant, nb échéances, date début, remarque) + bouton "Fiche élève". Fix bouton "Fiche élève" dans OrganismeTiersDetail (eleve.id manquant dans la query select) | `git revert 10c7cff` |
+| `df23e90` | `AssistantSocial.jsx` | Bouton "Fiche élève" ajouté dans EchelonnementDetail (onglet Assist. social) | `git revert df23e90` |
+| `356c1c0` | `Eleves.jsx` | Suppression colonne Actions (pas de modif/suppression car lié à Smartschool) + couleurs badges AS : CPAS mauve, ULB bleu, SPJ vert, Autres rouge | `git revert 356c1c0` |
+| `445a782` | `Eleves.jsx` | Tableau pleine largeur après suppression colonne Actions (colonnes non-sticky flexibles) | `git revert 445a782` |
+| `9ac9799` | `Commentaires.jsx`, `NotificationBell.jsx`, `Header.jsx`, `AssistantSocial.jsx`, `Activites.jsx` + DB | Système complet commentaires/messagerie + notifications : chat par entité (activité, échelonnement, organisme tiers), cloche avec badge rouge, deep-link vers la bonne page/onglet, Realtime Supabase. Tables DB : `commentaires` + `notifications` avec RLS | `git revert 9ac9799` |
+| `ba3206d` | `AssistantSocial.jsx`, `Activites.jsx` | Commentaires déplacés en colonne gauche dans tous les slide-ins (layout deux colonnes). ActivityModal converti en slide-in depuis la droite (même pattern que les autres panneaux) | `git revert ba3206d` |
+| `02e958d` | `Activites.jsx` | Carte activité cliquable (ouvre le slide-in) + suppression bouton "Modifier". Docs/Factures/Archiver conservent leur propre action | `git revert 02e958d` |
+
+---
+
 ## 2026-06-18 — Session 2 (workflow + AssistantSocial)
 
 ### ✅ Ajouté / Corrigé
