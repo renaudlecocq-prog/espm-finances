@@ -868,7 +868,7 @@ export default function Activites() {
   const reload = useCallback(async () => {
     const [activitesRes, docsRes] = await Promise.all([
       supabase.from('activites').select('*').order('date_debut', { ascending: false }),
-      supabase.from('activite_documents').select('activite_id'),
+      supabase.from('activite_documents').select('activite_id, categorie'),
     ])
     setData(activitesRes.data || [])
     const docs = docsRes.data || []
