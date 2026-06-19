@@ -15,6 +15,8 @@ Format : `[Date] Commit — Description — Rollback`
 | `4aef92e` | `Activites.jsx` | Affichage des documents sauvegardés dans le slide-in (section Documents & Factures) — rechargement après upload, boutons Voir (signed URL) et Suppr. Fin du bug : fichiers invisibles après enregistrement. | `git revert 4aef92e` |
 | `a6b901c` | `Activites.jsx` | Fix journal : `useAuth()` manquant dans `ActivityModal` → `user`/`profile` undefined → `logEvent()` échouait silencieusement (auteur_id null). Icône trombone (📎) sur les cards ayant des docs/factures. | `git revert a6b901c` |
 | `1047c58` | `Activites.jsx` | Boutons Docs/Factures colorés (bleu/vert) si fichiers présents. `logEvent` ajouté dans `uploadStagedFiles` et `delSavedDoc`. Sets `activitiesWithDocs`/`activitiesWithFactures` distincts. Suppression trombone. | `git revert 1047c58` |
+| `26ae229` | `Activites.jsx` | Fix couleur boutons : `select('activite_id, categorie')` au lieu de `activite_id` seul → les Sets docs/factures étaient toujours vides. | `git revert 26ae229` |
+| DB | `commentaires` | Contrainte `message_check` assouplie : `type = 'system' OR char_length(message) > 0` — les événements système (message vide) étaient silencieusement rejetés. | Migration SQL manuelle |
 
 ---
 
