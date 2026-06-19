@@ -704,7 +704,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
 }
 
 // ── Docs / Factures modal ─────────────────────────────────────────────────
-function DocsModal({ row, categorie, onClose }) {
+function DocsModal({ row, categorie, onClose, onDocsChanged }) {
   const { user, profile } = useAuth()
   const isFacture = categorie === 'facture'
   const label = isFacture ? 'Factures' : 'Documents'
@@ -749,6 +749,7 @@ function DocsModal({ row, categorie, onClose }) {
     if (dbErr) { alert('Erreur base de données : ' + dbErr.message); setUploading(false); return }
     try { await logDocEvent('doc_add', file.name) } catch {}
     await reload()
+    if (onDocsChanged) onDocsChanged()
     setUploading(false)
   }
   const upload = async e => { await uploadFile(e.target.files[0]); e.target.value = '' }
@@ -763,6 +764,7 @@ function DocsModal({ row, categorie, onClose }) {
     await supabase.from('activite_documents').delete().eq('id', doc.id)
     try { await logDocEvent('doc_del', doc.nom_fichier) } catch {}
     await reload()
+    if (onDocsChanged) onDocsChanged()
   }
 
   return (
@@ -863,6 +865,13 @@ export default function Activites() {
         label: `${p.prenom || ''} ${p.nom || ''}`.trim() || p.id,
       })))
     })
+  }, [])
+
+  const reloadDocsSets = useCallback(async () => {
+    const { data } = await supabase.from('activite_documents').select('activite_id, categorie')
+    const docs = data || []
+    setActivitiesWithDocs(new Set(docs.filter(d => d.categorie === 'document').map(d => d.activite_id)))
+    setActivitiesWithFactures(new Set(docs.filter(d => d.categorie === 'facture').map(d => d.activite_id)))
   }, [])
 
   const reload = useCallback(async () => {
@@ -1199,7 +1208,7 @@ export default function Activites() {
           onSaved={reload}
         />
       )}
-      {docsRow && <DocsModal row={docsRow} categorie={docsCategorie} onClose={() => setDocsRow(null)} />}
+      {docsRow && <DocsModal row={docsRow} categorie={docsCategorie} onClose={() => setDocsRow(null)} onDocsChanged={reloadDocsSets} />}
     </div>
   )
 }
