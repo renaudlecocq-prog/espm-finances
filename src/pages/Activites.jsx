@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
-import { Search, X, FileText, Pencil, Archive, Receipt, ChevronDown, Plus, Loader2 } from 'lucide-react'
+import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2 } from 'lucide-react'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
@@ -799,7 +799,9 @@ export default function Activites() {
         {displayed.map(row => {
           const responsableLabel = row.responsable_id ? staffById[row.responsable_id] : row.responsable
           return (
-            <div key={row.id} className="card p-5 flex items-start justify-between gap-4 hover:shadow-md transition-shadow">
+            <div key={row.id}
+              className={`card p-5 flex items-start justify-between gap-4 hover:shadow-md transition-shadow ${canEdit(row) ? 'cursor-pointer' : ''}`}
+              onClick={() => canEdit(row) && openEdit(row)}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1.5">
                   <span className="font-semibold text-gray-800">{row.intitule}</span>
@@ -826,22 +828,17 @@ export default function Activites() {
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0 items-center flex-wrap justify-end">
-                <button onClick={() => openDocs(row, 'document')}
+                <button onClick={e => { e.stopPropagation(); openDocs(row, 'document') }}
                   className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
                   <FileText size={12} /> Docs
                 </button>
-                <button onClick={() => openDocs(row, 'facture')}
+                <button onClick={e => { e.stopPropagation(); openDocs(row, 'facture') }}
                   className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
                   <Receipt size={12} /> Factures
                 </button>
-                {canEdit(row) && (
-                  <button onClick={() => openEdit(row)}
-                    className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
-                    <Pencil size={12} /> Modifier
-                  </button>
-                )}
+
                 {isFinancier && row.statut !== 'archive' && (
-                  <button onClick={() => archive(row.id)}
+                  <button onClick={e => { e.stopPropagation(); archive(row.id) }}
                     className="flex items-center gap-1.5 text-xs text-orange-500 hover:text-orange-700 border border-orange-200 hover:border-orange-400 rounded-full px-3 py-1.5 transition-colors">
                     <Archive size={12} /> Archiver
                   </button>
