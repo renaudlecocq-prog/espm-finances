@@ -317,18 +317,24 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
   }
 
   const uploadStagedFiles = async (activiteId) => {
+    const uploadErrors = []
     const up = async (files, categorie) => {
       for (const file of files) {
         const uid = crypto.randomUUID()
         const storagePath = `${categorie}/${activiteId}/${uid}_${file.name}`
-        const { error } = await supabase.storage.from('activite-factures').upload(storagePath, file)
-        if (!error) await supabase.from('activite_documents').insert({
+        const { error: storeErr } = await supabase.storage.from('activite-factures').upload(
+          storagePath, file, { contentType: 'application/pdf' }
+        )
+        if (storeErr) { uploadErrors.push(`${file.name} : ${storeErr.message}`); continue }
+        const { error: dbErr } = await supabase.from('activite_documents').insert({
           activite_id: activiteId, nom_fichier: file.name, storage_path: storagePath, taille: file.size, categorie
         })
+        if (dbErr) uploadErrors.push(`${file.name} (DB) : ${dbErr.message}`)
       }
     }
     await up(pendingDocs, 'document')
     await up(pendingFactures, 'facture')
+    if (uploadErrors.length > 0) alert('Erreur(s) lors de l\'upload :\n' + uploadErrors.join('\n'))
   }
 
   const save = async () => {
@@ -680,7 +686,7 @@ function DocsModal({ row, categorie, onClose }) {
     setUploading(true)
     const uid = crypto.randomUUID()
     const storagePath = `${categorie}/${row.id}/${uid}_${file.name}`
-    const { error: storeErr } = await supabase.storage.from('activite-factures').upload(storagePath, file)
+    const { error: storeErr } = await supabase.storage.from('activite-factures').upload(storagePath, file, { contentType: 'application/pdf' })
     if (storeErr) { alert('Erreur upload : ' + storeErr.message); setUploading(false); return }
     const { error: dbErr } = await supabase.from('activite_documents').insert({
       activite_id: row.id, nom_fichier: file.name, storage_path: storagePath, taille: file.size, categorie
