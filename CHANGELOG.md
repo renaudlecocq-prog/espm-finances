@@ -120,3 +120,10 @@ git push origin main
 - ⚠️ **Jamais déployer en production sans mot-clé explicite de Renaud** : "go prod", "feu vert", "go main", "ok sur main", "déploiement sur main"
 - Toujours cloner `main` depuis GitHub avant tout build
 - Le proxy-path Netlify est temporaire — en redemander un via le MCP à chaque session
+
+## Session 6 — 2026-06-19
+
+| Commit | Fichier(s) | Description | Rollback |
+|--------|-----------|-------------|---------|
+| `e1a5d42` | `NotificationBell.jsx`, `Activites.jsx` | Deep-link notification → ouvre le slide-in de l'activité concernée (`?open=<id>`). Badge rouge de messages non-lus sur les cartes. Marque lu à l'ouverture. | `git revert e1a5d42` |
+
