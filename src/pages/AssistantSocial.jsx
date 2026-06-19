@@ -412,7 +412,7 @@ function EchelonnementForm({ eleves, onSaved, onClose }) {
       mensualite,
       date_debut: form.date_debut,
       statut: form.statut,
-      remarque: form.remarque || null,
+      notes: form.notes || null,
     }).select().single()
 
     if (ech) {
@@ -763,7 +763,7 @@ function TabOrganismesTiers({ isAllowed }) {
     { key: 'statut',    label: 'Statut',    options: Object.entries(STATUT_OT).map(([v, m]) => ({ value: v, label: m.label })) },
   ]
   const [sort, setSort] = useState({ col: 'nom', dir: 'asc' })
-  const [form, setForm] = useState({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', montant_accorde: '', remarque: '' })
+  const [form, setForm] = useState({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', montant_accorde: '', notes: '' })
   const [saving, setSaving] = useState(false)
 
   const reload = () =>
@@ -785,7 +785,7 @@ function TabOrganismesTiers({ isAllowed }) {
     const payload = {
       ...form,
       montant_accorde: form.montant_accorde !== '' ? Number(form.montant_accorde) : null,
-      remarque: form.remarque || null,
+      notes: form.notes || null,
     }
     const { error } = await supabase.from('organismes_tiers').insert(payload)
     if (error) {
@@ -796,7 +796,7 @@ function TabOrganismesTiers({ isAllowed }) {
     await reload()
     setSaving(false)
     setShowForm(false)
-    setForm({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', montant_accorde: '', remarque: '' })
+    setForm({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', montant_accorde: '', notes: '' })
   }
 
   const del = async (id) => {
@@ -896,9 +896,9 @@ function TabOrganismesTiers({ isAllowed }) {
                     onChange={e => setForm(f => ({ ...f, montant_accorde: e.target.value }))} />
                 </div>
                 <div className="col-span-2 md:col-span-3">
-                  <label className="label">Remarque</label>
-                  <input className="input" value={form.remarque}
-                    onChange={e => setForm(f => ({ ...f, remarque: e.target.value }))} />
+                  <label className="label">Notes</label>
+                  <input className="input" value={form.notes}
+                    onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
