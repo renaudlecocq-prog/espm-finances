@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
-import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2, Trash2, Paperclip } from 'lucide-react'
+import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2, Trash2 } from 'lucide-react'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
@@ -298,6 +298,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
   const delSavedDoc = async doc => {
     await supabase.storage.from('activite-factures').remove([doc.storage_path])
     await supabase.from('activite_documents').delete().eq('id', doc.id)
+    try { await logEvent(editRow.id, { action: 'doc_del', filename: doc.nom_fichier, categorie: doc.categorie }) } catch {}
     loadSaved()
   }
 
@@ -354,7 +355,8 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
         const { error: dbErr } = await supabase.from('activite_documents').insert({
           activite_id: activiteId, nom_fichier: file.name, storage_path: storagePath, taille: file.size, categorie
         })
-        if (dbErr) uploadErrors.push(`${file.name} (DB) : ${dbErr.message}`)
+        if (dbErr) { uploadErrors.push(`${file.name} (DB) : ${dbErr.message}`); continue }
+        try { await logEvent(activiteId, { action: 'doc_add', filename: file.name, categorie }) } catch {}
       }
     }
     await up(pendingDocs, 'document')
@@ -811,7 +813,8 @@ export default function Activites() {
   const [showModal, setShowModal] = useState(false)
   const [editRow, setEditRow]     = useState(null)
   const [unreadByActivity, setUnreadByActivity] = useState({}) // entity_id → count
-  const [docsWithFiles, setDocsWithFiles] = useState(new Set()) // activite_ids ayant des documents
+  const [activitiesWithDocs, setActivitiesWithDocs] = useState(new Set())
+  const [activitiesWithFactures, setActivitiesWithFactures] = useState(new Set())
   const [docsRow, setDocsRow]     = useState(null)
   const [docsCategorie, setDocsCategorie] = useState('document')
   const [showArchived, setShowArchived]   = useState(false)
@@ -868,7 +871,9 @@ export default function Activites() {
       supabase.from('activite_documents').select('activite_id'),
     ])
     setData(activitesRes.data || [])
-    setDocsWithFiles(new Set((docsRes.data || []).map(d => d.activite_id)))
+    const docs = docsRes.data || []
+    setActivitiesWithDocs(new Set(docs.filter(d => d.categorie === 'document').map(d => d.activite_id)))
+    setActivitiesWithFactures(new Set(docs.filter(d => d.categorie === 'facture').map(d => d.activite_id)))
   }, [])
 
   useEffect(() => { reload().then(() => setLoading(false)) }, [reload])
@@ -1124,9 +1129,6 @@ export default function Activites() {
                     {row.nb_eleves && <span>👥 {row.nb_eleves} élève{row.nb_eleves !== 1 ? 's' : ''}</span>}
                     {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
                     {row.pop && <span className="text-orange-500">🏛 POP : {fmt(row.pop)}</span>}
-                    {docsWithFiles.has(row.id) && (
-                      <span className="flex items-center gap-0.5 text-gray-400"><Paperclip size={11} />docs</span>
-                    )}
                   </div>
 
                   {/* Ligne 4 — Personnel */}
@@ -1144,11 +1146,19 @@ export default function Activites() {
                 </div>
                 <div className="flex gap-2 flex-shrink-0 items-start flex-wrap justify-end">
                 <button onClick={e => { e.stopPropagation(); openDocs(row, 'document') }}
-                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
+                  className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 transition-colors border ${
+                    activitiesWithDocs.has(row.id)
+                      ? 'text-primary border-primary/40 bg-primary/5 font-medium hover:bg-primary/10'
+                      : 'text-gray-500 hover:text-primary border-gray-200 hover:border-primary'
+                  }`}>
                   <FileText size={12} /> Docs
                 </button>
                 <button onClick={e => { e.stopPropagation(); openDocs(row, 'facture') }}
-                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
+                  className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 transition-colors border ${
+                    activitiesWithFactures.has(row.id)
+                      ? 'text-emerald-600 border-emerald-300 bg-emerald-50 font-medium hover:bg-emerald-100'
+                      : 'text-gray-500 hover:text-primary border-gray-200 hover:border-primary'
+                  }`}>
                   <Receipt size={12} /> Factures
                 </button>
 
