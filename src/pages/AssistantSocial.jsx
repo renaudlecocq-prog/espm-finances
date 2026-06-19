@@ -76,10 +76,22 @@ function computeAlertStatus(ech, echeances, paiements) {
 
 // ── Detail Panel ─────────────────────────────────────────────────────────
 function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose, onUpdated, isAllowed, onFicheEleve }) {
+  const { user, profile } = useAuth()
   const [echeances, setEcheances] = useState(initEcheances || [])
   const [statut, setStatut]       = useState(ech.statut)
   const [editEch, setEditEch]     = useState(null) // { id, value }
   const [saving, setSaving]       = useState(false)
+
+  const logEvent = async (meta) => {
+    const auteurNom = profile
+      ? `${profile.prenom || ''} ${profile.nom || ''}`.trim()
+      : (user?.email || 'Inconnu')
+    await supabase.from('commentaires').insert({
+      entity_type: 'echelonnement', entity_id: ech.id,
+      auteur_id: user?.id, auteur_nom: auteurNom,
+      message: '', type: 'system', meta,
+    })
+  }
 
   useEffect(() => { setEcheances(initEcheances || []) }, [initEcheances])
   useEffect(() => { setStatut(ech.statut) }, [ech.statut])
@@ -125,7 +137,9 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
 
   const saveStatut = async () => {
     setSaving(true)
+    const prevStatut = ech.statut
     await supabase.from('echelonnements').update({ statut }).eq('id', ech.id)
+    if (statut !== prevStatut) await logEvent({ action: 'edit', fields: ['Statut'] })
     setSaving(false)
     onUpdated()
   }
@@ -155,6 +169,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
     for (const u of updates) {
       await supabase.from('echeances').update({ date_echeance: u.date_echeance }).eq('id', u.id)
     }
+    await logEvent({ action: 'edit', fields: ['Date de début'] })
     setEditDateDebut(null)
     onUpdated()
   }
@@ -165,7 +180,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/25" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-4xl h-full shadow-2xl flex flex-col"
+      <div className="relative bg-white w-full max-w-5xl h-full shadow-2xl flex flex-col"
            style={{ zIndex: 51 }}>
 
         {/* Header */}
@@ -197,7 +212,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
         <div className="flex flex-1 overflow-hidden">
 
           {/* LEFT — Commentaires */}
-          <div className="w-72 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+          <div className="w-96 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
             <Commentaires
               entityType="echelonnement"
               entityId={ech.id}
@@ -771,6 +786,7 @@ function TabEchelonnements({ isAllowed }) {
 // ── Tab Organismes Tiers ─────────────────────────────────────────────────
 
 function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
+  const { user, profile } = useAuth()
   const [form, setForm] = useState({
     organisme: (row.organisme || 'cpas').toUpperCase(),
     statut: row.statut || 'en_cours',
@@ -779,6 +795,17 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
   })
   const [saving, setSaving] = useState(false)
   const [ficheId, setFicheId] = useState(null)
+
+  const logEvent = async (meta) => {
+    const auteurNom = profile
+      ? `${profile.prenom || ''} ${profile.nom || ''}`.trim()
+      : (user?.email || 'Inconnu')
+    await supabase.from('commentaires').insert({
+      entity_type: 'organisme_tiers', entity_id: row.id,
+      auteur_id: user?.id, auteur_nom: auteurNom,
+      message: '', type: 'system', meta,
+    })
+  }
 
   const hasChanges =
     form.organisme.toLowerCase() !== (row.organisme || '') ||
@@ -796,6 +823,15 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
       updated_at: new Date().toISOString(),
     }
     const { error } = await supabase.from('organismes_tiers').update(payload).eq('id', row.id)
+    if (!error) {
+      const changed = []
+      if (form.organisme.toLowerCase() !== (row.organisme || '')) changed.push('Organisme')
+      if (form.statut !== row.statut) changed.push('Statut')
+      const newMontant = form.montant_accorde !== '' ? Number(form.montant_accorde) : null
+      if (newMontant !== row.montant_accorde) changed.push('Montant accordé')
+      if ((form.notes || null) !== (row.notes || null)) changed.push('Notes')
+      if (changed.length > 0) await logEvent({ action: 'edit', fields: changed })
+    }
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
     onUpdated()
@@ -814,7 +850,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
     <>
       <div className="fixed inset-0 z-50 flex justify-end">
         <div className="absolute inset-0 bg-black/25" onClick={onClose} />
-        <div className="relative z-10 w-full max-w-2xl bg-white shadow-2xl flex flex-col h-full overflow-hidden">
+        <div className="relative z-10 w-full max-w-4xl bg-white shadow-2xl flex flex-col h-full overflow-hidden">
           {/* Header */}
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
             <div>
@@ -838,7 +874,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
           <div className="flex flex-1 overflow-hidden">
 
             {/* LEFT — Commentaires */}
-            <div className="w-72 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+            <div className="w-96 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
               <Commentaires
                 entityType="organisme_tiers"
                 entityId={row.id}

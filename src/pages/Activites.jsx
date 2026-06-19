@@ -295,6 +295,25 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     lieu_rdv: 'Lieu de RDV', type_transport: 'Type de transport',
     date_fin: 'Date de retour', local: 'Local',
     heure_debut: 'Heure de début', heure_fin: 'Heure de fin',
+    statut: 'Statut', description: 'Description', nb_eleves: 'Nb élèves',
+    montant_total: 'Montant total', pop: 'POP',
+    responsable_id: 'Responsable', accompagnateur_ids: 'Accompagnateurs',
+  }
+  const TRACKED_FIELDS = [
+    'intitule', 'description', 'type', 'statut', 'date_debut', 'date_fin',
+    'lieu', 'local', 'heure_debut', 'heure_fin', 'heure_depart', 'heure_retour',
+    'lieu_rdv', 'type_transport', 'responsable_id', 'nb_eleves', 'montant_total', 'pop',
+  ]
+
+  const logEvent = async (activiteId, meta) => {
+    const auteurNom = profile
+      ? `${profile.prenom || ''} ${profile.nom || ''}`.trim()
+      : (user?.email || 'Inconnu')
+    await supabase.from('commentaires').insert({
+      entity_type: 'activite', entity_id: activiteId,
+      auteur_id: user?.id, auteur_nom: auteurNom,
+      message: '', type: 'system', meta,
+    })
   }
 
   const uploadStagedFiles = async (activiteId) => {
@@ -328,7 +347,18 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     let error, data
     if (editRow) {
       ;({ error } = await supabase.from('activites').update(payload).eq('id', editRow.id))
-      if (!error) await uploadStagedFiles(editRow.id)
+      if (!error) {
+        await uploadStagedFiles(editRow.id)
+        // Logger les champs modifiés
+        const changed = TRACKED_FIELDS.filter(k => {
+          const before = editRow[k] ?? ''
+          const after  = payload[k] ?? ''
+          return String(before) !== String(after)
+        })
+        if (changed.length > 0) {
+          await logEvent(editRow.id, { action: 'edit', fields: changed.map(k => FIELD_LABELS[k] || k) })
+        }
+      }
     } else {
       payload.created_by = userId
       ;({ error, data } = await supabase.from('activites').insert(payload).select('id').single())
@@ -363,7 +393,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/40" onClick={handleBackdropClose} />
-      <div className="relative z-10 w-full max-w-4xl bg-white shadow-2xl flex flex-col h-full">
+      <div className="relative z-10 w-full max-w-5xl bg-white shadow-2xl flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="font-bold text-gray-800 text-lg">{editRow ? 'Modifier' : 'Nouvelle'} activité</h2>
@@ -375,7 +405,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
 
           {/* LEFT — Commentaires (mode édition uniquement) */}
           {editRow?.id && (
-            <div className="w-80 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+            <div className="w-[26rem] shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
               <Commentaires
                 entityType="activite"
                 entityId={editRow.id}
@@ -614,12 +644,25 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
 
 // ── Docs / Factures modal ─────────────────────────────────────────────────
 function DocsModal({ row, categorie, onClose }) {
+  const { user, profile } = useAuth()
   const isFacture = categorie === 'facture'
   const label = isFacture ? 'Factures' : 'Documents'
   const [docs, setDocs] = useState([])
   const [uploading, setUploading] = useState(false)
   const [dragging, setDragging] = useState(false)
   const fileRef = useRef()
+
+  const logDocEvent = async (action, filename) => {
+    const auteurNom = profile
+      ? `${profile.prenom || ''} ${profile.nom || ''}`.trim()
+      : (user?.email || 'Inconnu')
+    await supabase.from('commentaires').insert({
+      entity_type: 'activite', entity_id: row.id,
+      auteur_id: user?.id, auteur_nom: auteurNom,
+      message: '', type: 'system',
+      meta: { action, filename, categorie },
+    })
+  }
 
   const reload = useCallback(() =>
     supabase.from('activite_documents').select('*')
@@ -637,6 +680,7 @@ function DocsModal({ row, categorie, onClose }) {
     const { error } = await supabase.storage.from('activite-factures').upload(path, file)
     if (!error) {
       await supabase.from('activite_documents').insert({ activite_id: row.id, nom: file.name, chemin: path, taille: file.size, categorie })
+      await logDocEvent('doc_add', file.name)
       await reload()
     }
     setUploading(false)
@@ -651,6 +695,7 @@ function DocsModal({ row, categorie, onClose }) {
   const del = async doc => {
     await supabase.storage.from('activite-factures').remove([doc.chemin])
     await supabase.from('activite_documents').delete().eq('id', doc.id)
+    await logDocEvent('doc_del', doc.nom)
     await reload()
   }
 
