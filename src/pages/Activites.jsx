@@ -413,14 +413,16 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
               <div>
                 <label className="label">Responsable</label>
                 <MultiSearchSelect
-                  options={staffList} value={form.responsable_id}
+                  options={staffList.filter(s => !(form.accompagnateur_ids || []).includes(s.value))}
+                  value={form.responsable_id}
                   onChange={v => f('responsable_id', v)}
                   placeholder="Choisir un·e responsable…" single />
               </div>
               <div>
                 <label className="label">Accompagnateur·rice·s</label>
                 <MultiSearchSelect
-                  options={staffList} value={form.accompagnateur_ids}
+                  options={staffList.filter(s => s.value !== form.responsable_id)}
+                  value={form.accompagnateur_ids}
                   onChange={v => f('accompagnateur_ids', v)}
                   placeholder="Choisir des accompagnateur·rices…" />
               </div>
