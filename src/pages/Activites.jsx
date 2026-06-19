@@ -339,15 +339,32 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-4xl bg-white shadow-2xl flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="font-bold text-gray-800 text-lg">{editRow ? 'Modifier' : 'Nouvelle'} activité</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
         </div>
 
-        <div className="px-6 py-5 space-y-4 overflow-y-auto">
+        {/* Two-column body */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* LEFT — Commentaires (mode édition uniquement) */}
+          {editRow?.id && (
+            <div className="w-80 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+              <Commentaires
+                entityType="activite"
+                entityId={editRow.id}
+                entityLabel={editRow.intitule || 'Activité'}
+              />
+            </div>
+          )}
+
+          {/* RIGHT — Formulaire */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 px-6 py-5 space-y-4 overflow-y-auto">
           {errors.length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
               Champs manquants : {errors.map(e => FIELD_LABELS[e] || e).join(', ')}
@@ -542,16 +559,8 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
           </div>
         </div>
 
-        {/* Commentaires — uniquement en mode édition */}
-        {editRow?.id && (
-          <Commentaires
-            entityType="activite"
-            entityId={editRow.id}
-            entityLabel={editRow.intitule || 'Activité'}
-          />
-        )}
-
-        <div className="flex gap-2 px-6 py-4 border-t border-gray-100">
+        {/* Footer */}
+        <div className="flex gap-2 px-6 py-4 border-t border-gray-100 shrink-0">
           <button onClick={save} disabled={saving}
             className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
             {saving && <Loader2 size={14} className="animate-spin" />}
@@ -559,6 +568,8 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
           </button>
           <button onClick={onClose} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
         </div>
+          </div>{/* end RIGHT */}
+        </div>{/* end two-column */}
       </div>
     </div>
   )

@@ -165,11 +165,11 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/25" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-xl h-full overflow-y-auto shadow-2xl flex flex-col"
+      <div className="relative bg-white w-full max-w-4xl h-full shadow-2xl flex flex-col"
            style={{ zIndex: 51 }}>
 
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 z-10 flex items-start justify-between">
+        <div className="bg-white border-b border-gray-100 px-6 py-4 z-10 flex items-start justify-between shrink-0">
           <div>
             <h2 className="text-lg font-bold text-gray-800">
               {ech.eleve?.nom} {ech.eleve?.prenom}
@@ -193,6 +193,20 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
           </div>
         </div>
 
+        {/* Two-column body */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* LEFT — Commentaires */}
+          <div className="w-72 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+            <Commentaires
+              entityType="echelonnement"
+              entityId={ech.id}
+              entityLabel={`${ech.eleve?.prenom || ''} ${ech.eleve?.nom || ''}`.trim() || 'Échelonnement'}
+            />
+          </div>
+
+          {/* RIGHT — Détails */}
+          <div className="flex-1 overflow-y-auto flex flex-col">
         <div className="flex-1 px-6 py-5 space-y-6">
 
           {/* Summary cards */}
@@ -391,13 +405,9 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
             </div>
           )}
 
-          {/* Commentaires */}
-          <Commentaires
-            entityType="echelonnement"
-            entityId={ech.id}
-            entityLabel={`${ech.eleve?.prenom || ''} ${ech.eleve?.nom || ''}`.trim() || 'Échelonnement'}
-          />
         </div>
+          </div>{/* end RIGHT */}
+        </div>{/* end two-column */}
       </div>
     </div>
   )
@@ -804,7 +814,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
     <>
       <div className="fixed inset-0 z-50 flex justify-end">
         <div className="absolute inset-0 bg-black/25" onClick={onClose} />
-        <div className="relative z-10 w-full max-w-sm bg-white shadow-2xl flex flex-col h-full overflow-hidden">
+        <div className="relative z-10 w-full max-w-2xl bg-white shadow-2xl flex flex-col h-full overflow-hidden">
           {/* Header */}
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
             <div>
@@ -824,7 +834,20 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
             </div>
           </div>
 
-          {/* Body */}
+          {/* Two-column body */}
+          <div className="flex flex-1 overflow-hidden">
+
+            {/* LEFT — Commentaires */}
+            <div className="w-72 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+              <Commentaires
+                entityType="organisme_tiers"
+                entityId={row.id}
+                entityLabel={`${(row.eleve?.prenom || '')} ${(row.eleve?.nom || '')}`.trim() || 'Organisme tiers'}
+              />
+            </div>
+
+            {/* RIGHT — Détails */}
+            <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
             {/* Organisme + Statut */}
             <div className="grid grid-cols-2 gap-3">
@@ -884,13 +907,6 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
             </div>
           </div>
 
-          {/* Commentaires */}
-          <Commentaires
-            entityType="organisme_tiers"
-            entityId={row.id}
-            entityLabel={`${(row.eleve?.prenom || '')} ${(row.eleve?.nom || '')}`.trim() || 'Organisme tiers'}
-          />
-
           {/* Footer */}
           {isAllowed && (
             <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
@@ -904,6 +920,8 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
               </button>
             </div>
           )}
+            </div>{/* end RIGHT */}
+          </div>{/* end two-column */}
         </div>
       </div>
       <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
