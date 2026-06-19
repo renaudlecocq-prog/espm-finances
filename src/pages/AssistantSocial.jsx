@@ -780,9 +780,23 @@ function TabOrganismesTiers({ isAllowed }) {
   }, []) // eslint-disable-line
 
   const save = async () => {
+    if (!form.eleve_id) return
     setSaving(true)
-    await supabase.from('organismes_tiers').insert(form)
-    await reload(); setSaving(false); setShowForm(false)
+    const payload = {
+      ...form,
+      montant_accorde: form.montant_accorde !== '' ? Number(form.montant_accorde) : null,
+      remarque: form.remarque || null,
+    }
+    const { error } = await supabase.from('organismes_tiers').insert(payload)
+    if (error) {
+      alert('Erreur lors de l\'enregistrement : ' + error.message)
+      setSaving(false)
+      return
+    }
+    await reload()
+    setSaving(false)
+    setShowForm(false)
+    setForm({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', montant_accorde: '', remarque: '' })
   }
 
   const del = async (id) => {
