@@ -805,6 +805,8 @@ export default function Activites() {
         {displayed.length === 0 && <div className="card p-8 text-center text-gray-400">Aucune activité</div>}
         {displayed.map(row => {
           const responsableLabel = row.responsable_id ? staffById[row.responsable_id] : row.responsable
+          const accompagnateurLabels = (row.accompagnateur_ids || [])
+            .map(id => staffById[id]).filter(Boolean)
           return (
             <div key={row.id}
               className={`card p-5 flex items-start justify-between gap-4 hover:shadow-md transition-shadow ${canEdit(row) ? 'cursor-pointer' : ''}`}
@@ -850,7 +852,12 @@ export default function Activites() {
                   {row.nb_eleves && <span>👥 {row.nb_eleves} élève{row.nb_eleves !== 1 ? 's' : ''}</span>}
                   {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
                   {row.pop && <span className="text-orange-500">🏛 POP : {fmt(row.pop)}</span>}
-                  {responsableLabel && <span>👤 {responsableLabel}</span>}
+                  {responsableLabel && (
+                    <span className="text-primary/80">👤 {responsableLabel}</span>
+                  )}
+                  {accompagnateurLabels.length > 0 && (
+                    <span className="text-teal-600">🤝 {accompagnateurLabels.join(' · ')}</span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0 items-center flex-wrap justify-end">
