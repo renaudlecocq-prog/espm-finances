@@ -909,7 +909,7 @@ export default function Activites() {
         {[
           { id: 'avenir',  label: '🟢 À venir' },
           { id: 'passees', label: '🔴 Passées' },
-          { id: 'mes',     label: '👤 Mes activités' },
+          ...(isAdmin || isFinancier ? [{ id: 'mes', label: '👤 Mes activités' }] : []),
         ].map(p => (
           <button key={p.id}
             onClick={() => setQuickFilter(q => q === p.id ? null : p.id)}
