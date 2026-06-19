@@ -15,8 +15,16 @@ const STATUT_COLORS = {
   archive:   'bg-orange-100 text-orange-700',
 }
 const FACT_COLORS = {
+  en_attente: 'bg-orange-100 text-orange-700',
   a_facturer: 'bg-yellow-100 text-yellow-700',
   facture:    'bg-green-100 text-green-700',
+  non_payant: 'bg-gray-100 text-gray-500',
+}
+const FACT_LABELS = {
+  en_attente: 'En attente',
+  a_facturer: 'À facturer',
+  facture:    'Facturé',
+  non_payant: 'Non payant',
 }
 const TYPE_LABELS = { extramuros: 'Extramuros', intramuros: 'Intramuros', voyage: 'Voyage' }
 
@@ -42,7 +50,7 @@ const EMPTY = {
   lieu_rdv: '', lieu_retour: '', type_transport: '', tel_organisateur: '', tel_sejour: '',
   local: '', heure_debut: '', heure_fin: '',
   montant_total: '', pop: '',
-  statut: 'brouillon', statut_facturation: 'a_facturer',
+  statut: 'brouillon', statut_facturation: 'en_attente',
   responsable_id: null,
   accompagnateur_ids: [],
   classes_incluses: [],
@@ -302,7 +310,18 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     loadSaved()
   }
 
-  const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
+  const f = (k, v) => setForm(p => {
+    const next = { ...p, [k]: v }
+    if (k === 'montant_total') {
+      const montant = parseFloat(v)
+      if (!v || montant === 0) {
+        next.statut_facturation = 'non_payant'
+      } else if (p.statut_facturation === 'non_payant') {
+        next.statut_facturation = 'en_attente'
+      }
+    }
+    return next
+  })
 
   const hasSelection = form.classes_incluses.length > 0 || form.groupes_inclus.length > 0
   const nbEleves = useMemo(() => calcNbEleves(allEleves, form),
@@ -377,6 +396,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
       }).map(([k, v]) => [k, v === '' ? null : v])
     )
     if (!isFinancier) delete payload.pop
+    if (!isFinancier) delete payload.statut_facturation
 
     let error, data
     if (editRow) {
@@ -418,6 +438,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
         }).map(([k, v]) => [k, v === '' ? null : v])
       )
       if (!isFinancier) delete payload.pop
+    if (!isFinancier) delete payload.statut_facturation
       const { error, data } = await supabase.from('activites').insert(payload).select('id').single()
       if (!error && data?.id) await uploadStagedFiles(data.id)
       onSaved()
@@ -644,6 +665,28 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
                   ))}
                 </div>
               </div>
+
+              {isFinancier && (
+                <div className="col-span-2"><label className="label">Statut facturation</label>
+                  {form.statut_facturation === 'non_payant' ? (
+                    <span className="inline-block text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-500">Non payant</span>
+                  ) : (
+                    <div className="flex gap-2 flex-wrap">
+                      {[
+                        { val: 'en_attente', label: 'En attente', active: 'bg-orange-50 border-orange-400 text-orange-700', idle: 'border-gray-200 text-gray-400' },
+                        { val: 'a_facturer', label: 'À facturer', active: 'bg-yellow-50 border-yellow-400 text-yellow-700', idle: 'border-gray-200 text-gray-400' },
+                        { val: 'facture',    label: 'Facturé',    active: 'bg-green-50 border-green-500 text-green-700',  idle: 'border-gray-200 text-gray-400' },
+                      ].map(({ val, label, active, idle }) => (
+                        <button key={val} type="button"
+                          onClick={() => f('statut_facturation', val)}
+                          className={`px-4 py-1.5 text-sm rounded-lg border font-medium transition-all ${form.statut_facturation === val ? active : idle + ' hover:border-gray-300 hover:text-gray-500'}`}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
             </div>
           </div>
@@ -995,10 +1038,12 @@ export default function Activites() {
 
   const filterDefs = useMemo(() => [
     { key: 'type', label: 'Type', options: Object.entries(TYPE_LABELS).map(([v, l]) => ({ value: v, label: l })) },
-    { key: 'statut_facturation', label: 'Facturation', options: [
+    ...(isAdmin || isFinancier ? [{ key: 'statut_facturation', label: 'Facturation', options: [
+        { value: 'en_attente', label: 'En attente' },
         { value: 'a_facturer', label: 'À facturer' },
         { value: 'facture',    label: 'Facturé' },
-      ]},
+        { value: 'non_payant', label: 'Non payant' },
+      ]}] : []),
     { key: 'classe', label: 'Classe', options: allClasses },
   ], [allClasses])
 
@@ -1103,9 +1148,9 @@ export default function Activites() {
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUT_COLORS[row.statut] || 'bg-gray-100 text-gray-600'}`}>
                       {row.statut === 'brouillon' ? 'Brouillon' : row.statut === 'publie' ? 'Publié' : 'Archivé'}
                     </span>
-                    {isFinancier && row.statut_facturation && (
+                    {(isFinancier || isAdmin) && row.statut_facturation && (
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FACT_COLORS[row.statut_facturation] || 'bg-gray-100'}`}>
-                        {row.statut_facturation === 'a_facturer' ? 'À facturer' : 'Facturé'}
+                        {FACT_LABELS[row.statut_facturation] || row.statut_facturation}
                       </span>
                     )}
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">
