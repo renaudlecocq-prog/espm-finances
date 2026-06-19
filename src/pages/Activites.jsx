@@ -321,7 +321,8 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     const up = async (files, categorie) => {
       for (const file of files) {
         const uid = crypto.randomUUID()
-        const storagePath = `${categorie}/${activiteId}/${uid}_${file.name}`
+        const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_')
+        const storagePath = `${categorie}/${activiteId}/${uid}_${safeName}`
         const { error: storeErr } = await supabase.storage.from('activite-factures').upload(
           storagePath, file, { contentType: 'application/pdf' }
         )
@@ -685,7 +686,8 @@ function DocsModal({ row, categorie, onClose }) {
     if (file.type !== 'application/pdf') { alert('Seuls les fichiers PDF sont acceptés.'); return }
     setUploading(true)
     const uid = crypto.randomUUID()
-    const storagePath = `${categorie}/${row.id}/${uid}_${file.name}`
+    const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_')
+    const storagePath = `${categorie}/${row.id}/${uid}_${safeName}`
     const { error: storeErr } = await supabase.storage.from('activite-factures').upload(storagePath, file, { contentType: 'application/pdf' })
     if (storeErr) { alert('Erreur upload : ' + storeErr.message); setUploading(false); return }
     const { error: dbErr } = await supabase.from('activite_documents').insert({
