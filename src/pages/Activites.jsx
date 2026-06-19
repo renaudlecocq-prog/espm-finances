@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
-import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2 } from 'lucide-react'
+import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2, Trash2 } from 'lucide-react'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
@@ -867,6 +867,17 @@ export default function Activites() {
                   <button onClick={e => { e.stopPropagation(); archive(row.id) }}
                     className="flex items-center gap-1.5 text-xs text-orange-500 hover:text-orange-700 border border-orange-200 hover:border-orange-400 rounded-full px-3 py-1.5 transition-colors">
                     <Archive size={12} /> Archiver
+                  </button>
+                )}
+                {isAdmin && (
+                  <button onClick={async e => {
+                    e.stopPropagation()
+                    if (!confirm('Supprimer définitivement cette activité ? Cette action est irréversible.')) return
+                    await supabase.from('activites').delete().eq('id', row.id)
+                    reload()
+                  }}
+                    className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-3 py-1.5 transition-colors">
+                    <Trash2 size={12} /> Supprimer
                   </button>
                 )}
               </div>
