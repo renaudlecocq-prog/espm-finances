@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
-import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2, Trash2 } from 'lucide-react'
+import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2, Trash2, Paperclip } from 'lucide-react'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
@@ -261,6 +261,7 @@ function FileStage({ label, files, setFiles }) {
 
 // ── Activity form modal ────────────────────────────────────────────────────
 function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, groupOptions, allClasses, onClose, onSaved }) {
+  const { user, profile } = useAuth()
   const initForm = editRow ? {
     ...EMPTY, ...editRow,
     accompagnateur_ids: editRow.accompagnateur_ids || [],
@@ -810,6 +811,7 @@ export default function Activites() {
   const [showModal, setShowModal] = useState(false)
   const [editRow, setEditRow]     = useState(null)
   const [unreadByActivity, setUnreadByActivity] = useState({}) // entity_id → count
+  const [docsWithFiles, setDocsWithFiles] = useState(new Set()) // activite_ids ayant des documents
   const [docsRow, setDocsRow]     = useState(null)
   const [docsCategorie, setDocsCategorie] = useState('document')
   const [showArchived, setShowArchived]   = useState(false)
@@ -860,10 +862,14 @@ export default function Activites() {
     })
   }, [])
 
-  const reload = useCallback(() =>
-    supabase.from('activites').select('*').order('date_debut', { ascending: false })
-      .then(({ data }) => setData(data || []))
-  , [])
+  const reload = useCallback(async () => {
+    const [activitesRes, docsRes] = await Promise.all([
+      supabase.from('activites').select('*').order('date_debut', { ascending: false }),
+      supabase.from('activite_documents').select('activite_id'),
+    ])
+    setData(activitesRes.data || [])
+    setDocsWithFiles(new Set((docsRes.data || []).map(d => d.activite_id)))
+  }, [])
 
   useEffect(() => { reload().then(() => setLoading(false)) }, [reload])
 
@@ -1118,6 +1124,9 @@ export default function Activites() {
                     {row.nb_eleves && <span>👥 {row.nb_eleves} élève{row.nb_eleves !== 1 ? 's' : ''}</span>}
                     {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
                     {row.pop && <span className="text-orange-500">🏛 POP : {fmt(row.pop)}</span>}
+                    {docsWithFiles.has(row.id) && (
+                      <span className="flex items-center gap-0.5 text-gray-400"><Paperclip size={11} />docs</span>
+                    )}
                   </div>
 
                   {/* Ligne 4 — Personnel */}
