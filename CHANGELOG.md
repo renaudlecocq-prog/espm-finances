@@ -13,6 +13,7 @@ Format : `[Date] Commit — Description — Rollback`
 | `3e6fbec` | `NotificationBell.jsx` | Bouton "Vider" pour supprimer toutes les notifications | `git revert 3e6fbec` |
 | `ef6ed03` | `Activites.jsx` | Fix : afficher `local` (intramuros) sur la carte en plus de `lieu`. Pills de filtre rapide Passées/À venir/Mes activités. Signal visuel pastel vert/rouge + "Dans X jours" / "Il y a X jours". | `git revert ef6ed03` |
 | `a5eeafa` | `Activites.jsx` | Pill "Mes activités" masquée pour les MdP (déjà filtrés par défaut) | `git revert a5eeafa` |
+| `fee214e` | `Commentaires.jsx`, `Activites.jsx`, `AssistantSocial.jsx` | Journal d'activité dans le chat : événements système (modification de champs, ajout/suppression de documents). Fenêtre chat élargie dans les 3 slide-ins (Activités w-104, Échelonnements et Organismes tiers w-96). Migration Supabase : colonnes `type` et `meta` sur `commentaires`. | `git revert fee214e` |
 
 ---
 
