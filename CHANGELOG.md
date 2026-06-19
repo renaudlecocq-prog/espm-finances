@@ -9,7 +9,7 @@ Format : `[Date] Commit — Description — Rollback`
 
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
-| `HEAD` | `Activites.jsx` | Fix critique : noms de colonnes corrects pour `activite_documents` (`nom_fichier`, `storage_path` au lieu de `nom`, `chemin`). Chemin storage via `crypto.randomUUID()` pour éviter les collisions. Gestion d'erreur explicite dans `DocsModal` (alerte si upload storage ou insert DB échoue). `try/catch` autour des appels `logDocEvent` pour éviter qu'une erreur de journal bloque le `reload()`. | `git revert HEAD` |
+| `f0ed999` | `Activites.jsx` | Fix critique : noms de colonnes corrects pour `activite_documents` (`nom_fichier`, `storage_path` au lieu de `nom`, `chemin`). Chemin storage via `crypto.randomUUID()` pour éviter les collisions. Gestion d'erreur explicite dans `DocsModal` (alerte si upload storage ou insert DB échoue). `try/catch` autour des appels `logDocEvent` pour éviter qu'une erreur de journal bloque le `reload()`. | `git revert HEAD` |
 
 ---
 
