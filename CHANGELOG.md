@@ -5,6 +5,14 @@ Format : `[Date] Commit — Description — Rollback`
 
 ---
 
+## Session 7 — 2026-06-19 (fix documents)
+
+| Commit | Fichier(s) | Description | Rollback |
+|--------|-----------|-------------|---------|
+| `HEAD` | `Activites.jsx` | Fix critique : noms de colonnes corrects pour `activite_documents` (`nom_fichier`, `storage_path` au lieu de `nom`, `chemin`). Chemin storage via `crypto.randomUUID()` pour éviter les collisions. Gestion d'erreur explicite dans `DocsModal` (alerte si upload storage ou insert DB échoue). `try/catch` autour des appels `logDocEvent` pour éviter qu'une erreur de journal bloque le `reload()`. | `git revert HEAD` |
+
+---
+
 ## Session 6 — 2026-06-19 (notifications)
 
 | Commit | Fichier(s) | Description | Rollback |

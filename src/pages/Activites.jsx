@@ -319,10 +319,11 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
   const uploadStagedFiles = async (activiteId) => {
     const up = async (files, categorie) => {
       for (const file of files) {
-        const path = `${categorie}/${activiteId}/${Date.now()}_${file.name}`
-        const { error } = await supabase.storage.from('activite-factures').upload(path, file)
+        const uid = crypto.randomUUID()
+        const storagePath = `${categorie}/${activiteId}/${uid}_${file.name}`
+        const { error } = await supabase.storage.from('activite-factures').upload(storagePath, file)
         if (!error) await supabase.from('activite_documents').insert({
-          activite_id: activiteId, nom: file.name, chemin: path, taille: file.size, categorie
+          activite_id: activiteId, nom_fichier: file.name, storage_path: storagePath, taille: file.size, categorie
         })
       }
     }
@@ -674,28 +675,32 @@ function DocsModal({ row, categorie, onClose }) {
   useEffect(() => { reload() }, [reload])
 
   const uploadFile = async file => {
-    if (!file || file.type !== 'application/pdf') return
+    if (!file) return
+    if (file.type !== 'application/pdf') { alert('Seuls les fichiers PDF sont acceptés.'); return }
     setUploading(true)
-    const path = `${categorie}/${row.id}/${Date.now()}_${file.name}`
-    const { error } = await supabase.storage.from('activite-factures').upload(path, file)
-    if (!error) {
-      await supabase.from('activite_documents').insert({ activite_id: row.id, nom: file.name, chemin: path, taille: file.size, categorie })
-      await logDocEvent('doc_add', file.name)
-      await reload()
-    }
+    const uid = crypto.randomUUID()
+    const storagePath = `${categorie}/${row.id}/${uid}_${file.name}`
+    const { error: storeErr } = await supabase.storage.from('activite-factures').upload(storagePath, file)
+    if (storeErr) { alert('Erreur upload : ' + storeErr.message); setUploading(false); return }
+    const { error: dbErr } = await supabase.from('activite_documents').insert({
+      activite_id: row.id, nom_fichier: file.name, storage_path: storagePath, taille: file.size, categorie
+    })
+    if (dbErr) { alert('Erreur base de données : ' + dbErr.message); setUploading(false); return }
+    try { await logDocEvent('doc_add', file.name) } catch {}
+    await reload()
     setUploading(false)
   }
   const upload = async e => { await uploadFile(e.target.files[0]); e.target.value = '' }
 
   const view = async doc => {
-    const { data } = await supabase.storage.from('activite-factures').createSignedUrl(doc.chemin, 60)
+    const { data } = await supabase.storage.from('activite-factures').createSignedUrl(doc.storage_path, 60)
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
   }
 
   const del = async doc => {
-    await supabase.storage.from('activite-factures').remove([doc.chemin])
+    await supabase.storage.from('activite-factures').remove([doc.storage_path])
     await supabase.from('activite_documents').delete().eq('id', doc.id)
-    await logDocEvent('doc_del', doc.nom)
+    try { await logDocEvent('doc_del', doc.nom_fichier) } catch {}
     await reload()
   }
 
@@ -725,7 +730,7 @@ function DocsModal({ row, categorie, onClose }) {
           {docs.length === 0 && <p className="text-sm text-gray-400 text-center py-4">Aucun document</p>}
           {docs.map(d => (
             <div key={d.id} className="flex items-center justify-between py-2 border-b border-gray-100 text-sm">
-              <span className="truncate text-gray-700 flex-1">{d.nom}</span>
+              <span className="truncate text-gray-700 flex-1">{d.nom_fichier}</span>
               <div className="flex gap-2 ml-2">
                 <button onClick={() => view(d)} className="text-primary text-xs hover:underline">Voir</button>
                 <button onClick={() => del(d)} className="text-red-500 text-xs hover:underline">Suppr.</button>
