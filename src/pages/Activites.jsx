@@ -817,7 +817,26 @@ export default function Activites() {
                     {TYPE_LABELS[row.type] || row.type}
                   </span>
                 </div>
-                {row.description && <p className="text-sm text-gray-500 mb-2 line-clamp-1">{row.description}</p>}
+                {/* Classes + Groupes inclus */}
+                {((row.classes_incluses?.length > 0) || (row.groupes_inclus?.length > 0)) && (() => {
+                  const classChips = row.classes_incluses || []
+                  const groupChips = (row.groupes_inclus || []).map(g => {
+                    const opt = groupOptions.find(o => o.value === g)
+                    return opt ? (opt.label.split(' : ')[1] || opt.label) : (g.split(':')[1] || g)
+                  })
+                  const all = [...classChips, ...groupChips]
+                  const MAX = 6
+                  const visible = all.slice(0, MAX)
+                  const extra = all.length - MAX
+                  return (
+                    <div className="flex flex-wrap gap-1 mt-1 mb-1.5">
+                      {visible.map((chip, i) => (
+                        <span key={i} className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 leading-tight">{chip}</span>
+                      ))}
+                      {extra > 0 && <span className="text-xs text-gray-400 py-0.5 pl-0.5">+{extra}</span>}
+                    </div>
+                  )
+                })()}
                 <div className="flex flex-wrap gap-4 text-xs text-gray-400">
                   <span>📅 {fmtDate(row.date_debut)}{row.date_fin ? ` → ${fmtDate(row.date_fin)}` : ''}</span>
                   {row.lieu && <span>📍 {row.lieu}</span>}
