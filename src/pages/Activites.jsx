@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
@@ -695,10 +696,12 @@ function DocsModal({ row, categorie, onClose }) {
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function Activites() {
   const { user, isAdmin, isFinancier, isMdp } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [data, setData]           = useState([])
   const [loading, setLoading]     = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editRow, setEditRow]     = useState(null)
+  const [unreadByActivity, setUnreadByActivity] = useState({}) // entity_id → count
   const [docsRow, setDocsRow]     = useState(null)
   const [docsCategorie, setDocsCategorie] = useState('document')
   const [showArchived, setShowArchived]   = useState(false)
@@ -755,8 +758,65 @@ export default function Activites() {
 
   useEffect(() => { reload().then(() => setLoading(false)) }, [reload])
 
+  // ── Notifications non-lues par activité ────────────────────────────────
+  const loadUnread = useCallback(async () => {
+    if (!user) return
+    const { data: notifs } = await supabase
+      .from('notifications')
+      .select('entity_id')
+      .eq('destinataire_id', user.id)
+      .eq('entity_type', 'activite')
+      .eq('lu', false)
+    const counts = {}
+    for (const n of (notifs || [])) {
+      counts[n.entity_id] = (counts[n.entity_id] || 0) + 1
+    }
+    setUnreadByActivity(counts)
+  }, [user])
+
+  useEffect(() => { loadUnread() }, [loadUnread])
+
+  // Realtime : recharger les non-lus quand une notif arrive/est lue
+  useEffect(() => {
+    if (!user) return
+    const ch = supabase
+      .channel(`activites-notifs:${user.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'notifications',
+        filter: `destinataire_id=eq.${user.id}`,
+      }, () => loadUnread())
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [user, loadUnread])
+
+  // ── Deep-link ?open=<id> depuis une notification ────────────────────────
+  useEffect(() => {
+    const openId = searchParams.get('open')
+    if (!openId || !data.length) return
+    const row = data.find(r => r.id === openId)
+    if (row && canView(row)) {
+      setEditRow(row)
+      setShowModal(true)
+      // Nettoyer le param URL sans rechargement
+      setSearchParams(prev => { const next = new URLSearchParams(prev); next.delete('open'); return next }, { replace: true })
+    }
+  }, [searchParams, data]) // eslint-disable-line
+
   const openNew  = () => { setEditRow(null); setShowModal(true) }
-  const openEdit = row => { setEditRow(row); setShowModal(true) }
+  const openEdit = async row => {
+    setEditRow(row)
+    setShowModal(true)
+    // Marquer les notifs de cette activité comme lues
+    if (unreadByActivity[row.id] && user) {
+      await supabase.from('notifications')
+        .update({ lu: true })
+        .eq('destinataire_id', user.id)
+        .eq('entity_type', 'activite')
+        .eq('entity_id', row.id)
+        .eq('lu', false)
+      setUnreadByActivity(prev => { const n = { ...prev }; delete n[row.id]; return n })
+    }
+  }
   const openDocs = (row, cat) => { setDocsRow(row); setDocsCategorie(cat) }
 
   const archive = async id => {
@@ -859,6 +919,13 @@ export default function Activites() {
                   {/* Ligne 1 — Titre + badges statut */}
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="font-semibold text-gray-800">{row.intitule}</span>
+                    {unreadByActivity[row.id] > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1
+                        bg-red-500 text-white text-[10px] font-bold rounded-full leading-none"
+                        title={`${unreadByActivity[row.id]} message${unreadByActivity[row.id] > 1 ? 's' : ''} non lu${unreadByActivity[row.id] > 1 ? 's' : ''}`}>
+                        {unreadByActivity[row.id] > 9 ? '9+' : unreadByActivity[row.id]}
+                      </span>
+                    )}
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUT_COLORS[row.statut] || 'bg-gray-100 text-gray-600'}`}>
                       {row.statut === 'brouillon' ? 'Brouillon' : row.statut === 'publie' ? 'Publié' : 'Archivé'}
                     </span>

@@ -84,7 +84,9 @@ export default function NotificationBell() {
       setNotifs(prev => prev.map(n => n.id === notif.id ? { ...n, lu: true } : n))
     }
     setOpen(false)
-    const route = ENTITY_ROUTES[notif.entity_type] || '/'
+    const base = ENTITY_ROUTES[notif.entity_type] || '/'
+    // Deep-link : passer l'id de l'entité pour ouvrir directement le bon élément
+    const route = notif.entity_id ? `${base}?open=${notif.entity_id}` : base
     navigate(route)
   }
 
