@@ -914,7 +914,7 @@ function TabOrganismesTiers({ isAllowed }) {
 
   const reload = () =>
     supabase.from('organismes_tiers')
-      .select('*, eleve:eleve_id(nom,prenom,classe)')
+      .select('*, eleve:eleve_id(id,nom,prenom,classe)')
       .order('created_at', { ascending: false })
       .then(({ data }) => setRows(data || []))
 
