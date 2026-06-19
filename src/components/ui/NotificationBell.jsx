@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
-import { Bell, MessageCircle, CheckCheck } from 'lucide-react'
+import { Bell, MessageCircle, CheckCheck, Trash2 } from 'lucide-react'
 
 const ENTITY_ROUTES = {
   activite:        '/activites',
@@ -77,6 +77,12 @@ export default function NotificationBell() {
     setNotifs(prev => prev.map(n => ({ ...n, lu: true })))
   }
 
+  const deleteAll = async () => {
+    if (!notifs.length) return
+    await supabase.from('notifications').delete().eq('destinataire_id', user.id)
+    setNotifs([])
+  }
+
   const clickNotif = async notif => {
     // Mark as read
     if (!notif.lu) {
@@ -124,12 +130,20 @@ export default function NotificationBell() {
                 </span>
               )}
             </span>
-            {unread > 0 && (
-              <button onClick={markAllRead}
-                className="flex items-center gap-1 text-xs text-primary hover:underline">
-                <CheckCheck size={12} /> Tout marquer lu
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {unread > 0 && (
+                <button onClick={markAllRead}
+                  className="flex items-center gap-1 text-xs text-primary hover:underline">
+                  <CheckCheck size={12} /> Tout marquer lu
+                </button>
+              )}
+              {notifs.length > 0 && (
+                <button onClick={deleteAll}
+                  className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 hover:underline">
+                  <Trash2 size={11} /> Vider
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Liste */}
