@@ -1,10 +1,9 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../context/AuthContext'
 import FicheEleve from '../components/ui/FicheEleve'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
-import { Link2, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, Search, X } from 'lucide-react'
+import { ChevronUp, ChevronDown, ChevronsUpDown, Search, X } from 'lucide-react'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
 
@@ -38,21 +37,13 @@ const COLS = [
   { key: '_paiements', label: 'Paiements', w: 120, align: 'right' },
   { key: '_ech',       label: 'ÉCH.',      w: 110, align: 'right' },
   { key: '_as',        label: 'AS',        w: 60,  align: 'center' },
-  { key: '_actions',   label: 'Actions',   w: 90,  align: 'center', noSort: true },
 ]
 
 export default function Eleves() {
-  const { isAdmin, isFinancier } = useAuth()
-  const canEdit = isAdmin || isFinancier
-
   const [searchParams] = useSearchParams()
   const [rows, setRows]       = useState([])
   const [loading, setLoading] = useState(true)
   const [ficheId, setFicheId] = useState(null)
-  const [editRow, setEditRow] = useState(null)
-  const [deleteRow, setDeleteRow] = useState(null)
-  const [saving, setSaving]   = useState(false)
-
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({})
   const [sort, setSort]     = useState({ col: 'nom', dir: 'asc' })
@@ -235,20 +226,22 @@ export default function Eleves() {
                   else if (c.key === '_paiements') cell = fmtMoney(row._paiements)
                   else if (c.key === '_ech')   cell = fmtMoney(row._ech)
                   else if (c.key === '_as') {
+                    const ORG_COLORS = {
+                      cpas:  'bg-purple-100 text-purple-700',
+                      ulb:   'bg-blue-100 text-blue-700',
+                      spj:   'bg-green-100 text-green-700',
+                      autre: 'bg-red-100 text-red-700',
+                    }
                     const orgs = row._asOrganismes || []
                     cell = orgs.length > 0
                       ? <span className="inline-flex flex-wrap gap-1">{orgs.map(o => (
-                          <span key={o} className="inline-block rounded-full bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 font-medium leading-none">{o.toUpperCase()}</span>
+                          <span key={o} className={`inline-block rounded-full text-xs px-1.5 py-0.5 font-medium leading-none ${ORG_COLORS[o] || 'bg-gray-100 text-gray-600'}`}>
+                            {o.toUpperCase()}
+                          </span>
                         ))}</span>
                       : null
                   }
-                  else if (c.key === '_actions') cell = (
-                    <div className="flex items-center justify-center gap-1" onClick={e => e.stopPropagation()}>
-                      {canEdit && <button onClick={() => setEditRow(row)} className="text-gray-400 hover:text-primary p-1"><Pencil size={13} /></button>}
-                      <button onClick={() => setFicheId(row.id)} className="text-gray-400 hover:text-primary p-1"><Link2 size={13} /></button>
-                      {canEdit && <button onClick={() => setDeleteRow(row)} className="text-gray-400 hover:text-red-500 p-1"><Trash2 size={13} /></button>}
-                    </div>
-                  )
+
                   else cell = row[c.key]
                   return (
                     <td key={c.key}
@@ -273,75 +266,7 @@ export default function Eleves() {
 
       <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
 
-      {/* Edit modal */}
-      {editRow && (
-        <EditEleveModal
-          row={editRow}
-          onClose={() => setEditRow(null)}
-          onSaved={() => { setEditRow(null); loadData() }}
-        />
-      )}
-
-      {/* Delete confirm */}
-      {deleteRow && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-            <h3 className="font-semibold text-gray-800 mb-2">Supprimer l'élève ?</h3>
-            <p className="text-sm text-gray-500 mb-5">
-              {deleteRow.nom} {deleteRow.prenom} ({deleteRow.classe}) — cette action est irréversible.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setDeleteRow(null)} className="btn-secondary text-sm py-1.5 px-4">Annuler</button>
-              <button
-                disabled={saving}
-                onClick={async () => {
-                  setSaving(true)
-                  await supabase.from('eleves').update({ actif: false }).eq('id', deleteRow.id)
-                  setDeleteRow(null); setSaving(false); loadData()
-                }}
-                className="bg-red-500 hover:bg-red-600 text-white text-sm py-1.5 px-4 rounded-lg font-medium disabled:opacity-50"
-              >
-                {saving ? 'Suppression…' : 'Supprimer'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
 
-// ── Edit modal (unchanged) ─────────────────────────────────────────────────
-function EditEleveModal({ row, onClose, onSaved }) {
-  const [form, setForm] = useState({ nom: row.nom || '', prenom: row.prenom || '', classe: row.classe || '' })
-  const [saving, setSaving] = useState(false)
-  const save = async () => {
-    setSaving(true)
-    await supabase.from('eleves').update(form).eq('id', row.id)
-    onSaved()
-  }
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-        <h3 className="font-semibold text-gray-800 mb-4">Modifier l'élève</h3>
-        <div className="space-y-3">
-          <div><label className="label">Nom</label>
-            <input className="input" value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} />
-          </div>
-          <div><label className="label">Prénom</label>
-            <input className="input" value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} />
-          </div>
-          <div><label className="label">Classe</label>
-            <input className="input" value={form.classe} onChange={e => setForm(f => ({ ...f, classe: e.target.value }))} />
-          </div>
-        </div>
-        <div className="flex gap-2 justify-end mt-5">
-          <button onClick={onClose} className="btn-secondary text-sm py-1.5 px-4">Annuler</button>
-          <button onClick={save} disabled={saving} className="btn-primary text-sm py-1.5 px-4 disabled:opacity-50">
-            {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
