@@ -4,6 +4,33 @@ Format : `[Date] Commit — Description — Rollback`
 
 ---
 
+## 2026-06-19 — Session 5 (rôles OAuth + UX activités)
+
+### ✅ Ajouté / Corrigé
+
+| Commit | Fichier / Périmètre | Changement | Rollback |
+|--------|---------------------|------------|----------|
+| `c088dda` | `Activites.jsx` | Puces classes/groupes sur la carte (max 6 + overflow "+N") — retire la description du résumé | `git revert c088dda` |
+| `2c1f5b6` | `Activites.jsx` | Responsable et accompagnateurs mutuellement exclusifs : sélectionner un responsable le retire automatiquement des accompagnateurs | `git revert 2c1f5b6` |
+| `2be0499` | `Activites.jsx` | Fix `min-w-0` grille personnel + logique non-destructive (n'écrase pas les données existantes à l'ouverture) | `git revert 2be0499` |
+| `e08cfb3` | `Activites.jsx` | Fix débordement horizontal du dropdown `MultiSearchSelect` (`w-full` sur le wrapper) | `git revert e08cfb3` |
+| `f9ecdd6` | `Activites.jsx` | Bouton "Supprimer" visible uniquement pour l'admin (avec confirmation) | `git revert f9ecdd6` |
+| `6106411` | `Activites.jsx` | Accompagnateurs affichés sur la carte (couleur teal), distincts du responsable (violet) | `git revert 6106411` |
+| `ae05f4a` | `Activites.jsx` | Carte réorganisée en 4 lignes : titre+badges / classes+groupes / métadonnées (date, lieu, élèves, montant, POP) / personnel (responsable + accompagnateurs). Exclut le responsable de la liste des accompagnateurs à l'affichage | `git revert ae05f4a` |
+| `65a218f` | `Activites.jsx` + DB | Accompagnateurs peuvent ouvrir le slide-in et commenter (ajout `canView` distinct de `canEdit`). Signup sans rôle par défaut (trigger `handle_new_user` → `NULL` au lieu de `responsable`) | `git revert 65a218f` |
+| `db7c7a6` | `smartschool-callback.mjs` + DB | **OAuth Smartschool → rôle automatique à la connexion** : Direction/Enseignant/Autre → MdP ; co-compte (parent) → Responsable ; Élève principal → bloqué. Valeurs FR et NL supportées. Mise à jour aussi pour les utilisateurs existants. Les rôles admin/financier ne sont jamais écrasés | `git revert db7c7a6` |
+| `0d1af49` | `Activites.jsx` | Statut en boutons visuels (Brouillon gris / Publié vert / Archivé orange) au lieu d'une liste déroulante. Auto-sauvegarde brouillon si on ferme le slide-in par inadvertance (clic backdrop) avec un intitulé rempli | `git revert 0d1af49` |
+
+### 🗄 Migrations Supabase
+
+| Migration | Changement |
+|-----------|------------|
+| `fix_profiles_select_all_authenticated` | Policy `profiles_select` étendue à tous les utilisateurs authentifiés (était admin/financier uniquement) — nécessaire pour les notifications des rôles MdP |
+| `handle_new_user_autodetect_role_from_smartschool` | Trigger lu depuis `basisrol` de la table `personnel` et `email_coaccount*` de `eleves` (remplacé par la logique OAuth) |
+| `handle_new_user_read_role_from_metadata` / `fix_handle_new_user_default_role_null` | Trigger : signup sans rôle par défaut (`NULL`) — le rôle est assigné par l'OAuth Smartschool |
+
+---
+
 ## 2026-06-19 — Session 4 (commentaires + UX slide-ins)
 
 ### ✅ Ajouté / Corrigé
@@ -82,7 +109,7 @@ git push origin main
 | Après filtres multi-select | `274b3b4` | ~2026-06-16 |
 | Après header + AssistantSocial | `81d4cba` | 2026-06-17 |
 | Début session 2 (stable) | `1956e81` | 2026-06-18 |
-| Actuel     | 27b1c49 | fix(Home): activités nettes de POP |
+| Actuel     | `0d1af49` | feat(Activites): statut boutons + auto-save brouillon | 2026-06-19 |
 
 ---
 
