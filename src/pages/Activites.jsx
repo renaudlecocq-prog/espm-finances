@@ -806,61 +806,73 @@ export default function Activites() {
         {displayed.map(row => {
           const responsableLabel = row.responsable_id ? staffById[row.responsable_id] : row.responsable
           const accompagnateurLabels = (row.accompagnateur_ids || [])
+            .filter(id => id !== row.responsable_id)
             .map(id => staffById[id]).filter(Boolean)
+          const classChips = row.classes_incluses || []
+          const groupChips = (row.groupes_inclus || []).map(g => {
+            const opt = groupOptions.find(o => o.value === g)
+            return opt ? (opt.label.split(' : ')[1] || opt.label) : (g.split(':')[1] || g)
+          })
+          const allChips = [...classChips, ...groupChips]
+          const MAX_CHIPS = 6
           return (
             <div key={row.id}
-              className={`card p-5 flex items-start justify-between gap-4 hover:shadow-md transition-shadow ${canEdit(row) ? 'cursor-pointer' : ''}`}
+              className={`card p-5 hover:shadow-md transition-shadow ${canEdit(row) ? 'cursor-pointer' : ''}`}
               onClick={() => canEdit(row) && openEdit(row)}>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                  <span className="font-semibold text-gray-800">{row.intitule}</span>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUT_COLORS[row.statut] || 'bg-gray-100 text-gray-600'}`}>
-                    {row.statut === 'brouillon' ? 'Brouillon' : row.statut === 'publie' ? 'Publié' : 'Archivé'}
-                  </span>
-                  {isFinancier && row.statut_facturation && (
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FACT_COLORS[row.statut_facturation] || 'bg-gray-100'}`}>
-                      {row.statut_facturation === 'a_facturer' ? 'À facturer' : 'Facturé'}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+
+                  {/* Ligne 1 — Titre + badges statut */}
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="font-semibold text-gray-800">{row.intitule}</span>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUT_COLORS[row.statut] || 'bg-gray-100 text-gray-600'}`}>
+                      {row.statut === 'brouillon' ? 'Brouillon' : row.statut === 'publie' ? 'Publié' : 'Archivé'}
                     </span>
-                  )}
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">
-                    {TYPE_LABELS[row.type] || row.type}
-                  </span>
-                </div>
-                {/* Classes + Groupes inclus */}
-                {((row.classes_incluses?.length > 0) || (row.groupes_inclus?.length > 0)) && (() => {
-                  const classChips = row.classes_incluses || []
-                  const groupChips = (row.groupes_inclus || []).map(g => {
-                    const opt = groupOptions.find(o => o.value === g)
-                    return opt ? (opt.label.split(' : ')[1] || opt.label) : (g.split(':')[1] || g)
-                  })
-                  const all = [...classChips, ...groupChips]
-                  const MAX = 6
-                  const visible = all.slice(0, MAX)
-                  const extra = all.length - MAX
-                  return (
-                    <div className="flex flex-wrap gap-1 mt-1 mb-1.5">
-                      {visible.map((chip, i) => (
+                    {isFinancier && row.statut_facturation && (
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FACT_COLORS[row.statut_facturation] || 'bg-gray-100'}`}>
+                        {row.statut_facturation === 'a_facturer' ? 'À facturer' : 'Facturé'}
+                      </span>
+                    )}
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">
+                      {TYPE_LABELS[row.type] || row.type}
+                    </span>
+                  </div>
+
+                  {/* Ligne 2 — Classes + Groupes */}
+                  {allChips.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-1.5">
+                      {allChips.slice(0, MAX_CHIPS).map((chip, i) => (
                         <span key={i} className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 leading-tight">{chip}</span>
                       ))}
-                      {extra > 0 && <span className="text-xs text-gray-400 py-0.5 pl-0.5">+{extra}</span>}
+                      {allChips.length > MAX_CHIPS && (
+                        <span className="text-xs text-gray-400 py-0.5 pl-0.5">+{allChips.length - MAX_CHIPS}</span>
+                      )}
                     </div>
-                  )
-                })()}
-                <div className="flex flex-wrap gap-4 text-xs text-gray-400">
-                  <span>📅 {fmtDate(row.date_debut)}{row.date_fin ? ` → ${fmtDate(row.date_fin)}` : ''}</span>
-                  {row.lieu && <span>📍 {row.lieu}</span>}
-                  {row.nb_eleves && <span>👥 {row.nb_eleves} élève{row.nb_eleves !== 1 ? 's' : ''}</span>}
-                  {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
-                  {row.pop && <span className="text-orange-500">🏛 POP : {fmt(row.pop)}</span>}
-                  {responsableLabel && (
-                    <span className="text-primary/80">👤 {responsableLabel}</span>
                   )}
-                  {accompagnateurLabels.length > 0 && (
-                    <span className="text-teal-600">🤝 {accompagnateurLabels.join(' · ')}</span>
+
+                  {/* Ligne 3 — Date, lieu, élèves, montant, POP */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 mb-1">
+                    <span>📅 {fmtDate(row.date_debut)}{row.date_fin ? ` → ${fmtDate(row.date_fin)}` : ''}</span>
+                    {row.lieu && <span>📍 {row.lieu}</span>}
+                    {row.nb_eleves && <span>👥 {row.nb_eleves} élève{row.nb_eleves !== 1 ? 's' : ''}</span>}
+                    {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
+                    {row.pop && <span className="text-orange-500">🏛 POP : {fmt(row.pop)}</span>}
+                  </div>
+
+                  {/* Ligne 4 — Personnel */}
+                  {(responsableLabel || accompagnateurLabels.length > 0) && (
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs">
+                      {responsableLabel && (
+                        <span className="text-primary/80">👤 {responsableLabel}</span>
+                      )}
+                      {accompagnateurLabels.length > 0 && (
+                        <span className="text-teal-600">🤝 {accompagnateurLabels.join(' · ')}</span>
+                      )}
+                    </div>
                   )}
+
                 </div>
-              </div>
-              <div className="flex gap-2 flex-shrink-0 items-center flex-wrap justify-end">
+                <div className="flex gap-2 flex-shrink-0 items-start flex-wrap justify-end">
                 <button onClick={e => { e.stopPropagation(); openDocs(row, 'document') }}
                   className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1.5 transition-colors">
                   <FileText size={12} /> Docs
@@ -887,6 +899,7 @@ export default function Activites() {
                     <Trash2 size={12} /> Supprimer
                   </button>
                 )}
+                </div>
               </div>
             </div>
           )
