@@ -705,6 +705,7 @@ export default function Activites() {
   const [docsRow, setDocsRow]     = useState(null)
   const [docsCategorie, setDocsCategorie] = useState('document')
   const [showArchived, setShowArchived]   = useState(false)
+  const [quickFilter, setQuickFilter]     = useState(null) // null | 'passees' | 'avenir' | 'mes'
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({})
   const toggleFilter = useCallback((key, val) =>
@@ -835,6 +836,19 @@ export default function Activites() {
 
   const staffById = useMemo(() => Object.fromEntries(staffList.map(s => [s.value, s.label])), [staffList])
 
+  // Helpers date
+  const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d }, [])
+  const isPast    = r => r.date_debut && new Date(r.date_fin || r.date_debut) < today
+  const isUpcoming = r => r.date_debut && new Date(r.date_debut) >= today
+  const daysLabel = r => {
+    if (!r.date_debut) return null
+    const ref = isPast(r) ? new Date(r.date_fin || r.date_debut) : new Date(r.date_debut)
+    const diff = Math.round((ref - today) / 86400000)
+    if (diff === 0) return "Aujourd'hui"
+    if (diff > 0)   return `Dans ${diff} jour${diff > 1 ? 's' : ''}`
+    return `Il y a ${Math.abs(diff)} jour${Math.abs(diff) > 1 ? 's' : ''}`
+  }
+
   const displayed = data
     .filter(r => showArchived ? true : r.statut !== 'archive')
     .filter(r => isAdmin || isFinancier || r.created_by === user?.id || r.responsable_id === user?.id || (r.accompagnateur_ids || []).includes(user?.id) || r.statut === 'publie')
@@ -842,8 +856,14 @@ export default function Activites() {
     .filter(r => !filters.type?.length || filters.type.includes(r.type))
     .filter(r => !filters.statut_facturation?.length || filters.statut_facturation.includes(r.statut_facturation))
     .filter(r => !filters.classe?.length || filters.classe.some(c => (r.classes_incluses || []).includes(c)))
+    .filter(r => {
+      if (quickFilter === 'passees')  return isPast(r)
+      if (quickFilter === 'avenir')   return isUpcoming(r)
+      if (quickFilter === 'mes')      return r.responsable_id === user?.id || (r.accompagnateur_ids || []).includes(user?.id)
+      return true
+    })
 
-  const hasFilters = search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
+  const hasFilters = search || quickFilter || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
 
   const filterDefs = useMemo(() => [
     { key: 'type', label: 'Type', options: Object.entries(TYPE_LABELS).map(([v, l]) => ({ value: v, label: l })) },
@@ -885,8 +905,25 @@ export default function Activites() {
           onChange={toggleFilter}
           onClearAll={() => setFilters({})}
         />
+        {/* Pills de filtre rapide */}
+        {[
+          { id: 'avenir',  label: '🟢 À venir' },
+          { id: 'passees', label: '🔴 Passées' },
+          { id: 'mes',     label: '👤 Mes activités' },
+        ].map(p => (
+          <button key={p.id}
+            onClick={() => setQuickFilter(q => q === p.id ? null : p.id)}
+            className={`text-xs rounded-full px-3 py-1.5 border font-medium transition-colors ${
+              quickFilter === p.id
+                ? 'bg-primary text-white border-primary'
+                : 'bg-white text-gray-500 border-gray-200 hover:border-primary hover:text-primary'
+            }`}>
+            {p.label}
+          </button>
+        ))}
+
         {hasFilters && (
-          <button onClick={() => { setSearch(''); setFilters({}) }}
+          <button onClick={() => { setSearch(''); setFilters({}); setQuickFilter(null) }}
             className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors">
             <X size={11} /> Tout effacer
           </button>
@@ -909,9 +946,18 @@ export default function Activites() {
           })
           const allChips = [...classChips, ...groupChips]
           const MAX_CHIPS = 6
+          const past    = isPast(row)
+          const upcoming = isUpcoming(row)
+          const dayHint  = daysLabel(row)
+          const cardAccent = past
+            ? 'border-l-4 border-l-red-300 bg-red-50/40'
+            : upcoming
+              ? 'border-l-4 border-l-green-400 bg-green-50/30'
+              : ''
+
           return (
             <div key={row.id}
-              className={`card p-5 hover:shadow-md transition-shadow ${canView(row) ? 'cursor-pointer' : ''}`}
+              className={`card p-5 hover:shadow-md transition-shadow ${canView(row) ? 'cursor-pointer' : ''} ${cardAccent}`}
               onClick={() => canView(row) && openEdit(row)}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -953,8 +999,14 @@ export default function Activites() {
 
                   {/* Ligne 3 — Date, lieu, élèves, montant, POP */}
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 mb-1">
-                    <span>📅 {fmtDate(row.date_debut)}{row.date_fin ? ` → ${fmtDate(row.date_fin)}` : ''}</span>
-                    {row.lieu && <span>📍 {row.lieu}</span>}
+                    <span>📅 {fmtDate(row.date_debut)}{row.date_fin ? ` → ${fmtDate(row.date_fin)}` : ''}
+                      {dayHint && (
+                        <span className={`ml-1.5 font-medium ${past ? 'text-red-400' : upcoming ? 'text-green-600' : 'text-amber-500'}`}>
+                          · {dayHint}
+                        </span>
+                      )}
+                    </span>
+                    {(row.local || row.lieu) && <span>📍 {row.local || row.lieu}</span>}
                     {row.nb_eleves && <span>👥 {row.nb_eleves} élève{row.nb_eleves !== 1 ? 's' : ''}</span>}
                     {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
                     {row.pop && <span className="text-orange-500">🏛 POP : {fmt(row.pop)}</span>}
