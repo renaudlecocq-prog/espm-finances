@@ -16,6 +16,7 @@ Format : `[Date] Commit — Description — Rollback`
 | `a6b901c` | `Activites.jsx` | Fix journal : `useAuth()` manquant dans `ActivityModal` → `user`/`profile` undefined → `logEvent()` échouait silencieusement (auteur_id null). Icône trombone (📎) sur les cards ayant des docs/factures. | `git revert a6b901c` |
 | `1047c58` | `Activites.jsx` | Boutons Docs/Factures colorés (bleu/vert) si fichiers présents. `logEvent` ajouté dans `uploadStagedFiles` et `delSavedDoc`. Sets `activitiesWithDocs`/`activitiesWithFactures` distincts. Suppression trombone. | `git revert 1047c58` |
 | `26ae229` | `Activites.jsx` | Fix couleur boutons : `select('activite_id, categorie')` au lieu de `activite_id` seul → les Sets docs/factures étaient toujours vides. | `git revert 26ae229` |
+| `7ceb04e` | `Activites.jsx` | Mise à jour dynamique des boutons Docs/Factures : `reloadDocsSets` callback passé à `DocsModal` → appelé après chaque upload/suppression sans rechargement de page. | `git revert 7ceb04e` |
 | DB | `commentaires` | Contrainte `message_check` assouplie : `type = 'system' OR char_length(message) > 0` — les événements système (message vide) étaient silencieusement rejetés. | Migration SQL manuelle |
 
 ---
