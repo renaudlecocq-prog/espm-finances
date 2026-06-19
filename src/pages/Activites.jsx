@@ -276,6 +276,29 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
   const [saveError, setSaveError]   = useState(null)
   const [pendingDocs, setPendingDocs]         = useState([])
   const [pendingFactures, setPendingFactures] = useState([])
+  const [savedDocs, setSavedDocs]           = useState([])
+  const [savedFactures, setSavedFactures]   = useState([])
+
+  const loadSaved = useCallback(async () => {
+    if (!editRow?.id) return
+    const { data } = await supabase.from('activite_documents')
+      .select('*').eq('activite_id', editRow.id).order('created_at', { ascending: false })
+    setSavedDocs((data || []).filter(d => d.categorie === 'document'))
+    setSavedFactures((data || []).filter(d => d.categorie === 'facture'))
+  }, [editRow?.id])
+
+  useEffect(() => { loadSaved() }, [loadSaved])
+
+  const viewDoc = async doc => {
+    const { data } = await supabase.storage.from('activite-factures').createSignedUrl(doc.storage_path, 60)
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+  }
+
+  const delSavedDoc = async doc => {
+    await supabase.storage.from('activite-factures').remove([doc.storage_path])
+    await supabase.from('activite_documents').delete().eq('id', doc.id)
+    loadSaved()
+  }
 
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
@@ -357,6 +380,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
       ;({ error } = await supabase.from('activites').update(payload).eq('id', editRow.id))
       if (!error) {
         await uploadStagedFiles(editRow.id)
+        await loadSaved()
         // Logger les champs modifiés
         const changed = TRACKED_FIELDS.filter(k => {
           const before = editRow[k] ?? ''
@@ -625,8 +649,34 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
           <div>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Documents & Factures</h3>
             <div className="grid grid-cols-2 gap-4">
-              <FileStage label="Documents (PDF)" files={pendingDocs} setFiles={setPendingDocs} />
-              <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} />
+              <div>
+                <FileStage label="Documents (PDF)" files={pendingDocs} setFiles={setPendingDocs} />
+                {savedDocs.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {savedDocs.map(d => (
+                      <li key={d.id} className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-1.5">
+                        <span className="flex-1 truncate">{d.nom_fichier}</span>
+                        <button type="button" onClick={() => viewDoc(d)} className="text-primary hover:underline shrink-0">Voir</button>
+                        <button type="button" onClick={() => delSavedDoc(d)} className="text-red-400 hover:underline shrink-0">Suppr.</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div>
+                <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} />
+                {savedFactures.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {savedFactures.map(d => (
+                      <li key={d.id} className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-1.5">
+                        <span className="flex-1 truncate">{d.nom_fichier}</span>
+                        <button type="button" onClick={() => viewDoc(d)} className="text-primary hover:underline shrink-0">Voir</button>
+                        <button type="button" onClick={() => delSavedDoc(d)} className="text-red-400 hover:underline shrink-0">Suppr.</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
             {(pendingDocs.length > 0 || pendingFactures.length > 0) && (
               <p className="text-xs text-gray-400 mt-2">Uploadés automatiquement après sauvegarde.</p>
