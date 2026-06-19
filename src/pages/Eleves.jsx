@@ -238,7 +238,7 @@ export default function Eleves() {
                     const orgs = row._asOrganismes || []
                     cell = orgs.length > 0
                       ? <span className="inline-flex flex-wrap gap-1">{orgs.map(o => (
-                          <span key={o} className="inline-block rounded-full bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 font-medium leading-none">{o}</span>
+                          <span key={o} className="inline-block rounded-full bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 font-medium leading-none">{o.toUpperCase()}</span>
                         ))}</span>
                       : null
                   }

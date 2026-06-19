@@ -208,7 +208,7 @@ function HomeFinancier() {
 
       const og = {}
       ;(orgs.data || []).filter(o => ['en_cours', 'valide'].includes(o.statut))
-        .forEach(o => { const k = ['CPAS', 'ULB', 'SPJ'].includes(o.organisme) ? o.organisme : 'Autre'; og[k] = (og[k] || 0) + 1 })
+        .forEach(o => { const org = (o.organisme || '').toUpperCase(); const k = ['CPAS', 'ULB', 'SPJ'].includes(org) ? org : 'Autre'; og[k] = (og[k] || 0) + 1 })
       setOrgStats({ CPAS: og.CPAS || 0, ULB: og.ULB || 0, SPJ: og.SPJ || 0, Autre: og.Autre || 0 })
 
       setLoading(false)

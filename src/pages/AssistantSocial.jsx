@@ -784,6 +784,7 @@ function TabOrganismesTiers({ isAllowed }) {
     setSaving(true)
     const payload = {
       ...form,
+      organisme: form.organisme.toLowerCase(),
       montant_accorde: form.montant_accorde !== '' ? Number(form.montant_accorde) : null,
       notes: form.notes || null,
     }
@@ -814,7 +815,7 @@ function TabOrganismesTiers({ isAllowed }) {
       d = d.filter(r => (r.eleve?.nom || '').toLowerCase().includes(q) || (r.eleve?.prenom || '').toLowerCase().includes(q))
     }
     if (filters.statut?.length)    d = d.filter(r => filters.statut.includes(r.statut))
-    if (filters.organisme?.length) d = d.filter(r => filters.organisme.includes(r.organisme))
+    if (filters.organisme?.length) d = d.filter(r => filters.organisme.map(o => o.toLowerCase()).includes((r.organisme || '').toLowerCase()))
     const { col, dir } = sort
     return [...d].sort((a, b) => {
       const va = col === 'nom' ? (a.eleve?.nom || '') : col === 'prenom' ? (a.eleve?.prenom || '') : col === 'classe' ? (a.eleve?.classe || '') : (a[col] ?? '')
@@ -937,7 +938,7 @@ function TabOrganismesTiers({ isAllowed }) {
                 <td className="px-3 py-2.5 text-gray-700">{r.eleve?.prenom}</td>
                 <td className="px-3 py-2.5 text-gray-500 text-xs">{r.eleve?.classe}</td>
                 <td className="px-3 py-2.5">
-                  <span className="font-semibold text-primary">{r.organisme}</span>
+                  <span className="font-semibold text-primary">{(r.organisme || '').toUpperCase()}</span>
                 </td>
                 <td className="px-3 py-2.5 text-gray-700">
                   {r.montant_accorde ? fmtEur(r.montant_accorde) : '—'}
