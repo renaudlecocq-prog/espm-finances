@@ -741,12 +741,158 @@ function TabEchelonnements({ isAllowed }) {
 }
 
 // ── Tab Organismes Tiers ─────────────────────────────────────────────────
+
+function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
+  const [form, setForm] = useState({
+    organisme: (row.organisme || 'cpas').toUpperCase(),
+    statut: row.statut || 'en_cours',
+    montant_accorde: row.montant_accorde != null ? String(row.montant_accorde) : '',
+    notes: row.notes || '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [ficheId, setFicheId] = useState(null)
+
+  const hasChanges =
+    form.organisme.toLowerCase() !== (row.organisme || '') ||
+    form.statut !== row.statut ||
+    (form.montant_accorde !== '' ? Number(form.montant_accorde) : null) !== row.montant_accorde ||
+    (form.notes || null) !== (row.notes || null)
+
+  const save = async () => {
+    setSaving(true)
+    const payload = {
+      organisme: form.organisme.toLowerCase(),
+      statut: form.statut,
+      montant_accorde: form.montant_accorde !== '' ? Number(form.montant_accorde) : null,
+      notes: form.notes || null,
+      updated_at: new Date().toISOString(),
+    }
+    const { error } = await supabase.from('organismes_tiers').update(payload).eq('id', row.id)
+    setSaving(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    onUpdated()
+  }
+
+  const del = async () => {
+    if (!confirm('Supprimer cet organisme tiers ?')) return
+    await supabase.from('organismes_tiers').delete().eq('id', row.id)
+    onUpdated()
+    onClose()
+  }
+
+  const eleve = row.eleve || {}
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="absolute inset-0 bg-black/25" onClick={onClose} />
+        <div className="relative z-10 w-full max-w-sm bg-white shadow-2xl flex flex-col h-full overflow-hidden">
+          {/* Header */}
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+            <div>
+              <div className="font-bold text-gray-800 text-base">
+                {eleve.nom} {eleve.prenom}
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5">{eleve.classe}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setFicheId(eleve.id)}
+                className="text-xs text-primary border border-primary/30 hover:bg-primary/5 rounded-lg px-2.5 py-1 transition-colors">
+                Fiche élève
+              </button>
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 ml-1">
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+            {/* Organisme + Statut */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">Organisme</label>
+                {isAllowed
+                  ? <select className="input" value={form.organisme}
+                      onChange={e => setForm(f => ({ ...f, organisme: e.target.value }))}>
+                      {['CPAS', 'ULB', 'SPJ', 'Autre'].map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  : <div className="input bg-gray-50 font-semibold text-primary">{form.organisme}</div>
+                }
+              </div>
+              <div>
+                <label className="label">Statut</label>
+                {isAllowed
+                  ? <select className="input" value={form.statut}
+                      onChange={e => setForm(f => ({ ...f, statut: e.target.value }))}>
+                      {Object.entries(STATUT_OT).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                    </select>
+                  : <Badge val={form.statut} map={STATUT_OT} />
+                }
+              </div>
+            </div>
+
+            {/* Montant accordé */}
+            <div>
+              <label className="label">Montant accordé (€)</label>
+              {isAllowed
+                ? <input className="input" type="number" step="0.01" value={form.montant_accorde}
+                    onChange={e => setForm(f => ({ ...f, montant_accorde: e.target.value }))}
+                    placeholder="0.00" />
+                : <div className="input bg-gray-50 text-gray-700">
+                    {form.montant_accorde ? fmtEur(Number(form.montant_accorde)) : '—'}
+                  </div>
+              }
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label className="label">Notes</label>
+              {isAllowed
+                ? <textarea className="input resize-none" rows={4} value={form.notes}
+                    onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                    placeholder="Remarques, contacts, numéros de dossier…" />
+                : <div className="input bg-gray-50 text-gray-700 min-h-[80px] whitespace-pre-wrap">
+                    {form.notes || <span className="text-gray-400 italic">Aucune note</span>}
+                  </div>
+              }
+            </div>
+
+            {/* Dates */}
+            <div className="text-xs text-gray-400 space-y-0.5 border-t border-gray-100 pt-4">
+              {row.created_at && <div>Créé le {fmtDate(row.created_at.slice(0, 10))}</div>}
+              {row.updated_at && row.updated_at !== row.created_at &&
+                <div>Modifié le {fmtDate(row.updated_at.slice(0, 10))}</div>}
+            </div>
+          </div>
+
+          {/* Footer */}
+          {isAllowed && (
+            <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
+              <button onClick={del}
+                className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 transition-colors">
+                <Trash2 size={13} /> Supprimer
+              </button>
+              <button onClick={save} disabled={saving || !hasChanges}
+                className="btn-primary py-1.5 px-4 text-sm disabled:opacity-40">
+                {saving ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
+    </>
+  )
+}
+
 function TabOrganismesTiers({ isAllowed }) {
   const [rows, setRows]     = useState([])
   const [eleves, setEleves] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [ficheId, setFicheId]   = useState(null)
+  const [detailOTId, setDetailOTId] = useState(null)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({})
   const toggleFilter = useCallback((key, val) =>
@@ -932,7 +1078,7 @@ function TabOrganismesTiers({ isAllowed }) {
               <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Aucun organisme tiers</td></tr>
             ) : filtered.map(r => (
               <tr key={r.id}
-                onClick={() => setFicheId(r.eleve_id)}
+                onClick={() => setDetailOTId(r.id)}
                 className="border-b border-gray-50 hover:bg-primary/5 cursor-pointer">
                 <td className="px-3 py-2.5 font-medium text-gray-800">{r.eleve?.nom}</td>
                 <td className="px-3 py-2.5 text-gray-700">{r.eleve?.prenom}</td>
@@ -944,20 +1090,23 @@ function TabOrganismesTiers({ isAllowed }) {
                   {r.montant_accorde ? fmtEur(r.montant_accorde) : '—'}
                 </td>
                 <td className="px-3 py-2.5"><Badge val={r.statut} map={STATUT_OT} /></td>
-                {isAllowed && (
-                  <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => del(r.id)}
-                      className="text-gray-300 hover:text-red-500 transition-colors">
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                )}
+                {isAllowed && <td className="px-2 py-2.5" />}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
+      {detailOTId && (() => {
+        const detailRow = rows.find(r => r.id === detailOTId)
+        return detailRow ? (
+          <OrganismeTiersDetail
+            row={detailRow}
+            onClose={() => setDetailOTId(null)}
+            onUpdated={() => { reload(); setDetailOTId(null) }}
+            isAllowed={isAllowed}
+          />
+        ) : null
+      })()}
     </div>
   )
 }
