@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
-import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2, Trash2 } from 'lucide-react'
+import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2, Trash2, CheckCheck } from 'lucide-react'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
@@ -731,13 +731,32 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
         </div>
 
         {/* Footer */}
-        <div className="flex gap-2 px-6 py-4 border-t border-gray-100 shrink-0">
+        <div className="flex gap-2 px-6 py-4 border-t border-gray-100 shrink-0 flex-wrap">
           <button onClick={save} disabled={saving}
             className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
             {saving && <Loader2 size={14} className="animate-spin" />}
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
           <button onClick={onClose} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
+          <div className="flex-1" />
+          {isFinancier && editRow?.id && form.statut !== 'archive' && (
+            <button type="button" onClick={async () => {
+              if (!confirm('Archiver cette activité ?')) return
+              await supabase.from('activites').update({ statut: 'archive' }).eq('id', editRow.id)
+              onSaved(); onClose()
+            }} className="flex items-center gap-1.5 text-xs text-orange-500 hover:text-orange-700 border border-orange-200 hover:border-orange-400 rounded-lg px-3 py-1.5 transition-colors">
+              <Archive size={13} /> Archiver
+            </button>
+          )}
+          {isFinancier && editRow?.id && (
+            <button type="button" onClick={async () => {
+              if (!confirm('Supprimer définitivement cette activité ? Cette action est irréversible.')) return
+              await supabase.from('activites').delete().eq('id', editRow.id)
+              onSaved(); onClose()
+            }} className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-lg px-3 py-1.5 transition-colors">
+              <Trash2 size={13} /> Supprimer
+            </button>
+          )}
         </div>
           </div>{/* end RIGHT */}
         </div>{/* end two-column */}
@@ -997,6 +1016,13 @@ export default function Activites() {
     await reload()
   }
 
+  const toggleFacturation = async (e, row) => {
+    e.stopPropagation()
+    const next = row.statut_facturation === 'en_attente' ? 'a_facturer' : 'en_attente'
+    await supabase.from('activites').update({ statut_facturation: next }).eq('id', row.id)
+    reload()
+  }
+
   const canEdit   = row => isAdmin || isFinancier || (isMdp && row.created_by === user?.id && row.statut !== 'archive')
   const canView   = row => isAdmin || isFinancier || (isMdp && (
     row.created_by === user?.id ||
@@ -1216,21 +1242,16 @@ export default function Activites() {
                   <Receipt size={12} /> Factures
                 </button>
 
-                {isFinancier && row.statut !== 'archive' && (
-                  <button onClick={e => { e.stopPropagation(); archive(row.id) }}
-                    className="flex items-center gap-1.5 text-xs text-orange-500 hover:text-orange-700 border border-orange-200 hover:border-orange-400 rounded-full px-3 py-1.5 transition-colors">
-                    <Archive size={12} /> Archiver
-                  </button>
-                )}
-                {isAdmin && (
-                  <button onClick={async e => {
-                    e.stopPropagation()
-                    if (!confirm('Supprimer définitivement cette activité ? Cette action est irréversible.')) return
-                    await supabase.from('activites').delete().eq('id', row.id)
-                    reload()
-                  }}
-                    className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-3 py-1.5 transition-colors">
-                    <Trash2 size={12} /> Supprimer
+                {(isFinancier || isAdmin) && row.statut_facturation && row.statut_facturation !== 'non_payant' && row.statut_facturation !== 'facture' && (
+                  <button onClick={e => toggleFacturation(e, row)}
+                    title={row.statut_facturation === 'en_attente' ? 'Marquer À facturer' : 'Revenir En attente'}
+                    className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 transition-colors border font-medium ${
+                      row.statut_facturation === 'a_facturer'
+                        ? 'text-yellow-700 border-yellow-300 bg-yellow-50 hover:bg-yellow-100'
+                        : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
+                    }`}>
+                    <CheckCheck size={12} />
+                    {row.statut_facturation === 'a_facturer' ? 'À facturer' : 'En attente'}
                   </button>
                 )}
                 </div>
