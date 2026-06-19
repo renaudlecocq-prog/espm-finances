@@ -338,9 +338,30 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     onSaved(); onClose()
   }
 
+  // Fermeture par clic sur le fond — auto-sauvegarde brouillon si nouvelle activité avec intitulé
+  const handleBackdropClose = async () => {
+    const isNew = !editRow?.id
+    if (isNew && form.intitule?.trim()) {
+      const payload = Object.fromEntries(
+        Object.entries({
+          ...form,
+          statut: 'brouillon',
+          created_by: userId,
+          nb_eleves: hasSelection ? nbEleves : (form.nb_eleves || null),
+          montant_par_eleve: montantParEleve ? montantParEleve.toFixed(2) : null,
+        }).map(([k, v]) => [k, v === '' ? null : v])
+      )
+      if (!isFinancier) delete payload.pop
+      const { error, data } = await supabase.from('activites').insert(payload).select('id').single()
+      if (!error && data?.id) await uploadStagedFiles(data.id)
+      onSaved()
+    }
+    onClose()
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40" onClick={handleBackdropClose} />
       <div className="relative z-10 w-full max-w-4xl bg-white shadow-2xl flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
@@ -543,11 +564,19 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
                 <div className="input bg-gray-50 text-gray-600">{montantParEleve !== null ? fmt(montantParEleve) : '—'}</div>
               </div>
               <div><label className="label">Statut</label>
-                <select className="input" value={form.statut} onChange={e => f('statut', e.target.value)}>
-                  <option value="brouillon">Brouillon</option>
-                  <option value="publie">Publié</option>
-                  {editRow && isFinancier && <option value="archive">Archivé</option>}
-                </select>
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { val: 'brouillon', label: 'Brouillon', active: 'bg-gray-100 border-gray-400 text-gray-700', idle: 'border-gray-200 text-gray-400' },
+                    { val: 'publie',    label: 'Publié',    active: 'bg-green-50 border-green-500 text-green-700', idle: 'border-gray-200 text-gray-400' },
+                    ...(editRow?.id && isFinancier ? [{ val: 'archive', label: 'Archivé', active: 'bg-orange-50 border-orange-400 text-orange-700', idle: 'border-gray-200 text-gray-400' }] : []),
+                  ].map(({ val, label, active, idle }) => (
+                    <button key={val} type="button"
+                      onClick={() => f('statut', val)}
+                      className={`px-4 py-1.5 text-sm rounded-lg border font-medium transition-all ${form.statut === val ? active : idle + ' hover:border-gray-300 hover:text-gray-500'}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
             </div>
