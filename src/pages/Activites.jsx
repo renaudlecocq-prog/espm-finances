@@ -102,7 +102,7 @@ function MultiSearchSelect({ options, value, onChange, placeholder, single = fal
   const selectedOptions = options.filter(o => isSelected(getVal(o)))
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative w-full min-w-0">
       <div className="input cursor-pointer flex flex-wrap gap-1 items-center min-h-[38px]"
         onClick={() => setOpen(o => !o)}>
         {selectedOptions.length === 0 && <span className="text-gray-400 text-sm">{placeholder}</span>}
