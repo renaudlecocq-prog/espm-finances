@@ -186,7 +186,7 @@ export default function Eleves() {
 
       {/* Table */}
       <div className="card p-0 flex-1 overflow-auto min-h-0">
-        <table className="text-sm border-collapse" style={{ minWidth: totalW + 'px' }}>
+        <table className="text-sm border-collapse w-full" style={{ minWidth: totalW + 'px' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 20 }}>
             <tr className="bg-gray-50 border-b border-gray-200">
               {COLS.map(c => {
@@ -195,8 +195,7 @@ export default function Eleves() {
                   <th key={c.key}
                     onClick={() => !c.noSort && toggleSort(c.key)}
                     style={{
-                      width: c.w, minWidth: c.w,
-                      ...(isSticky ? { position: 'sticky', left: c.sticky, zIndex: 30 } : {}),
+                      ...(isSticky ? { width: c.w, minWidth: c.w, position: 'sticky', left: c.sticky, zIndex: 30 } : { minWidth: c.w }),
                       textAlign: c.align || 'left',
                     }}
                     className={`px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase
@@ -246,8 +245,7 @@ export default function Eleves() {
                   return (
                     <td key={c.key}
                       style={{
-                        width: c.w, minWidth: c.w,
-                        ...(isSticky ? { position: 'sticky', left: c.sticky, zIndex: 10 } : {}),
+                        ...(isSticky ? { width: c.w, minWidth: c.w, position: 'sticky', left: c.sticky, zIndex: 10 } : { minWidth: c.w }),
                         textAlign: c.align || 'left',
                       }}
                       className={`px-3 py-2 whitespace-nowrap border-r border-gray-50 last:border-r-0
