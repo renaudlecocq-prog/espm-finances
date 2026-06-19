@@ -109,7 +109,7 @@ git push origin main
 | Après filtres multi-select | `274b3b4` | ~2026-06-16 |
 | Après header + AssistantSocial | `81d4cba` | 2026-06-17 |
 | Début session 2 (stable) | `1956e81` | 2026-06-18 |
-| Actuel     | `0d1af49` | feat(Activites): statut boutons + auto-save brouillon | 2026-06-19 |
+| Actuel     | `3e6fbec` | feat(NotificationBell): bouton Vider notifications | 2026-06-19 |
 
 ---
 
@@ -126,6 +126,4 @@ git push origin main
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
 | `e1a5d42` | `NotificationBell.jsx`, `Activites.jsx` | Deep-link notification → ouvre le slide-in de l'activité concernée (`?open=<id>`). Badge rouge de messages non-lus sur les cartes. Marque lu à l'ouverture. | `git revert e1a5d42` |
-
-
-| `3e6fbec` | `NotificationBell.jsx` | Bouton "Vider" pour supprimer toutes les notifications | `git revert HEAD` |
+| `3e6fbec` | `NotificationBell.jsx` | Bouton "Vider" pour supprimer toutes les notifications | `git revert 3e6fbec` |
