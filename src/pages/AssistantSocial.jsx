@@ -73,7 +73,7 @@ function computeAlertStatus(ech, echeances, paiements) {
 }
 
 // ── Detail Panel ─────────────────────────────────────────────────────────
-function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose, onUpdated, isAllowed }) {
+function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose, onUpdated, isAllowed, onFicheEleve }) {
   const [echeances, setEcheances] = useState(initEcheances || [])
   const [statut, setStatut]       = useState(ech.statut)
   const [editEch, setEditEch]     = useState(null) // { id, value }
@@ -178,9 +178,17 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
               <Badge val={statut} map={STATUT_ECH} />
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 ml-2 shrink-0">
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0 ml-2">
+            {onFicheEleve && (
+              <button onClick={onFicheEleve}
+                className="text-xs text-primary border border-primary/30 hover:bg-primary/5 rounded-lg px-2.5 py-1 transition-colors">
+                Fiche élève
+              </button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 px-6 py-5 space-y-6">
@@ -732,6 +740,7 @@ function TabEchelonnements({ isAllowed }) {
           onClose={() => setDetailId(null)}
           onUpdated={reload}
           isAllowed={isAllowed}
+          onFicheEleve={() => setFicheId(detail.eleve_id)}
         />
       )}
 
