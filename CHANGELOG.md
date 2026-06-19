@@ -12,6 +12,7 @@ Format : `[Date] Commit — Description — Rollback`
 | `f0ed999` | `Activites.jsx` | Fix critique : noms de colonnes corrects pour `activite_documents` (`nom_fichier`, `storage_path` au lieu de `nom`, `chemin`). Chemin storage via `crypto.randomUUID()` pour éviter les collisions. Gestion d'erreur explicite dans `DocsModal` (alerte si upload storage ou insert DB échoue). `try/catch` autour des appels `logDocEvent` pour éviter qu'une erreur de journal bloque le `reload()`. | `git revert f0ed999` |
 | `db04343` | `Activites.jsx` | Fix upload : `contentType: 'application/pdf'` forcé (staged + DocsModal) — Windows remonte parfois un MIME type vide via drag&drop, rejeté par le bucket. Gestion d'erreur explicite dans `uploadStagedFiles`. | `git revert db04343` |
 | `0495fef` | `Activites.jsx` | Fix upload : sanitize du nom de fichier dans le chemin storage (NFD + suppression diacritiques + `_` pour caractères spéciaux) — Supabase rejette les clés avec espaces ou accents. Nom original conservé dans `nom_fichier`. | `git revert 0495fef` |
+| `4aef92e` | `Activites.jsx` | Affichage des documents sauvegardés dans le slide-in (section Documents & Factures) — rechargement après upload, boutons Voir (signed URL) et Suppr. Fin du bug : fichiers invisibles après enregistrement. | `git revert 4aef92e` |
 
 ---
 
