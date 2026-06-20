@@ -214,6 +214,17 @@ git push origin main
 
 ---
 
+## [Session 10e] - 2026-06-20
+
+### Added
+- **Logo cercle SVG** dans Header.jsx : remplacement du shield par un cercle mauve avec les initiales "EP", cohérent avec l'identité visuelle
+- **Favicon.svg** mis à jour : nouveau favicon cercle mauve, remplace l'ancienne icône
+- **HomeResponsable** : vue dédiée pour le rôle `responsable` sur la page d'accueil — liste des enfants liés au compte avec solde, factures et paiements en lecture seule
+- **Mode démo** : accès sans authentification avec données fictives pour présentation du site, activé via paramètre URL `?demo=true`
+
+### Fixed
+- **Page blanche HomeResponsable en mode démo** : correction du chargement des données fictives pour le rôle responsable
+
 ## [Session 10f] - 2026-06-20
 
 ### Added
@@ -239,6 +250,15 @@ git push origin main
 
 ---
 
+## [Session 10h] - 2026-06-20
+
+### Changed — UX DetailBatch
+- **Layout compact** : onglets "En attente / Approuvé", recherche et bouton "Tout approuver" regroupés sur une seule ligne
+- Titre de la page redevient "Factures" avec le numéro de batch en sous-titre
+- Suppression du bandeau de recherche séparé dans l'en-tête de la card
+
+---
+
 ## [Session 10g] - 2026-06-20
 
 ### Fixed — Bugs critiques
@@ -261,3 +281,35 @@ git push origin main
 ---
 
 > **Note GitHub** : les commits de sessions 10b-e n'ont pas encore été tous poussés depuis le sandbox. Seule la session 10g sera visible après le prochain push manuel.
+
+## [Session 10h] - 2026-06-20
+
+### Changed — UX DetailBatch
+- **Layout compact** : onglets "En attente / Approuvé", recherche et bouton "Tout approuver" regroupés sur une seule ligne
+- Titre de la page redevient "Factures" avec le numéro de batch en sous-titre
+- Suppression du bandeau de recherche séparé dans l'en-tête de la card
+
+---
+
+
+## [Session 10i] - 2026-06-20
+
+### Changed — UX DetailBatch (onglets + bouton)
+- Remplacement des deux pills ovales par un **segmented control** (cadre unique, deux sections, fond gris, section active en blanc avec ombre)
+- Compteur "En attente" affiché en chiffre sobre à droite du libellé, sans pill
+- Onglet "Facturé" (renommé depuis "Approuvé"), sans compteur
+- Bouton "Tout approuver" : style outlined (bordure + teinte primaire), plus léger que btn-primary
+
+## [Session 10j] - 2026-06-20
+
+### Changed — ListeBatches
+- Colonne "N° BATCH" renommée "N° FACTURATION"
+- Header aligné sur le style DetailBatch : titre + total factures + montant total coloré sur une ligne
+- Ajout segmented control "En attente / Facturé" pour filtrer les runs
+- Ajout champ de recherche : filtre par élève, classe ou numéro de batch
+- Montant total dans le tableau coloré en primary
+- Compteur "runs de facturation" → "factures générées"
+
+### Changed — DetailBatch
+- Bouton "← Retour aux batches" remplacé par bouton "← Retour" intégré dans la barre de contrôles (même ligne que les onglets), coloré en mauve/primary
+
