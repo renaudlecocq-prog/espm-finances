@@ -722,9 +722,15 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     const ids = factures.filter(f => f.statut === 'brouillon').map(f => f.id)
     if (!ids.length) return
     setBusy(true)
-    await supabase.from('factures').update({ statut: 'facture' }).in('id', ids)
+    // Filtrer par batch_id + statut plutôt que .in(ids) — évite la limite de longueur URL PostgREST
+    await supabase.from('factures')
+      .update({ statut: 'facture' })
+      .eq('batch_id', batchId)
+      .eq('statut', 'brouillon')
     await mettreAJourItemsApresApprobation(ids)
-    await load(); setBusy(false)
+    // Mise à jour locale immédiate — pas de rechargement complet
+    setFactures(prev => prev.map(f => f.statut === 'brouillon' ? { ...f, statut: 'facture' } : f))
+    setBusy(false)
   }
 
   const nbAttente  = factures.filter(f => f.statut === 'brouillon').length

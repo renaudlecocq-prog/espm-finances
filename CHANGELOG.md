@@ -321,3 +321,14 @@ git push origin main
 - **Supprimer** : la facture disparaît instantanément du tableau sans rechargement complet
 - **Bouton "Tout approuver"** : label devient "Approuver X élèves" (sans "Tout") dès qu'au moins une facture est ignorée, pour refléter que certains sont exclus
 
+## [Session 10l] - 2026-06-20
+
+### Fixed — DetailBatch
+- **Tout approuver** : remplacement de `.in('id', [644 ids])` par `.eq('batch_id').eq('statut','brouillon')` — évite le dépassement de limite URL PostgREST qui faisait échouer silencieusement l'approbation massive
+- Mise à jour locale immédiate après `toutApprouver` (plus de rechargement complet)
+- Les factures ignorées sont correctement exclues car leur statut est `ignore` (pas `brouillon`)
+
+### Note — Nomenclature individuelle
+- Le code de génération est correct : `F-AAMMJJ-NN-MATRICULE`
+- Les factures affichant `F-AAAA-NNN` sont des données legacy créées avec l'ancien code
+
