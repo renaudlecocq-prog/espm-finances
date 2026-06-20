@@ -372,7 +372,30 @@ function RField({ label, value }) {
     </div>
   )
 }
-
+function generateEcheancier(ech) {
+  if (!ech.date_debut || !ech.nombre_echeances) return []
+  const today = new Date(); today.setHours(0,0,0,0)
+  const base = new Date(ech.date_debut)
+  return Array.from({ length: ech.nombre_echeances }, (_, i) => {
+    const due = new Date(base.getFullYear(), base.getMonth() + i, base.getDate())
+    const isPast = due < today
+    const daysAgo = (today - due) / 86400000
+    let paiement
+    if (ech.statut === 'termine') paiement = 'paye'
+    else if (ech.statut === 'en_cours') paiement = isPast ? 'paye' : 'a_venir'
+    else if (ech.statut === 'non_respecte') {
+      if (!isPast) paiement = 'a_venir'
+      else if (daysAgo <= 45) paiement = 'en_retard'
+      else paiement = 'paye'
+    } else paiement = 'a_venir'
+    return { num: i+1, date: due, montant: ech.mensualite || (ech.montant/ech.nombre_echeances), paiement }
+  })
+}
+const ECH_PAY = {
+  paye:      { label:'Payé',      cls:'bg-green-100 text-green-700', icon:'✓' },
+  en_retard: { label:'En retard', cls:'bg-red-100 text-red-700',     icon:'⚠' },
+  a_venir:   { label:'À venir',   cls:'bg-gray-100 text-gray-500',   icon:'◌' },
+}
 function HomeResponsable() {
   const { user } = useAuth()
   const { demoMode } = useDemo()
