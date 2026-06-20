@@ -19,6 +19,13 @@ Format : `[Date] Commit — Description — Rollback`
 | `7ceb04e` | `Activites.jsx` | Mise à jour dynamique des boutons Docs/Factures : `reloadDocsSets` callback passé à `DocsModal` → appelé après chaque upload/suppression sans rechargement de page. | `git revert 7ceb04e` |
 | `83bce34` | `Activites.jsx` + DB | Statut facturation : 4 valeurs (en_attente, a_facturer, facture, non_payant), visible admin/financier uniquement. Auto-calcul non_payant si montant=0. Sélecteur dans slide-in. Filtre mis à jour. Contrainte CHECK DB étendue. | `git revert 83bce34` |
 | `a395099` | `Activites.jsx` | Bouton toggle En attente ↔ À facturer sur les cards. Archiver et Supprimer retirés des cards → déplacés dans le footer du slide-in. | `git revert a395099` |
+
+## Session 8 — 2026-06-20 (fiche élève + statut facturation)
+
+| Commit | Fichier(s) | Description | Rollback |
+|--------|-----------|-------------|---------|
+| DB | `appels_responsables` | Nouvelle table : historique des appels passés aux responsables (auteur, index resp., nom snap., note éditable). RLS : INSERT tous, SELECT/UPDATE admin+financier, DELETE admin. | Migration SQL manuelle |
+| `cdee9a5` | `FicheEleve.jsx` + `AssistantSocial.jsx` | Refonte complète fiche élève : identité, groupes scolaires (champs vides masqués), responsables + bouton appel, suivi social (échelonnements + OT, boutons accès rapide), financier (solde), historique des appels. Sections social/financier/appels masquées pour MdP. Fix noms colonnes resp. (`nom_responsable_N`). AS.jsx : param `?eleve=UUID` pour auto-ouvrir le détail. | `git revert cdee9a5` |
 | DB | `commentaires` | Contrainte `message_check` assouplie : `type = 'system' OR char_length(message) > 0` — les événements système (message vide) étaient silencieusement rejetés. | Migration SQL manuelle |
 
 ---
