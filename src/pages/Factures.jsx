@@ -656,8 +656,8 @@ function ListeBatches({ onNew, onSelect }) {
                   <tr key={b.id} onClick={() => onSelect(b.id)}
                     className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors">
                     <td className="px-4 py-3">
-                      <span className="font-mono text-sm font-bold text-gray-800">{b.numero}</span>
-                      {b.nom && <p className="text-xs text-gray-500 mt-0.5">{b.nom}</p>}
+                      <p className="text-sm font-semibold text-gray-800">{b.nom || b.numero}</p>
+                      {b.nom && <p className="font-mono text-xs text-gray-400 mt-0.5">{b.numero}</p>}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{fmtDate(b.date)}</td>
                     <td className="px-4 py-3 text-gray-700 font-medium">{s.nbTotal}</td>

@@ -469,3 +469,7 @@ git push origin main
 - **Fiche élève — section Financier** : détail complet des factures (avec nom du batch) et paiements, solde calculé dynamiquement (remplace le placeholder "disponible prochainement")
 ### Technical
 - Migration DB : colonne `nom TEXT` ajoutée à `facture_batches`
+
+## [Session 18b] - 2026-06-21
+### Changed
+- ListeBatches : nom du batch affiché en grand au-dessus, N° en petit en dessous (si nom absent, N° affiché seul en grand)
