@@ -683,8 +683,9 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     const attrIds  = [...new Set((lignes||[]).filter(l=>l.article_attribution_id).map(l=>l.article_attribution_id))]
     const activIds = [...new Set((lignes||[]).filter(l=>l.activite_id).map(l=>l.activite_id))]
 
-    // calcStatut : approche chunked fiable (le filtre embedded PostgREST+head:true retourne 0)
-    // 'ignore' compte comme "non facturé" → génère "partiellement_facture" si mix avec 'facture'
+    // calcStatut : évite { head:true } dont le count renvoie null en Supabase JS v2
+    // Utilise data.length (≤50 lignes/chunk) — fiable et simple
+    // 'ignore' = non facturé → mix ignore+facture → 'partiellement_facture'
     const calcStatut = async (fkCol, id) => {
       const { data: lignesItem } = await supabase.from('facture_lignes')
         .select('facture_id').eq(fkCol, id)
@@ -693,14 +694,12 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
 
       let nbPending = 0, nbApproved = 0
       for (const slice of chunk(ids, 50)) {
-        const [{ count: c1 }, { count: c2 }] = await Promise.all([
-          supabase.from('factures').select('id', { count: 'exact', head: true })
-            .in('id', slice).in('statut', ['brouillon', 'ignore']),
-          supabase.from('factures').select('id', { count: 'exact', head: true })
-            .in('id', slice).eq('statut', 'facture'),
+        const [{ data: d1 }, { data: d2 }] = await Promise.all([
+          supabase.from('factures').select('id').in('id', slice).in('statut', ['brouillon', 'ignore']),
+          supabase.from('factures').select('id').in('id', slice).eq('statut', 'facture'),
         ])
-        nbPending  += (c1 || 0)
-        nbApproved += (c2 || 0)
+        nbPending  += (d1 || []).length
+        nbApproved += (d2 || []).length
         if (nbPending > 0 && nbApproved > 0) break  // réponse connue → early exit
       }
 

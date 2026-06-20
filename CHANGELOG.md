@@ -389,3 +389,8 @@ git push origin main
 ### Fixed
 - **calcStatut** : l'approche par JOIN PostgREST (`factures!inner` + `.eq('factures.statut', ...)` + `head:true`) retournait systématiquement count=0, ce qui forçait le statut à "À facturer". Retour à l'approche chunked fiable : récupère les `facture_id` depuis `facture_lignes`, puis count par statut en lots de 50 avec early-exit dès que les deux catégories sont trouvées.
 - **Statut "Partiel"** : les factures `ignore` comptent désormais comme "non facturé" (comme `brouillon`), donc un article avec des élèves ignorés affiche bien "Partiellement facturé" plutôt que "Facturé".
+
+## [Session 11c] - 2026-06-21
+
+### Fixed
+- **calcStatut** : `{ count: 'exact', head: true }` retourne `count: null` dans Supabase JS v2, causant un faux "À facturer". Remplacé par `select('id')` sans `head:true` + `.length` sur `data` — fiable et simple (≤50 lignes/chunk).
