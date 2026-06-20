@@ -34,17 +34,24 @@ export default function Header() {
       <div className="max-w-screen-xl mx-auto px-4 flex items-center h-14 gap-4">
 
         <Link to="/" className="shrink-0 flex items-center gap-2">
-          {/* Logo ESPM+ : cercle biton blanc/orange */}
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
-            {/* Arc blanc : 3/4 du cercle (bas + gauche + haut-gauche) */}
-            <path d="M25,14 A11,11 0 1,1 14,3" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-            {/* Arc orange : quart supérieur-droit */}
-            <path d="M14,3 A11,11 0 0,1 25,14" stroke="#E86C00" strokeWidth="2.5" strokeLinecap="round"/>
-            {/* Barre horizontale du + (blanche) */}
-            <line x1="7" y1="14" x2="21" y2="14" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-            {/* Barre verticale du + (orange) */}
-            <line x1="14" y1="7" x2="14" y2="21" stroke="#E86C00" strokeWidth="2.5" strokeLinecap="round"/>
-          </svg>
+          {/* Logo école dans fond blanc arrondi */}
+          <div style={{
+            background: 'white',
+            borderRadius: '6px',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            padding: '3px'
+          }}>
+            <img
+              src="/logo-ecole.svg"
+              alt="École Plurielle Maritime"
+              style={{ width: '26px', height: '26px', objectFit: 'contain' }}
+            />
+          </div>
           <span className="text-white font-bold text-lg tracking-wide leading-none">
             ESPM<span style={{ color: '#E86C00' }}>+</span>
           </span>

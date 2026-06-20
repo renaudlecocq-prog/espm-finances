@@ -1,12 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Fond sombre arrondi (visible dans les onglets) -->
-  <rect width="32" height="32" rx="7" fill="#2D1B2E"/>
-  <!-- Arc blanc : 3/4 du cercle, centre (16,16) rayon 12 -->
-  <path d="M28,16 A12,12 0 1,1 16,4" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-  <!-- Arc orange : quart supérieur-droit -->
-  <path d="M16,4 A12,12 0 0,1 28,16" stroke="#E86C00" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-  <!-- Barre horizontale du + (blanche) -->
-  <line x1="9" y1="16" x2="23" y2="16" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- Barre verticale du + (orange) -->
-  <line x1="16" y1="9" x2="16" y2="23" stroke="#E86C00" stroke-width="2.5" stroke-linecap="round"/>
+  <rect width="32" height="32" rx="5" fill="white"/>
+  <line x1="16" y1="6" x2="16" y2="26" stroke="#E86C00" stroke-width="4.5" stroke-linecap="round"/>
+  <line x1="6" y1="16" x2="26" y2="16" stroke="#E86C00" stroke-width="4.5" stroke-linecap="round"/>
 </svg>
