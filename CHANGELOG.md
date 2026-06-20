@@ -404,3 +404,12 @@ git push origin main
 
 ### Changed
 - **calcStatut** : logique binaire — "Facturé" seulement si TOUS les élèves ont statut='facture' (ignore = non facturé). 1 requête par chunk avec `.neq('statut','facture').limit(1)`, early exit dès le premier élève non-facturé trouvé.
+
+## [Session 12] - 2026-06-21
+
+### Fixed
+- **Crash DetailFacture** : `activByCat` référencé mais jamais défini → ReferenceError. Les activités s'affichent maintenant en liste plate (pas de sous-catégories).
+- **removeLigne** : suppression de `{ count: 'exact', head: true }` (retourne null en Supabase JS v2) + suppression de `partiellement_facture` (statut supprimé). Reporter une ligne remet toujours l'article/activité à `a_facturer`.
+
+### Changed  
+- **Clic sur N° facture** au lieu du nom élève pour ouvrir le détail — le numéro est maintenant un lien cliquable (texte primaire souligné au survol), le nom reste en texte simple.

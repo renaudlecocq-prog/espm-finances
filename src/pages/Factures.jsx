@@ -868,13 +868,13 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
               <tr key={f.id}
                 className={`border-b border-gray-50 transition-colors ${f.statut === 'ignore' ? 'opacity-40' : 'hover:bg-gray-50/50'}`}>
                 <td className="px-4 py-3">
-                  <span className="font-mono text-xs text-gray-500 select-all">{f.numero || '—'}</span>
-                </td>
-                <td className="px-4 py-3">
                   <button onClick={() => onSelectFacture(f.id)}
-                    className="font-medium text-gray-800 hover:text-primary hover:underline text-left">
-                    {f.eleve?.prenom} {f.eleve?.nom}
+                    className="font-mono text-xs text-primary hover:underline text-left">
+                    {f.numero || '—'}
                   </button>
+                </td>
+                <td className="px-4 py-3 font-medium text-gray-800">
+                  {f.eleve?.prenom} {f.eleve?.nom}
                 </td>
                 <td className="px-4 py-3 text-gray-500">{f.eleve?.classe || '—'}</td>
                 <td className="px-4 py-3 font-semibold text-gray-800">{fmtEur(f.montant)}</td>
@@ -1027,18 +1027,15 @@ function DetailFacture({ factureId, onBack }) {
   const removeLigne = async (ligne, putBack) => {
     await supabase.from('facture_lignes').delete().eq('id', ligne.id)
     if (putBack) {
+      // Remet l'article/activité à 'a_facturer' (sera re-facturé au prochain batch)
       if (ligne.article_attribution_id) {
-        const { count } = await supabase.from('facture_lignes')
-          .select('*', { count: 'exact', head: true }).eq('article_attribution_id', ligne.article_attribution_id)
         await supabase.from('article_attributions')
-          .update({ statut_facturation: (count || 0) > 0 ? 'partiellement_facture' : 'a_facturer' })
+          .update({ statut_facturation: 'a_facturer' })
           .eq('id', ligne.article_attribution_id)
       }
       if (ligne.activite_id) {
-        const { count } = await supabase.from('facture_lignes')
-          .select('*', { count: 'exact', head: true }).eq('activite_id', ligne.activite_id)
         await supabase.from('activites')
-          .update({ statut_facturation: (count || 0) > 0 ? 'partiellement_facture' : 'a_facturer' })
+          .update({ statut_facturation: 'a_facturer' })
           .eq('id', ligne.activite_id)
       }
     }
@@ -1126,22 +1123,17 @@ function DetailFacture({ factureId, onBack }) {
         </div>
       )}
 
-      {activByCat && Object.keys(activByCat).length > 0 && (
+      {activites.length > 0 && (
         <div className="card p-5 mb-4">
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
             Activités
             {isFinancier && <span className="ml-2 text-gray-300 font-normal normal-case">— survolez une ligne pour Reporter ou Supprimer</span>}
           </h2>
-          {Object.entries(activByCat).map(([cat, items]) => (
-            <div key={cat} className="mb-4 last:mb-0">
-              <p className="text-xs font-semibold text-gray-400 mb-1.5">{cat}</p>
-              {items.map(l => <LigneRow key={l.id} ligne={l} onRemove={removeLigne} isFinancier={isFinancier} />)}
-              <div className="flex justify-between pt-1.5 text-xs text-gray-400">
-                <span>Sous-total {cat.toLowerCase()}</span>
-                <span className="tabular-nums">{fmtEur(items.reduce((s, l) => s + Number(l.montant), 0))}</span>
-              </div>
-            </div>
-          ))}
+          {activites.map(l => <LigneRow key={l.id} ligne={l} onRemove={removeLigne} isFinancier={isFinancier} />)}
+          <div className="flex justify-between pt-1.5 text-xs text-gray-400">
+            <span>Sous-total activités</span>
+            <span className="tabular-nums">{fmtEur(activites.reduce((s, l) => s + Number(l.montant), 0))}</span>
+          </div>
         </div>
       )}
 
