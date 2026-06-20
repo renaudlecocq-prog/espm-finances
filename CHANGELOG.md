@@ -438,3 +438,8 @@ git push origin main
 - **"Solde après"** dans `DetailBatch` : couleur négative changée de rouge → orange (`text-orange-500`) pour différencier du rouge "Impayé".
 - `DetailBatch.load()` : charge en parallèle les factures et paiements des élèves du batch (chunked par 50) pour calculer les impayés.
 - `ListeBatches.load()` : charge en parallèle toutes les factures approuvées + paiements pour agréger les impayés par batch.
+
+## [Session 15] - 2026-06-21
+
+### Fixed
+- **FacturationModal** : les activités en statut "Brouillon" n'apparaissaient pas dans la liste des éléments à facturer car le filtre `.eq('statut', 'publie')` les excluait. Suppression de ce filtre — seul `statut_facturation = 'a_facturer'` compte pour la facturation, pas le statut de publication.
