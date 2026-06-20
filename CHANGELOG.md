@@ -313,3 +313,11 @@ git push origin main
 ### Changed — DetailBatch
 - Bouton "← Retour aux batches" remplacé par bouton "← Retour" intégré dans la barre de contrôles (même ligne que les onglets), coloré en mauve/primary
 
+## [Session 10k] - 2026-06-20
+
+### Fixed — DetailBatch actions
+- **Ignorer** : mise à jour locale immédiate (optimistic update) — plus de flash "Chargement…" ni d'attente visible
+- **Valider** : idem, mise à jour locale immédiate
+- **Supprimer** : la facture disparaît instantanément du tableau sans rechargement complet
+- **Bouton "Tout approuver"** : label devient "Approuver X élèves" (sans "Tout") dès qu'au moins une facture est ignorée, pour refléter que certains sont exclus
+

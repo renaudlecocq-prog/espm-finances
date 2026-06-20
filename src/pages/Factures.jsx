@@ -672,16 +672,17 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
 
   const validerFacture = async (f) => {
     setBusy(true)
+    setFactures(prev => prev.map(ff => ff.id === f.id ? { ...ff, statut: 'facture' } : ff))
     await supabase.from('factures').update({ statut: 'facture' }).eq('id', f.id)
     await mettreAJourItemsApresApprobation([f.id])
-    await load(); setBusy(false)
+    setBusy(false)
   }
 
   const ignorerFacture = async (f) => {
-    setBusy(true)
     const newStatut = f.statut === 'ignore' ? 'brouillon' : 'ignore'
+    // Mise à jour locale immédiate (pas de flash de rechargement)
+    setFactures(prev => prev.map(ff => ff.id === f.id ? { ...ff, statut: newStatut } : ff))
     await supabase.from('factures').update({ statut: newStatut }).eq('id', f.id)
-    await load(); setBusy(false)
   }
 
   const supprimerFacture = async (f) => {
@@ -710,10 +711,10 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         .eq('id', id)
     }
 
-    // Supprimer la facture
+    // Supprimer la facture + mise à jour locale immédiate
     await supabase.from('factures').delete().eq('id', f.id)
+    setFactures(prev => prev.filter(ff => ff.id !== f.id))
     setConfirm(null)
-    await load()
     setBusy(false)
   }
 
@@ -792,7 +793,9 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         {isFinancier && nbAttente > 0 && (
           <button onClick={toutApprouver} disabled={busy}
             className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-green-300 text-green-700 bg-green-50 hover:bg-green-100 transition-colors shrink-0 disabled:opacity-50">
-            ✓ Tout approuver ({nbAttente})
+            ✓ {factures.some(f => f.statut === 'ignore')
+              ? `Approuver ${nbAttente} élève${nbAttente > 1 ? 's' : ''}`
+              : `Tout approuver (${nbAttente})`}
           </button>
         )}
       </div>
