@@ -20,6 +20,39 @@ function Badge({ statut }) {
   return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.cls}`}>{s.label}</span>
 }
 
+// Calcul des impayés par facture (priorité chronologique par élève)
+// allFactures : [{id, eleve_id, montant, date, created_at}]
+// paiementsMap : {eleve_id -> totalPaiements}
+// Retourne : {factureId -> montantImpayé}
+function calcImpayes(allFactures, paiementsMap) {
+  // Grouper par élève
+  const byEleve = {}
+  for (const f of allFactures) {
+    if (!byEleve[f.eleve_id]) byEleve[f.eleve_id] = []
+    byEleve[f.eleve_id].push(f)
+  }
+  const result = {}
+  for (const [eleveId, facs] of Object.entries(byEleve)) {
+    // Tri chronologique (date puis created_at)
+    facs.sort((a, b) => {
+      const d = new Date(a.date) - new Date(b.date)
+      return d !== 0 ? d : new Date(a.created_at) - new Date(b.created_at)
+    })
+    let credit = paiementsMap[eleveId] || 0
+    for (const f of facs) {
+      const montant = Number(f.montant)
+      if (credit >= montant) {
+        result[f.id] = 0
+        credit -= montant
+      } else {
+        result[f.id] = montant - credit
+        credit = 0
+      }
+    }
+  }
+  return result
+}
+
 function isEleveInActivite(eleve, activite) {
   const ci = activite.classes_incluses || []
   const ce = activite.classes_exclues  || []
@@ -109,6 +142,7 @@ function FacturationModal({ onClose, onDone }) {
   const [generating, setGenerating] = useState(false)
   const [progress, setProgress]     = useState(null)  // { step, current, total }
   const [done, setDone]             = useState(null)  // { count, batchId }
+  const [nomBatch, setNomBatch]     = useState('')
 
   const [allEleves, setAllEleves]         = useState([])
   const [allClasses, setAllClasses]       = useState([])
@@ -121,56 +155,48 @@ function FacturationModal({ onClose, onDone }) {
 
   useEffect(() => {
     const load = async () => {
+      const chunkFn = (arr, n) => Array.from({length: Math.ceil(arr.length/n)}, (_,i) => arr.slice(i*n,(i+1)*n))
+
       const [elevesRes, attrsRes, activRes] = await Promise.all([
         supabase.from('eleves').select('id,nom,prenom,classe,matricule').eq('actif', true).order('classe').order('nom'),
         supabase.from('article_attributions')
           .select('*, article:article_id(nom,categorie,prix_unitaire)')
-          .in('statut_facturation', ['a_facturer', 'partiellement_facture']),
+          .eq('statut_facturation', 'a_facturer'),
         supabase.from('activites')
           .select('*')
-          .in('statut_facturation', ['a_facturer', 'partiellement_facture'])
+          .eq('statut_facturation', 'a_facturer')
           .eq('statut', 'publie'),
       ])
-      const eleves       = elevesRes.data  || []
-      const pendingAttrs = attrsRes.data   || []
-      const pendingActiv = activRes.data   || []
+      const eleves = elevesRes.data || []
+      let pendingAttrs = attrsRes.data || []
+      let pendingActiv = activRes.data || []
 
       setAllEleves(eleves)
       setAllClasses([...new Set(eleves.map(e => e.classe).filter(Boolean))].sort())
+
+      // Exclure les items déjà dans un batch en brouillon → évite double facturation
+      const { data: brouillonFacs } = await supabase.from('factures').select('id').eq('statut', 'brouillon')
+      const bfIds = (brouillonFacs || []).map(f => f.id)
+      if (bfIds.length > 0) {
+        const attrsBilled = new Set(), activBilled = new Set()
+        for (const slice of chunkFn(bfIds, 50)) {
+          const { data: ls } = await supabase.from('facture_lignes')
+            .select('article_attribution_id, activite_id').in('facture_id', slice)
+          for (const l of (ls || [])) {
+            if (l.article_attribution_id) attrsBilled.add(l.article_attribution_id)
+            if (l.activite_id) activBilled.add(l.activite_id)
+          }
+        }
+        pendingAttrs = pendingAttrs.filter(a => !attrsBilled.has(a.id))
+        pendingActiv = pendingActiv.filter(a => !activBilled.has(a.id))
+      }
+
       setAttrs(pendingAttrs)
       setActivites(pendingActiv)
-
       const sel = {}
       pendingAttrs.forEach(a => { sel[`attr_${a.id}`]  = true })
       pendingActiv.forEach(a => { sel[`activ_${a.id}`] = true })
       setSelItems(sel)
-
-      const partialAttrIds  = pendingAttrs.filter(a => a.statut_facturation === 'partiellement_facture').map(a => a.id)
-      const partialActivIds = pendingActiv.filter(a => a.statut_facturation === 'partiellement_facture').map(a => a.id)
-
-      if (partialAttrIds.length > 0 || partialActivIds.length > 0) {
-        const filters = []
-        if (partialAttrIds.length)  filters.push(`article_attribution_id.in.(${partialAttrIds.join(',')})`)
-        if (partialActivIds.length) filters.push(`activite_id.in.(${partialActivIds.join(',')})`)
-        const { data: lignes } = await supabase
-          .from('facture_lignes')
-          .select('article_attribution_id, activite_id, facture:facture_id(eleve_id)')
-          .or(filters.join(','))
-        const byAttr = {}, byActiv = {}
-        for (const l of lignes || []) {
-          if (!l.facture?.eleve_id) continue
-          if (l.article_attribution_id) {
-            byAttr[l.article_attribution_id] ??= new Set()
-            byAttr[l.article_attribution_id].add(l.facture.eleve_id)
-          }
-          if (l.activite_id) {
-            byActiv[l.activite_id] ??= new Set()
-            byActiv[l.activite_id].add(l.facture.eleve_id)
-          }
-        }
-        setBilledByAttr(byAttr)
-        setBilledByActiv(byActiv)
-      }
       setLoading(false)
     }
     load()
@@ -248,7 +274,7 @@ function FacturationModal({ onClose, onDone }) {
     const runNumber = (existing?.length || 0) + 1
     const batchNumero = `${baseNumero}-${String(runNumber).padStart(2, '0')}`
     const { data: batch } = await supabase.from('facture_batches')
-      .insert({ numero: batchNumero, date: now.toISOString().slice(0, 10), statut: 'brouillon', created_by: user?.id })
+      .insert({ numero: batchNumero, date: now.toISOString().slice(0, 10), statut: 'brouillon', created_by: user?.id, nom: nomBatch.trim() || null })
       .select().single()
     if (!batch) { setGenerating(false); setProgress(null); return }
 
@@ -342,6 +368,17 @@ function FacturationModal({ onClose, onDone }) {
             </div>
           ) : (
             <div className="p-5 space-y-6">
+              {/* Nom du batch */}
+              <div className="flex items-center gap-3">
+                <label className="text-xs text-gray-500 shrink-0 w-20">Nom :</label>
+                <input
+                  type="text"
+                  placeholder="Ex : Photocopies 1H, Voyage scolaire 3A…"
+                  value={nomBatch}
+                  onChange={e => setNomBatch(e.target.value)}
+                  className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
               {allClasses.length > 0 && (
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-gray-500 shrink-0">Classes :</span>
@@ -465,20 +502,36 @@ function FacturationModal({ onClose, onDone }) {
 function ListeBatches({ onNew, onSelect }) {
   const { isFinancier } = useAuth()
   const [batches, setBatches]     = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [search, setSearch]       = useState('')
-  const [activeTab, setActiveTab] = useState('attente') // 'attente' | 'valide'
+  const [loading, setLoading]         = useState(true)
+  const [search, setSearch]           = useState('')
+  const [activeTab, setActiveTab]     = useState('attente') // 'attente' | 'valide' | 'impaye'
+  const [impayesParBatch, setImpayesParBatch] = useState({}) // batchId -> montant impayé
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('facture_batches')
-      .select('*, factures(id, montant, statut, eleve:eleves(nom, prenom, classe))')
-      .order('created_at', { ascending: false })
+    const [{ data }, { data: allFacs }, { data: allPaies }] = await Promise.all([
+      supabase.from('facture_batches')
+        .select('*, factures(id, montant, statut, eleve:eleves(nom, prenom, classe))')
+        .order('created_at', { ascending: false }),
+      supabase.from('factures')
+        .select('id, eleve_id, montant, date, created_at, batch_id')
+        .eq('statut', 'facture'),
+      supabase.from('paiements').select('eleve_id, montant'),
+    ])
     setBatches(data || [])
-    // Auto-switch vers "Facturé" s'il n'y a aucun batch en attente
     const hasAttente = (data || []).some(b => (b.factures || []).some(f => f.statut !== 'facture'))
     if ((data || []).length > 0 && !hasAttente) setActiveTab('valide')
+
+    // Calcul impayés
+    const pMap = {}
+    for (const p of (allPaies || [])) pMap[p.eleve_id] = (pMap[p.eleve_id] || 0) + Number(p.montant)
+    const impayes = calcImpayes(allFacs || [], pMap)
+    const byBatch = {}
+    for (const f of (allFacs || [])) {
+      if (!byBatch[f.batch_id]) byBatch[f.batch_id] = 0
+      byBatch[f.batch_id] += impayes[f.id] || 0
+    }
+    setImpayesParBatch(byBatch)
     setLoading(false)
   }
 
@@ -497,16 +550,19 @@ function ListeBatches({ onNew, onSelect }) {
   const totalFacs = batches.reduce((s, b) => s + (b.factures?.length || 0), 0)
   const nbAttenteTot = batches.filter(b => !stats(b).termine).length
   const nbValideTot  = batches.filter(b =>  stats(b).termine).length
+  const nbImpayeTot  = batches.filter(b => (impayesParBatch[b.id] || 0) > 0).length
 
   const filtered = batches.filter(b => {
     // Filtre onglet
     const s = stats(b)
     if (activeTab === 'attente' && s.termine) return false
     if (activeTab === 'valide'  && !s.termine) return false
+    if (activeTab === 'impaye'  && !((impayesParBatch[b.id] || 0) > 0)) return false
     // Filtre recherche : numéro batch, ou élève/classe dans les factures
     if (!search.trim()) return true
     const q = search.toLowerCase()
     if (b.numero?.toLowerCase().includes(q)) return true
+    if (b.nom?.toLowerCase().includes(q)) return true
     return (b.factures || []).some(f => {
       const e = f.eleve
       if (!e) return false
@@ -556,6 +612,17 @@ function ListeBatches({ onNew, onSelect }) {
                 : 'text-gray-500 hover:text-gray-700'}`}>
             Facturé
           </button>
+          <button onClick={() => setActiveTab('impaye')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-all
+              ${activeTab === 'impaye'
+                ? 'bg-white text-red-600 shadow-sm ring-1 ring-red-200'
+                : 'text-gray-500 hover:text-gray-700'}`}>
+            Impayés
+            <span className={`text-xs font-semibold tabular-nums
+              ${activeTab === 'impaye' ? 'text-red-500' : 'text-gray-400'}`}>
+              {nbImpayeTot}
+            </span>
+          </button>
         </div>
         <input
           type="text" placeholder="Rechercher un élève, une classe ou un N°…"
@@ -577,7 +644,7 @@ function ListeBatches({ onNew, onSelect }) {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {['N° Facturation','Date','Élèves','Total','Répartition','Statut'].map(h => (
+                {['N° Facturation','Date','Élèves','Total','Impayés','Répartition','Statut'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -588,10 +655,19 @@ function ListeBatches({ onNew, onSelect }) {
                 return (
                   <tr key={b.id} onClick={() => onSelect(b.id)}
                     className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors">
-                    <td className="px-4 py-3 font-mono text-sm font-bold text-gray-800">{b.numero}</td>
+                    <td className="px-4 py-3">
+                      <p className="text-sm font-semibold text-gray-800">{b.nom || b.numero}</p>
+                      {b.nom && <p className="font-mono text-xs text-gray-400 mt-0.5">{b.numero}</p>}
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{fmtDate(b.date)}</td>
                     <td className="px-4 py-3 text-gray-700 font-medium">{s.nbTotal}</td>
                     <td className="px-4 py-3 font-semibold text-primary">{fmtEur(s.total)}</td>
+                    <td className="px-4 py-3">
+                      {(impayesParBatch[b.id] || 0) > 0
+                        ? <span className="font-semibold text-red-600 tabular-nums">{fmtEur(impayesParBatch[b.id])}</span>
+                        : <span className="text-gray-300">—</span>
+                      }
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {s.nbValide > 0 && (
@@ -633,6 +709,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
   const [loading, setLoading] = useState(true)
   const [confirm, setConfirm] = useState(null) // { facture }
   const [busy, setBusy]       = useState(false)
+  const [impayes, setImpayes] = useState({}) // factureId -> montant impayé
 
   const load = async () => {
     const [{ data: b }, { data: facs }] = await Promise.all([
@@ -644,8 +721,26 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     ])
     setBatch(b)
     setFactures(facs || [])
-    // Auto-switch vers "Facturé" si toutes les factures sont approuvées
     if ((facs || []).length > 0 && (facs || []).every(f => f.statut === 'facture')) setActiveTab('valide')
+
+    // Calcul des impayés pour les élèves de ce batch
+    const eleveIds = [...new Set((facs || []).map(f => f.eleve_id).filter(Boolean))]
+    if (eleveIds.length > 0) {
+      const chunkL = (arr, n) => Array.from({length: Math.ceil(arr.length/n)}, (_,i) => arr.slice(i*n,(i+1)*n))
+      const allFacsArr = []
+      const allPaiesArr = []
+      for (const slice of chunkL(eleveIds, 50)) {
+        const [{ data: fs }, { data: ps }] = await Promise.all([
+          supabase.from('factures').select('id, eleve_id, montant, date, created_at').eq('statut', 'facture').in('eleve_id', slice),
+          supabase.from('paiements').select('eleve_id, montant').in('eleve_id', slice),
+        ])
+        allFacsArr.push(...(fs || []))
+        allPaiesArr.push(...(ps || []))
+      }
+      const pMap = {}
+      for (const p of allPaiesArr) pMap[p.eleve_id] = (pMap[p.eleve_id] || 0) + Number(p.montant)
+      setImpayes(calcImpayes(allFacsArr, pMap))
+    }
     setLoading(false)
   }
 
@@ -769,8 +864,10 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
 
   const nbAttente  = factures.filter(f => f.statut === 'brouillon').length
   const nbValide   = factures.filter(f => f.statut === 'facture').length
+  const nbImpaye   = factures.filter(f => f.statut === 'facture' && (impayes[f.id] || 0) > 0).length
 
   const filtered = factures.filter(f => {
+    if (activeTab === 'impaye') return f.statut === 'facture' && (impayes[f.id] || 0) > 0
     const tabMatch = activeTab === 'attente' ? f.statut !== 'facture' : f.statut === 'facture'
     if (!tabMatch) return false
     if (!search) return true
@@ -789,6 +886,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
       <div className="flex items-baseline gap-3 mb-1 flex-wrap">
         <h1 className="text-2xl font-bold text-gray-800">
           Factures <span className="text-gray-400 font-medium">{batch?.numero}</span>
+          {batch?.nom && <span className="text-xl font-normal text-gray-500 ml-2">— {batch.nom}</span>}
         </h1>
         <p className="text-sm text-gray-400">
           {factures.length} facture{factures.length !== 1 ? 's' : ''} au total
@@ -824,6 +922,17 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
                 : 'text-gray-500 hover:text-gray-700'}`}>
             Facturé
           </button>
+          <button onClick={() => setActiveTab('impaye')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-all
+              ${activeTab === 'impaye'
+                ? 'bg-white text-red-600 shadow-sm ring-1 ring-red-200'
+                : 'text-gray-500 hover:text-gray-700'}`}>
+            Impayés
+            <span className={`text-xs font-semibold tabular-nums
+              ${activeTab === 'impaye' ? 'text-red-500' : 'text-gray-400'}`}>
+              {nbImpaye}
+            </span>
+          </button>
         </div>
         <input
           type="text" placeholder="Rechercher un élève ou un numéro…"
@@ -849,8 +958,9 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Classe</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Montant</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Solde après</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-red-400 uppercase tracking-wide">Impayé</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
-              {isFinancier && activeTab === 'attente' && <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>}
+              {isFinancier && (activeTab === 'attente') && <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -870,12 +980,18 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
                 <td className="px-4 py-3 font-semibold text-gray-800">{fmtEur(f.montant)}</td>
                 <td className="px-4 py-3">
                   <span className={`font-semibold tabular-nums
-                    ${Number(f.solde_apres) < 0 ? 'text-red-600' : Number(f.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                    ${Number(f.solde_apres) < 0 ? 'text-orange-500' : Number(f.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                     {fmtEur(f.solde_apres)}
-                            </span>
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  {(impayes[f.id] || 0) > 0
+                    ? <span className="font-semibold text-red-600 tabular-nums">{fmtEur(impayes[f.id])}</span>
+                    : <span className="text-gray-300">—</span>
+                  }
                 </td>
                 <td className="px-4 py-3"><Badge statut={f.statut} /></td>
-                {isFinancier && activeTab === 'attente' && (
+                {isFinancier && (activeTab === 'attente') && (
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1">
                       {f.statut !== 'facture' && (

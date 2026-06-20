@@ -85,6 +85,7 @@ export default function FicheEleve({ eleveId, onClose }) {
   const [callingIdx, setCallingIdx] = useState(null)
   const [editNoteId, setEditNoteId] = useState(null)
   const [editNoteVal, setEditNoteVal] = useState('')
+  const [finData, setFinData] = useState(null)  // { factures, paiements }
 
   const load = useCallback(async () => {
     if (!eleveId) return
@@ -106,11 +107,35 @@ export default function FicheEleve({ eleveId, onClose }) {
           .order('created_at', { ascending: false })
       )
     }
+    // Financial data (admin/financier)
+    let finPromise = Promise.resolve(null)
+    if (canSeeRestricted) {
+      finPromise = Promise.all([
+        supabase.from('factures')
+          .select('id, numero, montant, statut, date, batch:batch_id(numero, nom)')
+          .eq('eleve_id', eleveId)
+          .neq('statut', 'brouillon')
+          .order('date', { ascending: false }),
+        supabase.from('paiements')
+          .select('id, date, montant, paye_par, notes')
+          .eq('eleve_id', eleveId)
+          .order('date', { ascending: false }),
+      ])
+    }
+
     const [eRes, ecRes, oRes, apRes] = await Promise.all(queries)
     setEleve(eRes.data)
     setEchs(ecRes.data || [])
     setOrgs(oRes.data || [])
     if (apRes) setAppels(apRes.data || [])
+
+    if (canSeeRestricted) {
+      const [facsRes, paiesRes] = await finPromise
+      setFinData({
+        factures: facsRes?.data || [],
+        paiements: paiesRes?.data || [],
+      })
+    }
     setLoading(false)
   }, [eleveId, canSeeRestricted])
 
@@ -372,23 +397,77 @@ export default function FicheEleve({ eleveId, onClose }) {
             )}
 
             {/* ── 5. Financier (admin/financier) ──────────────────────── */}
-            {canSeeRestricted && (
-              <Section icon="💶" title="Financier">
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-sm text-gray-500">Solde</span>
-                  <span className={`text-base font-bold ${
-                    (eleve.solde || 0) < 0 ? 'text-red-600'
-                    : (eleve.solde || 0) > 0 ? 'text-green-600'
-                    : 'text-gray-400'
-                  }`}>
-                    {fmtEur(eleve.solde)}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400 mt-1.5 italic">
-                  Détail factures &amp; paiements disponible prochainement.
-                </p>
-              </Section>
-            )}
+            {canSeeRestricted && finData && (() => {
+              const totalFac = finData.factures
+                .filter(f => f.statut === 'facture' || f.statut === 'rappel' || f.statut === 'mise_en_demeure')
+                .reduce((s, f) => s + Number(f.montant || 0), 0)
+              const totalPai = finData.paiements.reduce((s, p) => s + Number(p.montant || 0), 0)
+              const solde = totalPai - totalFac
+              const STATUT_FAC = {
+                facture:          { label: 'Facturé',          cls: 'bg-green-100 text-green-700' },
+                ignore:           { label: 'Ignoré',           cls: 'bg-gray-100 text-gray-500' },
+                rappel:           { label: 'Rappel',           cls: 'bg-orange-100 text-orange-700' },
+                mise_en_demeure:  { label: 'Mise en demeure',  cls: 'bg-red-100 text-red-700' },
+              }
+              return (
+                <Section icon="💶" title="Financier">
+                  {/* Solde */}
+                  <div className="flex items-center justify-between py-1 mb-3">
+                    <span className="text-sm text-gray-500 font-medium">Solde</span>
+                    <span className={`text-base font-bold ${
+                      solde < 0 ? 'text-red-600' : solde > 0 ? 'text-green-600' : 'text-gray-400'
+                    }`}>{fmtEur(solde)}</span>
+                  </div>
+
+                  {/* Factures */}
+                  {finData.factures.length > 0 && (
+                    <div className="mb-4">
+                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Factures</span>
+                      <div className="space-y-1.5 mt-2">
+                        {finData.factures.map(f => {
+                          const st = STATUT_FAC[f.statut] || { label: f.statut, cls: 'bg-gray-100 text-gray-500' }
+                          const batchLabel = f.batch?.nom || f.batch?.numero || '—'
+                          return (
+                            <div key={f.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-gray-700 truncate text-xs">{batchLabel}</p>
+                                <p className="text-gray-400 text-[11px] truncate">{f.numero} · {fmtDate(f.date)}</p>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                                <span className="font-semibold text-gray-700 tabular-nums text-xs">{fmtEur(f.montant)}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Paiements */}
+                  {finData.paiements.length > 0 && (
+                    <div>
+                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Paiements</span>
+                      <div className="space-y-1.5 mt-2">
+                        {finData.paiements.map(p => (
+                          <div key={p.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-gray-700 text-xs">{p.paye_par || 'Paiement'}</p>
+                              <p className="text-gray-400 text-[11px]">{fmtDate(p.date)}{p.notes ? ` · ${p.notes}` : ''}</p>
+                            </div>
+                            <span className="font-semibold text-green-600 tabular-nums shrink-0 text-xs">+{fmtEur(p.montant)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {finData.factures.length === 0 && finData.paiements.length === 0 && (
+                    <p className="text-xs text-gray-400 italic">Aucun mouvement financier.</p>
+                  )}
+                </Section>
+              )
+            })()}
 
             {/* ── 6. Historique appels (admin/financier) ──────────────── */}
             {canSeeRestricted && appels.length > 0 && (

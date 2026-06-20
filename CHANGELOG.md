@@ -425,3 +425,51 @@ git push origin main
 
 ### Fixed
 - **supprimerFacture** : suppression de `{ count: 'exact', head: true }` (retourne null) et de `partiellement_facture`. Recalcul correct du statut via `calcStatutSuppr` (même logique binaire que `calcStatut`).
+
+## [Session 14] - 2026-06-21
+
+### Added
+- **Calcul des impayés chronologique** : helper `calcImpayes(allFactures, paiementsMap)` — pour chaque élève, les paiements sont alloués aux factures dans l'ordre chronologique (la 1ère facture est couverte en premier). Retourne un map `factureId → montantImpayé`.
+- **Colonne "Impayés"** dans `ListeBatches` (à côté de "Total") : montant impayé total par batch en rouge, "—" si tout est payé.
+- **Colonne "Impayé"** dans `DetailBatch` (à côté de "Solde après") : montant impayé par facture individuelle en rouge.
+- **Onglet "Impayés"** (rouge) dans les deux vues — filtre les batches/factures avec impayé > 0.
+
+### Changed
+- **"Solde après"** dans `DetailBatch` : couleur négative changée de rouge → orange (`text-orange-500`) pour différencier du rouge "Impayé".
+- `DetailBatch.load()` : charge en parallèle les factures et paiements des élèves du batch (chunked par 50) pour calculer les impayés.
+- `ListeBatches.load()` : charge en parallèle toutes les factures approuvées + paiements pour agréger les impayés par batch.
+
+## [Session 15] - 2026-06-21
+
+### Fixed
+- **FacturationModal** : les activités en statut "Brouillon" n'apparaissaient pas dans la liste des éléments à facturer car le filtre `.eq('statut', 'publie')` les excluait. Suppression de ce filtre — seul `statut_facturation = 'a_facturer'` compte pour la facturation, pas le statut de publication.
+
+## [Session 16] - 2026-06-21
+
+### Changed
+- **Activites.jsx — formulaire** : suppression des boutons Brouillon/Publié dans le corps du formulaire. Remplacé "Enregistrer" par deux boutons dans le footer : **"✓ Publier"** (primary, enregistre avec `statut='publie'`) et **"✎ Brouillon"** (secondaire gris, enregistre avec `statut='brouillon'`).
+- **Statut facturation** : les options "À facturer" et "Facturé" sont désactivées (opacité 30%, cursor not-allowed, tooltip) tant que l'activité est en statut Brouillon. Seul "En attente" reste accessible.
+- **Quick-toggle liste** : le bouton "À facturer / En attente" n'est plus affiché si l'activité est en Brouillon.
+
+### Fixed  
+- **Factures.jsx** : rétablissement du filtre `.eq('statut', 'publie')` dans FacturationModal — les activités brouillon n'apparaissent pas dans la facturation (comportement intentionnel).
+- Apostrophe non échappée dans le `title` JSX qui cassait le build.
+
+## [Session 17] - 2026-06-21
+
+### Fixed
+- **Double facturation** : la FacturationModal affichait des articles/activités déjà inclus dans un batch en brouillon (non encore approuvé). Au chargement, les factures en brouillon sont maintenant consultées, et leurs items exclus de la liste — impossible de les facturer deux fois. Si le batch brouillon est supprimé, les items réapparaissent automatiquement.
+- Nettoyage du code mort `billedByAttr`/`billedByActiv` (logique `partiellement_facture` supprimée en session 11e).
+- Filtre `in('statut_facturation', [...])` simplifié en `eq('statut_facturation', 'a_facturer')` (partiellement_facture supprimé).
+
+## [Session 18] - 2026-06-21
+### Added
+- **Nom du batch** : champ texte optionnel dans la modal de facturation (ex : "Photocopies 1H", "Voyage scolaire 3A")
+- Nom affiché sous le N° dans ListeBatches, dans le header de DetailBatch, et inclus dans la recherche
+- **Fiche élève — section Financier** : détail complet des factures (avec nom du batch) et paiements, solde calculé dynamiquement (remplace le placeholder "disponible prochainement")
+### Technical
+- Migration DB : colonne `nom TEXT` ajoutée à `facture_batches`
+
+## [Session 18b] - 2026-06-21
+### Changed
+- ListeBatches : nom du batch affiché en grand au-dessus, N° en petit en dessous (si nom absent, N° affiché seul en grand)
