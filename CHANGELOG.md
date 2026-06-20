@@ -170,3 +170,9 @@ git push origin main
 |--------|-----------|-------------|---------|
 | `b4bcdbe` | `src/data/demoData.js` + `src/lib/supabaseMock.js` + `src/context/DemoContext.jsx` + `src/App.jsx` + `src/components/layout/Header.jsx` | Mode démo : 20 élèves fictifs (stars de la musique — Billie Eilish, Taylor Swift, Adele, Bruno Mars…) avec données complètes (factures, paiements, activités, articles, échelonnements, organismes tiers, responsables légaux). Client Supabase mocké (MockQuery/MockTable thenable + chainable, compatible Promise.all). Monkey-patch synchrone de `supabase.from()` via DemoContext avant tout rendu React. Toggle admin via bouton "🎭 Démo" dans le header. Bannière orange en bas de page. Header vire au brun foncé en mode démo. Aperçu Responsable en mode démo → affiche Billie Eilish + Post Malone. | `git revert b4bcdbe` |
 
+## [29e0de0] — 2026-06-20 — Fix mode démo + role switcher
+
+| Commit | Fichier(s) | Description | Rollback |
+|--------|-----------|-------------|---------|
+| `29e0de0` | `DemoContext.jsx` + `App.jsx` + `Admin.jsx` + `Home.jsx` | Fix critique : `profiles` et `sync_log` passent par le vrai Supabase (le mock les interceptait → rôle perdu → page blanche). Bannière démo : switcher de rôle intégré (Admin / Financier / MdP / Responsable). Admin > onglet Droits : bloc toggle mode démo avec état visuel. HomeResponsable : fallback automatique sur données démo si aucun élève lié (admin en aperçu responsable fonctionne sans mode démo). | `git revert 29e0de0` |
+
