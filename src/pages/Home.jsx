@@ -596,18 +596,55 @@ function HomeResponsable() {
               {echs.length > 0 && (
                 <div className={orgs.length > 0 ? 'mb-4' : ''}>
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Échelonnements</p>
-                  <div className="space-y-1.5">
-                    {echs.map(e => (
-                      <div key={e.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 text-sm gap-3">
-                        <span className="text-gray-700 truncate">
-                          {fmtEurR(e.montant)}
-                          {e.nombre_echeances ? ` · ${e.nombre_echeances} échéances` : ''}
-                          {e.mensualite ? ` de ${fmtEurR(e.mensualite)}/mois` : ''}
-                          {e.date_debut ? ` dès ${fmtDateR(e.date_debut)}` : ''}
-                        </span>
-                        <RBadge val={e.statut} map={STATUT_ECH_R} />
-                      </div>
-                    ))}
+                  <div className="space-y-3">
+                    {echs.map(e => {
+                      const cal = generateEcheancier(e)
+                      const nbPayes    = cal.filter(c => c.paiement === 'paye').length
+                      const nbRetard   = cal.filter(c => c.paiement === 'en_retard').length
+                      return (
+                        <div key={e.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                          {/* En-tête échelonnement */}
+                          <div className="flex items-center justify-between bg-gray-50 px-3 py-2.5 gap-3">
+                            <span className="text-sm text-gray-700 font-medium">
+                              {fmtEurR(e.montant)}
+                              {e.nombre_echeances ? ` · ${e.nombre_echeances} mensualités` : ''}
+                              {e.mensualite ? ` de ${fmtEurR(e.mensualite)}` : ''}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {nbRetard > 0 && (
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                                  {nbRetard} en retard
+                                </span>
+                              )}
+                              <RBadge val={e.statut} map={STATUT_ECH_R} />
+                            </div>
+                          </div>
+                          {/* Calendrier mois par mois */}
+                          {cal.length > 0 && (
+                            <div className="divide-y divide-gray-100">
+                              {cal.map(({ num, date, montant, paiement }) => {
+                                const p = ECH_PAY[paiement] || ECH_PAY.a_venir
+                                const dateStr = date.toLocaleDateString('fr-BE', { day:'2-digit', month:'2-digit', year:'numeric' })
+                                return (
+                                  <div key={num} className="flex items-center justify-between px-3 py-2 text-sm">
+                                    <div className="flex items-center gap-3">
+                                      <span className="w-5 text-center font-semibold text-gray-400 text-xs">{num}</span>
+                                      <span className="text-gray-600">{dateStr}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-gray-700 font-medium tabular-nums">{fmtEurR(montant)}</span>
+                                      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${p.cls}`}>
+                                        <span>{p.icon}</span> {p.label}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}

@@ -1,12 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { useDemo } from '../../context/DemoContext'
 import { supabase } from '../../lib/supabase'
 import NotificationBell from '../ui/NotificationBell'
 
 export default function Header() {
   const { profile, role, effectiveRole, isAdmin, isFinancier, isMdp } = useAuth()
-  const { demoMode, toggleDemo } = useDemo()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -32,7 +30,7 @@ export default function Header() {
   }
 
   return (
-    <header style={{ backgroundColor: demoMode ? '#7a3800' : '#2D1B2E' }}>
+    <header style={{ backgroundColor: '#2D1B2E' }}>
       <div className="max-w-screen-xl mx-auto px-4 flex items-center h-14 gap-4">
 
         <Link to="/" className="shrink-0 flex items-center gap-2">
@@ -44,11 +42,6 @@ export default function Header() {
           <span className="text-white font-bold text-lg tracking-wide leading-none">
             ESPM<span style={{ color: '#E86C00' }}>+</span>
           </span>
-          {demoMode && (
-            <span className="text-xs font-semibold px-1.5 py-0.5 rounded" style={{ background: '#E86C00', color: 'white' }}>
-              DÉMO
-            </span>
-          )}
         </Link>
 
         <nav className="flex items-center gap-0.5 overflow-x-auto flex-1">
@@ -60,19 +53,6 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3 shrink-0">
-          {/* Bouton mode démo — visible admin uniquement */}
-          {isAdmin && (
-            <button
-              onClick={toggleDemo}
-              title={demoMode ? 'Quitter le mode démo' : 'Activer le mode démo (données fictives)'}
-              className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors border"
-              style={demoMode
-                ? { background: '#E86C00', color: 'white', borderColor: 'transparent' }
-                : { background: 'transparent', color: 'rgba(255,255,255,0.5)', borderColor: 'rgba(255,255,255,0.2)' }}
-            >
-              🎭 Démo
-            </button>
-          )}
 
           <a
             href="https://espmaritime.smartschool.be/"
