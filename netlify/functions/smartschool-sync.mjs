@@ -10,7 +10,7 @@
  *
  * Env vars optionnelles (valeurs par défaut codées en dur) :
  *   SUPABASE_URL              (https://iubxalsakqljilydnqss.supabase.co)
- *   SMARTSCHOOL_API_URL       (https://espmaritime.smartschool.be/webservices/V3)
+ *   SMARTSCHOOL_API_URL       (https://espmaritime.smartschool.be/Webservices/V3)
  */
 
 const ALLOWED_ORIGINS = [
@@ -109,7 +109,7 @@ export default async function handler(req) {
 
   const SUPABASE_URL = process.env.SUPABASE_URL || 'https://iubxalsakqljilydnqss.supabase.co'
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const SS_URL       = process.env.SMARTSCHOOL_API_URL || 'https://espmaritime.smartschool.be/webservices/V3'
+  const SS_URL       = process.env.SMARTSCHOOL_API_URL || 'https://espmaritime.smartschool.be/Webservices/V3'
   const SS_CODE      = process.env.SMARTSCHOOL_ACCESS_CODE
 
   if (!SUPABASE_KEY) return new Response(JSON.stringify({ error: 'SUPABASE_SERVICE_ROLE_KEY manquant' }), { status: 500, headers })

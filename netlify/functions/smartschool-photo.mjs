@@ -68,7 +68,7 @@ export default async function handler(req) {
   if (req.method !== 'POST')
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers })
 
-  const SS_URL  = process.env.SMARTSCHOOL_API_URL  || 'https://espmaritime.smartschool.be/webservices/V3'
+  const SS_URL  = process.env.SMARTSCHOOL_API_URL  || 'https://espmaritime.smartschool.be/Webservices/V3'
   const SS_CODE = process.env.SMARTSCHOOL_ACCESS_CODE
 
   if (!SS_CODE)
