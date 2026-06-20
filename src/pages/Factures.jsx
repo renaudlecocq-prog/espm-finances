@@ -683,34 +683,29 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     const attrIds  = [...new Set((lignes||[]).filter(l=>l.article_attribution_id).map(l=>l.article_attribution_id))]
     const activIds = [...new Set((lignes||[]).filter(l=>l.activite_id).map(l=>l.activite_id))]
 
-    // Calcule le nouveau statut : 'facture' si tout approuvé, 'partiellement_facture' si certains
-    // ignorés/en attente mais au moins un approuvé, sinon 'a_facturer'
-    const calcStatut = async (table, fkCol, id) => {
-      const { data: lignesItem } = await supabase.from('facture_lignes')
-        .select('facture_id').eq(fkCol, id)
-      const ids = (lignesItem||[]).map(l=>l.facture_id)
-      if (!ids.length) return 'a_facturer'
-      // IDs chunked par 50 (chunk défini en haut de la fonction)
-      let nbPending = 0, nbApproved = 0
-      for (const slice of chunk(ids, 50)) {
-        const { count: c1 } = await supabase.from('factures')
-          .select('*',{count:'exact',head:true}).in('id',slice).in('statut',['brouillon','ignore'])
-        nbPending += (c1||0)
-        const { count: c2 } = await supabase.from('factures')
-          .select('*',{count:'exact',head:true}).in('id',slice).eq('statut','facture')
-        nbApproved += (c2||0)
-      }
-      if (nbPending === 0)              return 'facture'              // tous approuvés
-      if (nbApproved > 0)               return 'partiellement_facture' // mix
-      return 'a_facturer'                                              // aucun encore approuvé
+    // calcStatut : 2 requêtes parallèles avec JOIN au lieu de paginer des milliers d'IDs
+    // PostgREST filtre sur la table jointe via .eq('factures.statut', ...)
+    const calcStatut = async (fkCol, id) => {
+      const [{ count: nbBrouillon }, { count: nbApproved }] = await Promise.all([
+        supabase.from('facture_lignes')
+          .select('id, factures!inner(statut)', { count: 'exact', head: true })
+          .eq(fkCol, id).eq('factures.statut', 'brouillon'),
+        supabase.from('facture_lignes')
+          .select('id, factures!inner(statut)', { count: 'exact', head: true })
+          .eq(fkCol, id).eq('factures.statut', 'facture'),
+      ])
+      if ((nbBrouillon || 0) === 0 && (nbApproved || 0) === 0) return 'a_facturer'
+      if ((nbBrouillon || 0) === 0) return 'facture'               // plus rien en attente
+      if ((nbApproved || 0) > 0)   return 'partiellement_facture'  // mix approuvé + en attente
+      return 'a_facturer'
     }
 
     for (const id of attrIds) {
-      const statut = await calcStatut('article_attributions', 'article_attribution_id', id)
+      const statut = await calcStatut('article_attribution_id', id)
       await supabase.from('article_attributions').update({statut_facturation: statut}).eq('id', id)
     }
     for (const id of activIds) {
-      const statut = await calcStatut('activites', 'activite_id', id)
+      const statut = await calcStatut('activite_id', id)
       await supabase.from('activites').update({statut_facturation: statut}).eq('id', id)
     }
   }

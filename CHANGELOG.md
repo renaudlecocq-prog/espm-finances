@@ -367,3 +367,19 @@ git push origin main
 - La correction du `setBusy` en 10n était insuffisante : si deux "Ignorer" sont cliqués en succession rapide, deux `ignorerFacture` tournent en parallèle ; quand le premier se termine, `setBusy(false)` libère le bouton "Approuver" alors que le second save n'a pas encore atteint la DB
 - Solution radicale : `toutApprouver` utilise désormais les IDs **depuis l'état local** (pas un filtre DB `.eq('statut','brouillon')`). L'optimistic update de `ignorerFacture` exclut les élèves ignorés du state local IMMÉDIATEMENT (avant même le save Supabase), donc `ids` ne les contient jamais, quelle que soit la vitesse de la DB
 - Le `.update().in('id', ids)` est découpé en tranches de 50 pour respecter les limites URL PostgREST
+
+## [Session 11] - 2026-06-20
+
+### Fixed — calcStatut : statuts articles/activités toujours "À facturer"
+- Remplacement de l'approche "paginer des milliers d'IDs en chunks de 50" (≥94 requêtes séquentielles pour un seul article avec 7 batches de test) par 2 requêtes parallèles utilisant un JOIN PostgREST
+- `facture_lignes JOIN factures!inner` + `.eq('factures.statut', ...)` → la DB fait le join, zéro pagination côté client
+- Logique : nbBrouillon=0 + nbApproved>0 → 'facture' ; nbBrouillon>0 + nbApproved>0 → 'partiellement_facture' ; sinon → 'a_facturer'
+- Les factures ignorées ne bloquent plus la transition vers 'facture' (seules les brouillon comptent comme "en attente")
+
+### Changed — Articles : tableau attributions redesigné
+- Header "Notes" renommé "Statut" (le header pointait déjà sur la colonne des badges statut, le texte était trompeur)
+- Colonne "Notes" (texte libre, toujours vide = "—") supprimée du tableau — la saisie reste dans le formulaire
+- `__ALL__` remplacé par "Tous les élèves" dans la colonne Attribution
+- Boutons "Modifier" / "Supprimer" remplacés par icônes SVG crayon/corbeille (gain de place)
+- Boutons désactivés (opacité 30%, curseur interdit) quand `statut_facturation === 'facture'`
+
