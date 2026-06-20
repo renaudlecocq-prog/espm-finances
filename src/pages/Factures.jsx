@@ -695,13 +695,14 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         ← Retour aux batches
       </button>
 
-      <div className="mb-1">
-        <div className="flex items-center gap-3 mb-0.5">
-          <h1 className="text-2xl font-bold text-gray-800">Factures</h1>
-          <span className="text-gray-400 text-sm font-medium">{batch?.numero}</span>
-        </div>
-        <p className="text-gray-500 text-sm">
-          {factures.length} facture{factures.length !== 1 ? 's' : ''} au total · {fmtDate(batch?.date)} · {fmtEur(totalBatch)}
+      <div className="flex items-baseline gap-3 mb-1 flex-wrap">
+        <h1 className="text-2xl font-bold text-gray-800">
+          Factures <span className="text-gray-400 font-medium">{batch?.numero}</span>
+        </h1>
+        <p className="text-sm text-gray-400">
+          {factures.length} facture{factures.length !== 1 ? 's' : ''} au total
+          <span className="mx-1.5">·</span>{fmtDate(batch?.date)}
+          <span className="mx-1.5">·</span><span className="font-semibold text-primary">{fmtEur(totalBatch)}</span>
         </p>
       </div>
 
@@ -712,18 +713,18 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
           <button onClick={() => setActiveTab('attente')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-all
               ${activeTab === 'attente'
-                ? 'bg-white text-primary shadow-sm'
+                ? 'bg-white text-orange-600 shadow-sm ring-1 ring-orange-200'
                 : 'text-gray-500 hover:text-gray-700'}`}>
             En attente
             <span className={`text-xs font-semibold tabular-nums
-              ${activeTab === 'attente' ? 'text-primary' : 'text-gray-400'}`}>
+              ${activeTab === 'attente' ? 'text-orange-500' : 'text-gray-400'}`}>
               {nbAttente + factures.filter(f => f.statut === 'ignore').length}
             </span>
           </button>
           <button onClick={() => setActiveTab('valide')}
             className={`px-3 py-1 rounded-md text-sm font-medium transition-all
               ${activeTab === 'valide'
-                ? 'bg-white text-primary shadow-sm'
+                ? 'bg-white text-green-700 shadow-sm ring-1 ring-green-200'
                 : 'text-gray-500 hover:text-gray-700'}`}>
             Facturé
           </button>
@@ -735,7 +736,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         />
         {isFinancier && nbAttente > 0 && (
           <button onClick={toutApprouver} disabled={busy}
-            className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-primary/25 text-primary bg-primary/5 hover:bg-primary/10 transition-colors shrink-0 disabled:opacity-50">
+            className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-green-300 text-green-700 bg-green-50 hover:bg-green-100 transition-colors shrink-0 disabled:opacity-50">
             ✓ Tout approuver ({nbAttente})
           </button>
         )}
