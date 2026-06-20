@@ -214,6 +214,17 @@ git push origin main
 
 ---
 
+## [Session 10e] - 2026-06-20
+
+### Added
+- **Logo cercle SVG** dans Header.jsx : remplacement du shield par un cercle mauve avec les initiales "EP", cohérent avec l'identité visuelle
+- **Favicon.svg** mis à jour : nouveau favicon cercle mauve, remplace l'ancienne icône
+- **HomeResponsable** : vue dédiée pour le rôle `responsable` sur la page d'accueil — liste des enfants liés au compte avec solde, factures et paiements en lecture seule
+- **Mode démo** : accès sans authentification avec données fictives pour présentation du site, activé via paramètre URL `?demo=true`
+
+### Fixed
+- **Page blanche HomeResponsable en mode démo** : correction du chargement des données fictives pour le rôle responsable
+
 ## [Session 10f] - 2026-06-20
 
 ### Added
