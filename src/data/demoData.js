@@ -13,8 +13,8 @@ const CP       = ['1000','1020','1030','1040','1050','1060','1070','1080','1081'
 const RUES     = ['Rue de la Paix','Avenue des Arts','Chaussee de Mons','Rue Haute','Boulevard Anspach','Rue du Midi','Avenue Louise','Rue Royale','Place Fontainas','Rue des Bouchers']
 
 const STARS = [
-  { id:E(1),  prenom:'Billie',   nom:'Eilish',     classe:'1A',    dob:'2012-12-18', p1n:'Eilish',    p1f:'Maggie',     p1t:'0476 11 22 33', p2n:null,          p2f:null,        p2t:null,           philo:'Cours de religion catholique', solde:-45.00,  obs:'Sciences generales',  ac:'Arts plastiques',    m3:null,                  s3:null },
-  { id:E(2),  prenom:'Post',     nom:'Malone',     classe:'1B',    dob:'2012-07-04', p1n:'Malone',    p1f:'Rich',       p1t:'0487 33 44 55', p2n:'Malone',      p2f:'Amy',       p2t:'0472 55 66 77',philo:'Morale non confessionnelle',   solde: 20.00,  obs:'Sciences generales',  ac:null,                 m3:null,                  s3:null },
+  { id:E(1),  prenom:'Billie',   nom:'Eilish',     classe:'1A',    dob:'2012-12-18', p1n:'Eilish',    p1f:'Maggie',     p1t:'0476 11 22 33', p2n:'Malone',      p2f:'Richard',   p2t:'0487 33 44 55',           philo:'Cours de religion catholique', solde:-45.00,  obs:'Sciences generales',  ac:'Arts plastiques',    m3:null,                  s3:null },
+  { id:E(2),  prenom:'Post',     nom:'Malone',     classe:'1B',    dob:'2012-07-04', p1n:'Malone',    p1f:'Richard',    p1t:'0487 33 44 55', p2n:'Eilish',      p2f:'Maggie',    p2t:'0476 11 22 33',philo:'Morale non confessionnelle',   solde: 20.00,  obs:'Sciences generales',  ac:null,                 m3:null,                  s3:null },
   { id:E(3),  prenom:'Abel',     nom:'Tesfaye',    classe:'2A',    dob:'2011-02-16', p1n:'Tesfaye',   p1f:'Samra',      p1t:'0468 22 33 44', p2n:null,          p2f:null,        p2t:null,           philo:'Islam',                        solde:-80.00,  obs:'Sciences generales',  ac:null,                 m3:null,                  s3:null },
   { id:E(4),  prenom:'Ariana',   nom:'Grande',     classe:'2B',    dob:'2011-06-26', p1n:'Grande',    p1f:'Joan',       p1t:'0494 44 55 66', p2n:'Grande',      p2f:'Ed',        p2t:'0471 66 77 88',philo:'Cours de religion catholique', solde: 10.00,  obs:null,                  ac:'Musique',            m3:null,                  s3:null },
   { id:E(5),  prenom:'Taylor',   nom:'Swift',      classe:'3TQ A', dob:'2010-12-13', p1n:'Swift',     p1f:'Scott',      p1t:'0478 77 88 99', p2n:'Swift',       p2f:'Andrea',    p2t:'0462 99 00 11',philo:'Cours de religion catholique', solde:-125.50, obs:'Sciences appliquees', ac:'Langues modernes',   m3:null,                  s3:null },
@@ -135,7 +135,8 @@ const paiements = eleves.map((el, i) => {
 
 // ── Echelonnements ────────────────────────────────────────────────────────
 const echelonnements = [
-  { id:'demo-ech-001', eleve_id:E(5),  montant:450.00, nombre_echeances:6, date_debut:past(60),  mensualite:75.00, statut:'en_cours',     remarque:'Plan convenu avec la famille.' },
+  { id:'demo-ech-001', eleve_id:E(1),  montant:270.00, nombre_echeances:6, date_debut:past(60),  mensualite:45.00, statut:'en_cours',     remarque:'Plan convenu avec la famille.' },
+  { id:'demo-ech-001b', eleve_id:E(5), montant:450.00, nombre_echeances:6, date_debut:past(60),  mensualite:75.00, statut:'en_cours',     remarque:'Plan convenu avec la famille.' },
   { id:'demo-ech-002', eleve_id:E(8),  montant:600.00, nombre_echeances:8, date_debut:past(90),  mensualite:75.00, statut:'non_respecte', remarque:'Relance envoyee le ' + past(10) + '.' },
   { id:'demo-ech-003', eleve_id:E(10), montant:350.00, nombre_echeances:5, date_debut:past(150), mensualite:70.00, statut:'en_cours',     remarque:'Accord verbal parents.' },
   { id:'demo-ech-004', eleve_id:E(15), montant:525.00, nombre_echeances:7, date_debut:past(210), mensualite:75.00, statut:'non_respecte', remarque:'Dossier transmis a la direction.' },
@@ -144,7 +145,7 @@ const echelonnements = [
 
 // ── Organismes tiers ──────────────────────────────────────────────────────
 const organismes_tiers = [
-  { id:'demo-ot-001', eleve_id:E(1),  organisme:'CPAS',  statut:'en_cours', montant_accorde:180.00, notes:'Dossier ouvert.' },
+  { id:'demo-ot-001', eleve_id:E(3),  organisme:'CPAS',  statut:'en_cours', montant_accorde:180.00, notes:'Dossier ouvert.' },
   { id:'demo-ot-002', eleve_id:E(2),  organisme:'SPJ',   statut:'valide',   montant_accorde:300.00, notes:'Accord recu.' },
   { id:'demo-ot-003', eleve_id:E(9),  organisme:'ULB',   statut:'en_cours', montant_accorde:250.00, notes:'En attente de confirmation.' },
   { id:'demo-ot-004', eleve_id:E(14), organisme:'CPAS',  statut:'valide',   montant_accorde:240.00, notes:'Versement effectue.' },

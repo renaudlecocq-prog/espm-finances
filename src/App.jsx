@@ -18,12 +18,14 @@ import Admin from './pages/Admin'
 import MentionsLegales from './pages/MentionsLegales'
 
 function RequireAuth({ children, require = 'user' }) {
-  const { user, loading, role } = useAuth()
+  const { user, loading, role, effectiveRole } = useAuth()
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
   if (!user) return <Navigate to="/login" replace />
-  if (require === 'admin'     && role !== 'admin')                               return <Navigate to="/" replace />
-  if (require === 'financier' && !['admin','financier'].includes(role))          return <Navigate to="/" replace />
-  if (require === 'mdp'       && !['admin','financier','mdp'].includes(role))    return <Navigate to="/" replace />
+  // On utilise effectiveRole pour que l'aperçu de rôle restreigne vraiment l'accès aux pages
+  // Exception : /admin reste basé sur le vrai role (un admin ne perd jamais son accès admin)
+  if (require === 'admin'     && role !== 'admin')                                   return <Navigate to="/" replace />
+  if (require === 'financier' && !['admin','financier'].includes(effectiveRole))      return <Navigate to="/" replace />
+  if (require === 'mdp'       && !['admin','financier','mdp'].includes(effectiveRole))return <Navigate to="/" replace />
   return children
 }
 

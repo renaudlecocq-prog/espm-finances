@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import NotificationBell from '../ui/NotificationBell'
 
 export default function Header() {
-  const { profile, role, isAdmin, isFinancier, isMdp } = useAuth()
+  const { profile, role, effectiveRole, isAdmin, isFinancier, isMdp } = useAuth()
   const { demoMode, toggleDemo } = useDemo()
   const location = useLocation()
   const navigate = useNavigate()
@@ -90,7 +90,12 @@ export default function Header() {
           {profile && (
             <div className="text-right leading-tight hidden sm:block">
               <span className="text-white text-sm font-semibold block">{profile.prenom}</span>
-              <span className="text-white/60 text-xs">{roleLabel[role] || role}</span>
+              <span className="text-white/60 text-xs flex items-center gap-1 justify-end">
+                {roleLabel[effectiveRole] || effectiveRole}
+                {effectiveRole !== role && (
+                  <span title={`Réel : ${roleLabel[role] || role}`} className="opacity-50">↩</span>
+                )}
+              </span>
             </div>
           )}
 
