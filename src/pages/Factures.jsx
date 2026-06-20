@@ -154,56 +154,48 @@ function FacturationModal({ onClose, onDone }) {
 
   useEffect(() => {
     const load = async () => {
+      const chunkFn = (arr, n) => Array.from({length: Math.ceil(arr.length/n)}, (_,i) => arr.slice(i*n,(i+1)*n))
+
       const [elevesRes, attrsRes, activRes] = await Promise.all([
         supabase.from('eleves').select('id,nom,prenom,classe,matricule').eq('actif', true).order('classe').order('nom'),
         supabase.from('article_attributions')
           .select('*, article:article_id(nom,categorie,prix_unitaire)')
-          .in('statut_facturation', ['a_facturer', 'partiellement_facture']),
+          .eq('statut_facturation', 'a_facturer'),
         supabase.from('activites')
           .select('*')
-          .in('statut_facturation', ['a_facturer', 'partiellement_facture'])
+          .eq('statut_facturation', 'a_facturer')
           .eq('statut', 'publie'),
       ])
-      const eleves       = elevesRes.data  || []
-      const pendingAttrs = attrsRes.data   || []
-      const pendingActiv = activRes.data   || []
+      const eleves = elevesRes.data || []
+      let pendingAttrs = attrsRes.data || []
+      let pendingActiv = activRes.data || []
 
       setAllEleves(eleves)
       setAllClasses([...new Set(eleves.map(e => e.classe).filter(Boolean))].sort())
+
+      // Exclure les items déjà dans un batch en brouillon → évite double facturation
+      const { data: brouillonFacs } = await supabase.from('factures').select('id').eq('statut', 'brouillon')
+      const bfIds = (brouillonFacs || []).map(f => f.id)
+      if (bfIds.length > 0) {
+        const attrsBilled = new Set(), activBilled = new Set()
+        for (const slice of chunkFn(bfIds, 50)) {
+          const { data: ls } = await supabase.from('facture_lignes')
+            .select('article_attribution_id, activite_id').in('facture_id', slice)
+          for (const l of (ls || [])) {
+            if (l.article_attribution_id) attrsBilled.add(l.article_attribution_id)
+            if (l.activite_id) activBilled.add(l.activite_id)
+          }
+        }
+        pendingAttrs = pendingAttrs.filter(a => !attrsBilled.has(a.id))
+        pendingActiv = pendingActiv.filter(a => !activBilled.has(a.id))
+      }
+
       setAttrs(pendingAttrs)
       setActivites(pendingActiv)
-
       const sel = {}
       pendingAttrs.forEach(a => { sel[`attr_${a.id}`]  = true })
       pendingActiv.forEach(a => { sel[`activ_${a.id}`] = true })
       setSelItems(sel)
-
-      const partialAttrIds  = pendingAttrs.filter(a => a.statut_facturation === 'partiellement_facture').map(a => a.id)
-      const partialActivIds = pendingActiv.filter(a => a.statut_facturation === 'partiellement_facture').map(a => a.id)
-
-      if (partialAttrIds.length > 0 || partialActivIds.length > 0) {
-        const filters = []
-        if (partialAttrIds.length)  filters.push(`article_attribution_id.in.(${partialAttrIds.join(',')})`)
-        if (partialActivIds.length) filters.push(`activite_id.in.(${partialActivIds.join(',')})`)
-        const { data: lignes } = await supabase
-          .from('facture_lignes')
-          .select('article_attribution_id, activite_id, facture:facture_id(eleve_id)')
-          .or(filters.join(','))
-        const byAttr = {}, byActiv = {}
-        for (const l of lignes || []) {
-          if (!l.facture?.eleve_id) continue
-          if (l.article_attribution_id) {
-            byAttr[l.article_attribution_id] ??= new Set()
-            byAttr[l.article_attribution_id].add(l.facture.eleve_id)
-          }
-          if (l.activite_id) {
-            byActiv[l.activite_id] ??= new Set()
-            byActiv[l.activite_id].add(l.facture.eleve_id)
-          }
-        }
-        setBilledByAttr(byAttr)
-        setBilledByActiv(byActiv)
-      }
       setLoading(false)
     }
     load()
