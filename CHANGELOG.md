@@ -425,3 +425,16 @@ git push origin main
 
 ### Fixed
 - **supprimerFacture** : suppression de `{ count: 'exact', head: true }` (retourne null) et de `partiellement_facture`. Recalcul correct du statut via `calcStatutSuppr` (même logique binaire que `calcStatut`).
+
+## [Session 14] - 2026-06-21
+
+### Added
+- **Calcul des impayés chronologique** : helper `calcImpayes(allFactures, paiementsMap)` — pour chaque élève, les paiements sont alloués aux factures dans l'ordre chronologique (la 1ère facture est couverte en premier). Retourne un map `factureId → montantImpayé`.
+- **Colonne "Impayés"** dans `ListeBatches` (à côté de "Total") : montant impayé total par batch en rouge, "—" si tout est payé.
+- **Colonne "Impayé"** dans `DetailBatch` (à côté de "Solde après") : montant impayé par facture individuelle en rouge.
+- **Onglet "Impayés"** (rouge) dans les deux vues — filtre les batches/factures avec impayé > 0.
+
+### Changed
+- **"Solde après"** dans `DetailBatch` : couleur négative changée de rouge → orange (`text-orange-500`) pour différencier du rouge "Impayé".
+- `DetailBatch.load()` : charge en parallèle les factures et paiements des élèves du batch (chunked par 50) pour calculer les impayés.
+- `ListeBatches.load()` : charge en parallèle toutes les factures approuvées + paiements pour agréger les impayés par batch.

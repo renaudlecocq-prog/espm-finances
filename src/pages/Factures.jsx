@@ -20,6 +20,39 @@ function Badge({ statut }) {
   return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.cls}`}>{s.label}</span>
 }
 
+// Calcul des impayés par facture (priorité chronologique par élève)
+// allFactures : [{id, eleve_id, montant, date, created_at}]
+// paiementsMap : {eleve_id -> totalPaiements}
+// Retourne : {factureId -> montantImpayé}
+function calcImpayes(allFactures, paiementsMap) {
+  // Grouper par élève
+  const byEleve = {}
+  for (const f of allFactures) {
+    if (!byEleve[f.eleve_id]) byEleve[f.eleve_id] = []
+    byEleve[f.eleve_id].push(f)
+  }
+  const result = {}
+  for (const [eleveId, facs] of Object.entries(byEleve)) {
+    // Tri chronologique (date puis created_at)
+    facs.sort((a, b) => {
+      const d = new Date(a.date) - new Date(b.date)
+      return d !== 0 ? d : new Date(a.created_at) - new Date(b.created_at)
+    })
+    let credit = paiementsMap[eleveId] || 0
+    for (const f of facs) {
+      const montant = Number(f.montant)
+      if (credit >= montant) {
+        result[f.id] = 0
+        credit -= montant
+      } else {
+        result[f.id] = montant - credit
+        credit = 0
+      }
+    }
+  }
+  return result
+}
+
 function isEleveInActivite(eleve, activite) {
   const ci = activite.classes_incluses || []
   const ce = activite.classes_exclues  || []
@@ -465,20 +498,36 @@ function FacturationModal({ onClose, onDone }) {
 function ListeBatches({ onNew, onSelect }) {
   const { isFinancier } = useAuth()
   const [batches, setBatches]     = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [search, setSearch]       = useState('')
-  const [activeTab, setActiveTab] = useState('attente') // 'attente' | 'valide'
+  const [loading, setLoading]         = useState(true)
+  const [search, setSearch]           = useState('')
+  const [activeTab, setActiveTab]     = useState('attente') // 'attente' | 'valide' | 'impaye'
+  const [impayesParBatch, setImpayesParBatch] = useState({}) // batchId -> montant impayé
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('facture_batches')
-      .select('*, factures(id, montant, statut, eleve:eleves(nom, prenom, classe))')
-      .order('created_at', { ascending: false })
+    const [{ data }, { data: allFacs }, { data: allPaies }] = await Promise.all([
+      supabase.from('facture_batches')
+        .select('*, factures(id, montant, statut, eleve:eleves(nom, prenom, classe))')
+        .order('created_at', { ascending: false }),
+      supabase.from('factures')
+        .select('id, eleve_id, montant, date, created_at, batch_id')
+        .eq('statut', 'facture'),
+      supabase.from('paiements').select('eleve_id, montant'),
+    ])
     setBatches(data || [])
-    // Auto-switch vers "Facturé" s'il n'y a aucun batch en attente
     const hasAttente = (data || []).some(b => (b.factures || []).some(f => f.statut !== 'facture'))
     if ((data || []).length > 0 && !hasAttente) setActiveTab('valide')
+
+    // Calcul impayés
+    const pMap = {}
+    for (const p of (allPaies || [])) pMap[p.eleve_id] = (pMap[p.eleve_id] || 0) + Number(p.montant)
+    const impayes = calcImpayes(allFacs || [], pMap)
+    const byBatch = {}
+    for (const f of (allFacs || [])) {
+      if (!byBatch[f.batch_id]) byBatch[f.batch_id] = 0
+      byBatch[f.batch_id] += impayes[f.id] || 0
+    }
+    setImpayesParBatch(byBatch)
     setLoading(false)
   }
 
@@ -497,12 +546,14 @@ function ListeBatches({ onNew, onSelect }) {
   const totalFacs = batches.reduce((s, b) => s + (b.factures?.length || 0), 0)
   const nbAttenteTot = batches.filter(b => !stats(b).termine).length
   const nbValideTot  = batches.filter(b =>  stats(b).termine).length
+  const nbImpayeTot  = batches.filter(b => (impayesParBatch[b.id] || 0) > 0).length
 
   const filtered = batches.filter(b => {
     // Filtre onglet
     const s = stats(b)
     if (activeTab === 'attente' && s.termine) return false
     if (activeTab === 'valide'  && !s.termine) return false
+    if (activeTab === 'impaye'  && !((impayesParBatch[b.id] || 0) > 0)) return false
     // Filtre recherche : numéro batch, ou élève/classe dans les factures
     if (!search.trim()) return true
     const q = search.toLowerCase()
@@ -556,6 +607,17 @@ function ListeBatches({ onNew, onSelect }) {
                 : 'text-gray-500 hover:text-gray-700'}`}>
             Facturé
           </button>
+          <button onClick={() => setActiveTab('impaye')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-all
+              ${activeTab === 'impaye'
+                ? 'bg-white text-red-600 shadow-sm ring-1 ring-red-200'
+                : 'text-gray-500 hover:text-gray-700'}`}>
+            Impayés
+            <span className={`text-xs font-semibold tabular-nums
+              ${activeTab === 'impaye' ? 'text-red-500' : 'text-gray-400'}`}>
+              {nbImpayeTot}
+            </span>
+          </button>
         </div>
         <input
           type="text" placeholder="Rechercher un élève, une classe ou un N°…"
@@ -577,7 +639,7 @@ function ListeBatches({ onNew, onSelect }) {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {['N° Facturation','Date','Élèves','Total','Répartition','Statut'].map(h => (
+                {['N° Facturation','Date','Élèves','Total','Impayés','Répartition','Statut'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -592,6 +654,12 @@ function ListeBatches({ onNew, onSelect }) {
                     <td className="px-4 py-3 text-gray-600">{fmtDate(b.date)}</td>
                     <td className="px-4 py-3 text-gray-700 font-medium">{s.nbTotal}</td>
                     <td className="px-4 py-3 font-semibold text-primary">{fmtEur(s.total)}</td>
+                    <td className="px-4 py-3">
+                      {(impayesParBatch[b.id] || 0) > 0
+                        ? <span className="font-semibold text-red-600 tabular-nums">{fmtEur(impayesParBatch[b.id])}</span>
+                        : <span className="text-gray-300">—</span>
+                      }
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {s.nbValide > 0 && (
@@ -633,6 +701,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
   const [loading, setLoading] = useState(true)
   const [confirm, setConfirm] = useState(null) // { facture }
   const [busy, setBusy]       = useState(false)
+  const [impayes, setImpayes] = useState({}) // factureId -> montant impayé
 
   const load = async () => {
     const [{ data: b }, { data: facs }] = await Promise.all([
@@ -644,8 +713,26 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     ])
     setBatch(b)
     setFactures(facs || [])
-    // Auto-switch vers "Facturé" si toutes les factures sont approuvées
     if ((facs || []).length > 0 && (facs || []).every(f => f.statut === 'facture')) setActiveTab('valide')
+
+    // Calcul des impayés pour les élèves de ce batch
+    const eleveIds = [...new Set((facs || []).map(f => f.eleve_id).filter(Boolean))]
+    if (eleveIds.length > 0) {
+      const chunkL = (arr, n) => Array.from({length: Math.ceil(arr.length/n)}, (_,i) => arr.slice(i*n,(i+1)*n))
+      const allFacsArr = []
+      const allPaiesArr = []
+      for (const slice of chunkL(eleveIds, 50)) {
+        const [{ data: fs }, { data: ps }] = await Promise.all([
+          supabase.from('factures').select('id, eleve_id, montant, date, created_at').eq('statut', 'facture').in('eleve_id', slice),
+          supabase.from('paiements').select('eleve_id, montant').in('eleve_id', slice),
+        ])
+        allFacsArr.push(...(fs || []))
+        allPaiesArr.push(...(ps || []))
+      }
+      const pMap = {}
+      for (const p of allPaiesArr) pMap[p.eleve_id] = (pMap[p.eleve_id] || 0) + Number(p.montant)
+      setImpayes(calcImpayes(allFacsArr, pMap))
+    }
     setLoading(false)
   }
 
@@ -769,8 +856,10 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
 
   const nbAttente  = factures.filter(f => f.statut === 'brouillon').length
   const nbValide   = factures.filter(f => f.statut === 'facture').length
+  const nbImpaye   = factures.filter(f => f.statut === 'facture' && (impayes[f.id] || 0) > 0).length
 
   const filtered = factures.filter(f => {
+    if (activeTab === 'impaye') return f.statut === 'facture' && (impayes[f.id] || 0) > 0
     const tabMatch = activeTab === 'attente' ? f.statut !== 'facture' : f.statut === 'facture'
     if (!tabMatch) return false
     if (!search) return true
@@ -824,6 +913,17 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
                 : 'text-gray-500 hover:text-gray-700'}`}>
             Facturé
           </button>
+          <button onClick={() => setActiveTab('impaye')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-all
+              ${activeTab === 'impaye'
+                ? 'bg-white text-red-600 shadow-sm ring-1 ring-red-200'
+                : 'text-gray-500 hover:text-gray-700'}`}>
+            Impayés
+            <span className={`text-xs font-semibold tabular-nums
+              ${activeTab === 'impaye' ? 'text-red-500' : 'text-gray-400'}`}>
+              {nbImpaye}
+            </span>
+          </button>
         </div>
         <input
           type="text" placeholder="Rechercher un élève ou un numéro…"
@@ -849,8 +949,9 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Classe</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Montant</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Solde après</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-red-400 uppercase tracking-wide">Impayé</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
-              {isFinancier && activeTab === 'attente' && <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>}
+              {isFinancier && (activeTab === 'attente') && <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -870,12 +971,18 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
                 <td className="px-4 py-3 font-semibold text-gray-800">{fmtEur(f.montant)}</td>
                 <td className="px-4 py-3">
                   <span className={`font-semibold tabular-nums
-                    ${Number(f.solde_apres) < 0 ? 'text-red-600' : Number(f.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                    ${Number(f.solde_apres) < 0 ? 'text-orange-500' : Number(f.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                     {fmtEur(f.solde_apres)}
-                            </span>
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  {(impayes[f.id] || 0) > 0
+                    ? <span className="font-semibold text-red-600 tabular-nums">{fmtEur(impayes[f.id])}</span>
+                    : <span className="text-gray-300">—</span>
+                  }
                 </td>
                 <td className="px-4 py-3"><Badge statut={f.statut} /></td>
-                {isFinancier && activeTab === 'attente' && (
+                {isFinancier && (activeTab === 'attente') && (
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1">
                       {f.statut !== 'facture' && (
