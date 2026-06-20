@@ -26,6 +26,9 @@ Format : `[Date] Commit — Description — Rollback`
 |--------|-----------|-------------|---------|
 | DB | `appels_responsables` | Nouvelle table : historique des appels passés aux responsables (auteur, index resp., nom snap., note éditable). RLS : INSERT tous, SELECT/UPDATE admin+financier, DELETE admin. | Migration SQL manuelle |
 | `cdee9a5` | `FicheEleve.jsx` + `AssistantSocial.jsx` | Refonte complète fiche élève : identité, groupes scolaires (champs vides masqués), responsables + bouton appel, suivi social (échelonnements + OT, boutons accès rapide), financier (solde), historique des appels. Sections social/financier/appels masquées pour MdP. Fix noms colonnes resp. (`nom_responsable_N`). AS.jsx : param `?eleve=UUID` pour auto-ouvrir le détail. | `git revert cdee9a5` |
+| `2eb59a3` | `FicheEleve.jsx` | Fix canSeeRestricted : utilise `isAdmin||isFinancier` (isMdp=true pour tous les rôles, cf. AuthContext). Sections échelonnements/historique appels désormais visibles pour admin/financier. Responsables : numéro de téléphone rapproché du nom. | `git revert 2eb59a3` |
+| `26fcee0` | `FicheEleve.jsx` + `netlify/functions/smartschool-photo.mjs` | Photo Smartschool dans le header de la fiche (fallback initiales). Nouvelle fonction Netlify `smartschool-photo.mjs` (SOAP `getAccountPhoto`). | `git revert 26fcee0` |
+| `8d2cd04` | `FicheEleve.jsx` | Bouton Appel masqué pour le profil MdP (pas d'accès à l'historique). | `git revert 8d2cd04` |
 | DB | `commentaires` | Contrainte `message_check` assouplie : `type = 'system' OR char_length(message) > 0` — les événements système (message vide) étaient silencieusement rejetés. | Migration SQL manuelle |
 
 ---
