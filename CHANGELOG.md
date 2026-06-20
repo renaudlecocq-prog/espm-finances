@@ -9,6 +9,7 @@ Format : `[Date] Commit — Description — Rollback`
 
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
+| `c22fc71` | `Header.jsx` + `public/favicon.svg` | Logo ESPM+ : icône cercle biton blanc/orange en SVG inline (remplace favicon.svg filtré). Même icône utilisée pour le favicon de l'onglet (fond sombre #2D1B2E). Début d'identité visuelle en vue d'une commercialisation future. | `git revert c22fc71` |
 | DB | `appels_responsables` | Nouvelle table : historique des appels passés aux responsables (auteur, index resp., nom snap., note éditable). RLS : INSERT tous, SELECT/UPDATE admin+financier, DELETE admin. | Migration SQL manuelle |
 | `cdee9a5` | `FicheEleve.jsx` + `AssistantSocial.jsx` | Refonte complète fiche élève : identité, groupes scolaires (champs vides masqués), responsables + bouton appel, suivi social (échelonnements + OT, boutons accès rapide), financier (solde), historique des appels. Sections social/financier/appels masquées pour MdP. Fix noms colonnes resp. (`nom_responsable_N`). AS.jsx : param `?eleve=UUID` pour auto-ouvrir le détail. | `git revert cdee9a5` |
 | `cc7b27a` | `Header.jsx` | Logo école (favicon.svg, filtre blanc) à la place de l'icône GraduationCap dans le header. | `git revert cc7b27a` |
