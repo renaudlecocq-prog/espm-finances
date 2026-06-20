@@ -9,6 +9,7 @@ Format : `[Date] Commit — Description — Rollback`
 
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
+| `75bc6eb` | `public/logo-ecole.svg` + `Header.jsx` | Logo école recolorisé : pentagone blanc, bonhomme orange (#E86C00). Carré blanc supprimé — logo directement sur le fond sombre du header. | `git revert 75bc6eb` |
 | `0188595` | `Header.jsx` + `public/logo-ecole.svg` + `public/favicon.svg` | Logo école : SVG extrait du fichier .ai (pentagone #23101e + figure #b68e9e), fond blanc arrondi dans le header. Favicon : carré blanc + "+" orange. | `git revert 0188595` |
 | `9c95ef2` | `index.html` | Fix favicon : référence `favicon.svg` (SVG) en priorité, `favicon.png` en fallback. La balise pointait sur `.png` donc le nouveau logo n'apparaissait pas dans les onglets. | `git revert 9c95ef2` |
 | `c22fc71` | `Header.jsx` + `public/favicon.svg` | Logo ESPM+ : icône cercle biton blanc/orange en SVG inline (remplace favicon.svg filtré). Même icône utilisée pour le favicon de l'onglet (fond sombre #2D1B2E). Début d'identité visuelle en vue d'une commercialisation future. | `git revert c22fc71` |
