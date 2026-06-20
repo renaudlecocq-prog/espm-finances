@@ -34,24 +34,12 @@ export default function Header() {
       <div className="max-w-screen-xl mx-auto px-4 flex items-center h-14 gap-4">
 
         <Link to="/" className="shrink-0 flex items-center gap-2">
-          {/* Logo école dans fond blanc arrondi */}
-          <div style={{
-            background: 'white',
-            borderRadius: '6px',
-            width: '32px',
-            height: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            padding: '3px'
-          }}>
-            <img
-              src="/logo-ecole.svg"
-              alt="École Plurielle Maritime"
-              style={{ width: '26px', height: '26px', objectFit: 'contain' }}
-            />
-          </div>
+          {/* Logo école biton blanc/orange */}
+          <img
+            src="/logo-ecole.svg"
+            alt="École Plurielle Maritime"
+            style={{ height: '30px', width: 'auto', flexShrink: 0 }}
+          />
           <span className="text-white font-bold text-lg tracking-wide leading-none">
             ESPM<span style={{ color: '#E86C00' }}>+</span>
           </span>
