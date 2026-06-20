@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
-import { Phone, ExternalLink, Edit2, Check, X, Loader2 } from 'lucide-react'
+import { Phone, ExternalLink, Edit2, Check, X, Loader2, Voicemail } from 'lucide-react'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : null
@@ -436,10 +436,20 @@ export default function FicheEleve({ eleveId, onClose }) {
                           </span>
                           <button
                             onClick={() => { setEditNoteId(a.id); setEditNoteVal(a.note || '') }}
-                            className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="text-gray-400 hover:text-primary transition-colors"
                             title="Modifier la note"
                           >
-                            <Edit2 size={11} />
+                            <Edit2 size={12} />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              await supabase.from('appels_responsables').update({ note: 'Message vocal' }).eq('id', a.id)
+                              setAppels(prev => prev.map(x => x.id === a.id ? { ...x, note: 'Message vocal' } : x))
+                            }}
+                            className="text-gray-400 hover:text-orange-500 transition-colors"
+                            title="Message vocal"
+                          >
+                            <Voicemail size={12} />
                           </button>
                         </div>
                       )}
