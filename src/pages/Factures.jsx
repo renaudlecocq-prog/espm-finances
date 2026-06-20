@@ -695,19 +695,37 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         ← Retour aux batches
       </button>
 
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold text-gray-800">{batch?.numero}</h1>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full
-              ${nbAttente === 0 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-              {nbAttente === 0 ? 'Terminé' : 'En attente'}
-            </span>
-          </div>
-          <p className="text-gray-500 text-sm">
-            {fmtDate(batch?.date)} · {factures.length} élève{factures.length !== 1 ? 's' : ''} · {fmtEur(totalBatch)}
-          </p>
+      <div className="mb-1">
+        <div className="flex items-center gap-3 mb-0.5">
+          <h1 className="text-2xl font-bold text-gray-800">Factures</h1>
+          <span className="text-gray-400 text-sm font-medium">{batch?.numero}</span>
         </div>
+        <p className="text-gray-500 text-sm">
+          {factures.length} facture{factures.length !== 1 ? 's' : ''} au total · {fmtDate(batch?.date)} · {fmtEur(totalBatch)}
+        </p>
+      </div>
+
+      {/* Tabs + Recherche + Tout approuver sur une ligne */}
+      <div className="flex items-center gap-3 my-4">
+        <div className="flex gap-2 shrink-0">
+          {[
+            { key: 'attente', label: `En attente (${nbAttente + factures.filter(f=>f.statut==='ignore').length})` },
+            { key: 'valide',  label: `Approuvé (${nbValide})` },
+          ].map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors
+                ${activeTab === tab.key
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <input
+          type="text" placeholder="Rechercher un élève ou un numéro…"
+          value={search} onChange={e => setSearch(e.target.value)}
+          className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+        />
         {isFinancier && nbAttente > 0 && (
           <button onClick={toutApprouver} disabled={busy} className="btn-primary shrink-0 disabled:opacity-50">
             ✓ Tout approuver ({nbAttente})
@@ -715,30 +733,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         )}
       </div>
 
-      {/* Onglets */}
-      <div className="flex gap-2 mb-4">
-        {[
-          { key: 'attente', label: `En attente (${nbAttente + factures.filter(f=>f.statut==='ignore').length})` },
-          { key: 'valide',  label: `Approuvé (${nbValide})` },
-        ].map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors
-              ${activeTab === tab.key
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       <div className="card p-0 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-          <input
-            type="text" placeholder="Rechercher un élève ou un numéro…"
-            value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full max-w-xs text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>

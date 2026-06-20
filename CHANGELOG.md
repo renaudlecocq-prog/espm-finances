@@ -239,6 +239,15 @@ git push origin main
 
 ---
 
+## [Session 10h] - 2026-06-20
+
+### Changed — UX DetailBatch
+- **Layout compact** : onglets "En attente / Approuvé", recherche et bouton "Tout approuver" regroupés sur une seule ligne
+- Titre de la page redevient "Factures" avec le numéro de batch en sous-titre
+- Suppression du bandeau de recherche séparé dans l'en-tête de la card
+
+---
+
 ## [Session 10g] - 2026-06-20
 
 ### Fixed — Bugs critiques
@@ -261,3 +270,13 @@ git push origin main
 ---
 
 > **Note GitHub** : les commits de sessions 10b-e n'ont pas encore été tous poussés depuis le sandbox. Seule la session 10g sera visible après le prochain push manuel.
+
+## [Session 10h] - 2026-06-20
+
+### Changed — UX DetailBatch
+- **Layout compact** : onglets "En attente / Approuvé", recherche et bouton "Tout approuver" regroupés sur une seule ligne
+- Titre de la page redevient "Factures" avec le numéro de batch en sous-titre
+- Suppression du bandeau de recherche séparé dans l'en-tête de la card
+
+---
+
