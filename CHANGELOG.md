@@ -404,3 +404,24 @@ git push origin main
 
 ### Changed
 - **calcStatut** : logique binaire — "Facturé" seulement si TOUS les élèves ont statut='facture' (ignore = non facturé). 1 requête par chunk avec `.neq('statut','facture').limit(1)`, early exit dès le premier élève non-facturé trouvé.
+
+## [Session 12] - 2026-06-21
+
+### Fixed
+- **Crash DetailFacture** : `activByCat` référencé mais jamais défini → ReferenceError. Les activités s'affichent maintenant en liste plate (pas de sous-catégories).
+- **removeLigne** : suppression de `{ count: 'exact', head: true }` (retourne null en Supabase JS v2) + suppression de `partiellement_facture` (statut supprimé). Reporter une ligne remet toujours l'article/activité à `a_facturer`.
+
+### Changed  
+- **Clic sur N° facture** au lieu du nom élève pour ouvrir le détail — le numéro est maintenant un lien cliquable (texte primaire souligné au survol), le nom reste en texte simple.
+
+## [Session 13] - 2026-06-21
+
+### Added
+- **Auto-tab** : dans `ListeBatches` et `DetailBatch`, passage automatique sur l'onglet "Facturé" au chargement si aucun élément n'est en attente (dans les deux pages).
+
+### Changed
+- **Row cliquable dans DetailBatch** : toute la ligne est désormais cliquable (comme dans `ListeBatches`) — le N° de facture est toujours souligné pour indiquer la cliquabilité. `stopPropagation` sur la colonne des boutons d'action.
+- **FacturationModal** : suppression du Step 6 "marquer partiellement" (statut `partiellement_facture` supprimé depuis session 11e). Numérotation fallback basée sur l'index au lieu d'un `head:true` count.
+
+### Fixed
+- **supprimerFacture** : suppression de `{ count: 'exact', head: true }` (retourne null) et de `partiellement_facture`. Recalcul correct du statut via `calcStatutSuppr` (même logique binaire que `calcStatut`).
