@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { DemoProvider, useDemo } from './context/DemoContext'
 import Header from './components/layout/Header'
 import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
@@ -27,8 +28,10 @@ function RequireAuth({ children, require = 'user' }) {
 }
 
 const PREVIEW_LABELS = { financier: 'Financier', mdp: 'Membre du personnel', responsable: 'Responsable' }
+
 function Layout({ children }) {
   const { previewRole, setPreviewRole } = useAuth()
+  const { demoMode, toggleDemo } = useDemo()
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -37,7 +40,26 @@ function Layout({ children }) {
         <span>© 2026 École Secondaire Plurielle Maritime</span>
         <Link to="/mentions-legales" className="hover:text-primary transition-colors">Mentions légales</Link>
       </footer>
-      {previewRole && (
+
+      {/* Bannière mode démo */}
+      {demoMode && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2.5 text-sm shadow-[0_-4px_12px_rgba(0,0,0,0.2)]"
+          style={{ background: '#E86C00' }}>
+          <span className="flex items-center gap-2 text-white font-medium">
+            <span>🎭</span>
+            <span>Mode démo actif — données fictives, aucune donnée réelle affectée</span>
+          </span>
+          <button
+            onClick={toggleDemo}
+            className="bg-white font-semibold px-3 py-1 rounded-lg text-xs hover:bg-orange-50 transition-colors ml-4 shrink-0"
+            style={{ color: '#E86C00' }}>
+            Quitter le mode démo
+          </button>
+        </div>
+      )}
+
+      {/* Bannière aperçu de rôle (décalée si mode démo aussi actif) */}
+      {previewRole && !demoMode && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-orange-500 text-white px-4 py-2.5 flex items-center justify-between text-sm shadow-[0_-4px_12px_rgba(0,0,0,0.15)]">
           <span className="flex items-center gap-2">
             <span>👁</span>
@@ -81,9 +103,11 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <DemoProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </DemoProvider>
     </BrowserRouter>
   )
 }
