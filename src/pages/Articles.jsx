@@ -541,8 +541,8 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
                     <td className="px-4 py-3 text-gray-700">{fmt(prix)}</td>
                     <td className="px-4 py-3 font-medium text-gray-800">{r.nb_eleves ? fmt(total) : '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${r.statut_facturation === 'facture' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {r.statut_facturation === 'facture' ? 'Facturé' : 'À facturer'}
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${r.statut_facturation === 'facture' ? 'bg-green-100 text-green-700' : r.statut_facturation === 'partiellement_facture' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {r.statut_facturation === 'facture' ? 'Facturé' : r.statut_facturation === 'partiellement_facture' ? 'Partiel' : 'À facturer'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-xs max-w-[120px] truncate">{r.notes || '—'}</td>
