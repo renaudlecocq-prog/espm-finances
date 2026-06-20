@@ -383,3 +383,9 @@ git push origin main
 - Boutons "Modifier" / "Supprimer" remplacés par icônes SVG crayon/corbeille (gain de place)
 - Boutons désactivés (opacité 30%, curseur interdit) quand `statut_facturation === 'facture'`
 
+
+## [Session 11b] - 2026-06-21
+
+### Fixed
+- **calcStatut** : l'approche par JOIN PostgREST (`factures!inner` + `.eq('factures.statut', ...)` + `head:true`) retournait systématiquement count=0, ce qui forçait le statut à "À facturer". Retour à l'approche chunked fiable : récupère les `facture_id` depuis `facture_lignes`, puis count par statut en lots de 50 avec early-exit dès que les deux catégories sont trouvées.
+- **Statut "Partiel"** : les factures `ignore` comptent désormais comme "non facturé" (comme `brouillon`), donc un article avec des élèves ignorés affiche bien "Partiellement facturé" plutôt que "Facturé".

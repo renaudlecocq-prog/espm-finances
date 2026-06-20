@@ -683,20 +683,30 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     const attrIds  = [...new Set((lignes||[]).filter(l=>l.article_attribution_id).map(l=>l.article_attribution_id))]
     const activIds = [...new Set((lignes||[]).filter(l=>l.activite_id).map(l=>l.activite_id))]
 
-    // calcStatut : 2 requêtes parallèles avec JOIN au lieu de paginer des milliers d'IDs
-    // PostgREST filtre sur la table jointe via .eq('factures.statut', ...)
+    // calcStatut : approche chunked fiable (le filtre embedded PostgREST+head:true retourne 0)
+    // 'ignore' compte comme "non facturé" → génère "partiellement_facture" si mix avec 'facture'
     const calcStatut = async (fkCol, id) => {
-      const [{ count: nbBrouillon }, { count: nbApproved }] = await Promise.all([
-        supabase.from('facture_lignes')
-          .select('id, factures!inner(statut)', { count: 'exact', head: true })
-          .eq(fkCol, id).eq('factures.statut', 'brouillon'),
-        supabase.from('facture_lignes')
-          .select('id, factures!inner(statut)', { count: 'exact', head: true })
-          .eq(fkCol, id).eq('factures.statut', 'facture'),
-      ])
-      if ((nbBrouillon || 0) === 0 && (nbApproved || 0) === 0) return 'a_facturer'
-      if ((nbBrouillon || 0) === 0) return 'facture'               // plus rien en attente
-      if ((nbApproved || 0) > 0)   return 'partiellement_facture'  // mix approuvé + en attente
+      const { data: lignesItem } = await supabase.from('facture_lignes')
+        .select('facture_id').eq(fkCol, id)
+      const ids = [...new Set((lignesItem || []).map(l => l.facture_id))]
+      if (!ids.length) return 'a_facturer'
+
+      let nbPending = 0, nbApproved = 0
+      for (const slice of chunk(ids, 50)) {
+        const [{ count: c1 }, { count: c2 }] = await Promise.all([
+          supabase.from('factures').select('id', { count: 'exact', head: true })
+            .in('id', slice).in('statut', ['brouillon', 'ignore']),
+          supabase.from('factures').select('id', { count: 'exact', head: true })
+            .in('id', slice).eq('statut', 'facture'),
+        ])
+        nbPending  += (c1 || 0)
+        nbApproved += (c2 || 0)
+        if (nbPending > 0 && nbApproved > 0) break  // réponse connue → early exit
+      }
+
+      if (nbPending === 0 && nbApproved === 0) return 'a_facturer'
+      if (nbPending === 0) return 'facture'
+      if (nbApproved > 0) return 'partiellement_facture'
       return 'a_facturer'
     }
 
