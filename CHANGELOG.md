@@ -399,3 +399,8 @@ git push origin main
 
 ### Simplified
 - **Statut articles/activités** : suppression du statut "Partiellement facturé". Après approbation d'un batch, les articles et activités sont directement marqués "Facturé". Un élève ignoré = décision consciente, l'article est considéré traité. Approche directe sans calcul de statut complexe.
+
+## [Session 11e] - 2026-06-21
+
+### Changed
+- **calcStatut** : logique binaire — "Facturé" seulement si TOUS les élèves ont statut='facture' (ignore = non facturé). 1 requête par chunk avec `.neq('statut','facture').limit(1)`, early exit dès le premier élève non-facturé trouvé.

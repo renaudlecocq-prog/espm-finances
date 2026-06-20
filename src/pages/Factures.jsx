@@ -683,14 +683,29 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     const attrIds  = [...new Set((lignes||[]).filter(l=>l.article_attribution_id).map(l=>l.article_attribution_id))]
     const activIds = [...new Set((lignes||[]).filter(l=>l.activite_id).map(l=>l.activite_id))]
 
-    // Approche directe : après approbation, on marque tout comme 'facture'
-    // Pas de "Partiel" — un élève ignoré = décision consciente, l'article est considéré fait
-    // Simple, fiable, sans requêtes complexes
-    for (const slice of chunk(attrIds, 50)) {
-      await supabase.from('article_attributions').update({ statut_facturation: 'facture' }).in('id', slice)
+    // calcStatut : binaire — 'facture' seulement si 0 élève non-facturé (brouillon ou ignore)
+    // 1 seule query par chunk, early exit dès qu'un non-facturé est trouvé
+    const calcStatut = async (fkCol, id) => {
+      const { data: lignesItem } = await supabase.from('facture_lignes')
+        .select('facture_id').eq(fkCol, id)
+      const ids = [...new Set((lignesItem || []).map(l => l.facture_id))]
+      if (!ids.length) return 'a_facturer'
+
+      for (const slice of chunk(ids, 50)) {
+        const { data: pending } = await supabase.from('factures')
+          .select('id').in('id', slice).neq('statut', 'facture').limit(1)
+        if ((pending || []).length > 0) return 'a_facturer'
+      }
+      return 'facture'
     }
-    for (const slice of chunk(activIds, 50)) {
-      await supabase.from('activites').update({ statut_facturation: 'facture' }).in('id', slice)
+
+    for (const id of attrIds) {
+      const statut = await calcStatut('article_attribution_id', id)
+      await supabase.from('article_attributions').update({ statut_facturation: statut }).eq('id', id)
+    }
+    for (const id of activIds) {
+      const statut = await calcStatut('activite_id', id)
+      await supabase.from('activites').update({ statut_facturation: statut }).eq('id', id)
     }
   }
 
