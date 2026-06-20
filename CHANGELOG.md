@@ -164,3 +164,9 @@ git push origin main
 - ⚠️ **Jamais déployer en production sans mot-clé explicite de Renaud** : "go prod", "feu vert", "go main", "ok sur main", "déploiement sur main"
 - Toujours cloner `main` depuis GitHub avant tout build
 - Le proxy-path Netlify est temporaire — en redemander un via le MCP à chaque session
+## Session 9 — 2026-06-20 (mode démo + HomeResponsable)
+
+| Commit | Fichier(s) | Description | Rollback |
+|--------|-----------|-------------|---------|
+| `b4bcdbe` | `src/data/demoData.js` + `src/lib/supabaseMock.js` + `src/context/DemoContext.jsx` + `src/App.jsx` + `src/components/layout/Header.jsx` | Mode démo : 20 élèves fictifs (stars de la musique — Billie Eilish, Taylor Swift, Adele, Bruno Mars…) avec données complètes (factures, paiements, activités, articles, échelonnements, organismes tiers, responsables légaux). Client Supabase mocké (MockQuery/MockTable thenable + chainable, compatible Promise.all). Monkey-patch synchrone de `supabase.from()` via DemoContext avant tout rendu React. Toggle admin via bouton "🎭 Démo" dans le header. Bannière orange en bas de page. Header vire au brun foncé en mode démo. Aperçu Responsable en mode démo → affiche Billie Eilish + Post Malone. | `git revert b4bcdbe` |
+
