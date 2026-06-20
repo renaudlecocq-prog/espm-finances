@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { RefreshCw, UserPlus, Shield } from 'lucide-react'
+import { RefreshCw, UserPlus, Shield } from "lucide-react"
+import { useDemo } from "../context/DemoContext"
 
 const ROLES = ['admin','financier','mdp','responsable']
 
@@ -35,6 +36,7 @@ const fmtDate = d => d ? new Date(d).toLocaleString('fr-BE', {
 
 export default function Admin() {
   const { user, isAdmin, role: myRole, previewRole, setPreviewRole } = useAuth()
+  const { demoMode, toggleDemo } = useDemo()
   const [searchParams] = useSearchParams()
   const [tab, setTab]             = useState(searchParams.get('onglet') || 'utilisateurs')
   const [users, setUsers]         = useState([])
@@ -210,6 +212,33 @@ export default function Admin() {
       {/* ── DROITS ───────────────────────────────────── */}
       {tab === 'droits' && (
         <div className="space-y-6">
+          {/* ── Mode démo ── */}
+          <div className={`card p-4 border ${demoMode ? 'bg-orange-50 border-orange-300' : 'bg-gray-50 border-gray-200'}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">🎭</span>
+                  <span className="text-sm font-semibold text-gray-800">Mode démo</span>
+                  {demoMode && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{background:'#E86C00'}}>ACTIF</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {demoMode
+                    ? 'Les données fictives (Billie Eilish, Taylor Swift…) remplacent la base réelle. Aucune donnée réelle n&apos;est affectée.'
+                    : 'Active des données fictives pour présenter la plateforme à des tiers sans exposer les données réelles.'}
+                </p>
+              </div>
+              <button
+                onClick={toggleDemo}
+                className="ml-4 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                style={demoMode
+                  ? { background: '#E86C00', color: 'white' }
+                  : { background: '#2D1B2E', color: 'white' }}>
+                {demoMode ? 'Quitter le mode démo' : 'Activer le mode démo'}
+              </button>
+            </div>
+          </div>
           {/* Aperçu — déplacé ici car lié aux droits */}
           <div className="card p-4 bg-orange-50 border border-orange-100">
             <div className="flex items-center gap-2 mb-3">

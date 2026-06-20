@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useDemo } from '../context/DemoContext'
+import demoData from '../data/demoData'
 
 const fmt = n => Number(n || 0).toLocaleString('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
 const fmtShort = n => {
@@ -373,6 +375,7 @@ function RField({ label, value }) {
 
 function HomeResponsable() {
   const { user } = useAuth()
+  const { demoMode } = useDemo()
   const [eleves, setEleves]         = useState([])
   const [activeId, setActiveId]     = useState(null)
   const [eleve, setEleve]           = useState(null)
@@ -382,20 +385,36 @@ function HomeResponsable() {
   const [loading, setLoading]       = useState(true)
   const [loadingFiche, setLoadingFiche] = useState(false)
 
+  // Données démo pour l'aperçu responsable (mode démo OU aucun élève lié)
+  const DEMO_ELEVES = demoData.responsable_eleve.map(r => r.eleve).filter(Boolean)
+
   // Charger les enfants liés au compte
   useEffect(() => {
     if (!user) return
+    // En mode démo : utiliser directement les données fictives
+    if (demoMode) {
+      setEleves(DEMO_ELEVES)
+      if (DEMO_ELEVES.length > 0) setActiveId(DEMO_ELEVES[0].id)
+      setLoading(false)
+      return
+    }
     supabase
       .from('responsable_eleve')
       .select('eleve:eleve_id(id, prenom, nom, classe, date_naissance)')
       .eq('responsable_id', user.id)
       .then(({ data }) => {
         const list = (data || []).map(r => r.eleve).filter(Boolean)
-        setEleves(list)
-        if (list.length > 0) setActiveId(list[0].id)
+        // Fallback démo si aucun élève lié (ex : admin en aperçu responsable)
+        if (list.length === 0) {
+          setEleves(DEMO_ELEVES)
+          if (DEMO_ELEVES.length > 0) setActiveId(DEMO_ELEVES[0].id)
+        } else {
+          setEleves(list)
+          if (list.length > 0) setActiveId(list[0].id)
+        }
         setLoading(false)
       })
-  }, [user])
+  }, [user, demoMode])
 
   // Charger la fiche complète de l'enfant sélectionné
   useEffect(() => {

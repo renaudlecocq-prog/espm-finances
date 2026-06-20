@@ -3,18 +3,24 @@ import { supabase } from '../lib/supabase'
 import { createMockClient } from '../lib/supabaseMock'
 import demoData from '../data/demoData'
 
-// ── Application synchrone du mode demo avant tout rendu React ────────────
-// sessionStorage est lu au chargement du module (avant les useEffect).
+// Tables qui doivent passer par le vrai Supabase même en mode démo
+// (auth, droits utilisateurs, logs de synchro)
+const REAL_TABLES = new Set(['profiles', 'sync_log', 'auth'])
+
 const isDemoMode =
   typeof window !== 'undefined' &&
   sessionStorage.getItem('espm_demo') === 'true'
 
 if (isDemoMode) {
   const mock = createMockClient(demoData)
-  // Monkey-patch : remplace supabase.from() par le client mock
-  // Les autres methodes (auth, storage, etc.) restent reelles.
-  supabase._originalFrom = supabase.from.bind(supabase)
-  supabase.from = mock.from
+  const originalFrom = supabase.from.bind(supabase)
+  // Monkey-patch synchrone avant tout rendu React :
+  // - tables réelles (profiles, sync_log) → vrai Supabase
+  // - tout le reste → mock
+  supabase.from = (table) => {
+    if (REAL_TABLES.has(table)) return originalFrom(table)
+    return mock.from(table)
+  }
 }
 
 const DemoContext = createContext({ demoMode: isDemoMode, toggleDemo: () => {} })
