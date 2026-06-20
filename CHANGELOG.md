@@ -341,3 +341,22 @@ git push origin main
   - Aucune encore approuvée → `a_facturer`
 - Requêtes chunckées par 50 pour éviter les limites URL PostgREST
 
+## [Session 10n] - 2026-06-20
+
+### Fixed — Race condition ignorerFacture / toutApprouver
+- `ignorerFacture` appelle désormais `setBusy(true/false)` — le bouton "Approuver X élèves" reste désactivé pendant le save Supabase de l'ignore, évitant qu'un étudiant ignoré soit quand même marqué `facture` si l'utilisateur cliquait immédiatement après
+
+### Fixed — Statuts articles/activités toujours "À facturer" après toutApprouver
+- La requête initiale `.in('facture_id', [669 ids])` dans `mettreAJourItemsApresApprobation` dépassait la limite URL PostgREST et échouait silencieusement → résultat vide → aucun statut mis à jour
+- Remplacement par une boucle chunked (tranches de 50), cohérente avec les autres fix PostgREST
+
+### Fixed — Rechargement manuel après génération d'un batch
+- Après génération, `onDone(batchId)` navigue directement vers le `DetailBatch` du nouveau batch au lieu de fermer le modal et attendre un rechargement manuel
+
+### Added — Inserts par lots + barre de progression pendant génération
+- `generate()` refondu : remplace 670 inserts séquentiels (≈1340 requêtes) par des inserts en lots de 50 pour les factures et de 100 pour les lignes (~15-20 requêtes au total)
+- Affiche une barre de progression avec l'étape courante (Création du batch, Calcul des soldes, Génération des factures X/N, Enregistrement des lignes X/N, Mise à jour des statuts)
+- Le modal est bloqué (clic backdrop et bouton ✕ désactivés) pendant la génération avec message "⚠ Ne pas fermer ni recharger la page"
+- Bouton "Voir les factures générées →" à la fin au lieu de "Fermer et rafraîchir"
+- La query des soldes utilise maintenant une requête globale (sans `.in()`) pour éviter la limite URL avec 670+ élèves
+
