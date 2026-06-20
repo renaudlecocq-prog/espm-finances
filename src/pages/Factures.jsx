@@ -707,19 +707,24 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
 
       {/* Tabs + Recherche + Tout approuver sur une ligne */}
       <div className="flex items-center gap-3 my-4">
-        <div className="flex gap-2 shrink-0">
+        {/* Segmented control */}
+        <div className="flex items-center bg-gray-100 rounded-lg p-0.5 shrink-0">
           <button onClick={() => setActiveTab('attente')}
-            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors
-              ${activeTab === 'attente' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-all
+              ${activeTab === 'attente'
+                ? 'bg-white text-primary shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'}`}>
             En attente
-            <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full text-xs font-bold
-              ${activeTab === 'attente' ? 'bg-white/20 text-white' : 'bg-gray-300 text-gray-600'}`}>
+            <span className={`text-xs font-semibold tabular-nums
+              ${activeTab === 'attente' ? 'text-primary' : 'text-gray-400'}`}>
               {nbAttente + factures.filter(f => f.statut === 'ignore').length}
             </span>
           </button>
           <button onClick={() => setActiveTab('valide')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors
-              ${activeTab === 'valide' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-all
+              ${activeTab === 'valide'
+                ? 'bg-white text-primary shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'}`}>
             Facturé
           </button>
         </div>
@@ -729,7 +734,8 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
           className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
         {isFinancier && nbAttente > 0 && (
-          <button onClick={toutApprouver} disabled={busy} className="btn-primary shrink-0 disabled:opacity-50">
+          <button onClick={toutApprouver} disabled={busy}
+            className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-primary/25 text-primary bg-primary/5 hover:bg-primary/10 transition-colors shrink-0 disabled:opacity-50">
             ✓ Tout approuver ({nbAttente})
           </button>
         )}
