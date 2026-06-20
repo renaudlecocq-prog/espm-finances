@@ -457,14 +457,16 @@ function FacturationModal({ onClose, onDone }) {
 // ── Liste des batches (niveau 1) ──────────────────────────────────────────────
 function ListeBatches({ onNew, onSelect }) {
   const { isFinancier } = useAuth()
-  const [batches, setBatches] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [batches, setBatches]     = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [search, setSearch]       = useState('')
+  const [activeTab, setActiveTab] = useState('attente') // 'attente' | 'valide'
 
   const load = async () => {
     setLoading(true)
     const { data } = await supabase
       .from('facture_batches')
-      .select('*, factures(id, montant, statut)')
+      .select('*, factures(id, montant, statut, eleve:eleves(nom, prenom, classe))')
       .order('created_at', { ascending: false })
     setBatches(data || [])
     setLoading(false)
@@ -476,25 +478,80 @@ function ListeBatches({ onNew, onSelect }) {
     const facs = b.factures || []
     const total     = facs.reduce((s, f) => s + Number(f.montant || 0), 0)
     const nbTotal   = facs.length
-    const nbAttente = facs.filter(f => f.statut === 'brouillon').length
-    const nbIgnore  = facs.filter(f => f.statut === 'ignore').length
+    const nbAttente = facs.filter(f => f.statut !== 'facture').length
     const nbValide  = facs.filter(f => f.statut === 'facture').length
     const termine   = nbAttente === 0
-    return { total, nbTotal, nbAttente, nbIgnore, nbValide, termine }
+    return { total, nbTotal, nbAttente, nbValide, termine }
   }
+
+  const totalFacs = batches.reduce((s, b) => s + (b.factures?.length || 0), 0)
+  const nbAttenteTot = batches.filter(b => !stats(b).termine).length
+  const nbValideTot  = batches.filter(b =>  stats(b).termine).length
+
+  const filtered = batches.filter(b => {
+    // Filtre onglet
+    const s = stats(b)
+    if (activeTab === 'attente' && s.termine) return false
+    if (activeTab === 'valide'  && !s.termine) return false
+    // Filtre recherche : numéro batch, ou élève/classe dans les factures
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
+    if (b.numero?.toLowerCase().includes(q)) return true
+    return (b.factures || []).some(f => {
+      const e = f.eleve
+      if (!e) return false
+      return (e.nom + ' ' + e.prenom).toLowerCase().includes(q) || e.classe?.toLowerCase().includes(q)
+    })
+  })
 
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      {/* Header */}
+      <div className="flex items-baseline gap-3 mb-1 flex-wrap justify-between">
+        <div className="flex items-baseline gap-3 flex-wrap">
           <h1 className="text-2xl font-bold text-gray-800">Factures</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{batches.length} run{batches.length !== 1 ? 's' : ''} de facturation</p>
+          <p className="text-sm text-gray-400">
+            {totalFacs} facture{totalFacs !== 1 ? 's' : ''} générée{totalFacs !== 1 ? 's' : ''}
+            <span className="mx-1.5">·</span>
+            <span className="font-semibold text-primary">
+              {fmtEur(batches.reduce((s, b) => s + stats(b).total, 0))}
+            </span>
+          </p>
         </div>
         {isFinancier && (
           <button onClick={onNew} className="btn-primary">+ Facturer</button>
         )}
+      </div>
+
+      {/* Barre : Tabs + Recherche */}
+      <div className="flex items-center gap-3 my-4">
+        <div className="flex items-center bg-gray-100 rounded-lg p-0.5 shrink-0">
+          <button onClick={() => setActiveTab('attente')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-all
+              ${activeTab === 'attente'
+                ? 'bg-white text-orange-600 shadow-sm ring-1 ring-orange-200'
+                : 'text-gray-500 hover:text-gray-700'}`}>
+            En attente
+            <span className={`text-xs font-semibold tabular-nums
+              ${activeTab === 'attente' ? 'text-orange-500' : 'text-gray-400'}`}>
+              {nbAttenteTot}
+            </span>
+          </button>
+          <button onClick={() => setActiveTab('valide')}
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-all
+              ${activeTab === 'valide'
+                ? 'bg-white text-green-700 shadow-sm ring-1 ring-green-200'
+                : 'text-gray-500 hover:text-gray-700'}`}>
+            Facturé
+          </button>
+        </div>
+        <input
+          type="text" placeholder="Rechercher un élève, une classe ou un N°…"
+          value={search} onChange={e => setSearch(e.target.value)}
+          className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+        />
       </div>
 
       {batches.length === 0 ? (
@@ -503,18 +560,20 @@ function ListeBatches({ onNew, onSelect }) {
           <p className="font-medium">Aucune facturation</p>
           <p className="text-sm mt-1">Cliquez sur "+ Facturer" pour générer le premier batch.</p>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="card p-8 text-center text-gray-400 text-sm">Aucun résultat pour cette recherche.</div>
       ) : (
         <div className="card p-0 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {['N° batch','Date','Élèves','Total','Répartition','Statut'].map(h => (
+                {['N° Facturation','Date','Élèves','Total','Répartition','Statut'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {batches.map(b => {
+              {filtered.map(b => {
                 const s = stats(b)
                 return (
                   <tr key={b.id} onClick={() => onSelect(b.id)}
@@ -522,22 +581,17 @@ function ListeBatches({ onNew, onSelect }) {
                     <td className="px-4 py-3 font-mono text-sm font-bold text-gray-800">{b.numero}</td>
                     <td className="px-4 py-3 text-gray-600">{fmtDate(b.date)}</td>
                     <td className="px-4 py-3 text-gray-700 font-medium">{s.nbTotal}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-800">{fmtEur(s.total)}</td>
+                    <td className="px-4 py-3 font-semibold text-primary">{fmtEur(s.total)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {s.nbValide > 0 && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-                            {s.nbValide} validé{s.nbValide > 1 ? 's' : ''}
+                            {s.nbValide} facturé{s.nbValide > 1 ? 's' : ''}
                           </span>
                         )}
                         {s.nbAttente > 0 && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
                             {s.nbAttente} en attente
-                          </span>
-                        )}
-                        {s.nbIgnore > 0 && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                            {s.nbIgnore} ignoré{s.nbIgnore > 1 ? 's' : ''}
                           </span>
                         )}
                       </div>
@@ -691,10 +745,6 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
-      <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-4 flex items-center gap-1">
-        ← Retour aux batches
-      </button>
-
       <div className="flex items-baseline gap-3 mb-1 flex-wrap">
         <h1 className="text-2xl font-bold text-gray-800">
           Factures <span className="text-gray-400 font-medium">{batch?.numero}</span>
@@ -706,8 +756,13 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         </p>
       </div>
 
-      {/* Tabs + Recherche + Tout approuver sur une ligne */}
+      {/* Retour + Tabs + Recherche + Tout approuver sur une ligne */}
       <div className="flex items-center gap-3 my-4">
+        {/* Bouton Retour */}
+        <button onClick={onBack}
+          className="flex items-center gap-1 px-3 py-1 rounded-md text-sm font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors shrink-0">
+          ← Retour
+        </button>
         {/* Segmented control */}
         <div className="flex items-center bg-gray-100 rounded-lg p-0.5 shrink-0">
           <button onClick={() => setActiveTab('attente')}

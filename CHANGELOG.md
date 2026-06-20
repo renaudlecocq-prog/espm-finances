@@ -299,3 +299,17 @@ git push origin main
 - Compteur "En attente" affiché en chiffre sobre à droite du libellé, sans pill
 - Onglet "Facturé" (renommé depuis "Approuvé"), sans compteur
 - Bouton "Tout approuver" : style outlined (bordure + teinte primaire), plus léger que btn-primary
+
+## [Session 10j] - 2026-06-20
+
+### Changed — ListeBatches
+- Colonne "N° BATCH" renommée "N° FACTURATION"
+- Header aligné sur le style DetailBatch : titre + total factures + montant total coloré sur une ligne
+- Ajout segmented control "En attente / Facturé" pour filtrer les runs
+- Ajout champ de recherche : filtre par élève, classe ou numéro de batch
+- Montant total dans le tableau coloré en primary
+- Compteur "runs de facturation" → "factures générées"
+
+### Changed — DetailBatch
+- Bouton "← Retour aux batches" remplacé par bouton "← Retour" intégré dans la barre de contrôles (même ligne que les onglets), coloré en mauve/primary
+
