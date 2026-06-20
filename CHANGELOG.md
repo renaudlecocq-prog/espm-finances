@@ -182,3 +182,9 @@ git push origin main
 |--------|-----------|-------------|---------|
 | `a1870a0` | `App.jsx` + `Header.jsx` + `demoData.js` | Fix critique : RequireAuth utilise `effectiveRole` pour les pages financier/mdp (aperçu de rôle bloque maintenant vraiment l'accès par URL directe). `/admin` reste protégé par le vrai rôle. Header : label de rôle reflète l'effectiveRole avec `↩` si aperçu actif. demoData : Billie Eilish et Post Malone sont frère/sœur (Maggie Eilish + Richard Malone = parents communs). Billie a un échelonnement (270€/6 mois), pas d'OT. Post garde son OT SPJ. | `git revert a1870a0` |
 
+## [343fef1] — 2026-06-20 — Échéancier mensuel + nettoyage header
+
+| Commit | Fichier(s) | Description | Rollback |
+|--------|-----------|-------------|---------|
+| `343fef1` | `Home.jsx` + `Header.jsx` | HomeResponsable : échelonnements affichés mois par mois avec date attendue, montant, et statut paiement (✓ Payé / ⚠ En retard / ◌ À venir) calculé dynamiquement selon le statut global et les dates. En-tête récapitulatif par échelonnement. Header : bouton toggle démo supprimé (désormais uniquement dans Admin > Droits). | `git revert 343fef1` |
+
