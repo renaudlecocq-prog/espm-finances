@@ -263,15 +263,13 @@ function FacturationModal({ onClose, onDone }) {
     ;(facts || []).forEach(f => { soldeMap[f.eleve_id] = (soldeMap[f.eleve_id] || 0) - Number(f.montant) })
 
     // 3. Préparer toutes les données factures (numérotation matricule)
-    const { count } = await supabase.from('factures').select('*', { count: 'exact', head: true })
-    let num = (count || 0) + 1
     const today = now.toISOString().slice(0, 10)
 
     const entries = Object.entries(eleveMap)
-    const allFactureData = entries.map(([eleveId, { eleve, items }]) => {
+    const allFactureData = entries.map(([eleveId, { eleve, items }], idx) => {
       const total      = items.reduce((s, i) => s + i.montant, 0)
       const soldeAvant = soldeMap[eleveId] || 0
-      const matricule  = eleve.matricule || String(num++).padStart(6, '0')
+      const matricule  = eleve.matricule || String(idx + 1).padStart(6, '0')
       const numero     = `${batchNumero}-${matricule}`
       return { eleveId, items, numero, insertData: {
         eleve_id: eleveId, montant: total, date: today,
@@ -302,24 +300,6 @@ function FacturationModal({ onClose, onDone }) {
     for (let i = 0; i < ligneChunks.length; i++) {
       setProgress({ step: 'Enregistrement des lignes…', current: i + 1, total: ligneChunks.length })
       await supabase.from('facture_lignes').insert(ligneChunks[i])
-    }
-
-    // 6. Marquer PARTIELLEMENT les éléments ciblant des classes ignorées
-    setProgress({ step: 'Mise à jour des statuts…', current: 0, total: 0 })
-    const selectedAttrs = attrs.filter(a => selItems[`attr_${a.id}`])
-    for (const attr of selectedAttrs) {
-      const ci = attr.eleve_id ? [] : (attr.classes_incluses || [])
-      if (isItemPartial(ci)) {
-        await supabase.from('article_attributions')
-          .update({ statut_facturation: 'partiellement_facture' }).eq('id', attr.id)
-      }
-    }
-    const selectedActiv = activites.filter(a => selItems[`activ_${a.id}`])
-    for (const activ of selectedActiv) {
-      if (isItemPartial(activ.classes_incluses || [])) {
-        await supabase.from('activites')
-          .update({ statut_facturation: 'partiellement_facture' }).eq('id', activ.id)
-      }
     }
 
     setGenerating(false)
@@ -496,6 +476,9 @@ function ListeBatches({ onNew, onSelect }) {
       .select('*, factures(id, montant, statut, eleve:eleves(nom, prenom, classe))')
       .order('created_at', { ascending: false })
     setBatches(data || [])
+    // Auto-switch vers "Facturé" s'il n'y a aucun batch en attente
+    const hasAttente = (data || []).some(b => (b.factures || []).some(f => f.statut !== 'facture'))
+    if ((data || []).length > 0 && !hasAttente) setActiveTab('valide')
     setLoading(false)
   }
 
@@ -661,6 +644,8 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     ])
     setBatch(b)
     setFactures(facs || [])
+    // Auto-switch vers "Facturé" si toutes les factures sont approuvées
+    if ((facs || []).length > 0 && (facs || []).every(f => f.statut === 'facture')) setActiveTab('valide')
     setLoading(false)
   }
 
@@ -733,23 +718,28 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     const { data: lignes } = await supabase.from('facture_lignes').select('*').eq('facture_id', f.id)
     await supabase.from('facture_lignes').delete().eq('facture_id', f.id)
 
-    // Recalculer statut des items (après suppression des lignes de cet élève)
+    // Recalculer statut des items via calcStatut (logique binaire, même que mettreAJour…)
     const attrIds  = [...new Set((lignes || []).filter(l => l.article_attribution_id).map(l => l.article_attribution_id))]
     const activIds = [...new Set((lignes || []).filter(l => l.activite_id).map(l => l.activite_id))]
-
+    const chunkS = (arr, n) => Array.from({length: Math.ceil(arr.length/n)}, (_,i) => arr.slice(i*n,(i+1)*n))
+    const calcStatutSuppr = async (fkCol, id) => {
+      const { data: lignesItem } = await supabase.from('facture_lignes').select('facture_id').eq(fkCol, id)
+      const ids = [...new Set((lignesItem || []).map(l => l.facture_id))]
+      if (!ids.length) return 'a_facturer'
+      for (const slice of chunkS(ids, 50)) {
+        const { data: pending } = await supabase.from('factures')
+          .select('id').in('id', slice).neq('statut', 'facture').limit(1)
+        if ((pending || []).length > 0) return 'a_facturer'
+      }
+      return 'facture'
+    }
     for (const id of attrIds) {
-      const { count } = await supabase.from('facture_lignes')
-        .select('*', { count: 'exact', head: true }).eq('article_attribution_id', id)
-      await supabase.from('article_attributions')
-        .update({ statut_facturation: (count || 0) > 0 ? 'partiellement_facture' : 'a_facturer' })
-        .eq('id', id)
+      const statut = await calcStatutSuppr('article_attribution_id', id)
+      await supabase.from('article_attributions').update({ statut_facturation: statut }).eq('id', id)
     }
     for (const id of activIds) {
-      const { count } = await supabase.from('facture_lignes')
-        .select('*', { count: 'exact', head: true }).eq('activite_id', id)
-      await supabase.from('activites')
-        .update({ statut_facturation: (count || 0) > 0 ? 'partiellement_facture' : 'a_facturer' })
-        .eq('id', id)
+      const statut = await calcStatutSuppr('activite_id', id)
+      await supabase.from('activites').update({ statut_facturation: statut }).eq('id', id)
     }
 
     // Supprimer la facture + mise à jour locale immédiate
@@ -866,12 +856,12 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
           <tbody>
             {filtered.map(f => (
               <tr key={f.id}
-                className={`border-b border-gray-50 transition-colors ${f.statut === 'ignore' ? 'opacity-40' : 'hover:bg-gray-50/50'}`}>
+                onClick={() => onSelectFacture(f.id)}
+                className={`border-b border-gray-50 transition-colors cursor-pointer ${f.statut === 'ignore' ? 'opacity-40' : 'hover:bg-primary/5'}`}>
                 <td className="px-4 py-3">
-                  <button onClick={() => onSelectFacture(f.id)}
-                    className="font-mono text-xs text-primary hover:underline text-left">
+                  <span className="font-mono text-xs text-primary underline">
                     {f.numero || '—'}
-                  </button>
+                  </span>
                 </td>
                 <td className="px-4 py-3 font-medium text-gray-800">
                   {f.eleve?.prenom} {f.eleve?.nom}
@@ -886,7 +876,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
                 </td>
                 <td className="px-4 py-3"><Badge statut={f.statut} /></td>
                 {isFinancier && activeTab === 'attente' && (
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1">
                       {f.statut !== 'facture' && (
                         <button onClick={() => validerFacture(f)} disabled={busy}
@@ -938,7 +928,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
               <strong>{confirm.facture.eleve?.prenom} {confirm.facture.eleve?.nom}</strong> — {fmtEur(confirm.facture.montant)}
             </p>
             <p className="text-gray-400 text-xs mb-5">
-              Les articles et activités concernés seront remis en "à facturer" ou "partiellement facturé" selon les autres élèves déjà couverts.
+              Les articles et activités concernés seront remis en "à facturer".
             </p>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setConfirm(null)}
