@@ -142,6 +142,7 @@ function FacturationModal({ onClose, onDone }) {
   const [generating, setGenerating] = useState(false)
   const [progress, setProgress]     = useState(null)  // { step, current, total }
   const [done, setDone]             = useState(null)  // { count, batchId }
+  const [nomBatch, setNomBatch]     = useState('')
 
   const [allEleves, setAllEleves]         = useState([])
   const [allClasses, setAllClasses]       = useState([])
@@ -273,7 +274,7 @@ function FacturationModal({ onClose, onDone }) {
     const runNumber = (existing?.length || 0) + 1
     const batchNumero = `${baseNumero}-${String(runNumber).padStart(2, '0')}`
     const { data: batch } = await supabase.from('facture_batches')
-      .insert({ numero: batchNumero, date: now.toISOString().slice(0, 10), statut: 'brouillon', created_by: user?.id })
+      .insert({ numero: batchNumero, date: now.toISOString().slice(0, 10), statut: 'brouillon', created_by: user?.id, nom: nomBatch.trim() || null })
       .select().single()
     if (!batch) { setGenerating(false); setProgress(null); return }
 
@@ -367,6 +368,17 @@ function FacturationModal({ onClose, onDone }) {
             </div>
           ) : (
             <div className="p-5 space-y-6">
+              {/* Nom du batch */}
+              <div className="flex items-center gap-3">
+                <label className="text-xs text-gray-500 shrink-0 w-20">Nom :</label>
+                <input
+                  type="text"
+                  placeholder="Ex : Photocopies 1H, Voyage scolaire 3A…"
+                  value={nomBatch}
+                  onChange={e => setNomBatch(e.target.value)}
+                  className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
               {allClasses.length > 0 && (
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-gray-500 shrink-0">Classes :</span>
@@ -550,6 +562,7 @@ function ListeBatches({ onNew, onSelect }) {
     if (!search.trim()) return true
     const q = search.toLowerCase()
     if (b.numero?.toLowerCase().includes(q)) return true
+    if (b.nom?.toLowerCase().includes(q)) return true
     return (b.factures || []).some(f => {
       const e = f.eleve
       if (!e) return false
@@ -642,7 +655,10 @@ function ListeBatches({ onNew, onSelect }) {
                 return (
                   <tr key={b.id} onClick={() => onSelect(b.id)}
                     className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors">
-                    <td className="px-4 py-3 font-mono text-sm font-bold text-gray-800">{b.numero}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-sm font-bold text-gray-800">{b.numero}</span>
+                      {b.nom && <p className="text-xs text-gray-500 mt-0.5">{b.nom}</p>}
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{fmtDate(b.date)}</td>
                     <td className="px-4 py-3 text-gray-700 font-medium">{s.nbTotal}</td>
                     <td className="px-4 py-3 font-semibold text-primary">{fmtEur(s.total)}</td>
@@ -870,6 +886,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
       <div className="flex items-baseline gap-3 mb-1 flex-wrap">
         <h1 className="text-2xl font-bold text-gray-800">
           Factures <span className="text-gray-400 font-medium">{batch?.numero}</span>
+          {batch?.nom && <span className="text-xl font-normal text-gray-500 ml-2">— {batch.nom}</span>}
         </h1>
         <p className="text-sm text-gray-400">
           {factures.length} facture{factures.length !== 1 ? 's' : ''} au total

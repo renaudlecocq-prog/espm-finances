@@ -461,3 +461,11 @@ git push origin main
 - **Double facturation** : la FacturationModal affichait des articles/activités déjà inclus dans un batch en brouillon (non encore approuvé). Au chargement, les factures en brouillon sont maintenant consultées, et leurs items exclus de la liste — impossible de les facturer deux fois. Si le batch brouillon est supprimé, les items réapparaissent automatiquement.
 - Nettoyage du code mort `billedByAttr`/`billedByActiv` (logique `partiellement_facture` supprimée en session 11e).
 - Filtre `in('statut_facturation', [...])` simplifié en `eq('statut_facturation', 'a_facturer')` (partiellement_facture supprimé).
+
+## [Session 18] - 2026-06-21
+### Added
+- **Nom du batch** : champ texte optionnel dans la modal de facturation (ex : "Photocopies 1H", "Voyage scolaire 3A")
+- Nom affiché sous le N° dans ListeBatches, dans le header de DetailBatch, et inclus dans la recherche
+- **Fiche élève — section Financier** : détail complet des factures (avec nom du batch) et paiements, solde calculé dynamiquement (remplace le placeholder "disponible prochainement")
+### Technical
+- Migration DB : colonne `nom TEXT` ajoutée à `facture_batches`
