@@ -283,6 +283,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                     {r.tel && (
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-sm text-gray-500">{r.tel}</span>
+                        {canSeeRestricted && (
                         <button
                           onClick={() => logAppel(r.idx, r.nom || `Responsable ${r.idx}`)}
                           disabled={callingIdx === r.idx}
@@ -294,6 +295,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                             : <Phone size={11} />}
                           Appel
                         </button>
+                        )}
                       </div>
                     )}
                   </div>
