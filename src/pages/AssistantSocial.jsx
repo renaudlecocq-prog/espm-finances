@@ -552,7 +552,7 @@ function EchelonnementForm({ eleves, onSaved, onClose }) {
 }
 
 // ── Tab Échelonnements ────────────────────────────────────────────────────
-function TabEchelonnements({ isAllowed }) {
+function TabEchelonnements({ isAllowed, openEleveId }) {
   const [rows, setRows]                 = useState([])
   const [echeancesMap, setEcheancesMap] = useState({})
   const [paiementsMap, setPaiementsMap] = useState({})
@@ -608,6 +608,13 @@ function TabEchelonnements({ isAllowed }) {
       supabase.from('eleves').select('id,nom,prenom,classe').eq('actif', true).order('nom'),
     ]).then(([, e]) => { setEleves(e.data || []); setLoading(false) })
   }, []) // eslint-disable-line
+
+  // Auto-ouvrir le détail si on arrive depuis la fiche élève
+  useEffect(() => {
+    if (!openEleveId || rows.length === 0) return
+    const found = rows.find(r => r.eleve_id === openEleveId)
+    if (found) setDetailId(found.id)
+  }, [openEleveId, rows])
 
   const del = async (id) => {
     if (!confirm('Supprimer cet échelonnement et toutes ses échéances ?')) return
@@ -965,7 +972,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
   )
 }
 
-function TabOrganismesTiers({ isAllowed }) {
+function TabOrganismesTiers({ isAllowed, openEleveId }) {
   const [rows, setRows]     = useState([])
   const [eleves, setEleves] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1003,6 +1010,13 @@ function TabOrganismesTiers({ isAllowed }) {
       supabase.from('eleves').select('id,nom,prenom,classe').eq('actif', true).order('nom'),
     ]).then(([, e]) => { setEleves(e.data || []); setLoading(false) })
   }, []) // eslint-disable-line
+
+  // Auto-ouvrir le détail si on arrive depuis la fiche élève
+  useEffect(() => {
+    if (!openEleveId || rows.length === 0) return
+    const found = rows.find(r => r.eleve_id === openEleveId)
+    if (found) setDetailOTId(found.id)
+  }, [openEleveId, rows])
 
   const save = async () => {
     if (!form.eleve_id) return
@@ -1221,8 +1235,8 @@ export default function AssistantSocial() {
         ))}
       </div>
 
-      {tab === 'echelonnements' && <TabEchelonnements isAllowed={isAllowed} />}
-      {tab === 'organismes'     && <TabOrganismesTiers isAllowed={isAllowed} />}
+      {tab === 'echelonnements' && <TabEchelonnements isAllowed={isAllowed} openEleveId={searchParams.get('eleve')} />}
+      {tab === 'organismes'     && <TabOrganismesTiers isAllowed={isAllowed} openEleveId={searchParams.get('eleve')} />}
     </div>
   )
 }
