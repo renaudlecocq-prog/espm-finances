@@ -313,3 +313,94 @@ git push origin main
 ### Changed — DetailBatch
 - Bouton "← Retour aux batches" remplacé par bouton "← Retour" intégré dans la barre de contrôles (même ligne que les onglets), coloré en mauve/primary
 
+## [Session 10k] - 2026-06-20
+
+### Fixed — DetailBatch actions
+- **Ignorer** : mise à jour locale immédiate (optimistic update) — plus de flash "Chargement…" ni d'attente visible
+- **Valider** : idem, mise à jour locale immédiate
+- **Supprimer** : la facture disparaît instantanément du tableau sans rechargement complet
+- **Bouton "Tout approuver"** : label devient "Approuver X élèves" (sans "Tout") dès qu'au moins une facture est ignorée, pour refléter que certains sont exclus
+
+## [Session 10l] - 2026-06-20
+
+### Fixed — DetailBatch
+- **Tout approuver** : remplacement de `.in('id', [644 ids])` par `.eq('batch_id').eq('statut','brouillon')` — évite le dépassement de limite URL PostgREST qui faisait échouer silencieusement l'approbation massive
+- Mise à jour locale immédiate après `toutApprouver` (plus de rechargement complet)
+- Les factures ignorées sont correctement exclues car leur statut est `ignore` (pas `brouillon`)
+
+### Note — Nomenclature individuelle
+- Le code de génération est correct : `F-AAMMJJ-NN-MATRICULE`
+- Les factures affichant `F-AAAA-NNN` sont des données legacy créées avec l'ancien code
+
+## [Session 10m] - 2026-06-20
+
+### Fixed — Statut articles/activités après approbation partielle
+- `mettreAJourItemsApresApprobation` gère désormais 3 cas :
+  - Toutes les factures approuvées → `facture`
+  - Certaines approuvées, d'autres ignorées/en attente → `partiellement_facture`
+  - Aucune encore approuvée → `a_facturer`
+- Requêtes chunckées par 50 pour éviter les limites URL PostgREST
+
+## [Session 10n] - 2026-06-20
+
+### Fixed — Race condition ignorerFacture / toutApprouver
+- `ignorerFacture` appelle désormais `setBusy(true/false)` — le bouton "Approuver X élèves" reste désactivé pendant le save Supabase de l'ignore, évitant qu'un étudiant ignoré soit quand même marqué `facture` si l'utilisateur cliquait immédiatement après
+
+### Fixed — Statuts articles/activités toujours "À facturer" après toutApprouver
+- La requête initiale `.in('facture_id', [669 ids])` dans `mettreAJourItemsApresApprobation` dépassait la limite URL PostgREST et échouait silencieusement → résultat vide → aucun statut mis à jour
+- Remplacement par une boucle chunked (tranches de 50), cohérente avec les autres fix PostgREST
+
+### Fixed — Rechargement manuel après génération d'un batch
+- Après génération, `onDone(batchId)` navigue directement vers le `DetailBatch` du nouveau batch au lieu de fermer le modal et attendre un rechargement manuel
+
+### Added — Inserts par lots + barre de progression pendant génération
+- `generate()` refondu : remplace 670 inserts séquentiels (≈1340 requêtes) par des inserts en lots de 50 pour les factures et de 100 pour les lignes (~15-20 requêtes au total)
+- Affiche une barre de progression avec l'étape courante (Création du batch, Calcul des soldes, Génération des factures X/N, Enregistrement des lignes X/N, Mise à jour des statuts)
+- Le modal est bloqué (clic backdrop et bouton ✕ désactivés) pendant la génération avec message "⚠ Ne pas fermer ni recharger la page"
+- Bouton "Voir les factures générées →" à la fin au lieu de "Fermer et rafraîchir"
+- La query des soldes utilise maintenant une requête globale (sans `.in()`) pour éviter la limite URL avec 670+ élèves
+
+
+## [Session 10o] - 2026-06-20
+
+### Fixed — toutApprouver : élèves ignorés quand même facturés (race condition persistante)
+- La correction du `setBusy` en 10n était insuffisante : si deux "Ignorer" sont cliqués en succession rapide, deux `ignorerFacture` tournent en parallèle ; quand le premier se termine, `setBusy(false)` libère le bouton "Approuver" alors que le second save n'a pas encore atteint la DB
+- Solution radicale : `toutApprouver` utilise désormais les IDs **depuis l'état local** (pas un filtre DB `.eq('statut','brouillon')`). L'optimistic update de `ignorerFacture` exclut les élèves ignorés du state local IMMÉDIATEMENT (avant même le save Supabase), donc `ids` ne les contient jamais, quelle que soit la vitesse de la DB
+- Le `.update().in('id', ids)` est découpé en tranches de 50 pour respecter les limites URL PostgREST
+
+## [Session 11] - 2026-06-20
+
+### Fixed — calcStatut : statuts articles/activités toujours "À facturer"
+- Remplacement de l'approche "paginer des milliers d'IDs en chunks de 50" (≥94 requêtes séquentielles pour un seul article avec 7 batches de test) par 2 requêtes parallèles utilisant un JOIN PostgREST
+- `facture_lignes JOIN factures!inner` + `.eq('factures.statut', ...)` → la DB fait le join, zéro pagination côté client
+- Logique : nbBrouillon=0 + nbApproved>0 → 'facture' ; nbBrouillon>0 + nbApproved>0 → 'partiellement_facture' ; sinon → 'a_facturer'
+- Les factures ignorées ne bloquent plus la transition vers 'facture' (seules les brouillon comptent comme "en attente")
+
+### Changed — Articles : tableau attributions redesigné
+- Header "Notes" renommé "Statut" (le header pointait déjà sur la colonne des badges statut, le texte était trompeur)
+- Colonne "Notes" (texte libre, toujours vide = "—") supprimée du tableau — la saisie reste dans le formulaire
+- `__ALL__` remplacé par "Tous les élèves" dans la colonne Attribution
+- Boutons "Modifier" / "Supprimer" remplacés par icônes SVG crayon/corbeille (gain de place)
+- Boutons désactivés (opacité 30%, curseur interdit) quand `statut_facturation === 'facture'`
+
+
+## [Session 11b] - 2026-06-21
+
+### Fixed
+- **calcStatut** : l'approche par JOIN PostgREST (`factures!inner` + `.eq('factures.statut', ...)` + `head:true`) retournait systématiquement count=0, ce qui forçait le statut à "À facturer". Retour à l'approche chunked fiable : récupère les `facture_id` depuis `facture_lignes`, puis count par statut en lots de 50 avec early-exit dès que les deux catégories sont trouvées.
+- **Statut "Partiel"** : les factures `ignore` comptent désormais comme "non facturé" (comme `brouillon`), donc un article avec des élèves ignorés affiche bien "Partiellement facturé" plutôt que "Facturé".
+
+## [Session 11c] - 2026-06-21
+
+### Fixed
+- **calcStatut** : `{ count: 'exact', head: true }` retourne `count: null` dans Supabase JS v2, causant un faux "À facturer". Remplacé par `select('id')` sans `head:true` + `.length` sur `data` — fiable et simple (≤50 lignes/chunk).
+
+## [Session 11d] - 2026-06-21
+
+### Simplified
+- **Statut articles/activités** : suppression du statut "Partiellement facturé". Après approbation d'un batch, les articles et activités sont directement marqués "Facturé". Un élève ignoré = décision consciente, l'article est considéré traité. Approche directe sans calcul de statut complexe.
+
+## [Session 11e] - 2026-06-21
+
+### Changed
+- **calcStatut** : logique binaire — "Facturé" seulement si TOUS les élèves ont statut='facture' (ignore = non facturé). 1 requête par chunk avec `.neq('statut','facture').limit(1)`, early exit dès le premier élève non-facturé trouvé.

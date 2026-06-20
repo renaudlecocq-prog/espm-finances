@@ -482,6 +482,7 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
   const getAttributionLabel = r => {
     if (r.type_attribution === 'individuel' && r.eleve)
       return `${r.eleve.nom} ${r.eleve.prenom} (${r.eleve.classe})`
+    if (r.classes_incluses?.includes('__ALL__')) return 'Tous les élèves'
     const parts = []
     if (r.classes_incluses?.length) parts.push(r.classes_incluses.join(', '))
     if (r.groupes_inclus?.length) parts.push(r.groupes_inclus.map(g => g.split(':')[1]).join(', '))
@@ -517,14 +518,14 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
               <tr>
-                {['Article', 'Catégorie', 'Attribution', 'Nb élèves', 'Qté', 'Prix / élève', 'Total', 'Notes'].map(h => (
+                {['Article', 'Catégorie', 'Attribution', 'Nb élèves', 'Qté', 'Prix / élève', 'Total', 'Statut', ''].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">Aucune attribution</td></tr>
+                <tr><td colSpan={9} className="px-4 py-10 text-center text-gray-400">Aucune attribution</td></tr>
               )}
               {filtered.map(r => {
                 const prix = r.prix_unitaire_applique ?? r.article?.prix_unitaire ?? 0
@@ -545,17 +546,22 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
                         {r.statut_facturation === 'facture' ? 'Facturé' : r.statut_facturation === 'partiellement_facture' ? 'Partiel' : 'À facturer'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs max-w-[120px] truncate">{r.notes || '—'}</td>
                     <td className="px-4 py-3 text-right">
                       {isFinancier && (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button onClick={() => openEdit(r)}
-                            className="text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-2.5 py-0.5 transition-colors">
-                            Modifier
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => openEdit(r)} disabled={r.statut_facturation === 'facture'}
+                            title="Modifier"
+                            className="p-1.5 rounded-md text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
                           </button>
-                          <button onClick={() => deleteAttribution(r)}
-                            className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-0.5 transition-colors">
-                            Supprimer
+                          <button onClick={() => deleteAttribution(r)} disabled={r.statut_facturation === 'facture'}
+                            title="Supprimer"
+                            className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
                           </button>
                         </div>
                       )}
