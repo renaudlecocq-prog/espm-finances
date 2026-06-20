@@ -708,18 +708,20 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
       {/* Tabs + Recherche + Tout approuver sur une ligne */}
       <div className="flex items-center gap-3 my-4">
         <div className="flex gap-2 shrink-0">
-          {[
-            { key: 'attente', label: `En attente (${nbAttente + factures.filter(f=>f.statut==='ignore').length})` },
-            { key: 'valide',  label: `Approuvé (${nbValide})` },
-          ].map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors
-                ${activeTab === tab.key
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-              {tab.label}
-            </button>
-          ))}
+          <button onClick={() => setActiveTab('attente')}
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors
+              ${activeTab === 'attente' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            En attente
+            <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full text-xs font-bold
+              ${activeTab === 'attente' ? 'bg-white/20 text-white' : 'bg-gray-300 text-gray-600'}`}>
+              {nbAttente + factures.filter(f => f.statut === 'ignore').length}
+            </span>
+          </button>
+          <button onClick={() => setActiveTab('valide')}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors
+              ${activeTab === 'valide' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            Facturé
+          </button>
         </div>
         <input
           type="text" placeholder="Rechercher un élève ou un numéro…"

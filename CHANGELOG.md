@@ -291,3 +291,9 @@ git push origin main
 
 ---
 
+
+## [Session 10i] - 2026-06-20
+
+### Changed — UX DetailBatch (onglets)
+- Onglet "En attente" : compteur affiché en **badge** séparé à l'intérieur du pill (au lieu de "(n)" dans le texte)
+- Onglet "Facturé" (renommé depuis "Approuvé") : libellé corrigé, sans compteur
