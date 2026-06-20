@@ -214,4 +214,50 @@ git push origin main
 
 ---
 
-> **Note GitHub** : les commits `1dd7738`, `c7b9793`, `08e4cd6`, `227ccb4` de la session 10b-c n'ont pas encore été poussés depuis le sandbox. Seul le commit `0db2a51` et le présent CHANGELOG seront visibles après le prochain push manuel.
+## [Session 10f] - 2026-06-20
+
+### Added
+- **Architecture par batch** : chaque run de facturation crée un batch (table `facture_batches`) avec numéro au format `F-AAMMJJ` (ex. `F-260620`). Si plusieurs runs le même jour : `F-260620-2`, etc.
+- **Navigation 3 niveaux** : Liste des batches → Détail du batch (élèves) → Détail d'une facture (lignes)
+- **Action "Valider"** (par élève) : approuve une facture individuelle indépendamment du batch
+- **Action "Ignorer"** (par élève) : exclut un élève du "Tout approuver" tout en laissant sa facture en attente (reversible : "↩ Réactiver")
+- **Action "Supprimer"** (par élève) : supprime définitivement la facture de l'élève, avec recalcul intelligent du statut des items (`a_facturer` ou `partiellement_facture` selon les autres élèves encore couverts)
+- **Reporter / Supprimer une ligne** (niveau 3) : survol d'une ligne de facture → boutons "↩ Reporter" (remet en à_facturer pour prochain run) et "× Suppr." (suppression permanente). Si la dernière ligne est supprimée, la facture entière est effacée.
+- **"Tout approuver"** dans le détail d'un batch : valide toutes les factures `brouillon` (pas les `ignore`), avec compteur
+- **Légende des actions** sous le tableau du batch
+
+### Changed
+- `Factures.jsx` : refonte complète — `ListeBatches` + `DetailBatch` + `DetailFacture` avec `LigneRow`
+- `FacturationModal.generate()` : crée un batch avant les factures, injecte `batch_id` sur chaque facture
+- Statuts facture : ajout de `ignore` (en attente délibérée)
+- Badge statuts : `brouillon` → "En attente", `facture` → "Validé"
+
+### Migration Supabase
+- Table `facture_batches` : `id`, `numero`, `date`, `statut`, `created_by`, `created_at`
+- `factures.batch_id` → FK vers `facture_batches`
+- Batch rétroactif `F-000000` créé pour les factures existantes sans `batch_id`
+
+---
+
+## [Session 10g] - 2026-06-20
+
+### Fixed — Bugs critiques
+- **Statuts articles/activités prématurés** : les items restent `a_facturer` après génération d'un brouillon. Le statut `facture` n'est appliqué qu'à l'approbation effective (Valider ou Tout approuver). Seul `partiellement_facture` est appliqué à la génération (classes ignorées).
+- **DB** : batch `F-000000` renommé `F-260620-01` · statuts items remis à `a_facturer` (aucune facture n'était encore approuvée).
+
+### Changed — Nomenclature
+- **Batch** : format `F-AAMMJJ-01`, `F-AAMMJJ-02`… (suffixe 2 chiffres, toujours présent). Ex : `F-260620-01`.
+- **Facture individuelle** : `F-AAMMJJ-NN-MATRICULE`. Ex : `F-260620-01-230179`. Le matricule est lu depuis `eleves.matricule`.
+- **Collision** : le code compte les batches existants du même jour → suffixe incrémenté correctement.
+
+### Added — UX DetailBatch
+- **Onglets "En attente" / "Approuvé"** dans le détail d'un batch pour filtrer les factures par statut.
+- **Colonne "N° Facture"** dans la liste des élèves du batch (format mono-espace, sélectionnable).
+- **Colonne Actions** masquée dans l'onglet "Approuvé" (factures déjà traitées).
+
+### Changed — Modal
+- Texte "Les items qui ciblent…" → "Les **éléments** qui ciblent…"
+
+---
+
+> **Note GitHub** : les commits de sessions 10b-e n'ont pas encore été tous poussés depuis le sandbox. Seule la session 10g sera visible après le prochain push manuel.

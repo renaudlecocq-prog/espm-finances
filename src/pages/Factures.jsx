@@ -8,9 +8,10 @@ const fmtEur  = n => Number(n || 0).toLocaleString('fr-BE', { minimumFractionDig
 const CATEGORIES_ART = ['Frais obligatoires', 'Fournitures scolaires', 'Vêtements', 'Divers']
 
 const STATUTS = {
-  brouillon:       { label: 'Brouillon',       cls: 'bg-gray-100 text-gray-600' },
-  facture:         { label: 'Facturé',          cls: 'bg-blue-100 text-blue-700' },
-  rappel:          { label: 'Rappel',           cls: 'bg-orange-100 text-orange-700' },
+  brouillon:       { label: 'En attente',      cls: 'bg-orange-100 text-orange-700' },
+  ignore:          { label: 'Ignoré',           cls: 'bg-gray-100 text-gray-400' },
+  facture:         { label: 'Validé',           cls: 'bg-green-100 text-green-700' },
+  rappel:          { label: 'Rappel',           cls: 'bg-orange-200 text-orange-800' },
   mise_en_demeure: { label: 'Mise en demeure',  cls: 'bg-red-100 text-red-700' },
 }
 
@@ -114,14 +115,13 @@ function FacturationModal({ onClose, onDone }) {
   const [activites, setActivites]         = useState([])
   const [selItems, setSelItems]           = useState({})
   const [classesIgnorees, setClassesIgnorees] = useState([])
-  // Maps: eleve_id déjà facturé pour un item (pour items partiellement facturés)
   const [billedByAttr, setBilledByAttr]   = useState({})
   const [billedByActiv, setBilledByActiv] = useState({})
 
   useEffect(() => {
     const load = async () => {
       const [elevesRes, attrsRes, activRes] = await Promise.all([
-        supabase.from('eleves').select('id,nom,prenom,classe').eq('actif', true).order('classe').order('nom'),
+        supabase.from('eleves').select('id,nom,prenom,classe,matricule').eq('actif', true).order('classe').order('nom'),
         supabase.from('article_attributions')
           .select('*, article:article_id(nom,categorie,prix_unitaire)')
           .in('statut_facturation', ['a_facturer', 'partiellement_facture']),
@@ -130,23 +130,20 @@ function FacturationModal({ onClose, onDone }) {
           .in('statut_facturation', ['a_facturer', 'partiellement_facture'])
           .eq('statut', 'publie'),
       ])
-
-      const eleves       = elevesRes.data || []
-      const pendingAttrs = attrsRes.data  || []
-      const pendingActiv = activRes.data  || []
+      const eleves       = elevesRes.data  || []
+      const pendingAttrs = attrsRes.data   || []
+      const pendingActiv = activRes.data   || []
 
       setAllEleves(eleves)
       setAllClasses([...new Set(eleves.map(e => e.classe).filter(Boolean))].sort())
       setAttrs(pendingAttrs)
       setActivites(pendingActiv)
 
-      // Sélectionner tout par défaut
       const sel = {}
-      pendingAttrs.forEach(a => { sel[`attr_${a.id}`] = true })
+      pendingAttrs.forEach(a => { sel[`attr_${a.id}`]  = true })
       pendingActiv.forEach(a => { sel[`activ_${a.id}`] = true })
       setSelItems(sel)
 
-      // Charger les élèves déjà facturés pour les items partiels
       const partialAttrIds  = pendingAttrs.filter(a => a.statut_facturation === 'partiellement_facture').map(a => a.id)
       const partialActivIds = pendingActiv.filter(a => a.statut_facturation === 'partiellement_facture').map(a => a.id)
 
@@ -154,12 +151,10 @@ function FacturationModal({ onClose, onDone }) {
         const filters = []
         if (partialAttrIds.length)  filters.push(`article_attribution_id.in.(${partialAttrIds.join(',')})`)
         if (partialActivIds.length) filters.push(`activite_id.in.(${partialActivIds.join(',')})`)
-
         const { data: lignes } = await supabase
           .from('facture_lignes')
           .select('article_attribution_id, activite_id, facture:facture_id(eleve_id)')
           .or(filters.join(','))
-
         const byAttr = {}, byActiv = {}
         for (const l of lignes || []) {
           if (!l.facture?.eleve_id) continue
@@ -175,7 +170,6 @@ function FacturationModal({ onClose, onDone }) {
         setBilledByAttr(byAttr)
         setBilledByActiv(byActiv)
       }
-
       setLoading(false)
     }
     load()
@@ -183,12 +177,10 @@ function FacturationModal({ onClose, onDone }) {
 
   const toggleItem = key => setSelItems(s => ({ ...s, [key]: !s[key] }))
 
-  // Construire la map { eleveId → [lignes] } en excluant les déjà-facturés et les classes ignorées
   const eleveMap = useMemo(() => {
     const selectedAttrs = attrs.filter(a  => selItems[`attr_${a.id}`])
     const selectedActiv = activites.filter(a => selItems[`activ_${a.id}`])
     const map = {}
-
     const add = (eleveId, item) => {
       const e = allEleves.find(el => el.id === eleveId)
       if (!e) return
@@ -196,17 +188,10 @@ function FacturationModal({ onClose, onDone }) {
       if (!map[eleveId]) map[eleveId] = { eleve: e, items: [] }
       map[eleveId].items.push(item)
     }
-
     for (const attr of selectedAttrs) {
       const alreadyBilled = billedByAttr[attr.id] || new Set()
-      const ligne = {
-        type: 'article',
-        libelle: attr.article?.nom || 'Article',
-        categorie: attr.article?.categorie,
-        montant: prixAttribution(attr),
-        article_attribution_id: attr.id,
-        activite_id: null,
-      }
+      const ligne = { type: 'article', libelle: attr.article?.nom || 'Article', categorie: attr.article?.categorie,
+        montant: prixAttribution(attr), article_attribution_id: attr.id, activite_id: null }
       if (attr.eleve_id) {
         if (!alreadyBilled.has(attr.eleve_id)) add(attr.eleve_id, ligne)
       } else {
@@ -218,29 +203,21 @@ function FacturationModal({ onClose, onDone }) {
           if (ex.has(e.id)) continue
           if (!allMode && !ci.includes(e.classe)) continue
           if (ce.includes(e.classe)) continue
-          if (alreadyBilled.has(e.id)) continue  // déjà facturé dans un run précédent
+          if (alreadyBilled.has(e.id)) continue
           add(e.id, { ...ligne })
         }
       }
     }
-
     for (const activ of selectedActiv) {
       const alreadyBilled = billedByActiv[activ.id] || new Set()
-      const ligne = {
-        type: 'activite',
-        libelle: activ.intitule,
-        categorie: 'Activités',
-        montant: prixActivite(activ),
-        article_attribution_id: null,
-        activite_id: activ.id,
-      }
+      const ligne = { type: 'activite', libelle: activ.intitule, categorie: 'Activités',
+        montant: prixActivite(activ), article_attribution_id: null, activite_id: activ.id }
       for (const e of allEleves) {
         if (!isEleveInActivite(e, activ)) continue
-        if (alreadyBilled.has(e.id)) continue  // déjà facturé dans un run précédent
+        if (alreadyBilled.has(e.id)) continue
         add(e.id, { ...ligne })
       }
     }
-
     return map
   }, [attrs, activites, selItems, allEleves, classesIgnorees, billedByAttr, billedByActiv])
 
@@ -248,7 +225,6 @@ function FacturationModal({ onClose, onDone }) {
   const totalGlobal = Object.values(eleveMap).reduce((s, { items }) =>
     s + items.reduce((si, i) => si + i.montant, 0), 0)
 
-  // Déterminer si un item est partiellement facturé (certaines classes ignorées dans ce run)
   const isItemPartial = (targetClasses) => {
     if (classesIgnorees.length === 0) return false
     const effective = targetClasses.includes('__ALL__') ? allClasses : targetClasses
@@ -259,6 +235,21 @@ function FacturationModal({ onClose, onDone }) {
     if (nbEleves === 0) return
     setGenerating(true)
 
+    // 1. Créer le batch (format F-AAMMJJ-01, F-AAMMJJ-02…)
+    const now = new Date()
+    const y = now.getFullYear().toString().slice(2)
+    const m = String(now.getMonth() + 1).padStart(2, '0')
+    const d = String(now.getDate()).padStart(2, '0')
+    const baseNumero = `F-${y}${m}${d}`
+    const { data: existing } = await supabase.from('facture_batches').select('numero').like('numero', `${baseNumero}%`)
+    const runNumber = (existing?.length || 0) + 1
+    const batchNumero = `${baseNumero}-${String(runNumber).padStart(2, '0')}`
+    const { data: batch } = await supabase.from('facture_batches')
+      .insert({ numero: batchNumero, date: now.toISOString().slice(0, 10), statut: 'brouillon', created_by: user?.id })
+      .select().single()
+    if (!batch) { setGenerating(false); return }
+
+    // 2. Calculer soldes
     const eleveIds = Object.keys(eleveMap)
     const [{ data: paies }, { data: facts }] = await Promise.all([
       supabase.from('paiements').select('eleve_id,montant').in('eleve_id', eleveIds),
@@ -270,24 +261,28 @@ function FacturationModal({ onClose, onDone }) {
 
     const { count } = await supabase.from('factures').select('*', { count: 'exact', head: true })
     let num = (count || 0) + 1
-    const year  = new Date().getFullYear()
-    const today = new Date().toISOString().slice(0, 10)
+    const year  = now.getFullYear()
+    const today = now.toISOString().slice(0, 10)
 
+    // 3. Créer les factures avec batch_id (format F-AAMMJJ-NN-MATRICULE)
     let created = 0
-    for (const [eleveId, { items }] of Object.entries(eleveMap)) {
-      const total      = items.reduce((s, i) => s + i.montant, 0)
-      const soldeAvant = soldeMap[eleveId] || 0
+    for (const [eleveId, { eleve, items }] of Object.entries(eleveMap)) {
+      const total       = items.reduce((s, i) => s + i.montant, 0)
+      const soldeAvant  = soldeMap[eleveId] || 0
+      const matricule   = eleve.matricule || String(num).padStart(6, '0')
+      const factureNum  = `${batchNumero}-${matricule}`
+      num++
       const { data: facture } = await supabase.from('factures').insert({
         eleve_id: eleveId,
         montant: total,
         date: today,
         statut: 'brouillon',
-        numero: `F-${year}-${String(num++).padStart(3, '0')}`,
+        numero: factureNum,
         solde_avant: soldeAvant,
         solde_apres: soldeAvant - total,
         created_by: user?.id,
+        batch_id: batch.id,
       }).select().single()
-
       if (facture) {
         await supabase.from('facture_lignes').insert(
           items.map(ligne => ({ ...ligne, facture_id: facture.id }))
@@ -296,28 +291,24 @@ function FacturationModal({ onClose, onDone }) {
       }
     }
 
-    // Marquer chaque attribution article : facturé ou partiellement facturé
+    // 4. Marquer PARTIELLEMENT les éléments ciblant des classes ignorées
+    // (le statut 'facture' n'est appliqué qu'à l'approbation de la facture)
     const selectedAttrs = attrs.filter(a => selItems[`attr_${a.id}`])
     for (const attr of selectedAttrs) {
       const ci = attr.eleve_id ? [] : (attr.classes_incluses || [])
-      const partial = isItemPartial(ci)
-      // Pour un item partiel, on vérifie aussi s'il reste des élèves non facturés
-      // en combinant les déjà-facturés + ceux de ce run
-      const newStatut = partial ? 'partiellement_facture' : 'facture'
-      await supabase.from('article_attributions')
-        .update({ statut_facturation: newStatut })
-        .eq('id', attr.id)
+      if (isItemPartial(ci)) {
+        await supabase.from('article_attributions')
+          .update({ statut_facturation: 'partiellement_facture' })
+          .eq('id', attr.id)
+      }
     }
-
-    // Marquer chaque activité : facturé ou partiellement facturé
     const selectedActiv = activites.filter(a => selItems[`activ_${a.id}`])
     for (const activ of selectedActiv) {
-      const ci = activ.classes_incluses || []
-      const partial = isItemPartial(ci)
-      const newStatut = partial ? 'partiellement_facture' : 'facture'
-      await supabase.from('activites')
-        .update({ statut_facturation: newStatut })
-        .eq('id', activ.id)
+      if (isItemPartial(activ.classes_incluses || [])) {
+        await supabase.from('activites')
+          .update({ statut_facturation: 'partiellement_facture' })
+          .eq('id', activ.id)
+      }
     }
 
     setGenerating(false)
@@ -328,14 +319,10 @@ function FacturationModal({ onClose, onDone }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={done ? undefined : onClose} />
       <div className="relative z-10 bg-white w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl rounded-2xl overflow-hidden">
-
-        {/* Header */}
         <div className="p-5 border-b border-gray-100 flex items-center justify-between shrink-0">
           <h2 className="text-lg font-bold text-gray-800">Facturer les éléments en attente</h2>
           <button onClick={done ? onDone : onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 text-lg">✕</button>
         </div>
-
-        {/* Contenu */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="p-12 text-center text-gray-400">Chargement…</div>
@@ -348,16 +335,10 @@ function FacturationModal({ onClose, onDone }) {
             </div>
           ) : (
             <div className="p-5 space-y-6">
-
-              {/* Filtre classes */}
               {allClasses.length > 0 && (
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-gray-500 shrink-0">Classes :</span>
-                  <ClassFilterPill
-                    allClasses={allClasses}
-                    excluded={classesIgnorees}
-                    onChange={setClassesIgnorees}
-                  />
+                  <ClassFilterPill allClasses={allClasses} excluded={classesIgnorees} onChange={setClassesIgnorees} />
                   {classesIgnorees.length > 0 && (
                     <span className="text-xs text-orange-600 font-medium">
                       {classesIgnorees.join(', ')} ignorée{classesIgnorees.length > 1 ? 's' : ''} → items concernés seront marqués <em>Partiel</em>
@@ -365,8 +346,6 @@ function FacturationModal({ onClose, onDone }) {
                   )}
                 </div>
               )}
-
-              {/* Articles */}
               {attrs.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -382,8 +361,7 @@ function FacturationModal({ onClose, onDone }) {
                     {attrs.map(a => {
                       const key   = `attr_${a.id}`
                       const prix  = prixAttribution(a)
-                      const cible = a.eleve_id
-                        ? '1 élève individuel'
+                      const cible = a.eleve_id ? '1 élève individuel'
                         : ((a.classes_incluses || []).includes('__ALL__') ? 'Toutes classes'
                           : (a.classes_incluses || []).join(', ') || '?')
                       const isPartial = a.statut_facturation === 'partiellement_facture'
@@ -405,8 +383,6 @@ function FacturationModal({ onClose, onDone }) {
                   </div>
                 </div>
               )}
-
-              {/* Activités */}
               {activites.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -443,7 +419,6 @@ function FacturationModal({ onClose, onDone }) {
                   </div>
                 </div>
               )}
-
               {attrs.length === 0 && activites.length === 0 && (
                 <div className="py-16 text-center text-gray-400">
                   <div className="text-4xl mb-3">✅</div>
@@ -454,8 +429,6 @@ function FacturationModal({ onClose, onDone }) {
             </div>
           )}
         </div>
-
-        {/* Footer */}
         {!loading && done === null && (attrs.length > 0 || activites.length > 0) && (
           <div className="p-5 border-t border-gray-100 bg-gray-50 shrink-0">
             <div className="flex items-center justify-between mb-3 text-sm">
@@ -467,14 +440,12 @@ function FacturationModal({ onClose, onDone }) {
             </div>
             {classesIgnorees.length > 0 && (
               <p className="text-xs text-orange-600 mb-3">
-                ⚠ Les items qui ciblent des classes ignorées seront marqués <strong>Partiellement facturé</strong> et réapparaîtront lors du prochain run.
+                ⚠ Les éléments qui ciblent des classes ignorées seront marqués <strong>Partiellement facturé</strong>.
               </p>
             )}
             <button onClick={generate} disabled={generating || nbEleves === 0}
               className="btn-primary w-full py-2.5 disabled:opacity-50 disabled:cursor-not-allowed">
-              {generating
-                ? 'Génération en cours…'
-                : `Générer ${nbEleves} facture${nbEleves !== 1 ? 's' : ''} · ${fmtEur(totalGlobal)}`}
+              {generating ? 'Génération en cours…' : `Générer ${nbEleves} facture${nbEleves !== 1 ? 's' : ''} · ${fmtEur(totalGlobal)}`}
             </button>
           </div>
         )}
@@ -483,17 +454,34 @@ function FacturationModal({ onClose, onDone }) {
   )
 }
 
-// ── Liste des factures ────────────────────────────────────────────────────────
-function ListeFactures({ onNew, onSelect }) {
-  const [factures, setFactures] = useState([])
-  const [loading, setLoading]   = useState(true)
+// ── Liste des batches (niveau 1) ──────────────────────────────────────────────
+function ListeBatches({ onNew, onSelect }) {
+  const { isFinancier } = useAuth()
+  const [batches, setBatches] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    supabase.from('factures')
-      .select('*, eleve:eleve_id(nom,prenom,classe)')
-      .order('date', { ascending: false })
-      .then(({ data }) => { setFactures(data || []); setLoading(false) })
-  }, [])
+  const load = async () => {
+    setLoading(true)
+    const { data } = await supabase
+      .from('facture_batches')
+      .select('*, factures(id, montant, statut)')
+      .order('created_at', { ascending: false })
+    setBatches(data || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const stats = b => {
+    const facs = b.factures || []
+    const total     = facs.reduce((s, f) => s + Number(f.montant || 0), 0)
+    const nbTotal   = facs.length
+    const nbAttente = facs.filter(f => f.statut === 'brouillon').length
+    const nbIgnore  = facs.filter(f => f.statut === 'ignore').length
+    const nbValide  = facs.filter(f => f.statut === 'facture').length
+    const termine   = nbAttente === 0
+    return { total, nbTotal, nbAttente, nbIgnore, nbValide, termine }
+  }
 
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
@@ -502,44 +490,67 @@ function ListeFactures({ onNew, onSelect }) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Factures</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{factures.length} facture{factures.length !== 1 ? 's' : ''}</p>
+          <p className="text-gray-500 text-sm mt-0.5">{batches.length} run{batches.length !== 1 ? 's' : ''} de facturation</p>
         </div>
-        <button onClick={onNew} className="btn-primary">+ Facturer</button>
+        {isFinancier && (
+          <button onClick={onNew} className="btn-primary">+ Facturer</button>
+        )}
       </div>
 
-      {factures.length === 0 ? (
+      {batches.length === 0 ? (
         <div className="card p-12 text-center text-gray-400">
           <div className="text-4xl mb-3">🧾</div>
-          <p className="font-medium">Aucune facture</p>
-          <p className="text-sm mt-1">Cliquez sur "+ Facturer" pour générer les premières factures.</p>
+          <p className="font-medium">Aucune facturation</p>
+          <p className="text-sm mt-1">Cliquez sur "+ Facturer" pour générer le premier batch.</p>
         </div>
       ) : (
         <div className="card p-0 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {['N°','Date','Élève','Classe','Montant','Solde après','Statut'].map(h => (
+                {['N° batch','Date','Élèves','Total','Répartition','Statut'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {factures.map(f => (
-                <tr key={f.id} onClick={() => onSelect(f.id)}
-                  className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">{f.numero || '—'}</td>
-                  <td className="px-4 py-3 text-gray-600">{fmtDate(f.date)}</td>
-                  <td className="px-4 py-3 font-medium text-gray-800">{f.eleve?.prenom} {f.eleve?.nom}</td>
-                  <td className="px-4 py-3 text-gray-500">{f.eleve?.classe || '—'}</td>
-                  <td className="px-4 py-3 font-semibold text-gray-800">{fmtEur(f.montant)}</td>
-                  <td className="px-4 py-3">
-                    <span className={`font-semibold tabular-nums ${Number(f.solde_apres) < 0 ? 'text-red-600' : Number(f.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-                      {fmtEur(f.solde_apres)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3"><Badge statut={f.statut} /></td>
-                </tr>
-              ))}
+              {batches.map(b => {
+                const s = stats(b)
+                return (
+                  <tr key={b.id} onClick={() => onSelect(b.id)}
+                    className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors">
+                    <td className="px-4 py-3 font-mono text-sm font-bold text-gray-800">{b.numero}</td>
+                    <td className="px-4 py-3 text-gray-600">{fmtDate(b.date)}</td>
+                    <td className="px-4 py-3 text-gray-700 font-medium">{s.nbTotal}</td>
+                    <td className="px-4 py-3 font-semibold text-gray-800">{fmtEur(s.total)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {s.nbValide > 0 && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                            {s.nbValide} validé{s.nbValide > 1 ? 's' : ''}
+                          </span>
+                        )}
+                        {s.nbAttente > 0 && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                            {s.nbAttente} en attente
+                          </span>
+                        )}
+                        {s.nbIgnore > 0 && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                            {s.nbIgnore} ignoré{s.nbIgnore > 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full
+                        ${s.termine ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                        {s.termine ? 'Terminé' : 'En attente'}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -548,7 +559,336 @@ function ListeFactures({ onNew, onSelect }) {
   )
 }
 
-// ── Détail d'une facture ──────────────────────────────────────────────────────
+// ── Détail d'un batch (niveau 2) ──────────────────────────────────────────────
+function DetailBatch({ batchId, onSelectFacture, onBack }) {
+  const { isFinancier } = useAuth()
+  const [batch, setBatch]     = useState(null)
+  const [factures, setFactures] = useState([])
+  const [search, setSearch]   = useState('')
+  const [activeTab, setActiveTab] = useState('attente') // 'attente' | 'valide'
+  const [loading, setLoading] = useState(true)
+  const [confirm, setConfirm] = useState(null) // { facture }
+  const [busy, setBusy]       = useState(false)
+
+  const load = async () => {
+    const [{ data: b }, { data: facs }] = await Promise.all([
+      supabase.from('facture_batches').select('*').eq('id', batchId).single(),
+      supabase.from('factures')
+        .select('*, eleve:eleve_id(nom,prenom,classe)')
+        .eq('batch_id', batchId)
+        .order('eleve_id'),
+    ])
+    setBatch(b)
+    setFactures(facs || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [batchId])
+
+  // Met à jour les statuts articles/activités après approbation de factures
+  const mettreAJourItemsApresApprobation = async (factureIds) => {
+    if (!factureIds.length) return
+    const { data: lignes } = await supabase.from('facture_lignes')
+      .select('article_attribution_id, activite_id').in('facture_id', factureIds)
+    const attrIds  = [...new Set((lignes||[]).filter(l=>l.article_attribution_id).map(l=>l.article_attribution_id))]
+    const activIds = [...new Set((lignes||[]).filter(l=>l.activite_id).map(l=>l.activite_id))]
+    for (const id of attrIds) {
+      const { data: lignesItem } = await supabase.from('facture_lignes')
+        .select('facture_id').eq('article_attribution_id', id)
+      const ids = (lignesItem||[]).map(l=>l.facture_id)
+      if (!ids.length) continue
+      const { count } = await supabase.from('factures')
+        .select('*',{count:'exact',head:true}).in('id',ids).in('statut',['brouillon','ignore'])
+      if ((count||0) === 0) {
+        await supabase.from('article_attributions').update({statut_facturation:'facture'}).eq('id',id)
+      }
+    }
+    for (const id of activIds) {
+      const { data: lignesItem } = await supabase.from('facture_lignes')
+        .select('facture_id').eq('activite_id', id)
+      const ids = (lignesItem||[]).map(l=>l.facture_id)
+      if (!ids.length) continue
+      const { count } = await supabase.from('factures')
+        .select('*',{count:'exact',head:true}).in('id',ids).in('statut',['brouillon','ignore'])
+      if ((count||0) === 0) {
+        await supabase.from('activites').update({statut_facturation:'facture'}).eq('id',id)
+      }
+    }
+  }
+
+  const validerFacture = async (f) => {
+    setBusy(true)
+    await supabase.from('factures').update({ statut: 'facture' }).eq('id', f.id)
+    await mettreAJourItemsApresApprobation([f.id])
+    await load(); setBusy(false)
+  }
+
+  const ignorerFacture = async (f) => {
+    setBusy(true)
+    const newStatut = f.statut === 'ignore' ? 'brouillon' : 'ignore'
+    await supabase.from('factures').update({ statut: newStatut }).eq('id', f.id)
+    await load(); setBusy(false)
+  }
+
+  const supprimerFacture = async (f) => {
+    setBusy(true)
+
+    // Récupérer et supprimer les lignes
+    const { data: lignes } = await supabase.from('facture_lignes').select('*').eq('facture_id', f.id)
+    await supabase.from('facture_lignes').delete().eq('facture_id', f.id)
+
+    // Recalculer statut des items (après suppression des lignes de cet élève)
+    const attrIds  = [...new Set((lignes || []).filter(l => l.article_attribution_id).map(l => l.article_attribution_id))]
+    const activIds = [...new Set((lignes || []).filter(l => l.activite_id).map(l => l.activite_id))]
+
+    for (const id of attrIds) {
+      const { count } = await supabase.from('facture_lignes')
+        .select('*', { count: 'exact', head: true }).eq('article_attribution_id', id)
+      await supabase.from('article_attributions')
+        .update({ statut_facturation: (count || 0) > 0 ? 'partiellement_facture' : 'a_facturer' })
+        .eq('id', id)
+    }
+    for (const id of activIds) {
+      const { count } = await supabase.from('facture_lignes')
+        .select('*', { count: 'exact', head: true }).eq('activite_id', id)
+      await supabase.from('activites')
+        .update({ statut_facturation: (count || 0) > 0 ? 'partiellement_facture' : 'a_facturer' })
+        .eq('id', id)
+    }
+
+    // Supprimer la facture
+    await supabase.from('factures').delete().eq('id', f.id)
+    setConfirm(null)
+    await load()
+    setBusy(false)
+  }
+
+  const toutApprouver = async () => {
+    const ids = factures.filter(f => f.statut === 'brouillon').map(f => f.id)
+    if (!ids.length) return
+    setBusy(true)
+    await supabase.from('factures').update({ statut: 'facture' }).in('id', ids)
+    await mettreAJourItemsApresApprobation(ids)
+    await load(); setBusy(false)
+  }
+
+  const nbAttente  = factures.filter(f => f.statut === 'brouillon').length
+  const nbValide   = factures.filter(f => f.statut === 'facture').length
+
+  const filtered = factures.filter(f => {
+    const tabMatch = activeTab === 'attente' ? f.statut !== 'facture' : f.statut === 'facture'
+    if (!tabMatch) return false
+    if (!search) return true
+    const q = search.toLowerCase()
+    return `${f.eleve?.prenom} ${f.eleve?.nom}`.toLowerCase().includes(q)
+      || (f.eleve?.classe || '').toLowerCase().includes(q)
+      || (f.numero || '').toLowerCase().includes(q)
+  })
+
+  const totalBatch = factures.reduce((s, f) => s + Number(f.montant || 0), 0)
+
+  if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
+
+  return (
+    <div className="p-6 max-w-screen-xl mx-auto">
+      <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-4 flex items-center gap-1">
+        ← Retour aux batches
+      </button>
+
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold text-gray-800">{batch?.numero}</h1>
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full
+              ${nbAttente === 0 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+              {nbAttente === 0 ? 'Terminé' : 'En attente'}
+            </span>
+          </div>
+          <p className="text-gray-500 text-sm">
+            {fmtDate(batch?.date)} · {factures.length} élève{factures.length !== 1 ? 's' : ''} · {fmtEur(totalBatch)}
+          </p>
+        </div>
+        {isFinancier && nbAttente > 0 && (
+          <button onClick={toutApprouver} disabled={busy} className="btn-primary shrink-0 disabled:opacity-50">
+            ✓ Tout approuver ({nbAttente})
+          </button>
+        )}
+      </div>
+
+      {/* Onglets */}
+      <div className="flex gap-2 mb-4">
+        {[
+          { key: 'attente', label: `En attente (${nbAttente + factures.filter(f=>f.statut==='ignore').length})` },
+          { key: 'valide',  label: `Approuvé (${nbValide})` },
+        ].map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors
+              ${activeTab === tab.key
+                ? 'bg-primary text-white'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="card p-0 overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+          <input
+            type="text" placeholder="Rechercher un élève ou un numéro…"
+            value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full max-w-xs text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b border-gray-100">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">N° Facture</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Élève</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Classe</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Montant</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Solde après</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
+              {isFinancier && activeTab === 'attente' && <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(f => (
+              <tr key={f.id}
+                className={`border-b border-gray-50 transition-colors ${f.statut === 'ignore' ? 'opacity-40' : 'hover:bg-gray-50/50'}`}>
+                <td className="px-4 py-3">
+                  <span className="font-mono text-xs text-gray-500 select-all">{f.numero || '—'}</span>
+                </td>
+                <td className="px-4 py-3">
+                  <button onClick={() => onSelectFacture(f.id)}
+                    className="font-medium text-gray-800 hover:text-primary hover:underline text-left">
+                    {f.eleve?.prenom} {f.eleve?.nom}
+                  </button>
+                </td>
+                <td className="px-4 py-3 text-gray-500">{f.eleve?.classe || '—'}</td>
+                <td className="px-4 py-3 font-semibold text-gray-800">{fmtEur(f.montant)}</td>
+                <td className="px-4 py-3">
+                  <span className={`font-semibold tabular-nums
+                    ${Number(f.solde_apres) < 0 ? 'text-red-600' : Number(f.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                    {fmtEur(f.solde_apres)}
+                            </span>
+                </td>
+                <td className="px-4 py-3"><Badge statut={f.statut} /></td>
+                {isFinancier && activeTab === 'attente' && (
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      {f.statut !== 'facture' && (
+                        <button onClick={() => validerFacture(f)} disabled={busy}
+                          className="text-xs px-2 py-1 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 font-medium transition-colors disabled:opacity-40">
+                          ✓ Valider
+                        </button>
+                      )}
+                      {f.statut !== 'facture' && (
+                        <button onClick={() => ignorerFacture(f)} disabled={busy}
+                          className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors disabled:opacity-40
+                            ${f.statut === 'ignore'
+                              ? 'bg-orange-50 text-orange-700 hover:bg-orange-100'
+                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                          {f.statut === 'ignore' ? '↩ Réactiver' : '⏭ Ignorer'}
+                        </button>
+                      )}
+                      <button onClick={() => setConfirm({ facture: f })} disabled={busy}
+                        className="text-xs px-2 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-medium transition-colors disabled:opacity-40">
+                        × Suppr.
+                      </button>
+                    </div>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {filtered.length === 0 && (
+          <div className="p-8 text-center text-gray-400">
+            {search ? 'Aucun élève trouvé.' : 'Aucune facture dans ce batch.'}
+          </div>
+        )}
+      </div>
+
+      {isFinancier && factures.length > 0 && (
+        <div className="mt-3 flex items-center gap-4 text-xs text-gray-400">
+          <span><strong className="text-gray-500">Valider</strong> = approuver la facture</span>
+          <span><strong className="text-gray-500">Ignorer</strong> = exclure du "Tout approuver"</span>
+          <span><strong className="text-gray-500">Suppr.</strong> = supprimer définitivement (items remis en "à facturer")</span>
+        </div>
+      )}
+
+      {confirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirm(null)} />
+          <div className="relative z-10 bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Supprimer cette facture ?</h3>
+            <p className="text-gray-600 text-sm mb-1">
+              <strong>{confirm.facture.eleve?.prenom} {confirm.facture.eleve?.nom}</strong> — {fmtEur(confirm.facture.montant)}
+            </p>
+            <p className="text-gray-400 text-xs mb-5">
+              Les articles et activités concernés seront remis en "à facturer" ou "partiellement facturé" selon les autres élèves déjà couverts.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setConfirm(null)}
+                className="px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+                Annuler
+              </button>
+              <button onClick={() => supprimerFacture(confirm.facture)} disabled={busy}
+                className="px-4 py-2 text-sm rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors disabled:opacity-50">
+                {busy ? 'Suppression…' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Détail d'une facture (niveau 3) ──────────────────────────────────────────
+function LigneRow({ ligne, onRemove, isFinancier }) {
+  const [confirming, setConfirming] = useState(null)
+
+  if (confirming) return (
+    <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-amber-50 border border-amber-100 my-1 text-sm gap-3">
+      <span className="text-gray-600 text-xs leading-tight">
+        {confirming === 'reporter'
+          ? 'Reporter cette ligne dans la prochaine facturation ?'
+          : 'Supprimer définitivement cette ligne ?'}
+      </span>
+      <div className="flex gap-2 shrink-0">
+        <button onClick={() => setConfirming(null)}
+          className="text-xs text-gray-400 hover:text-gray-600 font-medium">Annuler</button>
+        <button onClick={() => { onRemove(ligne, confirming === 'reporter'); setConfirming(null) }}
+          className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-0.5 rounded-lg font-medium transition-colors">
+          Confirmer
+        </button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0 group">
+      <span className="text-sm text-gray-700">{ligne.libelle}</span>
+      <div className="flex items-center gap-2">
+        {isFinancier && (
+          <div className="hidden group-hover:flex items-center gap-1">
+            <button onClick={() => setConfirming('reporter')}
+              className="text-xs px-2 py-0.5 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 font-medium transition-colors">
+              ↩ Reporter
+            </button>
+            <button onClick={() => setConfirming('supprimer')}
+              className="text-xs px-2 py-0.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-medium transition-colors">
+              × Suppr.
+            </button>
+          </div>
+        )}
+        <span className="text-sm font-medium text-gray-800 tabular-nums">{fmtEur(ligne.montant)}</span>
+      </div>
+    </div>
+  )
+}
+
 function DetailFacture({ factureId, onBack }) {
   const { isFinancier } = useAuth()
   const [facture, setFacture] = useState(null)
@@ -572,6 +912,37 @@ function DetailFacture({ factureId, onBack }) {
     await load(); setSaving(false)
   }
 
+  const removeLigne = async (ligne, putBack) => {
+    await supabase.from('facture_lignes').delete().eq('id', ligne.id)
+    if (putBack) {
+      if (ligne.article_attribution_id) {
+        const { count } = await supabase.from('facture_lignes')
+          .select('*', { count: 'exact', head: true }).eq('article_attribution_id', ligne.article_attribution_id)
+        await supabase.from('article_attributions')
+          .update({ statut_facturation: (count || 0) > 0 ? 'partiellement_facture' : 'a_facturer' })
+          .eq('id', ligne.article_attribution_id)
+      }
+      if (ligne.activite_id) {
+        const { count } = await supabase.from('facture_lignes')
+          .select('*', { count: 'exact', head: true }).eq('activite_id', ligne.activite_id)
+        await supabase.from('activites')
+          .update({ statut_facturation: (count || 0) > 0 ? 'partiellement_facture' : 'a_facturer' })
+          .eq('id', ligne.activite_id)
+      }
+    }
+    const { data: remaining } = await supabase.from('facture_lignes').select('*').eq('facture_id', factureId)
+    if (!remaining?.length) {
+      await supabase.from('factures').delete().eq('id', factureId)
+      onBack(); return
+    }
+    const newTotal = remaining.reduce((s, l) => s + Number(l.montant), 0)
+    await supabase.from('factures').update({
+      montant: newTotal,
+      solde_apres: Number(facture.solde_avant) - newTotal,
+    }).eq('id', factureId)
+    await load()
+  }
+
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
   if (!facture) return <div className="p-8 text-center text-gray-400">Facture introuvable.</div>
 
@@ -588,9 +959,8 @@ function DetailFacture({ factureId, onBack }) {
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-6 flex items-center gap-1">
-        ← Retour aux factures
+        ← Retour au batch
       </button>
-
       <div className="card p-6 mb-4">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -611,33 +981,30 @@ function DetailFacture({ factureId, onBack }) {
         </div>
         {isFinancier && (
           <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 flex-wrap">
-            {facture.statut === 'brouillon' && <button onClick={() => setStatut('facture')} disabled={saving} className="btn-primary text-sm py-1.5">✓ Marquer comme facturé</button>}
-            {facture.statut === 'facture' && <button onClick={() => setStatut('rappel')} disabled={saving} className="btn-secondary text-sm py-1.5 text-orange-600">⚠ Rappel</button>}
-            {facture.statut === 'rappel' && <button onClick={() => setStatut('mise_en_demeure')} disabled={saving} className="btn-secondary text-sm py-1.5 text-red-600">🚨 Mise en demeure</button>}
-            {facture.statut !== 'brouillon' && <button onClick={() => setStatut('brouillon')} disabled={saving} className="btn-secondary text-sm py-1.5">↩ Brouillon</button>}
+            {facture.statut === 'brouillon' && <button onClick={() => setStatut('facture')} disabled={saving} className="btn-primary text-sm py-1.5">✓ Valider</button>}
+            {facture.statut === 'ignore'    && <button onClick={() => setStatut('brouillon')} disabled={saving} className="btn-secondary text-sm py-1.5">↩ Réactiver</button>}
+            {facture.statut === 'facture'   && <button onClick={() => setStatut('rappel')} disabled={saving} className="btn-secondary text-sm py-1.5 text-orange-600">⚠ Rappel</button>}
+            {facture.statut === 'rappel'    && <button onClick={() => setStatut('mise_en_demeure')} disabled={saving} className="btn-secondary text-sm py-1.5 text-red-600">🚨 Mise en demeure</button>}
+            {!['brouillon','ignore'].includes(facture.statut) && <button onClick={() => setStatut('brouillon')} disabled={saving} className="btn-secondary text-sm py-1.5">↩ Brouillon</button>}
           </div>
         )}
       </div>
-
       <div className="card p-4 mb-4 flex items-center justify-between">
         <span className="text-sm font-medium text-gray-600">Solde de départ</span>
         <span className={`text-lg font-bold tabular-nums ${Number(facture.solde_avant) < 0 ? 'text-red-600' : Number(facture.solde_avant) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
           {fmtEur(facture.solde_avant)}
         </span>
       </div>
-
       {Object.keys(artByCat).length > 0 && (
         <div className="card p-5 mb-4">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Articles</h2>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
+            Articles
+            {isFinancier && <span className="ml-2 text-gray-300 font-normal normal-case">— survolez une ligne pour Reporter ou Supprimer</span>}
+          </h2>
           {Object.entries(artByCat).map(([cat, items]) => (
             <div key={cat} className="mb-4 last:mb-0">
               <p className="text-xs font-semibold text-gray-400 mb-1.5">{cat}</p>
-              {items.map(l => (
-                <div key={l.id} className="flex justify-between py-1.5 border-b border-gray-50 last:border-0 text-sm">
-                  <span className="text-gray-700">{l.libelle}</span>
-                  <span className="font-medium text-gray-800 tabular-nums">{fmtEur(l.montant)}</span>
-                </div>
-              ))}
+              {items.map(l => <LigneRow key={l.id} ligne={l} onRemove={removeLigne} isFinancier={isFinancier} />)}
               <div className="flex justify-between pt-1.5 text-xs text-gray-400">
                 <span>Sous-total {cat.toLowerCase()}</span>
                 <span className="tabular-nums">{fmtEur(items.reduce((s, l) => s + Number(l.montant), 0))}</span>
@@ -647,70 +1014,71 @@ function DetailFacture({ factureId, onBack }) {
         </div>
       )}
 
-      {activites.length > 0 && (
+      {activByCat && Object.keys(activByCat).length > 0 && (
         <div className="card p-5 mb-4">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Activités</h2>
-          {activites.map(l => (
-            <div key={l.id} className="flex justify-between py-1.5 border-b border-gray-50 last:border-0 text-sm">
-              <span className="text-gray-700">{l.libelle}</span>
-              <span className="font-medium text-gray-800 tabular-nums">{fmtEur(l.montant)}</span>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
+            Activités
+            {isFinancier && <span className="ml-2 text-gray-300 font-normal normal-case">— survolez une ligne pour Reporter ou Supprimer</span>}
+          </h2>
+          {Object.entries(activByCat).map(([cat, items]) => (
+            <div key={cat} className="mb-4 last:mb-0">
+              <p className="text-xs font-semibold text-gray-400 mb-1.5">{cat}</p>
+              {items.map(l => <LigneRow key={l.id} ligne={l} onRemove={removeLigne} isFinancier={isFinancier} />)}
+              <div className="flex justify-between pt-1.5 text-xs text-gray-400">
+                <span>Sous-total {cat.toLowerCase()}</span>
+                <span className="tabular-nums">{fmtEur(items.reduce((s, l) => s + Number(l.montant), 0))}</span>
+              </div>
             </div>
           ))}
-          <div className="flex justify-between pt-1.5 text-xs text-gray-400">
-            <span>Sous-total activités</span>
-            <span className="tabular-nums">{fmtEur(activites.reduce((s, l) => s + Number(l.montant), 0))}</span>
-          </div>
         </div>
       )}
 
-      <div className="card p-5 bg-gray-50">
-        <div className="space-y-2 text-sm">
-          {Object.entries(artByCat).map(([cat, items]) => (
-            <div key={cat} className="flex justify-between text-gray-500">
-              <span>{cat}</span><span className="tabular-nums">{fmtEur(items.reduce((s, l) => s + Number(l.montant), 0))}</span>
-            </div>
-          ))}
-          {activites.length > 0 && (
-            <div className="flex justify-between text-gray-500">
-              <span>Activités</span><span className="tabular-nums">{fmtEur(activites.reduce((s, l) => s + Number(l.montant), 0))}</span>
-            </div>
-          )}
-          <div className="flex justify-between font-bold text-gray-800 border-t border-gray-200 pt-2 text-base">
-            <span>Total facturé</span><span className="tabular-nums">{fmtEur(facture.montant)}</span>
-          </div>
-          <div className="flex justify-between items-center pt-1">
-            <span className="text-gray-600">Solde après facturation</span>
-            <span className={`font-bold text-xl tabular-nums ${Number(facture.solde_apres) < 0 ? 'text-red-600' : Number(facture.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-              {fmtEur(facture.solde_apres)}
-            </span>
-          </div>
-        </div>
-        {facture.notes && <p className="text-xs text-gray-400 mt-4 pt-4 border-t border-gray-200 italic">{facture.notes}</p>}
+      <div className="card p-4 flex items-center justify-between">
+        <span className="text-sm font-semibold text-gray-700">Total facture</span>
+        <span className="text-lg font-bold text-gray-800 tabular-nums">{fmtEur(facture.montant)}</span>
+      </div>
+      <div className="card p-4 mt-2 flex items-center justify-between">
+        <span className="text-sm font-medium text-gray-600">Solde après facturation</span>
+        <span className={`text-lg font-bold tabular-nums ${Number(facture.solde_apres) < 0 ? 'text-red-600' : Number(facture.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+          {fmtEur(facture.solde_apres)}
+        </span>
       </div>
     </div>
   )
 }
 
-// ── Composant principal ───────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Composant principal
+// ─────────────────────────────────────────────────────────────────────────────
 export default function Factures() {
-  const { isFinancier } = useAuth()
-  const [modal, setModal]           = useState(false)
-  const [viewId, setViewId]         = useState(null)
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [view, setView]         = useState('batches')  // 'batches' | 'batch' | 'facture'
+  const [batchId, setBatchId]     = useState(null)
+  const [factureId, setFactureId] = useState(null)
+  const [showModal, setShowModal] = useState(false)
 
-  if (viewId) return <DetailFacture factureId={viewId} onBack={() => setViewId(null)} />
-
+  if (view === 'facture') return (
+    <DetailFacture
+      factureId={factureId}
+      onBack={() => setView('batch')}
+    />
+  )
+  if (view === 'batch') return (
+    <DetailBatch
+      batchId={batchId}
+      onSelectFacture={id => { setFactureId(id); setView('facture') }}
+      onBack={() => setView('batches')}
+    />
+  )
   return (
     <>
-      <ListeFactures
-        key={refreshKey}
-        onNew={() => isFinancier && setModal(true)}
-        onSelect={setViewId}
+      <ListeBatches
+        onNew={() => setShowModal(true)}
+        onSelect={id => { setBatchId(id); setView('batch') }}
       />
-      {modal && (
+      {showModal && (
         <FacturationModal
-          onClose={() => setModal(false)}
-          onDone={() => { setModal(false); setRefreshKey(k => k + 1) }}
+          onClose={() => setShowModal(false)}
+          onDone={() => setShowModal(false)}
         />
       )}
     </>
