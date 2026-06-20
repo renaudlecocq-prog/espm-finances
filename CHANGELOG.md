@@ -332,3 +332,12 @@ git push origin main
 - Le code de génération est correct : `F-AAMMJJ-NN-MATRICULE`
 - Les factures affichant `F-AAAA-NNN` sont des données legacy créées avec l'ancien code
 
+## [Session 10m] - 2026-06-20
+
+### Fixed — Statut articles/activités après approbation partielle
+- `mettreAJourItemsApresApprobation` gère désormais 3 cas :
+  - Toutes les factures approuvées → `facture`
+  - Certaines approuvées, d'autres ignorées/en attente → `partiellement_facture`
+  - Aucune encore approuvée → `a_facturer`
+- Requêtes chunckées par 50 pour éviter les limites URL PostgREST
+

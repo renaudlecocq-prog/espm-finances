@@ -646,27 +646,37 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
       .select('article_attribution_id, activite_id').in('facture_id', factureIds)
     const attrIds  = [...new Set((lignes||[]).filter(l=>l.article_attribution_id).map(l=>l.article_attribution_id))]
     const activIds = [...new Set((lignes||[]).filter(l=>l.activite_id).map(l=>l.activite_id))]
-    for (const id of attrIds) {
+
+    // Calcule le nouveau statut : 'facture' si tout approuvé, 'partiellement_facture' si certains
+    // ignorés/en attente mais au moins un approuvé, sinon 'a_facturer'
+    const calcStatut = async (table, fkCol, id) => {
       const { data: lignesItem } = await supabase.from('facture_lignes')
-        .select('facture_id').eq('article_attribution_id', id)
+        .select('facture_id').eq(fkCol, id)
       const ids = (lignesItem||[]).map(l=>l.facture_id)
-      if (!ids.length) continue
-      const { count } = await supabase.from('factures')
-        .select('*',{count:'exact',head:true}).in('id',ids).in('statut',['brouillon','ignore'])
-      if ((count||0) === 0) {
-        await supabase.from('article_attributions').update({statut_facturation:'facture'}).eq('id',id)
+      if (!ids.length) return 'a_facturer'
+      // Chunk les IDs par 50 pour éviter les limites URL de PostgREST
+      const chunk = (arr, n) => Array.from({length: Math.ceil(arr.length/n)}, (_,i) => arr.slice(i*n,(i+1)*n))
+      let nbPending = 0, nbApproved = 0
+      for (const slice of chunk(ids, 50)) {
+        const { count: c1 } = await supabase.from('factures')
+          .select('*',{count:'exact',head:true}).in('id',slice).in('statut',['brouillon','ignore'])
+        nbPending += (c1||0)
+        const { count: c2 } = await supabase.from('factures')
+          .select('*',{count:'exact',head:true}).in('id',slice).eq('statut','facture')
+        nbApproved += (c2||0)
       }
+      if (nbPending === 0)              return 'facture'              // tous approuvés
+      if (nbApproved > 0)               return 'partiellement_facture' // mix
+      return 'a_facturer'                                              // aucun encore approuvé
+    }
+
+    for (const id of attrIds) {
+      const statut = await calcStatut('article_attributions', 'article_attribution_id', id)
+      await supabase.from('article_attributions').update({statut_facturation: statut}).eq('id', id)
     }
     for (const id of activIds) {
-      const { data: lignesItem } = await supabase.from('facture_lignes')
-        .select('facture_id').eq('activite_id', id)
-      const ids = (lignesItem||[]).map(l=>l.facture_id)
-      if (!ids.length) continue
-      const { count } = await supabase.from('factures')
-        .select('*',{count:'exact',head:true}).in('id',ids).in('statut',['brouillon','ignore'])
-      if ((count||0) === 0) {
-        await supabase.from('activites').update({statut_facturation:'facture'}).eq('id',id)
-      }
+      const statut = await calcStatut('activites', 'activite_id', id)
+      await supabase.from('activites').update({statut_facturation: statut}).eq('id', id)
     }
   }
 
