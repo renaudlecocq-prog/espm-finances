@@ -1,98 +1,48 @@
-# Changelog — ESPM Finances
+# Changelog — ESPM+
 
-Format : `[Date] Commit — Description — Rollback`  
-**Ordre : du plus récent au plus ancien.**
-
----
-
-## Session 8 — 2026-06-20 (fiche élève + statut facturation)
-
-| Commit | Fichier(s) | Description | Rollback |
-|--------|-----------|-------------|---------|
-| `f0ce1e9` | `Home.jsx` | Page d'accueil responsable : fiche de l'enfant pleine page (photo Smartschool, identité, groupes scolaires, responsables légaux, suivi social sans notes internes, solde financier). Support multi-enfants (onglets). Requête via table `responsable_eleve`. | `git revert f0ce1e9` |
-| `75bc6eb` | `public/logo-ecole.svg` + `Header.jsx` | Logo école recolorisé : pentagone blanc, bonhomme orange (#E86C00). Carré blanc supprimé — logo directement sur le fond sombre du header. | `git revert 75bc6eb` |
-| `0188595` | `Header.jsx` + `public/logo-ecole.svg` + `public/favicon.svg` | Logo école : SVG extrait du fichier .ai (pentagone #23101e + figure #b68e9e), fond blanc arrondi dans le header. Favicon : carré blanc + "+" orange. | `git revert 0188595` |
-| `9c95ef2` | `index.html` | Fix favicon : référence `favicon.svg` (SVG) en priorité, `favicon.png` en fallback. La balise pointait sur `.png` donc le nouveau logo n'apparaissait pas dans les onglets. | `git revert 9c95ef2` |
-| `c22fc71` | `Header.jsx` + `public/favicon.svg` | Logo ESPM+ : icône cercle biton blanc/orange en SVG inline (remplace favicon.svg filtré). Même icône utilisée pour le favicon de l'onglet (fond sombre #2D1B2E). Début d'identité visuelle en vue d'une commercialisation future. | `git revert c22fc71` |
-| DB | `appels_responsables` | Nouvelle table : historique des appels passés aux responsables (auteur, index resp., nom snap., note éditable). RLS : INSERT tous, SELECT/UPDATE admin+financier, DELETE admin. | Migration SQL manuelle |
-| `cdee9a5` | `FicheEleve.jsx` + `AssistantSocial.jsx` | Refonte complète fiche élève : identité, groupes scolaires (champs vides masqués), responsables + bouton appel, suivi social (échelonnements + OT, boutons accès rapide), financier (solde), historique des appels. Sections social/financier/appels masquées pour MdP. Fix noms colonnes resp. (`nom_responsable_N`). AS.jsx : param `?eleve=UUID` pour auto-ouvrir le détail. | `git revert cdee9a5` |
-| `cc7b27a` | `Header.jsx` | Logo école (favicon.svg, filtre blanc) à la place de l'icône GraduationCap dans le header. | `git revert cc7b27a` |
-| `5054e11` | `Header.jsx` + `Home.jsx` + `index.html` | Rebranding ESPM+ : logo retiré du header, remplacé par icône GraduationCap + texte "ESPM+" (+ orange). Titre onglet et page d'accueil mis à jour. | `git revert 5054e11` |
-| `9fce5ff` | `FicheEleve.jsx` | Historique appels : icône édition toujours visible (plus opacity-0), bouton Voicemail pour noter "Message vocal" en 1 clic. | `git revert 9fce5ff` |
-| `7f789df` | `FicheEleve.jsx` | Fix photo Smartschool : utilise `smartschool_internal_number` comme `userIdentifier` (le username retournait erreur 12). | `git revert 7f789df` |
-| `c8e6691` | `smartschool-photo.mjs` + `smartschool-sync.mjs` | Fix URL SOAP : `webservices` → `Webservices` (majuscule) — l'URL minuscule retournait un redirect 302 vers le HTML au lieu d'une réponse SOAP. | `git revert c8e6691` |
-| `2eb59a3` | `FicheEleve.jsx` | Fix canSeeRestricted : utilise `isAdmin||isFinancier` (isMdp=true pour tous les rôles, cf. AuthContext). Sections échelonnements/historique appels désormais visibles pour admin/financier. Responsables : numéro de téléphone rapproché du nom. | `git revert 2eb59a3` |
-| `26fcee0` | `FicheEleve.jsx` + `netlify/functions/smartschool-photo.mjs` | Photo Smartschool dans le header de la fiche (fallback initiales). Nouvelle fonction Netlify `smartschool-photo.mjs` (SOAP `getAccountPhoto`). | `git revert 26fcee0` |
-| `8d2cd04` | `FicheEleve.jsx` | Bouton Appel masqué pour le profil MdP (pas d'accès à l'historique). | `git revert 8d2cd04` |
-| DB | `commentaires` | Contrainte `message_check` assouplie : `type = 'system' OR char_length(message) > 0` — les événements système (message vide) étaient silencieusement rejetés. | Migration SQL manuelle |
+Format : `[Commit] — Description — Rollback`  
+**Ordre : du plus ancien au plus récent (nouvelles entrées en bas).**
 
 ---
 
-## Session 7 — 2026-06-19 (fix documents)
+## Comment faire un rollback
 
-| Commit | Fichier(s) | Description | Rollback |
-|--------|-----------|-------------|---------|
-| `f0ed999` | `Activites.jsx` | Fix critique : noms de colonnes corrects pour `activite_documents` (`nom_fichier`, `storage_path` au lieu de `nom`, `chemin`). Chemin storage via `crypto.randomUUID()` pour éviter les collisions. Gestion d'erreur explicite dans `DocsModal` (alerte si upload storage ou insert DB échoue). `try/catch` autour des appels `logDocEvent` pour éviter qu'une erreur de journal bloque le `reload()`. | `git revert f0ed999` |
-| `db04343` | `Activites.jsx` | Fix upload : `contentType: 'application/pdf'` forcé (staged + DocsModal) — Windows remonte parfois un MIME type vide via drag&drop, rejeté par le bucket. Gestion d'erreur explicite dans `uploadStagedFiles`. | `git revert db04343` |
-| `0495fef` | `Activites.jsx` | Fix upload : sanitize du nom de fichier dans le chemin storage (NFD + suppression diacritiques + `_` pour caractères spéciaux) — Supabase rejette les clés avec espaces ou accents. Nom original conservé dans `nom_fichier`. | `git revert 0495fef` |
-| `4aef92e` | `Activites.jsx` | Affichage des documents sauvegardés dans le slide-in (section Documents & Factures) — rechargement après upload, boutons Voir (signed URL) et Suppr. Fin du bug : fichiers invisibles après enregistrement. | `git revert 4aef92e` |
-| `a6b901c` | `Activites.jsx` | Fix journal : `useAuth()` manquant dans `ActivityModal` → `user`/`profile` undefined → `logEvent()` échouait silencieusement (auteur_id null). Icône trombone (📎) sur les cards ayant des docs/factures. | `git revert a6b901c` |
-| `1047c58` | `Activites.jsx` | Boutons Docs/Factures colorés (bleu/vert) si fichiers présents. `logEvent` ajouté dans `uploadStagedFiles` et `delSavedDoc`. Sets `activitiesWithDocs`/`activitiesWithFactures` distincts. Suppression trombone. | `git revert 1047c58` |
-| `26ae229` | `Activites.jsx` | Fix couleur boutons : `select('activite_id, categorie')` au lieu de `activite_id` seul → les Sets docs/factures étaient toujours vides. | `git revert 26ae229` |
-| `7ceb04e` | `Activites.jsx` | Mise à jour dynamique des boutons Docs/Factures : `reloadDocsSets` callback passé à `DocsModal` → appelé après chaque upload/suppression sans rechargement de page. | `git revert 7ceb04e` |
-| `83bce34` | `Activites.jsx` + DB | Statut facturation : 4 valeurs (en_attente, a_facturer, facture, non_payant), visible admin/financier uniquement. Auto-calcul non_payant si montant=0. Sélecteur dans slide-in. Filtre mis à jour. Contrainte CHECK DB étendue. | `git revert 83bce34` |
-| `a395099` | `Activites.jsx` | Bouton toggle En attente ↔ À facturer sur les cards. Archiver et Supprimer retirés des cards → déplacés dans le footer du slide-in. | `git revert a395099` |
+### Rollback d'un fichier précis
+```bash
+git checkout <commit_hash> -- src/pages/MonFichier.jsx
+git commit -m "rollback: revenir à version <commit_hash> pour MonFichier.jsx"
+git push origin main
+```
 
-## Session 6 — 2026-06-19 (notifications)
+### Rollback complet à un commit précis
+```bash
+git revert <commit_hash>
+git push origin main
+# Puis redéployer sur staging pour vérifier, puis sur prod
+```
 
-| Commit | Fichier(s) | Description | Rollback |
-|--------|-----------|-------------|---------|
-| `e1a5d42` | `NotificationBell.jsx`, `Activites.jsx` | Deep-link notification → ouvre le slide-in de l'activité concernée (`?open=<id>`). Badge rouge de messages non-lus sur les cartes. Marque lu à l'ouverture. | `git revert e1a5d42` |
-| `3e6fbec` | `NotificationBell.jsx` | Bouton "Vider" pour supprimer toutes les notifications | `git revert 3e6fbec` |
-| `ef6ed03` | `Activites.jsx` | Fix : afficher `local` (intramuros) sur la carte en plus de `lieu`. Pills de filtre rapide Passées/À venir/Mes activités. Signal visuel pastel vert/rouge + "Dans X jours" / "Il y a X jours". | `git revert ef6ed03` |
-| `a5eeafa` | `Activites.jsx` | Pill "Mes activités" masquée pour les MdP (déjà filtrés par défaut) | `git revert a5eeafa` |
-| `fee214e` | `Commentaires.jsx`, `Activites.jsx`, `AssistantSocial.jsx` | Journal d'activité dans le chat : événements système (modification de champs, ajout/suppression de documents). Fenêtre chat élargie dans les 3 slide-ins (Activités w-104, Échelonnements et Organismes tiers w-96). Migration Supabase : colonnes `type` et `meta` sur `commentaires`. | `git revert fee214e` |
+## Règles de déploiement (rappel)
 
----
-
-## Session 5 — 2026-06-19 (rôles OAuth + UX activités)
-
-### ✅ Ajouté / Corrigé
-
-| Commit | Fichier / Périmètre | Changement | Rollback |
-|--------|---------------------|------------|----------|
-| `c088dda` | `Activites.jsx` | Puces classes/groupes sur la carte (max 6 + overflow "+N") — retire la description du résumé | `git revert c088dda` |
-| `2c1f5b6` | `Activites.jsx` | Responsable et accompagnateurs mutuellement exclusifs : sélectionner un responsable le retire automatiquement des accompagnateurs | `git revert 2c1f5b6` |
-| `2be0499` | `Activites.jsx` | Fix `min-w-0` grille personnel + logique non-destructive (n'écrase pas les données existantes à l'ouverture) | `git revert 2be0499` |
-| `e08cfb3` | `Activites.jsx` | Fix débordement horizontal du dropdown `MultiSearchSelect` (`w-full` sur le wrapper) | `git revert e08cfb3` |
-| `f9ecdd6` | `Activites.jsx` | Bouton "Supprimer" visible uniquement pour l'admin (avec confirmation) | `git revert f9ecdd6` |
-| `6106411` | `Activites.jsx` | Accompagnateurs affichés sur la carte (couleur teal), distincts du responsable (violet) | `git revert 6106411` |
-| `ae05f4a` | `Activites.jsx` | Carte réorganisée en 4 lignes : titre+badges / classes+groupes / métadonnées / personnel | `git revert ae05f4a` |
-| `65a218f` | `Activites.jsx` + DB | Accompagnateurs peuvent ouvrir le slide-in et commenter (`canView` distinct de `canEdit`). Signup sans rôle par défaut (trigger `handle_new_user` → `NULL`) | `git revert 65a218f` |
-| `db7c7a6` | `smartschool-callback.mjs` + DB | **OAuth Smartschool → rôle automatique** : Direction/Enseignant/Autre → MdP ; co-compte → Responsable ; Élève → bloqué. Rôles admin/financier jamais écrasés | `git revert db7c7a6` |
-| `0d1af49` | `Activites.jsx` | Statut en boutons visuels (Brouillon / Publié / Archivé). Auto-sauvegarde brouillon si fermeture accidentelle du slide-in | `git revert 0d1af49` |
-
-### 🗄 Migrations Supabase
-
-| Migration | Changement |
-|-----------|------------|
-| `fix_profiles_select_all_authenticated` | Policy `profiles_select` étendue à tous les utilisateurs authentifiés |
-| `handle_new_user_autodetect_role_from_smartschool` | Trigger (remplacé par la logique OAuth dans le callback) |
-| `handle_new_user_read_role_from_metadata` / `fix_handle_new_user_default_role_null` | Trigger : signup sans rôle par défaut (`NULL`) |
+- **staging** → `espmaritime-staging.netlify.app` (vérification avant mise en ligne)
+- **production** → `espmaritime.netlify.app`
+- ⚠️ **Jamais déployer en production sans mot-clé explicite de Renaud** : "go prod", "feu vert", "go main", "ok sur main", "déploiement sur main"
+- Toujours cloner `main` depuis GitHub avant tout build
+- Le proxy-path Netlify est temporaire — en redemander un via le MCP à chaque session
 
 ---
 
-## Session 4 — 2026-06-19 (commentaires + UX slide-ins)
+## Session 1 — 2026-06-18 (deploy/fix)
 
-| Commit | Fichier / Périmètre | Changement | Rollback |
-|--------|---------------------|------------|----------|
-| `10c7cff` | `Echelonnements.jsx` | Nouveau panneau slide-in éditable + bouton "Fiche élève" | `git revert 10c7cff` |
-| `df23e90` | `AssistantSocial.jsx` | Bouton "Fiche élève" dans EchelonnementDetail | `git revert df23e90` |
-| `356c1c0` | `Eleves.jsx` | Suppression colonne Actions + badges AS colorés | `git revert 356c1c0` |
-| `445a782` | `Eleves.jsx` | Tableau pleine largeur après suppression colonne Actions | `git revert 445a782` |
-| `9ac9799` | `Commentaires.jsx`, `NotificationBell.jsx`, `Header.jsx`, `AssistantSocial.jsx`, `Activites.jsx` + DB | Système complet commentaires/messagerie + notifications Realtime. Tables `commentaires` + `notifications` avec RLS | `git revert 9ac9799` |
-| `ba3206d` | `AssistantSocial.jsx`, `Activites.jsx` | Commentaires en colonne gauche dans tous les slide-ins. ActivityModal converti en slide-in | `git revert ba3206d` |
-| `02e958d` | `Activites.jsx` | Carte activité cliquable (ouvre le slide-in) + suppression bouton "Modifier" | `git revert 02e958d` |
+| Commit | Fichier | Changement | Rollback |
+|--------|---------|------------|----------|
+| `c1de3e3` | `netlify.toml` | Ajout `NODE_VERSION = "22"` | `git revert c1de3e3` |
+| `1956e81` | `Home.jsx` | Restauration version sparklines avec calcul dynamique | `git revert 1956e81` |
+| `486682e` | `App.jsx` | Route `/assistant-social` requiert rôle `financier` | `git revert 486682e` |
+| `6e3b425` | `Header.jsx` | Menu "Assist. social" visible uniquement admin+financier | `git revert 6e3b425` |
+| `36394c9` | `AuthContext.jsx` | Ajout `viewAsRole`, `effectiveRole`, `isMdpOnly` | `git revert 36394c9` |
+| `aa54eeb` | `AuthContext.jsx` | Ajout aliases `previewRole`/`setPreviewRole` | `git revert aa54eeb` |
+| `56ca23f` | `Header.jsx` | Nouveau header sombre, logo Plurielle, bouton Smartschool orange | `git revert 56ca23f` |
+| `81d4cba` | `AssistantSocial.jsx` | Page complète : échelonnements + organismes tiers + fiches élèves | `git revert 81d4cba` |
 
 ---
 
@@ -115,76 +65,101 @@ Format : `[Date] Commit — Description — Rollback`
 
 ---
 
-## Session 1 — 2026-06-18 (deploy/fix)
+## Session 4 — 2026-06-19 (commentaires + UX slide-ins)
 
-| Commit | Fichier | Changement | Rollback |
-|--------|---------|------------|----------|
-| `56ca23f` | `Header.jsx` | Nouveau header sombre, logo Plurielle, bouton Smartschool orange | `git revert 56ca23f` |
-| `81d4cba` | `AssistantSocial.jsx` | Page complète : échelonnements + organismes tiers + fiches élèves | `git revert 81d4cba` |
-| `36394c9` | `AuthContext.jsx` | Ajout `viewAsRole`, `effectiveRole`, `isMdpOnly` | `git revert 36394c9` |
-| `aa54eeb` | `AuthContext.jsx` | Ajout aliases `previewRole`/`setPreviewRole` | `git revert aa54eeb` |
-| `486682e` | `App.jsx` | Route `/assistant-social` requiert rôle `financier` | `git revert 486682e` |
-| `6e3b425` | `Header.jsx` | Menu "Assist. social" visible uniquement admin+financier | `git revert 6e3b425` |
-| `1956e81` | `Home.jsx` | Restauration version sparklines avec calcul dynamique | `git revert 1956e81` |
-| `c1de3e3` | `netlify.toml` | Ajout `NODE_VERSION = "22"` | `git revert c1de3e3` |
-
----
-
-## Comment faire un rollback
-
-### Rollback d'un fichier précis
-```bash
-git checkout <commit_hash> -- src/pages/MonFichier.jsx
-git commit -m "rollback: revenir à version <commit_hash> pour MonFichier.jsx"
-git push origin main
-```
-
-### Rollback complet à un commit précis
-```bash
-git revert <commit_hash>
-git push origin main
-# Puis redéployer sur staging pour vérifier, puis sur prod
-```
-
-### Commits clés de référence
-| État | Commit | Date |
-|------|--------|------|
-| Avant toutes les modifs de juin 2026 | `a5b8e3c` | ~2026-06-15 |
-| Après filtres multi-select | `274b3b4` | ~2026-06-16 |
-| Après header + AssistantSocial | `81d4cba` | 2026-06-17 |
-| Début session 2 (stable) | `1956e81` | 2026-06-18 |
-| Actuel | `3e6fbec` | Bouton Vider notifications — 2026-06-19 |
+| Commit | Fichier / Périmètre | Changement | Rollback |
+|--------|---------------------|------------|----------|
+| `10c7cff` | `Echelonnements.jsx` | Nouveau panneau slide-in éditable + bouton "Fiche élève" | `git revert 10c7cff` |
+| `df23e90` | `AssistantSocial.jsx` | Bouton "Fiche élève" dans EchelonnementDetail | `git revert df23e90` |
+| `356c1c0` | `Eleves.jsx` | Suppression colonne Actions + badges AS colorés | `git revert 356c1c0` |
+| `445a782` | `Eleves.jsx` | Tableau pleine largeur après suppression colonne Actions | `git revert 445a782` |
+| `9ac9799` | `Commentaires.jsx` + `NotificationBell.jsx` + `Header.jsx` + `AssistantSocial.jsx` + `Activites.jsx` + DB | Système complet commentaires/messagerie + notifications Realtime. Tables `commentaires` + `notifications` avec RLS | `git revert 9ac9799` |
+| `ba3206d` | `AssistantSocial.jsx` + `Activites.jsx` | Commentaires en colonne gauche dans tous les slide-ins. ActivityModal converti en slide-in | `git revert ba3206d` |
+| `02e958d` | `Activites.jsx` | Carte activité cliquable (ouvre le slide-in) + suppression bouton "Modifier" | `git revert 02e958d` |
 
 ---
 
-## Règles de déploiement (rappel)
+## Session 5 — 2026-06-19 (rôles OAuth + UX activités)
 
-- **staging** → `espmaritime-staging.netlify.app` (vérification avant mise en ligne)
-- **production** → `espmaritime.netlify.app`
-- ⚠️ **Jamais déployer en production sans mot-clé explicite de Renaud** : "go prod", "feu vert", "go main", "ok sur main", "déploiement sur main"
-- Toujours cloner `main` depuis GitHub avant tout build
-- Le proxy-path Netlify est temporaire — en redemander un via le MCP à chaque session
-## Session 9 — 2026-06-20 (mode démo + HomeResponsable)
+| Commit | Fichier / Périmètre | Changement | Rollback |
+|--------|---------------------|------------|----------|
+| `db7c7a6` | `smartschool-callback.mjs` + DB | **OAuth Smartschool → rôle automatique** : Direction/Enseignant/Autre → MdP ; co-compte → Responsable ; Élève → bloqué. Rôles admin/financier jamais écrasés | `git revert db7c7a6` |
+| `65a218f` | `Activites.jsx` + DB | Accompagnateurs peuvent ouvrir le slide-in et commenter (`canView` distinct de `canEdit`). Signup sans rôle par défaut (trigger `handle_new_user` → `NULL`) | `git revert 65a218f` |
+| `ae05f4a` | `Activites.jsx` | Carte réorganisée en 4 lignes : titre+badges / classes+groupes / métadonnées / personnel | `git revert ae05f4a` |
+| `6106411` | `Activites.jsx` | Accompagnateurs affichés sur la carte (couleur teal), distincts du responsable (violet) | `git revert 6106411` |
+| `f9ecdd6` | `Activites.jsx` | Bouton "Supprimer" visible uniquement pour l'admin (avec confirmation) | `git revert f9ecdd6` |
+| `e08cfb3` | `Activites.jsx` | Fix débordement horizontal du dropdown `MultiSearchSelect` | `git revert e08cfb3` |
+| `2be0499` | `Activites.jsx` | Fix `min-w-0` grille personnel + logique non-destructive | `git revert 2be0499` |
+| `2c1f5b6` | `Activites.jsx` | Responsable et accompagnateurs mutuellement exclusifs | `git revert 2c1f5b6` |
+| `c088dda` | `Activites.jsx` | Puces classes/groupes sur la carte (max 6 + overflow "+N") | `git revert c088dda` |
+| `0d1af49` | `Activites.jsx` | Statut en boutons visuels (Brouillon / Publié / Archivé). Auto-sauvegarde brouillon si fermeture accidentelle | `git revert 0d1af49` |
+
+### 🗄 Migrations Supabase
+
+| Migration | Changement |
+|-----------|------------|
+| `fix_profiles_select_all_authenticated` | Policy `profiles_select` étendue à tous les utilisateurs authentifiés |
+| `handle_new_user_read_role_from_metadata` / `fix_handle_new_user_default_role_null` | Trigger : signup sans rôle par défaut (`NULL`) |
+
+---
+
+## Session 6 — 2026-06-19 (notifications)
 
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
-| `b4bcdbe` | `src/data/demoData.js` + `src/lib/supabaseMock.js` + `src/context/DemoContext.jsx` + `src/App.jsx` + `src/components/layout/Header.jsx` | Mode démo : 20 élèves fictifs (stars de la musique — Billie Eilish, Taylor Swift, Adele, Bruno Mars…) avec données complètes (factures, paiements, activités, articles, échelonnements, organismes tiers, responsables légaux). Client Supabase mocké (MockQuery/MockTable thenable + chainable, compatible Promise.all). Monkey-patch synchrone de `supabase.from()` via DemoContext avant tout rendu React. Toggle admin via bouton "🎭 Démo" dans le header. Bannière orange en bas de page. Header vire au brun foncé en mode démo. Aperçu Responsable en mode démo → affiche Billie Eilish + Post Malone. | `git revert b4bcdbe` |
+| `fee214e` | `Commentaires.jsx` + `Activites.jsx` + `AssistantSocial.jsx` | Journal d'activité dans le chat : événements système (modification de champs, ajout/suppression de documents). Fenêtre chat élargie. Migration Supabase : colonnes `type` et `meta` sur `commentaires`. | `git revert fee214e` |
+| `a5eeafa` | `Activites.jsx` | Pill "Mes activités" masquée pour les MdP | `git revert a5eeafa` |
+| `ef6ed03` | `Activites.jsx` | Affichage `local` (intramuros) sur la carte. Pills de filtre rapide Passées/À venir/Mes activités. Signal visuel pastel vert/rouge. | `git revert ef6ed03` |
+| `3e6fbec` | `NotificationBell.jsx` | Bouton "Vider" pour supprimer toutes les notifications | `git revert 3e6fbec` |
+| `e1a5d42` | `NotificationBell.jsx` + `Activites.jsx` | Deep-link notification → ouvre le slide-in de l'activité concernée (`?open=<id>`). Badge rouge messages non-lus sur les cartes. | `git revert e1a5d42` |
 
-## [29e0de0] — 2026-06-20 — Fix mode démo + role switcher
+---
 
-| Commit | Fichier(s) | Description | Rollback |
-|--------|-----------|-------------|---------|
-| `29e0de0` | `DemoContext.jsx` + `App.jsx` + `Admin.jsx` + `Home.jsx` | Fix critique : `profiles` et `sync_log` passent par le vrai Supabase (le mock les interceptait → rôle perdu → page blanche). Bannière démo : switcher de rôle intégré (Admin / Financier / MdP / Responsable). Admin > onglet Droits : bloc toggle mode démo avec état visuel. HomeResponsable : fallback automatique sur données démo si aucun élève lié (admin en aperçu responsable fonctionne sans mode démo). | `git revert 29e0de0` |
-
-## [a1870a0] — 2026-06-20 — Fix accès pages + header role + données démo
-
-| Commit | Fichier(s) | Description | Rollback |
-|--------|-----------|-------------|---------|
-| `a1870a0` | `App.jsx` + `Header.jsx` + `demoData.js` | Fix critique : RequireAuth utilise `effectiveRole` pour les pages financier/mdp (aperçu de rôle bloque maintenant vraiment l'accès par URL directe). `/admin` reste protégé par le vrai rôle. Header : label de rôle reflète l'effectiveRole avec `↩` si aperçu actif. demoData : Billie Eilish et Post Malone sont frère/sœur (Maggie Eilish + Richard Malone = parents communs). Billie a un échelonnement (270€/6 mois), pas d'OT. Post garde son OT SPJ. | `git revert a1870a0` |
-
-## [343fef1] — 2026-06-20 — Échéancier mensuel + nettoyage header
+## Session 7 — 2026-06-19 (fix documents)
 
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
-| `343fef1` | `Home.jsx` + `Header.jsx` | HomeResponsable : échelonnements affichés mois par mois avec date attendue, montant, et statut paiement (✓ Payé / ⚠ En retard / ◌ À venir) calculé dynamiquement selon le statut global et les dates. En-tête récapitulatif par échelonnement. Header : bouton toggle démo supprimé (désormais uniquement dans Admin > Droits). | `git revert 343fef1` |
+| `a395099` | `Activites.jsx` | Bouton toggle En attente ↔ À facturer sur les cards. Archiver et Supprimer déplacés dans le footer du slide-in. | `git revert a395099` |
+| `83bce34` | `Activites.jsx` + DB | Statut facturation : 4 valeurs (en_attente, a_facturer, facture, non_payant). Auto-calcul non_payant si montant=0. Contrainte CHECK DB étendue. | `git revert 83bce34` |
+| `7ceb04e` | `Activites.jsx` | Mise à jour dynamique des boutons Docs/Factures : `reloadDocsSets` callback passé à `DocsModal`. | `git revert 7ceb04e` |
+| `26ae229` | `Activites.jsx` | Fix couleur boutons : `select('activite_id, categorie')` → Sets docs/factures corrects. | `git revert 26ae229` |
+| `1047c58` | `Activites.jsx` | Boutons Docs/Factures colorés si fichiers présents. `logEvent` dans upload/suppression. | `git revert 1047c58` |
+| `a6b901c` | `Activites.jsx` | Fix journal : `useAuth()` manquant dans `ActivityModal` → auteur_id null. Icône trombone sur les cards avec docs. | `git revert a6b901c` |
+| `4aef92e` | `Activites.jsx` | Affichage des documents sauvegardés dans le slide-in. Rechargement après upload. Boutons Voir (signed URL) et Suppr. | `git revert 4aef92e` |
+| `0495fef` | `Activites.jsx` | Fix upload : sanitize du nom de fichier dans le chemin storage (diacritiques + espaces). | `git revert 0495fef` |
+| `db04343` | `Activites.jsx` | Fix upload : `contentType: 'application/pdf'` forcé — Windows remonte parfois un MIME type vide. | `git revert db04343` |
+| `f0ed999` | `Activites.jsx` | Fix critique : noms de colonnes corrects pour `activite_documents` (`nom_fichier`, `storage_path`). | `git revert f0ed999` |
 
+---
+
+## Session 8 — 2026-06-20 (logo + fiche responsable)
+
+| Commit | Fichier(s) | Description | Rollback |
+|--------|-----------|-------------|---------|
+| DB | `commentaires` | Contrainte `message_check` assouplie : `type = 'system' OR char_length(message) > 0`. | Migration SQL manuelle |
+| DB | `appels_responsables` | Nouvelle table : historique des appels passés aux responsables. RLS : INSERT tous, SELECT/UPDATE admin+financier, DELETE admin. | Migration SQL manuelle |
+| `8d2cd04` | `FicheEleve.jsx` | Bouton Appel masqué pour le profil MdP. | `git revert 8d2cd04` |
+| `26fcee0` | `FicheEleve.jsx` + `smartschool-photo.mjs` | Photo Smartschool dans le header de la fiche (fallback initiales). Nouvelle fonction Netlify `smartschool-photo.mjs`. | `git revert 26fcee0` |
+| `2eb59a3` | `FicheEleve.jsx` | Fix canSeeRestricted : utilise `isAdmin\|\|isFinancier`. Sections échelonnements/historique appels visibles pour admin/financier. | `git revert 2eb59a3` |
+| `c8e6691` | `smartschool-photo.mjs` + `smartschool-sync.mjs` | Fix URL SOAP : `webservices` → `Webservices` (majuscule). | `git revert c8e6691` |
+| `7f789df` | `FicheEleve.jsx` | Fix photo Smartschool : utilise `smartschool_internal_number` comme `userIdentifier`. | `git revert 7f789df` |
+| `9fce5ff` | `FicheEleve.jsx` | Historique appels : icône édition toujours visible, bouton Voicemail en 1 clic. | `git revert 9fce5ff` |
+| `cdee9a5` | `FicheEleve.jsx` + `AssistantSocial.jsx` | Refonte complète fiche élève : identité, groupes scolaires, responsables + bouton appel, suivi social, financier, historique appels. | `git revert cdee9a5` |
+| `5054e11` | `Header.jsx` + `Home.jsx` + `index.html` | Rebranding ESPM+ : icône GraduationCap + texte "ESPM+" (+ orange). | `git revert 5054e11` |
+| `cc7b27a` | `Header.jsx` | Logo école (favicon.svg, filtre blanc) dans le header. | `git revert cc7b27a` |
+| `c22fc71` | `Header.jsx` + `public/favicon.svg` | Logo ESPM+ : icône cercle biton blanc/orange. Début d'identité visuelle. | `git revert c22fc71` |
+| `9c95ef2` | `index.html` | Fix favicon : référence `favicon.svg` en priorité, `favicon.png` en fallback. | `git revert 9c95ef2` |
+| `0188595` | `Header.jsx` + `public/logo-ecole.svg` + `public/favicon.svg` | Logo école SVG extrait du .ai. Favicon : carré blanc + "+" orange. | `git revert 0188595` |
+| `75bc6eb` | `public/logo-ecole.svg` + `Header.jsx` | Logo école recolorisé : pentagone blanc, bonhomme orange (#E86C00). | `git revert 75bc6eb` |
+| `f0ce1e9` | `Home.jsx` | Page d'accueil responsable : fiche de l'enfant pleine page (photo, identité, groupes, responsables légaux, suivi social sans notes internes, solde). Support multi-enfants (onglets). | `git revert f0ce1e9` |
+
+---
+
+## Session 9 — 2026-06-20 (mode démo)
+
+| Commit | Fichier(s) | Description | Rollback |
+|--------|-----------|-------------|---------|
+| `b4bcdbe` | `demoData.js` + `supabaseMock.js` + `DemoContext.jsx` + `App.jsx` + `Header.jsx` | Mode démo : 20 élèves fictifs (stars de la musique — Billie Eilish, Taylor Swift, Adele, Bruno Mars…). Client Supabase mocké (MockQuery/MockTable thenable). Monkey-patch synchrone de `supabase.from()`. Bannière orange + header brun en mode démo. Aperçu Responsable → Billie Eilish + Post Malone. | `git revert b4bcdbe` |
+| `29e0de0` | `DemoContext.jsx` + `App.jsx` + `Admin.jsx` + `Home.jsx` | Fix : `profiles`/`sync_log` passent par le vrai Supabase. Bannière démo : switcher de rôle (Admin/Financier/MdP/Responsable). Admin > Droits : bloc toggle mode démo. HomeResponsable : fallback démo si aucun élève lié. | `git revert 29e0de0` |
+| `a1870a0` | `App.jsx` + `Header.jsx` + `demoData.js` | Fix critique : RequireAuth utilise `effectiveRole` (aperçu bloque l'accès par URL directe). Header : label de rôle effectif + `↩` si aperçu. Billie/Post : fratrie cohérente, Billie=échelonnement, Post=OT SPJ. | `git revert a1870a0` |
+| `343fef1` | `Home.jsx` + `Header.jsx` | Échéancier mensuel dans HomeResponsable (✓ Payé / ⚠ En retard / ◌ À venir). Bouton démo retiré du header → uniquement Admin > Droits. | `git revert 343fef1` |
