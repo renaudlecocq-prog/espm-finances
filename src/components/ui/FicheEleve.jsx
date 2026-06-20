@@ -130,7 +130,7 @@ export default function FicheEleve({ eleveId, onClose }) {
   }, [])
 
   useEffect(() => {
-    if (eleve?.smartschool_username) fetchPhoto(eleve.smartschool_username)
+    if (eleve?.smartschool_internal_number) fetchPhoto(eleve.smartschool_internal_number)
   }, [eleve, fetchPhoto])
 
   const logAppel = async (respIdx, respNom) => {
