@@ -305,15 +305,336 @@ function HomeFinancier() {
   )
 }
 export default function Home() {
-  const { isFinancier, isMdp, loading } = useAuth()
+  const { isFinancier, isMdp, role, effectiveRole, loading } = useAuth()
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement...</div>
   if (isFinancier) return <HomeFinancier />
   if (isMdp) return <HomeMdp />
+  if (effectiveRole === 'responsable' || role === 'responsable') return <HomeResponsable />
   return (
     <div className="p-8 text-center">
       <div className="text-4xl mb-4">🏫</div>
       <h1 className="text-2xl font-bold text-gray-800 mb-2">ESPM+</h1>
       <p className="text-gray-500">Bienvenue.</p>
+    </div>
+  )
+}
+
+// ── HomeResponsable ────────────────────────────────────────────────────────
+const fmtDateR = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : null
+const fmtEurR  = n => new Intl.NumberFormat('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0) + ' €'
+
+function isMajeurR(dateNaissance) {
+  if (!dateNaissance) return false
+  const dob = new Date(dateNaissance)
+  const now = new Date()
+  const age = now.getFullYear() - dob.getFullYear() -
+    (now < new Date(now.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0)
+  return age >= 18
+}
+
+const STATUT_ECH_R = {
+  en_cours:     { label: 'En cours',     cls: 'bg-blue-100 text-blue-700' },
+  attente:      { label: 'En attente',   cls: 'bg-yellow-100 text-yellow-700' },
+  non_respecte: { label: 'Non respecté', cls: 'bg-red-100 text-red-700' },
+  termine:      { label: 'Terminé',      cls: 'bg-green-100 text-green-700' },
+}
+const STATUT_OT_R = {
+  en_cours: { label: 'En cours',  cls: 'bg-blue-100 text-blue-700' },
+  valide:   { label: 'Validé',    cls: 'bg-green-100 text-green-700' },
+  refuse:   { label: 'Refusé',    cls: 'bg-red-100 text-red-700' },
+  cloture:  { label: 'Clôturé',   cls: 'bg-gray-100 text-gray-600' },
+}
+
+function RBadge({ val, map }) {
+  const m = map[val] || { label: val, cls: 'bg-gray-100 text-gray-600' }
+  return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${m.cls}`}>{m.label}</span>
+}
+
+function RSection({ icon, title, children }) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-5">
+      <h2 className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+        <span>{icon}</span>{title}
+      </h2>
+      {children}
+    </div>
+  )
+}
+
+function RField({ label, value }) {
+  if (value === null || value === undefined || value === '') return null
+  return (
+    <div className="flex gap-3 py-1.5 text-sm border-b border-gray-50 last:border-0">
+      <span className="text-gray-400 w-40 shrink-0">{label}</span>
+      <span className="text-gray-800">{value}</span>
+    </div>
+  )
+}
+
+function HomeResponsable() {
+  const { user } = useAuth()
+  const [eleves, setEleves]         = useState([])
+  const [activeId, setActiveId]     = useState(null)
+  const [eleve, setEleve]           = useState(null)
+  const [echs, setEchs]             = useState([])
+  const [orgs, setOrgs]             = useState([])
+  const [photo, setPhoto]           = useState(null)
+  const [loading, setLoading]       = useState(true)
+  const [loadingFiche, setLoadingFiche] = useState(false)
+
+  // Charger les enfants liés au compte
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('responsable_eleve')
+      .select('eleve:eleve_id(id, prenom, nom, classe, date_naissance)')
+      .eq('responsable_id', user.id)
+      .then(({ data }) => {
+        const list = (data || []).map(r => r.eleve).filter(Boolean)
+        setEleves(list)
+        if (list.length > 0) setActiveId(list[0].id)
+        setLoading(false)
+      })
+  }, [user])
+
+  // Charger la fiche complète de l'enfant sélectionné
+  useEffect(() => {
+    if (!activeId) return
+    setLoadingFiche(true)
+    setPhoto(null)
+    Promise.all([
+      supabase.from('eleves').select('*').eq('id', activeId).single(),
+      supabase.from('echelonnements')
+        .select('id,montant,nombre_echeances,date_debut,mensualite,statut')
+        .eq('eleve_id', activeId),
+      supabase.from('organismes_tiers')
+        .select('id,organisme,statut,montant_accorde')
+        .eq('eleve_id', activeId),
+    ]).then(([eRes, ecRes, oRes]) => {
+      const e = eRes.data
+      setEleve(e)
+      setEchs(ecRes.data || [])
+      setOrgs(oRes.data || [])
+      setLoadingFiche(false)
+      if (e?.smartschool_internal_number) {
+        fetch('/.netlify/functions/smartschool-photo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: e.smartschool_internal_number }),
+        })
+          .then(r => r.json())
+          .then(({ photo: p }) => { if (p) setPhoto(p) })
+          .catch(() => {})
+      }
+    })
+  }, [activeId])
+
+  if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
+
+  if (eleves.length === 0) return (
+    <div className="p-8 text-center">
+      <div className="text-4xl mb-4">🏫</div>
+      <h1 className="text-xl font-bold text-gray-700 mb-2">Bienvenue sur ESPM+</h1>
+      <p className="text-gray-500 text-sm">
+        Aucun élève lié à votre compte.<br />Contactez l'école si vous pensez que c'est une erreur.
+      </p>
+    </div>
+  )
+
+  const responsables = eleve
+    ? [1, 2, 3].map(n => ({
+        idx: n,
+        nom: `${eleve[`nom_responsable_${n}`] || ''} ${eleve[`prenom_responsable_${n}`] || ''}`.trim(),
+        tel: eleve[`tel_responsable_${n}`] || '',
+      })).filter(r => r.nom || r.tel)
+    : []
+
+  const hasGroupes = eleve && [
+    eleve.philosophie, eleve.groupe_choix_philo,
+    eleve.obs_d2, eleve.ac_d2,
+    eleve.math_d3, eleve.sciences_d3, eleve.bio_physique_d3,
+    eleve.obs1_d3, eleve.obs2_d3, eleve.ac_d3,
+  ].some(Boolean)
+
+  const hasAS = echs.length > 0 || orgs.length > 0
+  const majeur = eleve ? isMajeurR(eleve.date_naissance) : false
+  const solde = eleve ? (eleve.solde || 0) : 0
+
+  return (
+    <div className="p-4 sm:p-6 max-w-2xl mx-auto">
+
+      {/* Sélecteur enfant si plusieurs */}
+      {eleves.length > 1 && (
+        <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+          {eleves.map(e => (
+            <button
+              key={e.id}
+              onClick={() => setActiveId(e.id)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                activeId === e.id
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {e.prenom} {e.nom}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {loadingFiche ? (
+        <div className="flex items-center justify-center py-16 text-gray-400 gap-2">
+          <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity=".25"/>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+          </svg>
+          Chargement…
+        </div>
+      ) : eleve ? (
+        <div className="space-y-3">
+
+          {/* ── Hero : identité principale ── */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 flex items-center gap-5">
+            {photo ? (
+              <img src={photo} alt="" className="w-20 h-20 rounded-full object-cover shrink-0 border-2 border-gray-100 shadow-sm" />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary text-2xl font-bold select-none">
+                {(eleve.prenom?.[0] || '') + (eleve.nom?.[0] || '')}
+              </div>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-gray-800 truncate">{eleve.prenom} {eleve.nom}</h1>
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                {eleve.classe && (
+                  <span className="text-sm text-gray-500 font-medium">{eleve.classe}</span>
+                )}
+                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                  majeur ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                }`}>
+                  {majeur ? 'Majeur·e' : 'Mineur·e'}
+                </span>
+                {!eleve.actif && (
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500">Inactif</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── 1. Identité ── */}
+          <RSection icon="👤" title="Identité">
+            <RField label="Date de naissance" value={fmtDateR(eleve.date_naissance)} />
+            <RField label="Nationalité"       value={eleve.nationalite} />
+            {(eleve.rue || eleve.commune) && (
+              <RField label="Adresse" value={[
+                eleve.rue,
+                [eleve.code_postal, eleve.commune].filter(Boolean).join(' '),
+                eleve.pays && eleve.pays !== 'Belgique' ? eleve.pays : null,
+              ].filter(Boolean).join(', ')} />
+            )}
+            <RField label="Email"     value={eleve.email} />
+            <RField label="Téléphone" value={eleve.telephone} />
+            <RField label="Mobile"    value={eleve.mobile} />
+          </RSection>
+
+          {/* ── 2. Groupes scolaires ── */}
+          {hasGroupes && (
+            <RSection icon="📚" title="Groupes scolaires">
+              {eleve.philosophie && (
+                <RField label="RLMO" value={
+                  eleve.groupe_choix_philo
+                    ? `${eleve.philosophie} ${eleve.groupe_choix_philo}`
+                    : eleve.philosophie
+                } />
+              )}
+              <RField label="OBS D2"          value={eleve.obs_d2} />
+              <RField label="AC D2"           value={eleve.ac_d2} />
+              <RField label="Math D3"         value={eleve.math_d3} />
+              <RField label="Sciences D3"     value={eleve.sciences_d3} />
+              <RField label="Bio/Physique D3" value={eleve.bio_physique_d3} />
+              <RField label="OBS 1 D3"        value={eleve.obs1_d3} />
+              <RField label="OBS 2 D3"        value={eleve.obs2_d3} />
+              <RField label="AC D3"           value={eleve.ac_d3} />
+            </RSection>
+          )}
+
+          {/* ── 3. Responsables légaux ── */}
+          {responsables.length > 0 && (
+            <RSection icon="👪" title="Responsables légaux">
+              <div className="space-y-2">
+                {responsables.map((r, i) => (
+                  <div key={r.idx} className={`flex items-center justify-between py-1.5 text-sm ${i > 0 ? 'border-t border-gray-50' : ''}`}>
+                    <span className="font-medium text-gray-800">{r.nom || `Responsable ${r.idx}`}</span>
+                    {r.tel && <span className="text-gray-500">{r.tel}</span>}
+                  </div>
+                ))}
+              </div>
+            </RSection>
+          )}
+
+          {/* ── 4. Suivi social (sans notes internes) ── */}
+          {hasAS && (
+            <RSection icon="🤝" title="Suivi social">
+              {echs.length > 0 && (
+                <div className={orgs.length > 0 ? 'mb-4' : ''}>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Échelonnements</p>
+                  <div className="space-y-1.5">
+                    {echs.map(e => (
+                      <div key={e.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 text-sm gap-3">
+                        <span className="text-gray-700 truncate">
+                          {fmtEurR(e.montant)}
+                          {e.nombre_echeances ? ` · ${e.nombre_echeances} échéances` : ''}
+                          {e.mensualite ? ` de ${fmtEurR(e.mensualite)}/mois` : ''}
+                          {e.date_debut ? ` dès ${fmtDateR(e.date_debut)}` : ''}
+                        </span>
+                        <RBadge val={e.statut} map={STATUT_ECH_R} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {orgs.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Organismes tiers</p>
+                  <div className="space-y-1.5">
+                    {orgs.map(o => (
+                      <div key={o.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 text-sm gap-3">
+                        <span className="text-gray-700 capitalize truncate">
+                          {o.organisme}
+                          {o.montant_accorde ? ` · ${fmtEurR(o.montant_accorde)} accordé·s` : ''}
+                        </span>
+                        <RBadge val={o.statut} map={STATUT_OT_R} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </RSection>
+          )}
+
+          {/* ── 5. Financier ── */}
+          <RSection icon="💶" title="Financier">
+            <div className="flex items-center justify-between py-1">
+              <span className="text-sm text-gray-500">Solde actuel</span>
+              <span className={`text-xl font-bold ${
+                solde < 0 ? 'text-red-600' : solde > 0 ? 'text-green-600' : 'text-gray-400'
+              }`}>
+                {fmtEurR(solde)}
+              </span>
+            </div>
+            {solde < 0 && (
+              <p className="text-xs text-red-500 mt-1.5">
+                Un solde négatif indique un montant dû à l'école. Contactez-nous pour plus d'informations.
+              </p>
+            )}
+            {solde > 0 && (
+              <p className="text-xs text-green-600 mt-1.5">
+                Un solde positif signifie qu'un crédit est disponible sur le compte de votre enfant.
+              </p>
+            )}
+          </RSection>
+
+        </div>
+      ) : null}
     </div>
   )
 }
