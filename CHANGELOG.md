@@ -163,3 +163,55 @@ git push origin main
 | `29e0de0` | `DemoContext.jsx` + `App.jsx` + `Admin.jsx` + `Home.jsx` | Fix : `profiles`/`sync_log` passent par le vrai Supabase. Bannière démo : switcher de rôle (Admin/Financier/MdP/Responsable). Admin > Droits : bloc toggle mode démo. HomeResponsable : fallback démo si aucun élève lié. | `git revert 29e0de0` |
 | `a1870a0` | `App.jsx` + `Header.jsx` + `demoData.js` | Fix critique : RequireAuth utilise `effectiveRole` (aperçu bloque l'accès par URL directe). Header : label de rôle effectif + `↩` si aperçu. Billie/Post : fratrie cohérente, Billie=échelonnement, Post=OT SPJ. | `git revert a1870a0` |
 | `343fef1` | `Home.jsx` + `Header.jsx` | Échéancier mensuel dans HomeResponsable (✓ Payé / ⚠ En retard / ◌ À venir). Bouton démo retiré du header → uniquement Admin > Droits. | `git revert 343fef1` |
+
+---
+
+## Session 10 — 2026-06-20 (facturation)
+
+| Commit | Fichier(s) | Description | Rollback |
+|--------|-----------|-------------|---------|
+| `4151f19` | `Factures.jsx` + migration SQL | Système de facturation complet : table `facture_lignes` + colonnes `solde_avant`/`solde_apres` sur `factures` + `facture_id` sur `article_attributions`. Wizard par élève (articles + activités en attente, sélection, solde avant/après). Vue liste + vue détail facture. Correction des champs (`date` pas `date_emission`, statuts corrects). | `git revert 4151f19` |
+
+## [Session 10b] - 2026-06-20
+
+### Refactored
+- **Factures — modal slideout** : "Nouvelle facture" ouvre un panneau latéral (plus de navigation de page)
+- **Facturation par groupe/classe** : le panneau liste directement les articles et activités à facturer, sans étape de sélection d'élève
+- Filtre optionnel par classe pour cibler les factures sur un sous-ensemble d'élèves
+- Case à cocher par item + bouton "Tout sélectionner / désélectionner" par section
+- Aperçu en pied de panneau : nb élèves + montant total avant génération
+- Génération batch : une facture par élève affecté, regroupant tous les items qui le concernent
+- Mise à jour automatique du statut articles et activités → `facture` après génération
+- Écran de succès avec compteur de factures créées
+
+**Commit :** `1dd7738`
+
+## [Session 10c] - 2026-06-20
+
+### Changed
+- **Factures — modal centré** : panneau de facturation affiché au centre de la page (max-w-2xl, max-h-90vh) au lieu du slide-in latéral
+- **Filtre classes en pill dropdown** : un seul bouton-pill "Ignorer des classes" ouvre un menu déroulant avec cases à cocher (style cohérent avec MasterFilter)
+- **Logique d'exclusion** : on exclut des classes (au lieu d'en sélectionner), par défaut toutes les classes sont facturées
+- Indicateur de classes ignorées dans le pied du modal et le résumé
+
+**Commit :** `08e4cd6`
+
+## [Session 10d] - 2026-06-20
+
+### Added
+- **Tag "Partiellement facturé"** : nouveau statut `partiellement_facture` pour articles et activités
+  - Déclenché quand un run de facturation ignore certaines classes qui sont dans la cible d'un item
+  - Badge bleu "Partiel" dans la liste des activités et dans le tableau des attributions (Articles)
+  - L'item **réapparaît** dans la modale lors du prochain run pour facturer les classes manquantes
+  - Badge "PARTIEL — N déjà fact." dans la modale pour indiquer les élèves déjà couverts
+
+### Changed  
+- **FacturationModal — logique multi-run** : charge les `facture_lignes` existantes pour les items partiels et exclut les élèves déjà facturés du calcul
+- **FacturationModal — avertissement** : message explicite dans le footer quand des classes ignorées feront passer des items en "Partiel"
+- Activites.jsx : filtre MasterFilter inclut l'option "Partiel"
+
+**Commits :** `1dd7738` (modal slideout) · `08e4cd6` (modal centré + pill) · `0db2a51` (partiellement facturé)
+
+---
+
+> **Note GitHub** : les commits `1dd7738`, `c7b9793`, `08e4cd6`, `227ccb4` de la session 10b-c n'ont pas encore été poussés depuis le sandbox. Seul le commit `0db2a51` et le présent CHANGELOG seront visibles après le prochain push manuel.
