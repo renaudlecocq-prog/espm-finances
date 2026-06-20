@@ -360,3 +360,10 @@ git push origin main
 - Bouton "Voir les factures générées →" à la fin au lieu de "Fermer et rafraîchir"
 - La query des soldes utilise maintenant une requête globale (sans `.in()`) pour éviter la limite URL avec 670+ élèves
 
+
+## [Session 10o] - 2026-06-20
+
+### Fixed — toutApprouver : élèves ignorés quand même facturés (race condition persistante)
+- La correction du `setBusy` en 10n était insuffisante : si deux "Ignorer" sont cliqués en succession rapide, deux `ignorerFacture` tournent en parallèle ; quand le premier se termine, `setBusy(false)` libère le bouton "Approuver" alors que le second save n'a pas encore atteint la DB
+- Solution radicale : `toutApprouver` utilise désormais les IDs **depuis l'état local** (pas un filtre DB `.eq('statut','brouillon')`). L'optimistic update de `ignorerFacture` exclut les élèves ignorés du state local IMMÉDIATEMENT (avant même le save Supabase), donc `ids` ne les contient jamais, quelle que soit la vitesse de la DB
+- Le `.update().in('id', ids)` est découpé en tranches de 50 pour respecter les limites URL PostgREST

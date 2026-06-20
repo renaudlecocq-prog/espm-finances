@@ -766,14 +766,17 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
   }
 
   const toutApprouver = async () => {
+    // On prend les IDs depuis l'état LOCAL (pas depuis la DB) :
+    // ainsi les élèves ignorés sont DÉJÀ exclus grâce à l'optimistic update de ignorerFacture,
+    // même si leur save Supabase est encore en cours (race condition impossible).
     const ids = factures.filter(f => f.statut === 'brouillon').map(f => f.id)
     if (!ids.length) return
     setBusy(true)
-    // Filtrer par batch_id + statut plutôt que .in(ids) — évite la limite de longueur URL PostgREST
-    await supabase.from('factures')
-      .update({ statut: 'facture' })
-      .eq('batch_id', batchId)
-      .eq('statut', 'brouillon')
+    const chunk = (arr, n) => Array.from({length: Math.ceil(arr.length/n)}, (_,i) => arr.slice(i*n,(i+1)*n))
+    // Chunked .in('id', ...) pour éviter la limite URL PostgREST (~50 IDs max)
+    for (const slice of chunk(ids, 50)) {
+      await supabase.from('factures').update({ statut: 'facture' }).in('id', slice)
+    }
     await mettreAJourItemsApresApprobation(ids)
     // Mise à jour locale immédiate — pas de rechargement complet
     setFactures(prev => prev.map(f => f.statut === 'brouillon' ? { ...f, statut: 'facture' } : f))
