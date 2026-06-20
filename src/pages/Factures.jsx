@@ -161,7 +161,8 @@ function FacturationModal({ onClose, onDone }) {
           .in('statut_facturation', ['a_facturer', 'partiellement_facture']),
         supabase.from('activites')
           .select('*')
-          .in('statut_facturation', ['a_facturer', 'partiellement_facture']),
+          .in('statut_facturation', ['a_facturer', 'partiellement_facture'])
+          .eq('statut', 'publie'),
       ])
       const eleves       = elevesRes.data  || []
       const pendingAttrs = attrsRes.data   || []

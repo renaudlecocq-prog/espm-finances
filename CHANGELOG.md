@@ -443,3 +443,14 @@ git push origin main
 
 ### Fixed
 - **FacturationModal** : les activités en statut "Brouillon" n'apparaissaient pas dans la liste des éléments à facturer car le filtre `.eq('statut', 'publie')` les excluait. Suppression de ce filtre — seul `statut_facturation = 'a_facturer'` compte pour la facturation, pas le statut de publication.
+
+## [Session 16] - 2026-06-21
+
+### Changed
+- **Activites.jsx — formulaire** : suppression des boutons Brouillon/Publié dans le corps du formulaire. Remplacé "Enregistrer" par deux boutons dans le footer : **"✓ Publier"** (primary, enregistre avec `statut='publie'`) et **"✎ Brouillon"** (secondaire gris, enregistre avec `statut='brouillon'`).
+- **Statut facturation** : les options "À facturer" et "Facturé" sont désactivées (opacité 30%, cursor not-allowed, tooltip) tant que l'activité est en statut Brouillon. Seul "En attente" reste accessible.
+- **Quick-toggle liste** : le bouton "À facturer / En attente" n'est plus affiché si l'activité est en Brouillon.
+
+### Fixed  
+- **Factures.jsx** : rétablissement du filtre `.eq('statut', 'publie')` dans FacturationModal — les activités brouillon n'apparaissent pas dans la facturation (comportement intentionnel).
+- Apostrophe non échappée dans le `title` JSX qui cassait le build.

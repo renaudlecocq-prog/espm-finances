@@ -385,14 +385,18 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     if (uploadErrors.length > 0) alert('Erreur(s) lors de l\'upload :\n' + uploadErrors.join('\n'))
   }
 
-  const save = async () => {
+  const [savingAs, setSavingAs] = useState(null) // 'publie' | 'brouillon'
+
+  const save = async (targetStatut = null) => {
     const miss = validate(form)
     if (miss.length > 0) { setErrors(miss); return }
     setSaving(true); setSaveError(null)
+    if (targetStatut) setSavingAs(targetStatut)
 
     const payload = Object.fromEntries(
       Object.entries({
         ...form,
+        ...(targetStatut ? { statut: targetStatut } : {}),
         nb_eleves: hasSelection ? nbEleves : (form.nb_eleves || null),
         montant_par_eleve: montantParEleve ? montantParEleve.toFixed(2) : null,
       }).map(([k, v]) => [k, v === '' ? null : v])
@@ -421,7 +425,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
       ;({ error, data } = await supabase.from('activites').insert(payload).select('id').single())
       if (!error && data?.id) await uploadStagedFiles(data.id)
     }
-    setSaving(false)
+    setSaving(false); setSavingAs(null)
     if (error) { setSaveError(error.message); return }
     onSaved(); onClose()
   }
@@ -652,21 +656,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
               <div><label className="label">Montant par élève (calculé)</label>
                 <div className="input bg-gray-50 text-gray-600">{montantParEleve !== null ? fmt(montantParEleve) : '—'}</div>
               </div>
-              <div><label className="label">Statut</label>
-                <div className="flex gap-2 flex-wrap">
-                  {[
-                    { val: 'brouillon', label: 'Brouillon', active: 'bg-gray-100 border-gray-400 text-gray-700', idle: 'border-gray-200 text-gray-400' },
-                    { val: 'publie',    label: 'Publié',    active: 'bg-green-50 border-green-500 text-green-700', idle: 'border-gray-200 text-gray-400' },
-                    ...(editRow?.id && isFinancier ? [{ val: 'archive', label: 'Archivé', active: 'bg-orange-50 border-orange-400 text-orange-700', idle: 'border-gray-200 text-gray-400' }] : []),
-                  ].map(({ val, label, active, idle }) => (
-                    <button key={val} type="button"
-                      onClick={() => f('statut', val)}
-                      className={`px-4 py-1.5 text-sm rounded-lg border font-medium transition-all ${form.statut === val ? active : idle + ' hover:border-gray-300 hover:text-gray-500'}`}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+
 
               {isFinancier && (
                 <div className="col-span-2"><label className="label">Statut facturation</label>
@@ -678,13 +668,20 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
                         { val: 'en_attente', label: 'En attente', active: 'bg-orange-50 border-orange-400 text-orange-700', idle: 'border-gray-200 text-gray-400' },
                         { val: 'a_facturer', label: 'À facturer', active: 'bg-yellow-50 border-yellow-400 text-yellow-700', idle: 'border-gray-200 text-gray-400' },
                         { val: 'facture',    label: 'Facturé',    active: 'bg-green-50 border-green-500 text-green-700',  idle: 'border-gray-200 text-gray-400' },
-                      ].map(({ val, label, active, idle }) => (
-                        <button key={val} type="button"
-                          onClick={() => f('statut_facturation', val)}
-                          className={`px-4 py-1.5 text-sm rounded-lg border font-medium transition-all ${form.statut_facturation === val ? active : idle + ' hover:border-gray-300 hover:text-gray-500'}`}>
-                          {label}
-                        </button>
-                      ))}
+                      ].map(({ val, label, active, idle }) => {
+                        const locked = form.statut === 'brouillon' && val !== 'en_attente'
+                        return (
+                          <button key={val} type="button"
+                            onClick={() => !locked && f('statut_facturation', val)}
+                            title={locked ? "Publiez l'activité pour modifier ce statut" : undefined}
+                            className={`px-4 py-1.5 text-sm rounded-lg border font-medium transition-all
+                              ${locked
+                                ? 'opacity-30 cursor-not-allowed border-gray-200 text-gray-400'
+                                : form.statut_facturation === val ? active : idle + ' hover:border-gray-300 hover:text-gray-500'}`}>
+                            {label}
+                          </button>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
@@ -734,10 +731,15 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
 
         {/* Footer */}
         <div className="flex gap-2 px-6 py-4 border-t border-gray-100 shrink-0 flex-wrap">
-          <button onClick={save} disabled={saving}
+          <button onClick={() => save('publie')} disabled={saving}
             className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
-            {saving && <Loader2 size={14} className="animate-spin" />}
-            {saving ? 'Enregistrement…' : 'Enregistrer'}
+            {saving && savingAs === 'publie' && <Loader2 size={14} className="animate-spin" />}
+            {saving && savingAs === 'publie' ? 'Publication…' : '✓ Publier'}
+          </button>
+          <button onClick={() => save('brouillon')} disabled={saving}
+            className="py-1.5 px-4 text-sm rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5 font-medium">
+            {saving && savingAs === 'brouillon' && <Loader2 size={14} className="animate-spin" />}
+            {saving && savingAs === 'brouillon' ? 'Enregistrement…' : '✎ Brouillon'}
           </button>
           <button onClick={onClose} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
           <div className="flex-1" />
@@ -1245,7 +1247,7 @@ export default function Activites() {
                   <Receipt size={12} /> Factures
                 </button>
 
-                {(isFinancier || isAdmin) && row.statut_facturation && row.statut_facturation !== 'non_payant' && row.statut_facturation !== 'facture' && row.statut_facturation !== 'partiellement_facture' && (
+                {(isFinancier || isAdmin) && row.statut !== 'brouillon' && row.statut_facturation && row.statut_facturation !== 'non_payant' && row.statut_facturation !== 'facture' && row.statut_facturation !== 'partiellement_facture' && (
                   <button onClick={e => toggleFacturation(e, row)}
                     title={row.statut_facturation === 'en_attente' ? 'Marquer À facturer' : 'Revenir En attente'}
                     className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 transition-colors border font-medium ${
