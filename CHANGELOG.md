@@ -176,3 +176,9 @@ git push origin main
 |--------|-----------|-------------|---------|
 | `29e0de0` | `DemoContext.jsx` + `App.jsx` + `Admin.jsx` + `Home.jsx` | Fix critique : `profiles` et `sync_log` passent par le vrai Supabase (le mock les interceptait → rôle perdu → page blanche). Bannière démo : switcher de rôle intégré (Admin / Financier / MdP / Responsable). Admin > onglet Droits : bloc toggle mode démo avec état visuel. HomeResponsable : fallback automatique sur données démo si aucun élève lié (admin en aperçu responsable fonctionne sans mode démo). | `git revert 29e0de0` |
 
+## [a1870a0] — 2026-06-20 — Fix accès pages + header role + données démo
+
+| Commit | Fichier(s) | Description | Rollback |
+|--------|-----------|-------------|---------|
+| `a1870a0` | `App.jsx` + `Header.jsx` + `demoData.js` | Fix critique : RequireAuth utilise `effectiveRole` pour les pages financier/mdp (aperçu de rôle bloque maintenant vraiment l'accès par URL directe). `/admin` reste protégé par le vrai rôle. Header : label de rôle reflète l'effectiveRole avec `↩` si aperçu actif. demoData : Billie Eilish et Post Malone sont frère/sœur (Maggie Eilish + Richard Malone = parents communs). Billie a un échelonnement (270€/6 mois), pas d'OT. Post garde son OT SPJ. | `git revert a1870a0` |
+
