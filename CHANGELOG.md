@@ -9,6 +9,7 @@ Format : `[Date] Commit — Description — Rollback`
 
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
+| `f0ce1e9` | `Home.jsx` | Page d'accueil responsable : fiche de l'enfant pleine page (photo Smartschool, identité, groupes scolaires, responsables légaux, suivi social sans notes internes, solde financier). Support multi-enfants (onglets). Requête via table `responsable_eleve`. | `git revert f0ce1e9` |
 | `75bc6eb` | `public/logo-ecole.svg` + `Header.jsx` | Logo école recolorisé : pentagone blanc, bonhomme orange (#E86C00). Carré blanc supprimé — logo directement sur le fond sombre du header. | `git revert 75bc6eb` |
 | `0188595` | `Header.jsx` + `public/logo-ecole.svg` + `public/favicon.svg` | Logo école : SVG extrait du fichier .ai (pentagone #23101e + figure #b68e9e), fond blanc arrondi dans le header. Favicon : carré blanc + "+" orange. | `git revert 0188595` |
 | `9c95ef2` | `index.html` | Fix favicon : référence `favicon.svg` (SVG) en priorité, `favicon.png` en fallback. La balise pointait sur `.png` donc le nouveau logo n'apparaissait pas dans les onglets. | `git revert 9c95ef2` |
