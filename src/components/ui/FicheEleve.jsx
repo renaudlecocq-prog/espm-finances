@@ -80,6 +80,7 @@ export default function FicheEleve({ eleveId, onClose }) {
   const [echs, setEchs]     = useState([])
   const [orgs, setOrgs]     = useState([])
   const [appels, setAppels] = useState([])
+  const [photo, setPhoto]   = useState(null)
   const [loading, setLoading]       = useState(true)
   const [callingIdx, setCallingIdx] = useState(null)
   const [editNoteId, setEditNoteId] = useState(null)
@@ -114,6 +115,23 @@ export default function FicheEleve({ eleveId, onClose }) {
   }, [eleveId, canSeeRestricted])
 
   useEffect(() => { load() }, [load])
+
+  const fetchPhoto = useCallback(async (username) => {
+    if (!username) return
+    try {
+      const res = await fetch('/.netlify/functions/smartschool-photo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      })
+      const { photo } = await res.json()
+      if (photo) setPhoto(photo)
+    } catch { /* pas de photo = pas bloquant */ }
+  }, [])
+
+  useEffect(() => {
+    if (eleve?.smartschool_username) fetchPhoto(eleve.smartschool_username)
+  }, [eleve, fetchPhoto])
 
   const logAppel = async (respIdx, respNom) => {
     setCallingIdx(respIdx)
@@ -160,22 +178,31 @@ export default function FicheEleve({ eleveId, onClose }) {
         {/* ── Header ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           {eleve ? (
-            <div>
-              <h2 className="text-lg font-bold text-gray-800">{eleve.prenom} {eleve.nom}</h2>
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                {eleve.classe && (
-                  <span className="text-xs text-gray-500">{eleve.classe}</span>
-                )}
-                {isMajeur(eleve.date_naissance) && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
-                    Majeur·e
-                  </span>
-                )}
-                {!eleve.actif && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                    Inactif
-                  </span>
-                )}
+            <div className="flex items-center gap-3">
+              {photo ? (
+                <img src={photo} alt="" className="w-12 h-12 rounded-full object-cover shrink-0 border border-gray-100" />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center shrink-0 text-gray-400 text-lg font-bold">
+                  {(eleve.prenom?.[0] || '') + (eleve.nom?.[0] || '')}
+                </div>
+              )}
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">{eleve.prenom} {eleve.nom}</h2>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  {eleve.classe && (
+                    <span className="text-xs text-gray-500">{eleve.classe}</span>
+                  )}
+                  {isMajeur(eleve.date_naissance) && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                      Majeur·e
+                    </span>
+                  )}
+                  {!eleve.actif && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                      Inactif
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           ) : (
@@ -250,7 +277,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                 {responsables.map((r, i) => (
                   <div key={r.idx}
                     className={`flex items-center gap-3 py-1.5 ${i > 0 ? 'border-t border-gray-50' : ''}`}>
-                    <span className="text-sm font-medium text-gray-800 flex-1 truncate">
+                    <span className="text-sm font-medium text-gray-800">
                       {r.nom || `Responsable ${r.idx}`}
                     </span>
                     {r.tel && (
