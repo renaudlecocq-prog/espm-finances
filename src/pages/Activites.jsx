@@ -17,14 +17,16 @@ const STATUT_COLORS = {
 const FACT_COLORS = {
   en_attente: 'bg-orange-100 text-orange-700',
   a_facturer: 'bg-yellow-100 text-yellow-700',
-  facture:    'bg-green-100 text-green-700',
-  non_payant: 'bg-gray-100 text-gray-500',
+  facture:              'bg-green-100 text-green-700',
+  partiellement_facture: 'bg-blue-100 text-blue-700',
+  non_payant:           'bg-gray-100 text-gray-500',
 }
 const FACT_LABELS = {
   en_attente: 'En attente',
   a_facturer: 'À facturer',
-  facture:    'Facturé',
-  non_payant: 'Non payant',
+  facture:              'Facturé',
+  partiellement_facture: 'Partiel',
+  non_payant:           'Non payant',
 }
 const TYPE_LABELS = { extramuros: 'Extramuros', intramuros: 'Intramuros', voyage: 'Voyage' }
 
@@ -1067,8 +1069,9 @@ export default function Activites() {
     ...(isAdmin || isFinancier ? [{ key: 'statut_facturation', label: 'Facturation', options: [
         { value: 'en_attente', label: 'En attente' },
         { value: 'a_facturer', label: 'À facturer' },
-        { value: 'facture',    label: 'Facturé' },
-        { value: 'non_payant', label: 'Non payant' },
+        { value: 'facture',             label: 'Facturé' },
+        { value: 'partiellement_facture', label: 'Partiel' },
+        { value: 'non_payant',          label: 'Non payant' },
       ]}] : []),
     { key: 'classe', label: 'Classe', options: allClasses },
   ], [allClasses])
@@ -1242,7 +1245,7 @@ export default function Activites() {
                   <Receipt size={12} /> Factures
                 </button>
 
-                {(isFinancier || isAdmin) && row.statut_facturation && row.statut_facturation !== 'non_payant' && row.statut_facturation !== 'facture' && (
+                {(isFinancier || isAdmin) && row.statut_facturation && row.statut_facturation !== 'non_payant' && row.statut_facturation !== 'facture' && row.statut_facturation !== 'partiellement_facture' && (
                   <button onClick={e => toggleFacturation(e, row)}
                     title={row.statut_facturation === 'en_attente' ? 'Marquer À facturer' : 'Revenir En attente'}
                     className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 transition-colors border font-medium ${
