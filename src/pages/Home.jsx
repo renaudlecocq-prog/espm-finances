@@ -312,7 +312,7 @@ export default function Home() {
   return (
     <div className="p-8 text-center">
       <div className="text-4xl mb-4">🏫</div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">ESPM Finances</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-2">ESPM+</h1>
       <p className="text-gray-500">Bienvenue.</p>
     </div>
   )

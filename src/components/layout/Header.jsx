@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { GraduationCap } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import NotificationBell from '../ui/NotificationBell'
@@ -33,8 +34,11 @@ export default function Header() {
     <header style={{ backgroundColor: '#2D1B2E' }}>
       <div className="max-w-screen-xl mx-auto px-4 flex items-center h-14 gap-4">
 
-        <Link to="/" className="shrink-0">
-          <img src="/logo-espm.png" alt="ESPM" className="h-9 w-auto brightness-0 invert" />
+        <Link to="/" className="shrink-0 flex items-center gap-2">
+          <GraduationCap size={22} className="text-white" />
+          <span className="text-white font-bold text-lg tracking-wide leading-none">
+            ESPM<span style={{ color: 'rgb(232,108,0)' }}>+</span>
+          </span>
         </Link>
 
         <nav className="flex items-center gap-0.5 overflow-x-auto flex-1">
