@@ -72,9 +72,9 @@ function StatusBadge({ val, map }) {
 
 // ── Main component ─────────────────────────────────────────────────────────
 export default function FicheEleve({ eleveId, onClose }) {
-  const { user, profile, isMdp } = useAuth()
+  const { user, profile, isAdmin, isFinancier } = useAuth()
   const navigate = useNavigate()
-  const canSeeRestricted = !isMdp
+  const canSeeRestricted = isAdmin || isFinancier
 
   const [eleve, setEleve]   = useState(null)
   const [echs, setEchs]     = useState([])
@@ -248,13 +248,14 @@ export default function FicheEleve({ eleveId, onClose }) {
             {responsables.length > 0 && (
               <Section icon="👪" title="Responsables légaux">
                 {responsables.map((r, i) => (
-                  <div key={r.idx} className={i > 0 ? 'mt-3 pt-3 border-t border-gray-50' : ''}>
-                    {r.nom && (
-                      <p className="text-sm font-medium text-gray-800 mb-1">{r.nom}</p>
-                    )}
+                  <div key={r.idx}
+                    className={`flex items-center gap-3 py-1.5 ${i > 0 ? 'border-t border-gray-50' : ''}`}>
+                    <span className="text-sm font-medium text-gray-800 flex-1 truncate">
+                      {r.nom || `Responsable ${r.idx}`}
+                    </span>
                     {r.tel && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">{r.tel}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-sm text-gray-500">{r.tel}</span>
                         <button
                           onClick={() => logAppel(r.idx, r.nom || `Responsable ${r.idx}`)}
                           disabled={callingIdx === r.idx}
