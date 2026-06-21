@@ -122,6 +122,7 @@ export default async function handler(req) {
 
   let elevesCount    = 0
   let personnelCount = 0
+  let debugInfo      = null
 
   try {
     // ── Fetch all accounts via getAllAccountsExtended ───────────────────────
@@ -153,14 +154,24 @@ export default async function handler(req) {
       const nom    = (a.naam    || a.surname  || a.name      || '').trim()
       const prenom = (a.voornaam || a.firstname || a.givenname || '').trim()
       const email  = a.email || null
-      // DEBUG TEMPORAIRE — dump structure groups du premier élève
-      if (isEleve && elevesRows.length === 0 && Array.isArray(a.groups)) {
-        console.log('[DEBUG-CLASSE] groups[0]:', JSON.stringify(a.groups[0]))
-        console.log('[DEBUG-CLASSE] groups count:', a.groups.length)
-        console.log('[DEBUG-CLASSE] keys of a:', Object.keys(a).join(', '))
+      // DEBUG TEMPORAIRE — capture structure du premier élève dans le log
+      if (isEleve && elevesRows.length === 0) {
+        debugInfo = {
+          keys: Object.keys(a),
+          basisrol: a.basisrol,
+          groups: a.groups,
+          groepen: a.groepen,
+          klas: a.klas, stamklas: a.stamklas,
+          class: a.class, officialclass: a.officialclass,
+        }
       }
-      const klasGroup = Array.isArray(a.groups) ? a.groups.find(g => g.isKlas && g.isOfficial) : null
-      const classe = (klasGroup && klasGroup.name?.trim()) || a.klas || a.stamklas || a.class || null
+      const rawGroups = a.groups || a.groepen || null
+      const klasGroup = Array.isArray(rawGroups) ? rawGroups.find(g =>
+        g.isKlas || g.isKlas === true || g.isklas || g.isklas === true ||
+        g.type === 'klas' || g.type === 'class'
+      ) : null
+      const classe = (klasGroup && (klasGroup.name || klasGroup.naam)?.trim()) ||
+        a.klas || a.stamklas || a.class || a.officialclass || null
 
       if (isEleve) {
         elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, actif: true })
@@ -199,7 +210,7 @@ export default async function handler(req) {
       status:             'success',
       eleves_upserted:    elevesCount,
       personnel_upserted: personnelCount,
-      details:            `OK — ${elevesCount} élèves, ${personnelCount} personnel`,
+      details:            `OK — ${elevesCount} élèves, ${personnelCount} personnel${debugInfo ? ' | DEBUG:' + JSON.stringify(debugInfo) : ''}`,
     })
 
     return new Response(JSON.stringify({ success: true, eleves: elevesCount, personnel: personnelCount }), { status: 200, headers })
