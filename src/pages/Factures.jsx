@@ -699,6 +699,19 @@ function ListeBatches({ onNew, onSelect }) {
   )
 }
 
+// ── Helper notifications Smartschool ─────────────────────────────────────────
+async function callNotify(type, data) {
+  try {
+    await fetch('/.netlify/functions/smartschool-notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, ...data }),
+    })
+  } catch (e) {
+    console.warn('[notify] erreur (non bloquante):', e.message)
+  }
+}
+
 // ── Détail d'un batch (niveau 2) ──────────────────────────────────────────────
 function DetailBatch({ batchId, onSelectFacture, onBack }) {
   const { isFinancier } = useAuth()
@@ -715,7 +728,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     const [{ data: b }, { data: facs }] = await Promise.all([
       supabase.from('facture_batches').select('*').eq('id', batchId).single(),
       supabase.from('factures')
-        .select('*, eleve:eleve_id(nom,prenom,classe)')
+        .select('*, eleve:eleve_id(nom,prenom,classe,smartschool_internal_number)')
         .eq('batch_id', batchId)
         .order('eleve_id'),
     ])
@@ -794,6 +807,10 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     setFactures(prev => prev.map(ff => ff.id === f.id ? { ...ff, statut: 'facture' } : ff))
     await supabase.from('factures').update({ statut: 'facture' }).eq('id', f.id)
     await mettreAJourItemsApresApprobation([f.id])
+    // Notification Smartschool (fire-and-forget, non bloquant)
+    if (f.eleve?.smartschool_internal_number) {
+      callNotify('facture', { students: [{ internal_number: f.eleve.smartschool_internal_number, nom: f.eleve.nom, prenom: f.eleve.prenom }] })
+    }
     setBusy(false)
   }
 
@@ -848,7 +865,8 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     // On prend les IDs depuis l'état LOCAL (pas depuis la DB) :
     // ainsi les élèves ignorés sont DÉJÀ exclus grâce à l'optimistic update de ignorerFacture,
     // même si leur save Supabase est encore en cours (race condition impossible).
-    const ids = factures.filter(f => f.statut === 'brouillon').map(f => f.id)
+    const toApprove = factures.filter(f => f.statut === 'brouillon')
+    const ids = toApprove.map(f => f.id)
     if (!ids.length) return
     setBusy(true)
     const chunk = (arr, n) => Array.from({length: Math.ceil(arr.length/n)}, (_,i) => arr.slice(i*n,(i+1)*n))
@@ -859,6 +877,11 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     await mettreAJourItemsApresApprobation(ids)
     // Mise à jour locale immédiate — pas de rechargement complet
     setFactures(prev => prev.map(f => f.statut === 'brouillon' ? { ...f, statut: 'facture' } : f))
+    // Notifications Smartschool (fire-and-forget, non bloquant)
+    const students = toApprove
+      .filter(f => f.eleve?.smartschool_internal_number)
+      .map(f => ({ internal_number: f.eleve.smartschool_internal_number, nom: f.eleve.nom, prenom: f.eleve.prenom }))
+    if (students.length) callNotify('facture', { students })
     setBusy(false)
   }
 

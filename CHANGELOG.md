@@ -489,6 +489,21 @@ git push origin main
 - Fiche élève : onglet Social masqué si aucune donnée (plus d'état vide)
 - Fiche élève : hauteur fixe (88vh) — plus de redimensionnement entre onglets
 
+## [v0.20] - 2026-06-21
+
+### Added
+- **Notifications Smartschool** : nouvelle Netlify Function `smartschool-notify.mjs` (SOAP `sendMsg` V3)
+  - Type `facture` : message aux co-comptes parents (co-account 1 et 2) de chaque élève lors d'une approbation
+  - Type `activite` : message à une liste fixe (direction) lors de la première publication d'une activité
+- **Mode test** : variable `SMARTSCHOOL_TEST_RECIPIENT` — redirige tous les messages vers un seul destinataire avec préfixe `[TEST]`
+- `SMARTSCHOOL_NOTIFY_SENDER` : identifiant Smartschool de l'expéditeur (futur compte ESPM+), 'Null' si absent
+- `SMARTSCHOOL_NOTIFY_DIRECTION` : JSON array des identifiants direction pour les notifications activités
+
+### Changed
+- `DetailBatch.load()` : select étendu avec `smartschool_internal_number` sur l'élève (nécessaire pour les notifications)
+- `validerFacture` + `toutApprouver` : appellent `callNotify('facture', ...)` après approbation (fire-and-forget)
+- `ActivityModal.save()` : appelle notify à la première publication d'une activité (`brouillon → publie`)
+
 ## [v0.19c] - 2026-06-21
 ### Changed
 - Fiche élève : point orange retiré de l'onglet Social (l'onglet est déjà masqué si pas de données)

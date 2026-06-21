@@ -427,6 +427,16 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     }
     setSaving(false); setSavingAs(null)
     if (error) { setSaveError(error.message); return }
+    // Notification Smartschool si première publication (fire-and-forget)
+    const isFirstPublish = targetStatut === 'publie' && (!editRow || editRow.statut !== 'publie')
+    if (isFirstPublish) {
+      const responsableLabel = staffList.find(s => s.value === form.responsable_id)?.label || 'Un membre du personnel'
+      fetch('/.netlify/functions/smartschool-notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'activite', intitule: form.intitule, responsableNom: responsableLabel }),
+      }).catch(e => console.warn('[notify] erreur activité:', e.message))
+    }
     onSaved(); onClose()
   }
 
