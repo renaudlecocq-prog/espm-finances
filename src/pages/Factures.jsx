@@ -808,9 +808,8 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     await supabase.from('factures').update({ statut: 'facture' }).eq('id', f.id)
     await mettreAJourItemsApresApprobation([f.id])
     // Notification Smartschool (fire-and-forget, non bloquant)
-    if (f.eleve?.smartschool_internal_number) {
-      callNotify('facture', { students: [{ internal_number: f.eleve.smartschool_internal_number, nom: f.eleve.nom, prenom: f.eleve.prenom }] })
-    }
+    // On appelle toujours — la fonction gère le mode test même sans internal_number
+    callNotify('facture', { students: [{ internal_number: f.eleve?.smartschool_internal_number || null, nom: f.eleve?.nom, prenom: f.eleve?.prenom }] })
     setBusy(false)
   }
 
@@ -878,9 +877,8 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     // Mise à jour locale immédiate — pas de rechargement complet
     setFactures(prev => prev.map(f => f.statut === 'brouillon' ? { ...f, statut: 'facture' } : f))
     // Notifications Smartschool (fire-and-forget, non bloquant)
-    const students = toApprove
-      .filter(f => f.eleve?.smartschool_internal_number)
-      .map(f => ({ internal_number: f.eleve.smartschool_internal_number, nom: f.eleve.nom, prenom: f.eleve.prenom }))
+    // On passe tous les élèves — la fonction gère le mode test même sans internal_number
+    const students = toApprove.map(f => ({ internal_number: f.eleve?.smartschool_internal_number || null, nom: f.eleve?.nom, prenom: f.eleve?.prenom }))
     if (students.length) callNotify('facture', { students })
     setBusy(false)
   }
