@@ -459,21 +459,32 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
             <h3 className="text-sm font-semibold text-gray-700 mb-2">Rapport signé</h3>
             <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
               onChange={e => { uploadFile(e.target.files[0]); e.target.value = '' }} />
-            <div
-              className={`rounded-xl border-2 border-dashed p-3 text-center cursor-pointer transition-colors mb-3
-                ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
-              onDragOver={e => { e.preventDefault(); setDragging(true) }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={e => { e.preventDefault(); setDragging(false); uploadFile(e.dataTransfer.files[0]) }}
-              onClick={() => fileRef.current.click()}
-            >
-              {uploading
-                ? <p className="text-sm text-primary">Upload en cours…</p>
-                : <div className="flex items-center justify-center gap-2 text-gray-400">
-                    <Upload size={14} />
-                    <span className="text-sm">Glisser-déposer ou <span className="text-primary underline">parcourir</span></span>
-                  </div>
-              }
+            <div className="flex gap-2 mb-3">
+              {/* Bouton générer PDF — 1/4 */}
+              {onPdf && (
+                <button onClick={onPdf} title="Générer le rapport PDF"
+                  className="w-1/4 shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors p-3 text-primary">
+                  <FileText size={18} />
+                  <span className="text-xs font-medium leading-tight text-center">Générer<br/>le rapport</span>
+                </button>
+              )}
+              {/* Zone drag & drop — 3/4 */}
+              <div
+                className={`flex-1 rounded-xl border-2 border-dashed p-3 text-center cursor-pointer transition-colors
+                  ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
+                onDragOver={e => { e.preventDefault(); setDragging(true) }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={e => { e.preventDefault(); setDragging(false); uploadFile(e.dataTransfer.files[0]) }}
+                onClick={() => fileRef.current.click()}
+              >
+                {uploading
+                  ? <p className="text-sm text-primary">Upload en cours…</p>
+                  : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400">
+                      <Upload size={14} />
+                      <span className="text-sm">Glisser-déposer ou <span className="text-primary underline">parcourir</span></span>
+                    </div>
+                }
+              </div>
             </div>
             {docs.length === 0
               ? <p className="text-xs text-gray-400 text-center">Aucun document uploadé</p>
