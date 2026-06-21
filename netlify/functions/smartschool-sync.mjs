@@ -62,6 +62,10 @@ async function insertSyncLog(url, key, data) {
 // ── SOAP helper ─────────────────────────────────────────────────────────────
 
 async function soapCall(apiUrl, accessCode, method) {
+  // getAllAccountsExtended nécessite code + recursive explicites (Smartschool v2026)
+  const extraParams = method === 'getAllAccountsExtended'
+    ? `<soa:code></soa:code><soa:recursive>1</soa:recursive>`
+    : ''
   const envelope = `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
                   xmlns:soa="http://www.smartschool.be/webservices">
@@ -69,6 +73,7 @@ async function soapCall(apiUrl, accessCode, method) {
   <soapenv:Body>
     <soa:${method}>
       <soa:accesscode>${accessCode}</soa:accesscode>
+      ${extraParams}
     </soa:${method}>
   </soapenv:Body>
 </soapenv:Envelope>`
