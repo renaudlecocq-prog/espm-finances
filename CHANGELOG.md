@@ -488,3 +488,8 @@ git push origin main
 - Fiche élève : paiements affichent "Payé par Responsable" / "Payé par CPAS" etc.
 - Fiche élève : onglet Social masqué si aucune donnée (plus d'état vide)
 - Fiche élève : hauteur fixe (88vh) — plus de redimensionnement entre onglets
+
+## [Session 19c] - 2026-06-21
+### Changed
+- Fiche élève : point orange retiré de l'onglet Social (l'onglet est déjà masqué si pas de données)
+- Fiche élève : retour automatique sur l'onglet Infos à chaque nouvelle fiche ouverte

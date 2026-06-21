@@ -143,6 +143,7 @@ export default function FicheEleve({ eleveId, onClose }) {
   }, [eleveId, canSeeRestricted])
 
   useEffect(() => { load() }, [load])
+  useEffect(() => { setActiveTab('info') }, [eleveId])
 
   const fetchPhoto = useCallback(async (username) => {
     if (!username) return
@@ -261,7 +262,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                 <button onClick={() => setActiveTab('social')}
                   className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
                     activeTab === 'social' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                  Social <span className="ml-1 text-xs text-orange-400">●</span>
+                  Social
                 </button>
               )}
               {canSeeRestricted && (
