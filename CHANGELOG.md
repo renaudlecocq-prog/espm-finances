@@ -680,3 +680,14 @@ git push origin main
 - Bucket Supabase `organismes-tiers-rapports`
 ### Changed
 - Factures : "← Retour au batch" → "← Retour aux factures individuelles"
+
+## [v0.29] — 2026-06-21
+### Added
+- Organismes tiers : table Supabase `organismes_repertoire` (répertoire d'adresses enregistrées : type, institution, rue, code postal, commune)
+- Organismes tiers : bouton "Nouvel organisme" dans la liste — ouvre un modal central pour créer une adresse répertoire (type CPAS/ULB/SPJ/Autre + 4 champs)
+- OrganismeTiersDetail modal : champs adresse décomposés (Institution, Rue et numéro, Code postal, Commune) + sélecteur de pré-remplissage depuis le répertoire
+- Formulaire "Nouvelle situation" : sélection depuis le répertoire ou saisie manuelle des 4 champs adresse
+- PDF "Demande de prise en charge" : affichage institution, rue et code postal/commune séparément
+### Changed
+- Bouton "+ Organisme" → "+ Nouvelle situation" dans la liste des organismes tiers
+- Colonne `adresse` text remplacée par `institution`, `rue`, `code_postal`, `commune`, `repertoire_id` sur `organismes_tiers`

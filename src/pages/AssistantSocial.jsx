@@ -703,8 +703,9 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
   useEffect(() => {
     Promise.all([
       reload(),
+      reloadRepertoire(),
       supabase.from('eleves').select('id,nom,prenom,classe').eq('actif', true).order('nom'),
-    ]).then(([, e]) => { setEleves(e.data || []); setLoading(false) })
+    ]).then(([,, e]) => { setEleves(e.data || []); setLoading(false) })
   }, []) // eslint-disable-line
 
   // Auto-ouvrir le détail si on arrive depuis la fiche élève
@@ -915,11 +916,25 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
 
   // ── Form fields ─────────────────────────────────────────────────────────
   const [form, setForm] = useState({
-    organisme: (row.organisme || 'CPAS').toUpperCase(),
-    statut:    row.statut || 'en_cours',
-    adresse:   row.adresse || '',
-    notes:     row.notes || '',
+    organisme:    (row.organisme || 'CPAS').toUpperCase(),
+    statut:       row.statut || 'en_cours',
+    institution:  row.institution || '',
+    rue:          row.rue || '',
+    code_postal:  row.code_postal || '',
+    commune:      row.commune || '',
+    repertoire_id: row.repertoire_id || '',
+    notes:        row.notes || '',
   })
+  const [repertoire, setRepertoire] = useState([])
+  useEffect(() => {
+    supabase.from('organismes_repertoire').select('*').order('institution')
+      .then(({ data }) => setRepertoire(data || []))
+  }, [])
+  const applyRepertoire = (repId) => {
+    const rep = repertoire.find(r => r.id === repId)
+    if (!rep) { setForm(f => ({ ...f, repertoire_id: '', institution: '', rue: '', code_postal: '', commune: '' })); return }
+    setForm(f => ({ ...f, repertoire_id: rep.id, institution: rep.institution, rue: rep.rue || '', code_postal: rep.code_postal || '', commune: rep.commune || '', organisme: (rep.type || 'autre').toUpperCase() }))
+  }
   const [saving, setSaving] = useState(false)
 
   // ── Articles ─────────────────────────────────────────────────────────────
@@ -1042,10 +1057,14 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
   const save = async () => {
     setSaving(true)
     const payload = {
-      organisme: form.organisme.toLowerCase(),
-      statut:    form.statut,
-      adresse:   form.adresse || null,
-      notes:     form.notes || null,
+      organisme:    form.organisme.toLowerCase(),
+      statut:       form.statut,
+      institution:  form.institution || null,
+      rue:          form.rue || null,
+      code_postal:  form.code_postal || null,
+      commune:      form.commune || null,
+      repertoire_id: form.repertoire_id || null,
+      notes:        form.notes || null,
       montant_demande: totalDemande || null,
       updated_at: new Date().toISOString(),
     }
@@ -1135,14 +1154,57 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                 </div>
 
                 {/* Adresse */}
-                <div>
-                  <label className="label">Adresse de l'organisme</label>
-                  {isAllowed
-                    ? <input className="input" value={form.adresse}
-                        onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))}
-                        placeholder="Rue, numéro, code postal, ville…" />
-                    : <div className="input bg-gray-50 text-gray-700">{form.adresse || <span className="text-gray-400 italic">—</span>}</div>
-                  }
+                <div className="space-y-2">
+                  <label className="label">Coordonnées de l'organisme</label>
+
+                  {/* Sélection depuis répertoire */}
+                  {isAllowed && repertoire.length > 0 && (
+                    <div>
+                      <select className="input text-sm"
+                        value={form.repertoire_id}
+                        onChange={e => applyRepertoire(e.target.value)}>
+                        <option value="">— Saisir manuellement ou choisir dans le répertoire —</option>
+                        {repertoire.map(r => (
+                          <option key={r.id} value={r.id}>
+                            {r.institution}{r.commune ? ` — ${r.commune}` : ''} ({(r.type||'').toUpperCase()})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* 4 champs décomposés */}
+                  {isAllowed ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="col-span-2">
+                        <input className="input text-sm" value={form.institution}
+                          onChange={e => setForm(f => ({ ...f, institution: e.target.value, repertoire_id: '' }))}
+                          placeholder="Institution" />
+                      </div>
+                      <div className="col-span-2">
+                        <input className="input text-sm" value={form.rue}
+                          onChange={e => setForm(f => ({ ...f, rue: e.target.value, repertoire_id: '' }))}
+                          placeholder="Rue et numéro" />
+                      </div>
+                      <div>
+                        <input className="input text-sm" value={form.code_postal}
+                          onChange={e => setForm(f => ({ ...f, code_postal: e.target.value, repertoire_id: '' }))}
+                          placeholder="Code postal" />
+                      </div>
+                      <div>
+                        <input className="input text-sm" value={form.commune}
+                          onChange={e => setForm(f => ({ ...f, commune: e.target.value, repertoire_id: '' }))}
+                          placeholder="Commune" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-700 space-y-0.5">
+                      {form.institution && <div className="font-medium">{form.institution}</div>}
+                      {form.rue         && <div>{form.rue}</div>}
+                      {(form.code_postal || form.commune) && <div>{[form.code_postal, form.commune].filter(Boolean).join(' ')}</div>}
+                      {!form.institution && !form.rue && <span className="text-gray-400 italic">—</span>}
+                    </div>
+                  )}
                 </div>
 
                 {/* Articles */}
@@ -1329,7 +1391,14 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
   const [rows, setRows]     = useState([])
   const [eleves, setEleves] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
+  const [showForm, setShowForm]       = useState(false)
+  const [showOrgModal, setShowOrgModal] = useState(false)
+  const [orgForm, setOrgForm]           = useState({ type: 'CPAS', institution: '', rue: '', code_postal: '', commune: '' })
+  const [orgSaving, setOrgSaving]       = useState(false)
+  const [repertoire, setRepertoire]     = useState([])
+  const reloadRepertoire = () =>
+    supabase.from('organismes_repertoire').select('*').order('institution')
+      .then(({ data }) => setRepertoire(data || []))
   const [ficheId, setFicheId]   = useState(null)
   const [detailOTId, setDetailOTId] = useState(null)
   const [search, setSearch] = useState('')
@@ -1348,7 +1417,7 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
     { key: 'statut',    label: 'Statut',    options: Object.entries(STATUT_OT).map(([v, m]) => ({ value: v, label: m.label })) },
   ]
   const [sort, setSort] = useState({ col: 'nom', dir: 'asc' })
-  const [form, setForm] = useState({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', adresse: '', notes: '' })
+  const [form, setForm] = useState({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', institution: '', rue: '', code_postal: '', commune: '', notes: '' })
   const [saving, setSaving] = useState(false)
 
   const reload = () =>
@@ -1384,11 +1453,14 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
     if (!form.eleve_id) return
     setSaving(true)
     const payload = {
-      eleve_id: form.eleve_id,
-      organisme: form.organisme.toLowerCase(),
-      statut: form.statut,
-      adresse: form.adresse || null,
-      notes: form.notes || null,
+      eleve_id:    form.eleve_id,
+      organisme:   form.organisme.toLowerCase(),
+      statut:      form.statut,
+      institution: form.institution || null,
+      rue:         form.rue || null,
+      code_postal: form.code_postal || null,
+      commune:     form.commune || null,
+      notes:       form.notes || null,
     }
     const { error } = await supabase.from('organismes_tiers').insert(payload)
     if (error) {
@@ -1399,7 +1471,7 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
     await reload()
     setSaving(false)
     setShowForm(false)
-    setForm({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', adresse: '', notes: '' })
+    setForm({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', institution: '', rue: '', code_postal: '', commune: '', notes: '' })
   }
 
   const del = async (id) => {
@@ -1455,18 +1527,91 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
         </div>
         <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
         {isAllowed && (
-          <button onClick={() => setShowForm(v => !v)} className="btn-primary text-sm py-1.5 px-4">
-            + Organisme
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowOrgModal(true)}
+              className="btn-secondary text-sm py-1.5 px-4">
+              + Nouvel organisme
+            </button>
+            <button onClick={() => setShowForm(v => !v)} className="btn-primary text-sm py-1.5 px-4">
+              + Nouvelle situation
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Modal Nouvel Organisme (répertoire) */}
+      {showOrgModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+          onClick={e => e.target === e.currentTarget && setShowOrgModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="font-bold text-gray-800 text-lg">Nouvel organisme</h2>
+              <button onClick={() => setShowOrgModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            </div>
+            <div className="px-6 py-5 space-y-3">
+              <div>
+                <label className="label">Type d'organisme</label>
+                <select className="input" value={orgForm.type}
+                  onChange={e => setOrgForm(f => ({ ...f, type: e.target.value }))}>
+                  {['CPAS','ULB','SPJ','Autre'].map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="label">Institution</label>
+                <input className="input" value={orgForm.institution}
+                  onChange={e => setOrgForm(f => ({ ...f, institution: e.target.value }))}
+                  placeholder="Nom de l'institution" />
+              </div>
+              <div>
+                <label className="label">Rue et numéro</label>
+                <input className="input" value={orgForm.rue}
+                  onChange={e => setOrgForm(f => ({ ...f, rue: e.target.value }))}
+                  placeholder="Rue et numéro" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="label">Code postal</label>
+                  <input className="input" value={orgForm.code_postal}
+                    onChange={e => setOrgForm(f => ({ ...f, code_postal: e.target.value }))}
+                    placeholder="1000" />
+                </div>
+                <div>
+                  <label className="label">Commune</label>
+                  <input className="input" value={orgForm.commune}
+                    onChange={e => setOrgForm(f => ({ ...f, commune: e.target.value }))}
+                    placeholder="Bruxelles" />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button disabled={orgSaving || !orgForm.institution.trim()}
+                  className="btn-primary py-1.5 px-4 text-sm disabled:opacity-50"
+                  onClick={async () => {
+                    setOrgSaving(true)
+                    const { error } = await supabase.from('organismes_repertoire').insert({
+                      type: orgForm.type.toLowerCase(), institution: orgForm.institution.trim(),
+                      rue: orgForm.rue || null, code_postal: orgForm.code_postal || null, commune: orgForm.commune || null,
+                    })
+                    if (error) { alert('Erreur : ' + error.message); setOrgSaving(false); return }
+                    await reloadRepertoire()
+                    setOrgForm({ type: 'CPAS', institution: '', rue: '', code_postal: '', commune: '' })
+                    setOrgSaving(false)
+                    setShowOrgModal(false)
+                  }}>
+                  {orgSaving ? 'Enregistrement…' : 'Enregistrer'}
+                </button>
+                <button onClick={() => setShowOrgModal(false)} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
           onClick={e => e.target === e.currentTarget && setShowForm(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl my-8 flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
-              <h2 className="font-bold text-gray-800 text-lg">Nouvel organisme tiers</h2>
+              <h2 className="font-bold text-gray-800 text-lg">Nouvelle situation</h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
             <div className="px-6 py-5 space-y-4 overflow-y-auto">
@@ -1493,11 +1638,41 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
                     {Object.entries(STATUT_OT).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
+                {/* Sélection répertoire */}
+                {repertoire.length > 0 && (
+                  <div className="col-span-2 md:col-span-3">
+                    <label className="label">Organismes enregistrés</label>
+                    <select className="input text-sm"
+                      onChange={e => {
+                        const rep = repertoire.find(r => r.id === e.target.value)
+                        if (rep) setForm(f => ({ ...f, institution: rep.institution, rue: rep.rue || '', code_postal: rep.code_postal || '', commune: rep.commune || '', organisme: (rep.type||'cpas').toUpperCase() }))
+                      }}>
+                      <option value="">— Choisir dans le répertoire —</option>
+                      {repertoire.map(r => (
+                        <option key={r.id} value={r.id}>{r.institution}{r.commune ? ` — ${r.commune}` : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="col-span-2 md:col-span-3">
-                  <label className="label">Adresse de l'organisme</label>
-                  <input className="input" value={form.adresse}
-                    onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))}
-                    placeholder="Rue, numéro, code postal, ville…" />
+                  <label className="label">Institution</label>
+                  <input className="input" value={form.institution}
+                    onChange={e => setForm(f => ({ ...f, institution: e.target.value }))} placeholder="Nom de l'institution" />
+                </div>
+                <div className="col-span-2 md:col-span-3">
+                  <label className="label">Rue et numéro</label>
+                  <input className="input" value={form.rue}
+                    onChange={e => setForm(f => ({ ...f, rue: e.target.value }))} placeholder="Rue et numéro" />
+                </div>
+                <div>
+                  <label className="label">Code postal</label>
+                  <input className="input" value={form.code_postal}
+                    onChange={e => setForm(f => ({ ...f, code_postal: e.target.value }))} placeholder="1000" />
+                </div>
+                <div>
+                  <label className="label">Commune</label>
+                  <input className="input" value={form.commune}
+                    onChange={e => setForm(f => ({ ...f, commune: e.target.value }))} placeholder="Bruxelles" />
                 </div>
                 <div className="col-span-2 md:col-span-3">
                   <label className="label">Notes</label>

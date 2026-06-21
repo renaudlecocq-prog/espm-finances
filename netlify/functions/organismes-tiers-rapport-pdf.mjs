@@ -135,7 +135,9 @@ export const handler = async (event) => {
       <div class="info-row"><span class="lbl">Élève</span><span class="val"><strong>${esc(eleve.nom)} ${esc(eleve.prenom)}</strong></span></div>
       <div class="info-row"><span class="lbl">Classe</span><span class="val">${esc(eleve.classe)}</span></div>
       <div class="info-row"><span class="lbl">Organisme</span><span class="val"><strong>${esc((ot.organisme||'').toUpperCase())}</strong></span></div>
-      ${ot.adresse ? `<div class="info-row"><span class="lbl">Adresse</span><span class="val">${esc(ot.adresse)}</span></div>` : ''}
+      ${ot.institution ? `<div class="info-row"><span class="lbl">Institution</span><span class="val">${esc(ot.institution)}</span></div>` : ''}
+      ${ot.rue ? `<div class="info-row"><span class="lbl">Adresse</span><span class="val">${esc(ot.rue)}</span></div>` : ''}
+      ${(ot.code_postal || ot.commune) ? `<div class="info-row"><span class="lbl"></span><span class="val">${esc([ot.code_postal, ot.commune].filter(Boolean).join(' '))}</span></div>` : ''}
       ${ot.notes  ? `<div class="info-row"><span class="lbl">Notes</span><span class="val">${esc(ot.notes)}</span></div>` : ''}
     </div>
 
