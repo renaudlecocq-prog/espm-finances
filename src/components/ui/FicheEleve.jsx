@@ -70,6 +70,8 @@ function StatusBadge({ val, map }) {
   )
 }
 
+const PAYE_PAR_LABELS = { responsable: 'Responsable', cpas: 'CPAS', ulb: 'ULB', spj: 'SPJ', autre: 'Autre' }
+
 // ── Main component ─────────────────────────────────────────────────────────
 export default function FicheEleve({ eleveId, onClose }) {
   const { user, profile, isAdmin, isFinancier } = useAuth()
@@ -86,6 +88,7 @@ export default function FicheEleve({ eleveId, onClose }) {
   const [editNoteId, setEditNoteId] = useState(null)
   const [editNoteVal, setEditNoteVal] = useState('')
   const [finData, setFinData] = useState(null)  // { factures, paiements }
+  const [activeTab, setActiveTab] = useState('info')
 
   const load = useCallback(async () => {
     if (!eleveId) return
@@ -238,6 +241,40 @@ export default function FicheEleve({ eleveId, onClose }) {
           </button>
         </div>
 
+        {/* ── Tabs (si droits) ────────────────────────────────────────── */}
+        {!loading && eleve && (
+          <div className="px-5 pt-3 border-b border-gray-100 shrink-0">
+            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 w-full">
+              <button onClick={() => setActiveTab('info')}
+                className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
+                  activeTab === 'info' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                Infos
+              </button>
+              {canSeeRestricted && (
+                <button onClick={() => setActiveTab('appels')}
+                  className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
+                    activeTab === 'appels' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  Appels {appels.length > 0 && <span className="ml-1 text-xs text-gray-400 tabular-nums">{appels.length}</span>}
+                </button>
+              )}
+              {canSeeRestricted && (
+                <button onClick={() => setActiveTab('social')}
+                  className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
+                    activeTab === 'social' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  Social {hasAS && <span className="ml-1 text-xs text-orange-400">●</span>}
+                </button>
+              )}
+              {canSeeRestricted && (
+                <button onClick={() => setActiveTab('financier')}
+                  className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
+                    activeTab === 'financier' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  Financier
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── Body ────────────────────────────────────────────────────── */}
         <div className="overflow-y-auto p-5 flex-1">
           {loading ? (
@@ -248,189 +285,242 @@ export default function FicheEleve({ eleveId, onClose }) {
             <div className="py-12 text-center text-gray-400">Élève introuvable</div>
           ) : (<>
 
-            {/* ── 1. Identité ─────────────────────────────────────────── */}
-            <Section icon="👤" title="Identité">
-              <Field label="Date de naissance" value={fmtDate(eleve.date_naissance)} />
-              <Field label="Nationalité"       value={eleve.nationalite} />
-              {(eleve.rue || eleve.commune) && (
-                <Field label="Adresse" value={[
-                  eleve.rue,
-                  [eleve.code_postal, eleve.commune].filter(Boolean).join(' '),
-                  eleve.pays && eleve.pays !== 'Belgique' ? eleve.pays : null,
-                ].filter(Boolean).join(', ')} />
-              )}
-              <Field label="Email"     value={eleve.email} />
-              <Field label="Téléphone" value={eleve.telephone} />
-              <Field label="Mobile"    value={eleve.mobile} />
-              <Field label="Matricule" value={eleve.matricule} />
-              {eleve.remarque && (
-                <div className="mt-2.5 p-2.5 bg-amber-50 rounded-lg border border-amber-100">
-                  <p className="text-xs text-amber-800 whitespace-pre-wrap">{eleve.remarque}</p>
-                </div>
-              )}
-            </Section>
-
-            {/* ── 2. Groupes scolaires ────────────────────────────────── */}
-            {[
-              eleve.philosophie, eleve.groupe_choix_philo,
-              eleve.obs_d2, eleve.ac_d2,
-              eleve.math_d3, eleve.sciences_d3, eleve.bio_physique_d3,
-              eleve.obs1_d3, eleve.obs2_d3, eleve.ac_d3,
-            ].some(Boolean) && (
-              <Section icon="📚" title="Groupes scolaires">
-                {eleve.philosophie && (
-                  <Field label="RLMO" value={
-                    eleve.groupe_choix_philo
-                      ? `${eleve.philosophie} ${eleve.groupe_choix_philo}`
-                      : eleve.philosophie
-                  } />
+            {/* ══ TAB 1 : Informations ══════════════════════════════════ */}
+            {activeTab === 'info' && (<>
+              <Section icon="👤" title="Identité">
+                <Field label="Date de naissance" value={fmtDate(eleve.date_naissance)} />
+                <Field label="Nationalité"       value={eleve.nationalite} />
+                {(eleve.rue || eleve.commune) && (
+                  <Field label="Adresse" value={[
+                    eleve.rue,
+                    [eleve.code_postal, eleve.commune].filter(Boolean).join(' '),
+                    eleve.pays && eleve.pays !== 'Belgique' ? eleve.pays : null,
+                  ].filter(Boolean).join(', ')} />
                 )}
-                <Field label="OBS D2"          value={eleve.obs_d2} />
-                <Field label="AC D2"           value={eleve.ac_d2} />
-                <Field label="Math D3"         value={eleve.math_d3} />
-                <Field label="Sciences D3"     value={eleve.sciences_d3} />
-                <Field label="Bio/Physique D3" value={eleve.bio_physique_d3} />
-                <Field label="OBS 1 D3"        value={eleve.obs1_d3} />
-                <Field label="OBS 2 D3"        value={eleve.obs2_d3} />
-                <Field label="AC D3"           value={eleve.ac_d3} />
+                <Field label="Email"     value={eleve.email} />
+                <Field label="Téléphone" value={eleve.telephone} />
+                <Field label="Mobile"    value={eleve.mobile} />
+                <Field label="Matricule" value={eleve.matricule} />
+                {eleve.remarque && (
+                  <div className="mt-2.5 p-2.5 bg-amber-50 rounded-lg border border-amber-100">
+                    <p className="text-xs text-amber-800 whitespace-pre-wrap">{eleve.remarque}</p>
+                  </div>
+                )}
               </Section>
-            )}
 
-            {/* ── 3. Responsables légaux ──────────────────────────────── */}
-            {responsables.length > 0 && (
-              <Section icon="👪" title="Responsables légaux">
-                {responsables.map((r, i) => (
-                  <div key={r.idx}
-                    className={`flex items-center gap-3 py-1.5 ${i > 0 ? 'border-t border-gray-50' : ''}`}>
-                    <span className="text-sm font-medium text-gray-800">
-                      {r.nom || `Responsable ${r.idx}`}
-                    </span>
-                    {r.tel && (
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-sm text-gray-500">{r.tel}</span>
-                        {canSeeRestricted && (
-                        <button
-                          onClick={() => logAppel(r.idx, r.nom || `Responsable ${r.idx}`)}
-                          disabled={callingIdx === r.idx}
-                          title="Enregistrer un appel"
-                          className="flex items-center gap-1 text-xs text-primary border border-primary/30 hover:bg-primary/5 rounded-full px-2.5 py-0.5 transition-colors disabled:opacity-50"
-                        >
-                          {callingIdx === r.idx
-                            ? <Loader2 size={11} className="animate-spin" />
-                            : <Phone size={11} />}
-                          Appel
-                        </button>
+              {[
+                eleve.philosophie, eleve.groupe_choix_philo,
+                eleve.obs_d2, eleve.ac_d2,
+                eleve.math_d3, eleve.sciences_d3, eleve.bio_physique_d3,
+                eleve.obs1_d3, eleve.obs2_d3, eleve.ac_d3,
+              ].some(Boolean) && (
+                <Section icon="📚" title="Groupes scolaires">
+                  {eleve.philosophie && (
+                    <Field label="RLMO" value={
+                      eleve.groupe_choix_philo
+                        ? `${eleve.philosophie} ${eleve.groupe_choix_philo}`
+                        : eleve.philosophie
+                    } />
+                  )}
+                  <Field label="OBS D2"          value={eleve.obs_d2} />
+                  <Field label="AC D2"           value={eleve.ac_d2} />
+                  <Field label="Math D3"         value={eleve.math_d3} />
+                  <Field label="Sciences D3"     value={eleve.sciences_d3} />
+                  <Field label="Bio/Physique D3" value={eleve.bio_physique_d3} />
+                  <Field label="OBS 1 D3"        value={eleve.obs1_d3} />
+                  <Field label="OBS 2 D3"        value={eleve.obs2_d3} />
+                  <Field label="AC D3"           value={eleve.ac_d3} />
+                </Section>
+              )}
+
+              {responsables.length > 0 && (
+                <Section icon="👪" title="Responsables légaux">
+                  {responsables.map((r, i) => (
+                    <div key={r.idx}
+                      className={`flex items-center gap-3 py-1.5 ${i > 0 ? 'border-t border-gray-50' : ''}`}>
+                      <span className="text-sm font-medium text-gray-800 flex-1">
+                        {r.nom || `Responsable ${r.idx}`}
+                      </span>
+                      {r.tel && <span className="text-sm text-gray-500">{r.tel}</span>}
+                    </div>
+                  ))}
+                </Section>
+              )}
+            </>)}
+
+            {/* ══ TAB 2 : Appels ═══════════════════════════════════════ */}
+            {activeTab === 'appels' && canSeeRestricted && (<>
+              {responsables.length > 0 && (
+                <Section icon="👪" title="Responsables légaux">
+                  {responsables.map((r, i) => (
+                    <div key={r.idx}
+                      className={`flex items-center gap-3 py-1.5 ${i > 0 ? 'border-t border-gray-50' : ''}`}>
+                      <span className="text-sm font-medium text-gray-800">
+                        {r.nom || `Responsable ${r.idx}`}
+                      </span>
+                      {r.tel && (
+                        <div className="flex items-center gap-2 ml-auto shrink-0">
+                          <span className="text-sm text-gray-500">{r.tel}</span>
+                          <button
+                            onClick={() => logAppel(r.idx, r.nom || `Responsable ${r.idx}`)}
+                            disabled={callingIdx === r.idx}
+                            title="Enregistrer un appel"
+                            className="flex items-center gap-1 text-xs text-primary border border-primary/30 hover:bg-primary/5 rounded-full px-2.5 py-0.5 transition-colors disabled:opacity-50"
+                          >
+                            {callingIdx === r.idx ? <Loader2 size={11} className="animate-spin" /> : <Phone size={11} />}
+                            Appel
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </Section>
+              )}
+
+              <Section icon="📞" title="Historique des appels">
+                {appels.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic">Aucun appel enregistré.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {appels.map(a => (
+                      <div key={a.id} className="bg-gray-50 rounded-lg px-3 py-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <Phone size={12} className="text-primary shrink-0" />
+                            <span className="text-sm font-medium text-gray-700 truncate">
+                              {a.responsable_nom || `Responsable ${a.responsable_index}`}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-400 shrink-0">{fmtDateTime(a.created_at)}</span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5 ml-[18px]">Par {a.auteur_nom || '—'}</p>
+                        {editNoteId === a.id ? (
+                          <div className="flex items-center gap-1.5 mt-1.5 ml-[18px]">
+                            <input autoFocus
+                              className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 outline-none focus:border-primary"
+                              value={editNoteVal}
+                              onChange={e => setEditNoteVal(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') saveNote(a.id)
+                                if (e.key === 'Escape') setEditNoteId(null)
+                              }}
+                            />
+                            <button onClick={() => saveNote(a.id)} className="text-green-600 hover:text-green-700"><Check size={14} /></button>
+                            <button onClick={() => setEditNoteId(null)} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 mt-1.5 ml-[18px] group">
+                            <span className="text-xs text-gray-500 italic flex-1">
+                              {a.note || <span className="text-gray-300">Aucune note</span>}
+                            </span>
+                            <button onClick={() => { setEditNoteId(a.id); setEditNoteVal(a.note || '') }}
+                              className="text-gray-400 hover:text-primary transition-colors" title="Modifier la note">
+                              <Edit2 size={12} />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                await supabase.from('appels_responsables').update({ note: 'Message vocal' }).eq('id', a.id)
+                                setAppels(prev => prev.map(x => x.id === a.id ? { ...x, note: 'Message vocal' } : x))
+                              }}
+                              className="text-gray-400 hover:text-orange-500 transition-colors" title="Message vocal">
+                              <Voicemail size={12} />
+                            </button>
+                          </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                ))}
-              </Section>
-            )}
-
-            {/* ── 4. Suivi social (admin/financier + si données) ──────── */}
-            {canSeeRestricted && hasAS && (
-              <Section icon="🤝" title="Suivi social">
-                {echs.length > 0 && (
-                  <div className={orgs.length > 0 ? 'mb-4' : ''}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                        Échelonnements
-                      </span>
-                      <button
-                        onClick={() => {
-                          onClose()
-                          navigate(`/assistant-social?tab=echelonnements&eleve=${eleveId}`)
-                        }}
-                        className="flex items-center gap-1 text-xs text-primary hover:underline"
-                      >
-                        <ExternalLink size={11} /> Gérer
-                      </button>
-                    </div>
-                    <div className="space-y-1.5">
-                      {echs.map(e => (
-                        <div key={e.id}
-                          className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-1.5 text-sm gap-3">
-                          <span className="text-gray-700 truncate">
-                            {fmtEur(e.montant)}
-                            {e.nombre_echeances ? ` — ${e.nombre_echeances} éch.` : ''}
-                            {e.mensualite ? ` de ${fmtEur(e.mensualite)}` : ''}
-                          </span>
-                          <StatusBadge val={e.statut} map={STATUT_ECH} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {orgs.length > 0 && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                        Organismes tiers
-                      </span>
-                      <button
-                        onClick={() => {
-                          onClose()
-                          navigate(`/assistant-social?tab=organismes&eleve=${eleveId}`)
-                        }}
-                        className="flex items-center gap-1 text-xs text-primary hover:underline"
-                      >
-                        <ExternalLink size={11} /> Gérer
-                      </button>
-                    </div>
-                    <div className="space-y-1.5">
-                      {orgs.map(o => (
-                        <div key={o.id}
-                          className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-1.5 text-sm gap-3">
-                          <span className="text-gray-700 capitalize truncate">
-                            {o.organisme}
-                            {o.montant_accorde ? ` — ${fmtEur(o.montant_accorde)}` : ''}
-                          </span>
-                          <StatusBadge val={o.statut} map={STATUT_OT} />
-                        </div>
-                      ))}
-                    </div>
+                    ))}
                   </div>
                 )}
               </Section>
+            </>)}
+
+            {/* ══ TAB 3 : Suivi social ══════════════════════════════════ */}
+            {activeTab === 'social' && canSeeRestricted && (
+              hasAS ? (
+                <Section icon="🤝" title="Suivi social">
+                  {echs.length > 0 && (
+                    <div className={orgs.length > 0 ? 'mb-4' : ''}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Échelonnements</span>
+                        <button onClick={() => { onClose(); navigate(`/assistant-social?tab=echelonnements&eleve=${eleveId}`) }}
+                          className="flex items-center gap-1 text-xs text-primary hover:underline">
+                          <ExternalLink size={11} /> Gérer
+                        </button>
+                      </div>
+                      <div className="space-y-1.5">
+                        {echs.map(e => (
+                          <div key={e.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-1.5 text-sm gap-3">
+                            <span className="text-gray-700 truncate">
+                              {fmtEur(e.montant)}{e.nombre_echeances ? ` — ${e.nombre_echeances} éch.` : ''}{e.mensualite ? ` de ${fmtEur(e.mensualite)}` : ''}
+                            </span>
+                            <StatusBadge val={e.statut} map={STATUT_ECH} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {orgs.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Organismes tiers</span>
+                        <button onClick={() => { onClose(); navigate(`/assistant-social?tab=organismes&eleve=${eleveId}`) }}
+                          className="flex items-center gap-1 text-xs text-primary hover:underline">
+                          <ExternalLink size={11} /> Gérer
+                        </button>
+                      </div>
+                      <div className="space-y-1.5">
+                        {orgs.map(o => (
+                          <div key={o.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-1.5 text-sm gap-3">
+                            <span className="text-gray-700 capitalize truncate">
+                              {o.organisme}{o.montant_accorde ? ` — ${fmtEur(o.montant_accorde)}` : ''}
+                            </span>
+                            <StatusBadge val={o.statut} map={STATUT_OT} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </Section>
+              ) : (
+                <div className="py-10 text-center text-gray-400">
+                  <div className="text-3xl mb-2">🤝</div>
+                  <p className="text-sm">Aucun suivi social pour cet élève.</p>
+                </div>
+              )
             )}
 
-            {/* ── 5. Financier (admin/financier) ──────────────────────── */}
-            {canSeeRestricted && finData && (() => {
+            {/* ══ TAB 4 : Financier ════════════════════════════════════ */}
+            {activeTab === 'financier' && canSeeRestricted && finData && (() => {
               const totalFac = finData.factures
                 .filter(f => f.statut === 'facture' || f.statut === 'rappel' || f.statut === 'mise_en_demeure')
                 .reduce((s, f) => s + Number(f.montant || 0), 0)
               const totalPai = finData.paiements.reduce((s, p) => s + Number(p.montant || 0), 0)
               const solde = totalPai - totalFac
               const STATUT_FAC = {
-                facture:          { label: 'Facturé',          cls: 'bg-green-100 text-green-700' },
-                ignore:           { label: 'Ignoré',           cls: 'bg-gray-100 text-gray-500' },
-                rappel:           { label: 'Rappel',           cls: 'bg-orange-100 text-orange-700' },
-                mise_en_demeure:  { label: 'Mise en demeure',  cls: 'bg-red-100 text-red-700' },
+                facture:         { label: 'Facturé',         cls: 'bg-green-100 text-green-700' },
+                ignore:          { label: 'Ignoré',          cls: 'bg-gray-100 text-gray-500' },
+                rappel:          { label: 'Rappel',          cls: 'bg-orange-100 text-orange-700' },
+                mise_en_demeure: { label: 'Mise en demeure', cls: 'bg-red-100 text-red-700' },
               }
-              return (
+              return (<>
                 <Section icon="💶" title="Financier">
-                  {/* Solde */}
                   <div className="flex items-center justify-between py-1 mb-3">
                     <span className="text-sm text-gray-500 font-medium">Solde</span>
-                    <span className={`text-base font-bold ${
-                      solde < 0 ? 'text-red-600' : solde > 0 ? 'text-green-600' : 'text-gray-400'
-                    }`}>{fmtEur(solde)}</span>
+                    <span className={`text-base font-bold ${solde < 0 ? 'text-red-600' : solde > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                      {fmtEur(solde)}
+                    </span>
                   </div>
 
-                  {/* Factures */}
                   {finData.factures.length > 0 && (
                     <div className="mb-4">
                       <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Factures</span>
                       <div className="space-y-1.5 mt-2">
                         {finData.factures.map(f => {
                           const st = STATUT_FAC[f.statut] || { label: f.statut, cls: 'bg-gray-100 text-gray-500' }
-                          const batchLabel = f.batch?.nom || f.batch?.numero || '—'
                           return (
                             <div key={f.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm gap-2">
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium text-gray-700 truncate text-xs">{batchLabel}</p>
+                                <p className="font-medium text-gray-700 truncate text-xs">{f.batch?.nom || f.batch?.numero || '—'}</p>
                                 <p className="text-gray-400 text-[11px] truncate">{f.numero} · {fmtDate(f.date)}</p>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
@@ -444,7 +534,6 @@ export default function FicheEleve({ eleveId, onClose }) {
                     </div>
                   )}
 
-                  {/* Paiements */}
                   {finData.paiements.length > 0 && (
                     <div>
                       <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Paiements</span>
@@ -452,7 +541,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                         {finData.paiements.map(p => (
                           <div key={p.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm gap-2">
                             <div className="min-w-0 flex-1">
-                              <p className="font-medium text-gray-700 text-xs">{p.paye_par || 'Paiement'}</p>
+                              <p className="font-medium text-gray-700 text-xs">{PAYE_PAR_LABELS[p.paye_par] || p.paye_par || 'Paiement'}</p>
                               <p className="text-gray-400 text-[11px]">{fmtDate(p.date)}{p.notes ? ` · ${p.notes}` : ''}</p>
                             </div>
                             <span className="font-semibold text-green-600 tabular-nums shrink-0 text-xs">+{fmtEur(p.montant)}</span>
@@ -466,77 +555,8 @@ export default function FicheEleve({ eleveId, onClose }) {
                     <p className="text-xs text-gray-400 italic">Aucun mouvement financier.</p>
                   )}
                 </Section>
-              )
+              </>)
             })()}
-
-            {/* ── 6. Historique appels (admin/financier) ──────────────── */}
-            {canSeeRestricted && appels.length > 0 && (
-              <Section icon="📞" title="Historique des appels">
-                <div className="space-y-2">
-                  {appels.map(a => (
-                    <div key={a.id} className="bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <Phone size={12} className="text-primary shrink-0" />
-                          <span className="text-sm font-medium text-gray-700 truncate">
-                            {a.responsable_nom || `Responsable ${a.responsable_index}`}
-                          </span>
-                        </div>
-                        <span className="text-xs text-gray-400 shrink-0">{fmtDateTime(a.created_at)}</span>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-0.5 ml-[18px]">
-                        Par {a.auteur_nom || '—'}
-                      </p>
-
-                      {/* Note éditable */}
-                      {editNoteId === a.id ? (
-                        <div className="flex items-center gap-1.5 mt-1.5 ml-[18px]">
-                          <input
-                            autoFocus
-                            className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 outline-none focus:border-primary"
-                            value={editNoteVal}
-                            onChange={e => setEditNoteVal(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') saveNote(a.id)
-                              if (e.key === 'Escape') setEditNoteId(null)
-                            }}
-                          />
-                          <button onClick={() => saveNote(a.id)} className="text-green-600 hover:text-green-700">
-                            <Check size={14} />
-                          </button>
-                          <button onClick={() => setEditNoteId(null)} className="text-gray-400 hover:text-gray-600">
-                            <X size={14} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 mt-1.5 ml-[18px] group">
-                          <span className="text-xs text-gray-500 italic flex-1">
-                            {a.note || <span className="text-gray-300">Aucune note</span>}
-                          </span>
-                          <button
-                            onClick={() => { setEditNoteId(a.id); setEditNoteVal(a.note || '') }}
-                            className="text-gray-400 hover:text-primary transition-colors"
-                            title="Modifier la note"
-                          >
-                            <Edit2 size={12} />
-                          </button>
-                          <button
-                            onClick={async () => {
-                              await supabase.from('appels_responsables').update({ note: 'Message vocal' }).eq('id', a.id)
-                              setAppels(prev => prev.map(x => x.id === a.id ? { ...x, note: 'Message vocal' } : x))
-                            }}
-                            className="text-gray-400 hover:text-orange-500 transition-colors"
-                            title="Message vocal"
-                          >
-                            <Voicemail size={12} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </Section>
-            )}
 
           </>)}
         </div>
