@@ -630,3 +630,42 @@ git push origin main
 - PDF groupé (et individuel) : dernière facture débordait sur une page vide quand elle contenait un plan d'échelonnement + organisme tiers
 - `.page` passe en `display:flex; flex-direction:column`, contenu dans `.page-body` (flex:1), footer en flux normal (plus de `position:absolute`)
 - Appliqué à `factures-batch-pdf.mjs` et `facture-pdf.mjs`
+
+## [v0.23] — 2026-06-21
+### Added
+- Rapport PDF des échelonnements (`echelonnements-rapport-pdf.mjs`)
+  - Format A4 paysage, même header/footer que les factures (logo + école)
+  - Sans coordonnées parents
+  - Tableau : Élève, Classe, Statut, Montant, Échéances, Mensualité, Début, Fin estimée, Remarque
+  - Sections groupées par statut (En cours / Non respecté / Terminé) quand filtre = Tous
+  - Cards de synthèse : compteurs par statut + montant total
+- Bouton "🖨 Rapport PDF" + sélecteur de statut dans la page Échelonnements
+
+## [v0.24] — 2026-06-21
+### Added
+- Rapport PDF des plans d'échelonnement (v2.0) depuis AssistantSocial
+  - Une page A4 par plan : info élève, statut, dates, remarque
+  - Cards financières : total prévu, total payé, retard, solde restant
+  - Tableau des échéances individuelles avec statut (À venir / En retard / Payé)
+  - Sélecteur statut + bouton "🖨 Rapport PDF" dans la toolbar de l'onglet Échelonnements
+### Removed
+- Pages orphelines `Echelonnements.jsx` et `OrganismesTiers.jsx` (remplacées depuis longtemps par AssistantSocial)
+- Imports correspondants retirés de App.jsx (les redirections /echelonnements et /organismes vers /assistant-social restent actives)
+
+## [v0.25] — 2026-06-21
+### Changed
+- PDF échelonnement : bouton icône FileText par ligne dans le tableau + dans le modal (plus de bouton toolbar global)
+- PDF échelonnement : paramètre `echId` (plan individuel uniquement), plus de filtre par statut
+- PDF échelonnement footer : suppression nom/adresse école, email/tél AS au lieu d'économe, "généré" au lieu d'"édité"
+- PDF factures : "Cette facture a été éditée" → "Cette facture a été générée" dans footer (facture-pdf.mjs + factures-batch-pdf.mjs)
+
+## [v0.26] — 2026-06-21
+### Added
+- PDF échelonnement : bloc signature en bas de page — "Fait à Molenbeek-Saint-Jean, le ___", ligne de signature responsable légal (gauche) et représentant de l'école (droite)
+
+## [v0.27] — 2026-06-21
+### Added
+- PDF échelonnement : logo de l'école en haut à gauche (chargement via URL HTTP comme les factures)
+- PDF échelonnement footer : "Jérôme Mignolet, Assistant social" avant email/tél
+- EchelonnementDetail modal : section "Rapport signé" avec upload PDF (drag & drop ou parcourir), liste des documents uploadés avec vue/suppression
+- Supabase : table `echelonnement_documents` + bucket `echelonnement-rapports` avec policies RLS

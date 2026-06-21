@@ -87,7 +87,9 @@ export default async function handler(req) {
 <style>
 @page { size: A4; margin: 0; }
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:Arial,Helvetica,sans-serif; font-size:10pt; color:#1a1a1a; background:#fff; }
+body { font-family:Arial,Helvetica,sans-serif; font-size:10pt; color:#1a1a1a; background:#f5f5f5; }
+@media screen { .page { box-shadow:0 2px 16px rgba(0,0,0,.12); margin:20px auto; } }
+@media print { body { background:white; } }
 .btn-print {
   position:fixed; top:12px; right:12px;
   background:#2D1B2E; color:#fff; border:none;
@@ -97,7 +99,7 @@ body { font-family:Arial,Helvetica,sans-serif; font-size:10pt; color:#1a1a1a; ba
 .btn-print:hover { background:#3e2640; }
 @media print { .btn-print { display:none !important; } }
 
-.page { width:210mm; min-height:297mm; display:flex; flex-direction:column; padding:12mm 15mm 0 15mm; }
+.page { width:210mm; min-height:297mm; display:flex; flex-direction:column; background:white; padding:12mm 15mm 0 15mm; }
 .page-body { flex:1; }
 
 /* EN-TÊTE : logo + ESPM+ côte à côte à gauche */
@@ -260,7 +262,7 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
   <!-- PIED DE PAGE -->
   </div><!-- /page-body -->
   <div class="footer">
-    ${esc(SCHOOL_EMAIL_ECO)} · ${esc(SCHOOL_TEL_ECO)}${SCHOOL_BCE ? ` — BCE N°&nbsp;${esc(SCHOOL_BCE)}` : ''} &nbsp;|&nbsp; Cette facture a été éditée depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
+    ${esc(SCHOOL_EMAIL_ECO)} · ${esc(SCHOOL_TEL_ECO)}${SCHOOL_BCE ? ` — BCE N°&nbsp;${esc(SCHOOL_BCE)}` : ''} &nbsp;|&nbsp; Cette facture a été générée depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
   </div>
 
 </div>

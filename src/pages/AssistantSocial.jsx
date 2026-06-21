@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -7,7 +7,7 @@ import FicheEleve from '../components/ui/FicheEleve'
 import Commentaires from '../components/ui/Commentaires'
 import {
   Search, ChevronUp, ChevronDown, ChevronsUpDown, Trash2, X,
-  AlertTriangle, CheckCircle2, Clock, Calendar,
+  AlertTriangle, CheckCircle2, Clock, Calendar, FileText, Upload, Eye,
 } from 'lucide-react'
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ function computeAlertStatus(ech, echeances, paiements) {
 }
 
 // ── Detail Panel ─────────────────────────────────────────────────────────
-function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose, onUpdated, isAllowed, onFicheEleve }) {
+function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose, onUpdated, isAllowed, onFicheEleve, onPdf }) {
   const { user, profile } = useAuth()
   const [echeances, setEcheances] = useState(initEcheances || [])
   const [statut, setStatut]       = useState(ech.statut)
@@ -157,6 +157,50 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
 
   const [editDateDebut, setEditDateDebut] = useState(null) // valeur ISO en cours d'édition
 
+  // ── Documents upload ────────────────────────────────────────────────────
+  const [docs, setDocs]         = useState([])
+  const [uploading, setUploading] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const fileRef                 = useRef()
+
+  const reloadDocs = useCallback(async () => {
+    const { data } = await supabase.from('echelonnement_documents')
+      .select('*').eq('echelonnement_id', ech.id).order('created_at', { ascending: false })
+    setDocs(data || [])
+  }, [ech.id])
+
+  useEffect(() => { reloadDocs() }, [reloadDocs])
+
+  const uploadFile = async file => {
+    if (!file) return
+    if (file.type !== 'application/pdf') { alert('Seuls les fichiers PDF sont acceptés.'); return }
+    setUploading(true)
+    const uid      = crypto.randomUUID()
+    const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_')
+    const storagePath = `${ech.id}/${uid}_${safeName}`
+    const { error: storeErr } = await supabase.storage.from('echelonnement-rapports')
+      .upload(storagePath, file, { contentType: 'application/pdf' })
+    if (storeErr) { alert('Erreur upload : ' + storeErr.message); setUploading(false); return }
+    const { error: dbErr } = await supabase.from('echelonnement_documents').insert({
+      echelonnement_id: ech.id, nom_fichier: file.name, storage_path: storagePath, taille: file.size,
+    })
+    if (dbErr) { alert('Erreur base de données : ' + dbErr.message); setUploading(false); return }
+    await reloadDocs()
+    setUploading(false)
+  }
+
+  const viewDoc = async doc => {
+    const { data } = await supabase.storage.from('echelonnement-rapports').createSignedUrl(doc.storage_path, 60)
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+  }
+
+  const deleteDoc = async doc => {
+    if (!window.confirm(`Supprimer "${doc.nom_fichier}" ?`)) return
+    await supabase.storage.from('echelonnement-rapports').remove([doc.storage_path])
+    await supabase.from('echelonnement_documents').delete().eq('id', doc.id)
+    await reloadDocs()
+  }
+
   const saveDateDebut = async (newDate) => {
     if (!newDate) return
     // Mettre à jour la date de début sur l'échelonnement
@@ -202,6 +246,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
                 Fiche élève
               </button>
             )}
+
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
               <X size={18} />
             </button>
@@ -401,6 +446,58 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Rapport signé — upload */}
+          <div className="border-t border-gray-100 pt-4">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Rapport signé</h3>
+            <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
+              onChange={e => { uploadFile(e.target.files[0]); e.target.value = '' }} />
+            <div className="flex gap-2 mb-3">
+              {/* Bouton générer PDF — 1/4 */}
+              {onPdf && (
+                <button onClick={onPdf} title="Générer le rapport PDF"
+                  className="w-1/4 shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors p-3 text-primary">
+                  <FileText size={18} />
+                  <span className="text-xs font-medium leading-tight text-center">Générer<br/>le rapport</span>
+                </button>
+              )}
+              {/* Zone drag & drop — 3/4 */}
+              <div
+                className={`flex-1 rounded-xl border-2 border-dashed p-3 text-center cursor-pointer transition-colors
+                  ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
+                onDragOver={e => { e.preventDefault(); setDragging(true) }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={e => { e.preventDefault(); setDragging(false); uploadFile(e.dataTransfer.files[0]) }}
+                onClick={() => fileRef.current.click()}
+              >
+                {uploading
+                  ? <p className="text-sm text-primary">Upload en cours…</p>
+                  : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400">
+                      <Upload size={14} />
+                      <span className="text-sm">Glisser-déposer ou <span className="text-primary underline">parcourir</span></span>
+                    </div>
+                }
+              </div>
+            </div>
+            {docs.length === 0
+              ? <p className="text-xs text-gray-400 text-center">Aucun document uploadé</p>
+              : docs.map(d => (
+                  <div key={d.id} className="flex items-center justify-between py-1.5 border-b border-gray-100 text-sm">
+                    <span className="truncate text-gray-700 flex-1 mr-2">{d.nom_fichier}</span>
+                    <div className="flex gap-2 shrink-0">
+                      <button onClick={() => viewDoc(d)} className="text-primary hover:text-primary/70 transition-colors" title="Voir">
+                        <Eye size={14} />
+                      </button>
+                      {isAllowed && (
+                        <button onClick={() => deleteDoc(d)} className="text-red-400 hover:text-red-600 transition-colors" title="Supprimer">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+            }
           </div>
 
           {/* Statut manuel */}
@@ -623,6 +720,15 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
     await reload()
   }
 
+  const handlePdfRapport = async (echId) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    window.open(
+      `/.netlify/functions/echelonnements-rapport-pdf?echId=${echId}&token=${session.access_token}`,
+      '_blank'
+    )
+  }
+
   const toggleSort = col =>
     setSort(s => s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'asc' })
 
@@ -706,6 +812,7 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
               <th className="px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase text-left whitespace-nowrap">Fin</th>
               <TH col="statut"          label="Statut" />
               <th className="px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase text-center whitespace-nowrap">Suivi auto</th>
+              <th className="px-3 py-2.5 w-8" />
               {isAllowed && <th className="px-3 py-2.5 w-10" />}
             </tr>
           </thead>
@@ -758,6 +865,14 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
                       </span>
                     )}
                   </td>
+                  <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => handlePdfRapport(r.id)}
+                      title="Générer le PDF"
+                      className="text-gray-300 hover:text-primary transition-colors">
+                      <FileText size={14} />
+                    </button>
+                  </td>
                   {isAllowed && (
                     <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
                       <button onClick={() => del(r.id)}
@@ -777,6 +892,7 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
         <EchelonnementDetail
           ech={detail}
           echeances={echeancesMap[detail.id] || []}
+          onPdf={() => handlePdfRapport(detail.id)}
           paiements={paiementsMap[detail.eleve_id] || []}
           onClose={() => setDetailId(null)}
           onUpdated={reload}
@@ -1163,6 +1279,7 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
               <TH col="organisme"       label="Organisme" />
               <TH col="montant_accorde" label="Montant accordé" />
               <TH col="statut"          label="Statut" />
+              <th className="px-3 py-2.5 w-8" />
               {isAllowed && <th className="px-3 py-2.5 w-10" />}
             </tr>
           </thead>
