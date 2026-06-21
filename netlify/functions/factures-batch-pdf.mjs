@@ -160,7 +160,7 @@ function genFacture(facture, lignes, ech, org, logoUrl) {
     <p>Pour toute précision concernant cette facture, prenez contact avec l'<strong>économe de l'école, Monsieur Lecocq</strong>, par Smartschool ou au <strong>${esc(SCHOOL_TEL_ECO)}</strong>.</p>
   </div>
   </div><!-- /page-body -->
-  <div class="footer">École Secondaire Plurielle Maritime — ASBL${SCHOOL_BCE ? ` — BCE N&deg;&nbsp;${esc(SCHOOL_BCE)}` : ''} — Avenue Jean Dubrucq 175, 1080 Molenbeek-Saint-Jean — ${esc(SCHOOL_EMAIL_ECO)} &middot; ${esc(SCHOOL_TEL_ECO)} &nbsp;|&nbsp; Cette facture a été éditée depuis <strong>ESPM<span style="color:#E86C00">+</span></strong></div>
+  <div class="footer">École Secondaire Plurielle Maritime — ASBL${SCHOOL_BCE ? ` — BCE N&deg;&nbsp;${esc(SCHOOL_BCE)}` : ''} — Avenue Jean Dubrucq 175, 1080 Molenbeek-Saint-Jean — ${esc(SCHOOL_EMAIL_ECO)} &middot; ${esc(SCHOOL_TEL_ECO)} &nbsp;|&nbsp; Cette facture a été générée depuis <strong>ESPM<span style="color:#E86C00">+</span></strong></div>
 </div>`
 }
 

@@ -7,7 +7,7 @@ import FicheEleve from '../components/ui/FicheEleve'
 import Commentaires from '../components/ui/Commentaires'
 import {
   Search, ChevronUp, ChevronDown, ChevronsUpDown, Trash2, X,
-  AlertTriangle, CheckCircle2, Clock, Calendar,
+  AlertTriangle, CheckCircle2, Clock, Calendar, FileText,
 } from 'lucide-react'
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ function computeAlertStatus(ech, echeances, paiements) {
 }
 
 // ── Detail Panel ─────────────────────────────────────────────────────────
-function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose, onUpdated, isAllowed, onFicheEleve }) {
+function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose, onUpdated, isAllowed, onFicheEleve, onPdf }) {
   const { user, profile } = useAuth()
   const [echeances, setEcheances] = useState(initEcheances || [])
   const [statut, setStatut]       = useState(ech.statut)
@@ -200,6 +200,13 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
               <button onClick={onFicheEleve}
                 className="text-xs text-primary border border-primary/30 hover:bg-primary/5 rounded-lg px-2.5 py-1 transition-colors">
                 Fiche élève
+              </button>
+            )}
+            {onPdf && (
+              <button onClick={onPdf}
+                title="Générer le PDF"
+                className="text-gray-400 hover:text-primary transition-colors p-1">
+                <FileText size={18} />
               </button>
             )}
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
@@ -564,8 +571,6 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
   const [search, setSearch]             = useState('')
   const [filters, setFilters]           = useState({})
   const [sort, setSort]                 = useState({ col: 'nom', dir: 'asc' })
-  const [pdfStatut, setPdfStatut]       = useState('')
-  const [pdfLoading, setPdfLoading]     = useState(false)
 
   const toggleFilter = useCallback((key, val) =>
     setFilters(f => {
@@ -625,13 +630,13 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
     await reload()
   }
 
-  const handlePdfRapport = async () => {
-    setPdfLoading(true)
+  const handlePdfRapport = async (echId) => {
     const { data: { session } } = await supabase.auth.getSession()
-    setPdfLoading(false)
     if (!session) return
-    const url = `/.netlify/functions/echelonnements-rapport-pdf?token=${session.access_token}${pdfStatut ? '&statut=' + pdfStatut : ''}`
-    window.open(url, '_blank')
+    window.open(
+      `/.netlify/functions/echelonnements-rapport-pdf?echId=${echId}&token=${session.access_token}`,
+      '_blank'
+    )
   }
 
   const toggleSort = col =>
@@ -692,31 +697,11 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
           <span className="text-xs text-gray-400">{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
         </div>
         <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
-        <div className="flex items-center gap-2">
-          <select
-            value={pdfStatut}
-            onChange={e => setPdfStatut(e.target.value)}
-            className="rounded-lg border border-gray-200 text-xs px-2 py-1.5 outline-none focus:border-primary"
-          >
-            <option value="">Tous statuts</option>
-            <option value="en_cours">En cours</option>
-            <option value="attente">En attente</option>
-            <option value="non_respecte">Non respecté</option>
-            <option value="termine">Terminé</option>
-          </select>
-          <button
-            onClick={handlePdfRapport}
-            disabled={pdfLoading}
-            className="btn-secondary text-sm py-1.5 flex items-center gap-1.5 disabled:opacity-50"
-          >
-            🖨 {pdfLoading ? 'Génération…' : 'Rapport PDF'}
+        {isAllowed && (
+          <button onClick={() => setShowForm(v => !v)} className="btn-primary text-sm py-1.5 px-4">
+            + Échelonnement
           </button>
-          {isAllowed && (
-            <button onClick={() => setShowForm(v => !v)} className="btn-primary text-sm py-1.5 px-4">
-              + Échelonnement
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       {showForm && (
@@ -737,6 +722,7 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
               <th className="px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase text-left whitespace-nowrap">Fin</th>
               <TH col="statut"          label="Statut" />
               <th className="px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase text-center whitespace-nowrap">Suivi auto</th>
+              <th className="px-3 py-2.5 w-8" />
               {isAllowed && <th className="px-3 py-2.5 w-10" />}
             </tr>
           </thead>
@@ -789,6 +775,14 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
                       </span>
                     )}
                   </td>
+                  <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => handlePdfRapport(r.id)}
+                      title="Générer le PDF"
+                      className="text-gray-300 hover:text-primary transition-colors">
+                      <FileText size={14} />
+                    </button>
+                  </td>
                   {isAllowed && (
                     <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
                       <button onClick={() => del(r.id)}
@@ -808,6 +802,7 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
         <EchelonnementDetail
           ech={detail}
           echeances={echeancesMap[detail.id] || []}
+          onPdf={() => handlePdfRapport(detail.id)}
           paiements={paiementsMap[detail.eleve_id] || []}
           onClose={() => setDetailId(null)}
           onUpdated={reload}
@@ -1194,6 +1189,7 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
               <TH col="organisme"       label="Organisme" />
               <TH col="montant_accorde" label="Montant accordé" />
               <TH col="statut"          label="Statut" />
+              <th className="px-3 py-2.5 w-8" />
               {isAllowed && <th className="px-3 py-2.5 w-10" />}
             </tr>
           </thead>

@@ -651,3 +651,10 @@ git push origin main
 ### Removed
 - Pages orphelines `Echelonnements.jsx` et `OrganismesTiers.jsx` (remplacées depuis longtemps par AssistantSocial)
 - Imports correspondants retirés de App.jsx (les redirections /echelonnements et /organismes vers /assistant-social restent actives)
+
+## [v0.25] — 2026-06-21
+### Changed
+- PDF échelonnement : bouton icône FileText par ligne dans le tableau + dans le modal (plus de bouton toolbar global)
+- PDF échelonnement : paramètre `echId` (plan individuel uniquement), plus de filtre par statut
+- PDF échelonnement footer : suppression nom/adresse école, email/tél AS au lieu d'économe, "généré" au lieu d'"édité"
+- PDF factures : "Cette facture a été éditée" → "Cette facture a été générée" dans footer (facture-pdf.mjs + factures-batch-pdf.mjs)

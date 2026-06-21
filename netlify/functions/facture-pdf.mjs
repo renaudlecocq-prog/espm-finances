@@ -260,7 +260,7 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
   <!-- PIED DE PAGE -->
   </div><!-- /page-body -->
   <div class="footer">
-    ${esc(SCHOOL_EMAIL_ECO)} · ${esc(SCHOOL_TEL_ECO)}${SCHOOL_BCE ? ` — BCE N°&nbsp;${esc(SCHOOL_BCE)}` : ''} &nbsp;|&nbsp; Cette facture a été éditée depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
+    ${esc(SCHOOL_EMAIL_ECO)} · ${esc(SCHOOL_TEL_ECO)}${SCHOOL_BCE ? ` — BCE N°&nbsp;${esc(SCHOOL_BCE)}` : ''} &nbsp;|&nbsp; Cette facture a été générée depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
   </div>
 
 </div>
