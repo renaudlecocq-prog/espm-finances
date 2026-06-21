@@ -1218,19 +1218,20 @@ function DetailFacture({ factureId, onBack }) {
               <p className="text-sm text-gray-400 mt-1">{facture.eleve.rue}, {facture.eleve.code_postal} {facture.eleve.commune}</p>
             )}
           </div>
-          <div className="text-right shrink-0">
-            <p className="text-xs text-gray-400 uppercase">Date</p>
-            <p className="font-semibold text-gray-700">{fmtDate(facture.date)}</p>
+          <div className="text-right shrink-0 flex flex-col items-end gap-2">
+            <div>
+              <p className="text-xs text-gray-400 uppercase">Date</p>
+              <p className="font-semibold text-gray-700">{fmtDate(facture.date)}</p>
+            </div>
+            <button onClick={handlePDF} className="btn-secondary text-sm py-1.5 flex items-center gap-1.5">🖨 PDF</button>
           </div>
         </div>
-        <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 flex-wrap items-center">
-            {isFinancier && facture.statut === 'brouillon' && <button onClick={() => setStatut('facture')} disabled={saving} className="btn-primary text-sm py-1.5">✓ Valider</button>}
-            {isFinancier && facture.statut === 'ignore'    && <button onClick={() => setStatut('brouillon')} disabled={saving} className="btn-secondary text-sm py-1.5">↩ Réactiver</button>}
-            {isFinancier && facture.statut === 'facture'   && <button onClick={() => setStatut('rappel')} disabled={saving} className="btn-secondary text-sm py-1.5 text-orange-600">⚠ Rappel</button>}
-            {isFinancier && facture.statut === 'rappel'    && <button onClick={() => setStatut('mise_en_demeure')} disabled={saving} className="btn-secondary text-sm py-1.5 text-red-600">🚨 Mise en demeure</button>}
-            {isFinancier && !['brouillon','ignore'].includes(facture.statut) && <button onClick={() => setStatut('brouillon')} disabled={saving} className="btn-secondary text-sm py-1.5">↩ Brouillon</button>}
-            <button onClick={handlePDF} className="btn-secondary text-sm py-1.5 ml-auto flex items-center gap-1.5">🖨 PDF</button>
+        {isFinancier && (facture.statut === 'brouillon' || facture.statut === 'ignore') && (
+          <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+            {facture.statut === 'brouillon' && <button onClick={() => setStatut('facture')} disabled={saving} className="btn-primary text-sm py-1.5">✓ Valider</button>}
+            {facture.statut === 'ignore'    && <button onClick={() => setStatut('brouillon')} disabled={saving} className="btn-secondary text-sm py-1.5">↩ Réactiver</button>}
           </div>
+        )}
       </div>
       <div className="card p-4 mb-4 flex items-center justify-between">
         <span className="text-sm font-medium text-gray-600">Solde de départ</span>
