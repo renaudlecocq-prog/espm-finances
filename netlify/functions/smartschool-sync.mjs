@@ -137,21 +137,28 @@ export default async function handler(req) {
     const personnelRows = []
 
     for (const a of list) {
+      // Smartschool retourne des noms de champs en néerlandais (getAllAccountsExtended)
       const type = (a.basisrol || a.type || a.role || '').toLowerCase()
       const isEleve = type === 'leerling' || type === 'student' || type === 'pupil'
 
-      const smartschool_id = String(a.internnumber || a.username || a.id || '').trim()
-      if (!smartschool_id) continue
+      const smartschool_internal_number = String(
+        a.internnummer || a.internnumber || ''
+      ).trim() || null
+      const smartschool_username = String(
+        a.gebruikersnaam || a.username || ''
+      ).trim() || null
+      // On skip uniquement si ni username ni numéro interne
+      if (!smartschool_username && !smartschool_internal_number) continue
 
-      const nom    = (a.surname   || a.name      || '').trim()
-      const prenom = (a.firstname || a.givenname || '').trim()
+      const nom    = (a.naam    || a.surname  || a.name      || '').trim()
+      const prenom = (a.voornaam || a.firstname || a.givenname || '').trim()
       const email  = a.email || null
-      const classe = a.class || a.officialclass || a.classname || null
+      const classe = a.klas || a.stamklas || a.class || a.officialclass || a.classname || null
 
       if (isEleve) {
-        elevesRows.push({ smartschool_id, nom, prenom, email, classe, actif: true })
+        elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, actif: true })
       } else {
-        personnelRows.push({ smartschool_id, nom, prenom, email, actif: true })
+        personnelRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, actif: true })
       }
     }
 
@@ -159,9 +166,9 @@ export default async function handler(req) {
     if (elevesRows.length > 0) {
       await supabaseUpsert(SUPABASE_URL, SUPABASE_KEY, 'eleves', elevesRows)
       // Désactiver les élèves absents de Smartschool
-      const ids = elevesRows.map(r => r.smartschool_id)
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/eleves?smartschool_id=not.in.(${ids.map(i => `"${i}"`).join(',')})&actif=eq.true`,
+      const usernames = elevesRows.map(r => r.smartschool_username).filter(Boolean)
+      if (usernames.length > 0) await fetch(
+        `${SUPABASE_URL}/rest/v1/eleves?smartschool_username=not.in.(${usernames.map(i => `"${i}"`).join(',')})&actif=eq.true`,
         {
           method: 'PATCH',
           headers: {
