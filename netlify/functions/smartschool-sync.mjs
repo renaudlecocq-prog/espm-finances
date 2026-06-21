@@ -153,6 +153,12 @@ export default async function handler(req) {
       const nom    = (a.naam    || a.surname  || a.name      || '').trim()
       const prenom = (a.voornaam || a.firstname || a.givenname || '').trim()
       const email  = a.email || null
+      // DEBUG TEMPORAIRE — dump structure groups du premier élève
+      if (isEleve && elevesRows.length === 0 && Array.isArray(a.groups)) {
+        console.log('[DEBUG-CLASSE] groups[0]:', JSON.stringify(a.groups[0]))
+        console.log('[DEBUG-CLASSE] groups count:', a.groups.length)
+        console.log('[DEBUG-CLASSE] keys of a:', Object.keys(a).join(', '))
+      }
       const klasGroup = Array.isArray(a.groups) ? a.groups.find(g => g.isKlas && g.isOfficial) : null
       const classe = (klasGroup && klasGroup.name?.trim()) || a.klas || a.stamklas || a.class || null
 
