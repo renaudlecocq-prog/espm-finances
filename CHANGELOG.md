@@ -630,3 +630,13 @@ git push origin main
 - PDF groupé (et individuel) : dernière facture débordait sur une page vide quand elle contenait un plan d'échelonnement + organisme tiers
 - `.page` passe en `display:flex; flex-direction:column`, contenu dans `.page-body` (flex:1), footer en flux normal (plus de `position:absolute`)
 - Appliqué à `factures-batch-pdf.mjs` et `facture-pdf.mjs`
+
+## [v0.23] — 2026-06-21
+### Added
+- Rapport PDF des échelonnements (`echelonnements-rapport-pdf.mjs`)
+  - Format A4 paysage, même header/footer que les factures (logo + école)
+  - Sans coordonnées parents
+  - Tableau : Élève, Classe, Statut, Montant, Échéances, Mensualité, Début, Fin estimée, Remarque
+  - Sections groupées par statut (En cours / Non respecté / Terminé) quand filtre = Tous
+  - Cards de synthèse : compteurs par statut + montant total
+- Bouton "🖨 Rapport PDF" + sélecteur de statut dans la page Échelonnements

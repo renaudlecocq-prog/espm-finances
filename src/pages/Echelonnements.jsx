@@ -185,6 +185,8 @@ export default function Echelonnements() {
     date_debut: new Date().toISOString().slice(0,10), remarque: '', statut: 'en_cours',
   })
   const [saving, setSaving] = useState(false)
+  const [pdfStatut, setPdfStatut] = useState('')
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   const reload = () =>
     supabase.from('echelonnements')
@@ -207,7 +209,16 @@ export default function Echelonnements() {
     setShowForm(false)
   }
 
-  const columns = [
+  const handlePdfRapport = async () => {
+    setPdfLoading(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    setPdfLoading(false)
+    if (!session) return
+    const url = `/.netlify/functions/echelonnements-rapport-pdf?token=${session.access_token}${pdfStatut ? '&statut=' + pdfStatut : ''}`
+    window.open(url, '_blank')
+  }
+
+    const columns = [
     { key: 'nom',              label: 'Nom',       render: (_, r) => r.eleve?.nom },
     { key: 'prenom',           label: 'Prénom',    render: (_, r) => r.eleve?.prenom },
     { key: 'classe',           label: 'Classe',    render: (_, r) => r.eleve?.classe },
@@ -231,9 +242,28 @@ export default function Echelonnements() {
     <div className="p-6 max-w-screen-xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Échelonnements</h1>
-        {isFinancier && (
-          <button onClick={() => setShowForm(true)} className="btn-primary">+ Échelonnement</button>
-        )}
+        <div className="flex items-center gap-2">
+          <select
+            value={pdfStatut}
+            onChange={e => setPdfStatut(e.target.value)}
+            className="input py-1.5 text-sm w-40"
+          >
+            <option value="">Tous statuts</option>
+            <option value="en_cours">En cours</option>
+            <option value="non_respecte">Non respecté</option>
+            <option value="termine">Terminé</option>
+          </select>
+          <button
+            onClick={handlePdfRapport}
+            disabled={pdfLoading}
+            className="btn-secondary text-sm py-1.5 flex items-center gap-1.5 disabled:opacity-50"
+          >
+            🖨 {pdfLoading ? 'Génération…' : 'Rapport PDF'}
+          </button>
+          {isFinancier && (
+            <button onClick={() => setShowForm(true)} className="btn-primary">+ Échelonnement</button>
+          )}
+        </div>
       </div>
 
       {showForm && (
