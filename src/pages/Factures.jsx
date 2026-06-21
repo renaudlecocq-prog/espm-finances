@@ -1153,6 +1153,12 @@ function DetailFacture({ factureId, onBack }) {
     await load(); setSaving(false)
   }
 
+  const handlePDF = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    window.open(`/.netlify/functions/facture-pdf?factureId=${factureId}&token=${session.access_token}`, '_blank')
+  }
+
   const removeLigne = async (ligne, putBack) => {
     await supabase.from('facture_lignes').delete().eq('id', ligne.id)
     if (putBack) {
@@ -1217,15 +1223,14 @@ function DetailFacture({ factureId, onBack }) {
             <p className="font-semibold text-gray-700">{fmtDate(facture.date)}</p>
           </div>
         </div>
-        {isFinancier && (
-          <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 flex-wrap">
-            {facture.statut === 'brouillon' && <button onClick={() => setStatut('facture')} disabled={saving} className="btn-primary text-sm py-1.5">✓ Valider</button>}
-            {facture.statut === 'ignore'    && <button onClick={() => setStatut('brouillon')} disabled={saving} className="btn-secondary text-sm py-1.5">↩ Réactiver</button>}
-            {facture.statut === 'facture'   && <button onClick={() => setStatut('rappel')} disabled={saving} className="btn-secondary text-sm py-1.5 text-orange-600">⚠ Rappel</button>}
-            {facture.statut === 'rappel'    && <button onClick={() => setStatut('mise_en_demeure')} disabled={saving} className="btn-secondary text-sm py-1.5 text-red-600">🚨 Mise en demeure</button>}
-            {!['brouillon','ignore'].includes(facture.statut) && <button onClick={() => setStatut('brouillon')} disabled={saving} className="btn-secondary text-sm py-1.5">↩ Brouillon</button>}
+        <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 flex-wrap items-center">
+            {isFinancier && facture.statut === 'brouillon' && <button onClick={() => setStatut('facture')} disabled={saving} className="btn-primary text-sm py-1.5">✓ Valider</button>}
+            {isFinancier && facture.statut === 'ignore'    && <button onClick={() => setStatut('brouillon')} disabled={saving} className="btn-secondary text-sm py-1.5">↩ Réactiver</button>}
+            {isFinancier && facture.statut === 'facture'   && <button onClick={() => setStatut('rappel')} disabled={saving} className="btn-secondary text-sm py-1.5 text-orange-600">⚠ Rappel</button>}
+            {isFinancier && facture.statut === 'rappel'    && <button onClick={() => setStatut('mise_en_demeure')} disabled={saving} className="btn-secondary text-sm py-1.5 text-red-600">🚨 Mise en demeure</button>}
+            {isFinancier && !['brouillon','ignore'].includes(facture.statut) && <button onClick={() => setStatut('brouillon')} disabled={saving} className="btn-secondary text-sm py-1.5">↩ Brouillon</button>}
+            <button onClick={handlePDF} className="btn-secondary text-sm py-1.5 ml-auto flex items-center gap-1.5">🖨 PDF</button>
           </div>
-        )}
       </div>
       <div className="card p-4 mb-4 flex items-center justify-between">
         <span className="text-sm font-medium text-gray-600">Solde de départ</span>

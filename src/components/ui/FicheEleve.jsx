@@ -88,6 +88,12 @@ export default function FicheEleve({ eleveId, onClose }) {
   const [editNoteId, setEditNoteId] = useState(null)
   const [editNoteVal, setEditNoteVal] = useState('')
   const [finData, setFinData] = useState(null)  // { factures, paiements }
+
+  const handlePDF = async (factureId) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    window.open(`/.netlify/functions/facture-pdf?factureId=${factureId}&token=${session.access_token}`, '_blank')
+  }
   const [activeTab, setActiveTab] = useState('info')
 
   const load = useCallback(async () => {
@@ -527,6 +533,11 @@ export default function FicheEleve({ eleveId, onClose }) {
                               <div className="flex items-center gap-2 shrink-0">
                                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
                                 <span className="font-semibold text-gray-700 tabular-nums text-xs">{fmtEur(f.montant)}</span>
+                                <button
+                                  onClick={e => { e.stopPropagation(); handlePDF(f.id) }}
+                                  title="Imprimer / PDF"
+                                  className="text-gray-400 hover:text-primary transition-colors text-xs px-1.5 py-0.5 rounded hover:bg-primary/10"
+                                >🖨</button>
                               </div>
                             </div>
                           )

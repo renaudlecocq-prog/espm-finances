@@ -575,3 +575,11 @@ git push origin main
 ## [v0.20o] - 2026-06-21
 ### Changed
 - notify : bouton ESPM+ redesigné — fond mauve (#2D1B2E), "ESPM" blanc, "+" orange (#E86C00), ouvre dans un nouvel onglet (target="_blank")
+
+## [v0.21] - 2026-06-21
+### Added
+- Génération PDF facture : nouvelle Netlify Function `facture-pdf.mjs` — génère un HTML A4 print-ready (logo école, ESPM+, adresse fenêtre droite enveloppe DL, lignes, totaux, IBAN/BIC, échelonnement et organisme tiers si actifs, contacts, pied de page)
+- Logo école (`public/logo-ecole.png`) — converti depuis le fichier .ai fourni par l'économe
+- Bouton "🖨 PDF" dans la vue détail d'une facture (DetailFacture) — visible pour tous les utilisateurs authentifiés
+- Bouton "🖨" par ligne facture dans FicheEleve (onglet Finances)
+- Env vars à configurer sur Netlify : SCHOOL_IBAN, SCHOOL_BIC, SCHOOL_EMAIL_ECO, SCHOOL_TEL_ECO, SCHOOL_EMAIL_AS, SCHOOL_TEL_AS, SCHOOL_BCE
