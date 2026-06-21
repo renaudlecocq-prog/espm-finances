@@ -132,6 +132,24 @@ export default async function handler(req) {
 
     if (!list.length) throw new Error('Aucun compte retourné par Smartschool')
 
+    // ── DEBUG FOOLPROOF : dump keys du premier compte ───────────────────────
+    {
+      const first = list[0] || {}
+      const keys = Object.keys(first).join(',')
+      // Extraire quelques valeurs sûrement sérialisables
+      const basisrol = String(first.basisrol ?? 'undef')
+      const klas     = String(first.klas ?? 'undef')
+      const groups_t = typeof first.groups
+      const groepen_t = typeof first.groepen
+      const class_v  = String(first.class ?? first.officialclass ?? 'undef')
+      const debugStr = `KEYS:${keys} | basisrol:${basisrol} | klas:${klas} | groups_type:${groups_t} | groepen_type:${groepen_t} | class:${class_v}`
+      await insertSyncLog(SUPABASE_URL, SUPABASE_KEY, {
+        type: 'debug', status: 'info',
+        eleves_upserted: 0, personnel_upserted: 0,
+        details: debugStr,
+      })
+    }
+
     // ── Split by type ──────────────────────────────────────────────────────
     // Smartschool types: 'leerling' = élève, everything else = personnel
     const elevesRows    = []
