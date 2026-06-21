@@ -529,3 +529,9 @@ git push origin main
 ## [v0.20e] - 2026-06-21
 ### Fixed
 - Sync Smartschool (erreur 19 "Parent-ID bestaat niet!") : `getAllAccountsExtended` nécessite maintenant des paramètres `$code` et `$recursive` explicites depuis la mise à jour Smartschool 2026. Passage de `<soa:code></soa:code><soa:recursive>1</soa:recursive>` pour forcer le retour de tous les comptes de manière récursive.
+
+## [v0.20f] - 2026-06-21
+### Fixed
+- Sync Smartschool : champs JSON en néerlandais (`internnummer` → `smartschool_internal_number`, `gebruikersnaam` → `smartschool_username`, `naam` → `nom`, `voornaam` → `prenom`, `klas`/`stamklas` → `classe`) — retournait 0 élèves/0 personnel
+- Upsert rows : colonnes DB corrigées (`smartschool_username` + `smartschool_internal_number` au lieu de `smartschool_id` inexistant)
+- Désactivation des élèves absents : filtre sur `smartschool_username` au lieu de `smartschool_id`
