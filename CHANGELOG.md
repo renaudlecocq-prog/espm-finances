@@ -662,3 +662,10 @@ git push origin main
 ## [v0.26] — 2026-06-21
 ### Added
 - PDF échelonnement : bloc signature en bas de page — "Fait à Molenbeek-Saint-Jean, le ___", ligne de signature responsable légal (gauche) et représentant de l'école (droite)
+
+## [v0.27] — 2026-06-21
+### Added
+- PDF échelonnement : logo de l'école en haut à gauche (chargement via URL HTTP comme les factures)
+- PDF échelonnement footer : "Jérôme Mignolet, Assistant social" avant email/tél
+- EchelonnementDetail modal : section "Rapport signé" avec upload PDF (drag & drop ou parcourir), liste des documents uploadés avec vue/suppression
+- Supabase : table `echelonnement_documents` + bucket `echelonnement-rapports` avec policies RLS

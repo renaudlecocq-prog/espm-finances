@@ -2,9 +2,6 @@
 // GET /.netlify/functions/echelonnements-rapport-pdf?echId=UUID&token=JWT
 // Génère un PDF A4 pour un plan d'échelonnement individuel
 import { createClient } from '@supabase/supabase-js'
-import { readFileSync } from 'fs'
-import { fileURLToPath } from 'url'
-import { join, dirname } from 'path'
 
 const SUPABASE_URL         = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -32,12 +29,7 @@ export const handler = async (event) => {
   if (authErr || !user) return { statusCode:403, body:'Non autorisé' }
 
   // Logo
-  let logoUrl = ''
-  try {
-    const __dir = dirname(fileURLToPath(import.meta.url))
-    const buf = readFileSync(join(__dir,'../../public/logo-ecole.png'))
-    logoUrl = 'data:image/png;base64,' + buf.toString('base64')
-  } catch {}
+  const logoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
 
   // Données
   const [{ data:ech }, { data:echAnces }, { data:paies }] = await Promise.all([
@@ -243,7 +235,7 @@ export const handler = async (event) => {
   </div>
 
   <div class="footer">
-    ${esc(SCHOOL_EMAIL_AS)} · ${esc(SCHOOL_TEL_AS)} &nbsp;|&nbsp; Rapport généré depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
+    <strong>Jérôme Mignolet</strong>, Assistant social &nbsp;—&nbsp; ${esc(SCHOOL_EMAIL_AS)} · ${esc(SCHOOL_TEL_AS)} &nbsp;|&nbsp; Rapport généré depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
   </div>
 </div>
 </body>
