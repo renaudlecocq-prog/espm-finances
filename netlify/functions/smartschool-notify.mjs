@@ -140,7 +140,7 @@ export default async function handler(req) {
     }
 
   } else if (type === 'activite') {
-    const { intitule, responsableNom } = payload
+    const { intitule, responsableNom, activiteId } = payload
     const isTest = Boolean(testRecipient)
 
     let recipients = []
@@ -155,7 +155,10 @@ export default async function handler(req) {
     }
 
     const msgTitle = isTest ? `[TEST] Nouvelle activité — ESPM+` : `Nouvelle activité — ESPM+`
-    const msgBody  = `Bonjour,\n\nUne nouvelle activité a été publiée par ${responsableNom} : "${intitule}".\n\nConsultez-la sur : https://espmaritime.netlify.app`
+    const lienActivite = activiteId
+      ? `https://espmaritime.netlify.app/activites?open=${activiteId}`
+      : `https://espmaritime.netlify.app/activites`
+    const msgBody  = `Bonjour,\n\nUne nouvelle activité a été publiée par ${responsableNom} : "${intitule}".\n\nConsultez-la sur : ${lienActivite}`
 
     await Promise.all(
       recipients.map(async (r) => {

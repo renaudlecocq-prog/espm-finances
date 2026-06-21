@@ -500,6 +500,8 @@ git push origin main
 - `SMARTSCHOOL_NOTIFY_DIRECTION` : JSON array des identifiants direction pour les notifications activités
 
 ### Changed
+- Lien activité dans le message : deep-link `https://espmaritime.netlify.app/activites?open=<id>` (la direction peut accéder à la page)
+- `SMARTSCHOOL_NOTIFY_SENDER` configuré sur le compte dédié **ESPM+**
 - `DetailBatch.load()` : select étendu avec `smartschool_internal_number` sur l'élève (nécessaire pour les notifications)
 - `validerFacture` + `toutApprouver` : appellent `callNotify('facture', ...)` après approbation (fire-and-forget)
 - `ActivityModal.save()` : appelle notify à la première publication d'une activité (`brouillon → publie`)

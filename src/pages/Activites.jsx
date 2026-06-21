@@ -431,10 +431,11 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     const isFirstPublish = targetStatut === 'publie' && (!editRow || editRow.statut !== 'publie')
     if (isFirstPublish) {
       const responsableLabel = staffList.find(s => s.value === form.responsable_id)?.label || 'Un membre du personnel'
+      const activiteId = editRow?.id || data?.id || null
       fetch('/.netlify/functions/smartschool-notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'activite', intitule: form.intitule, responsableNom: responsableLabel }),
+        body: JSON.stringify({ type: 'activite', intitule: form.intitule, responsableNom: responsableLabel, activiteId }),
       }).catch(e => console.warn('[notify] erreur activité:', e.message))
     }
     onSaved(); onClose()
