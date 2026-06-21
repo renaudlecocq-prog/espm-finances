@@ -575,3 +575,39 @@ git push origin main
 ## [v0.20o] - 2026-06-21
 ### Changed
 - notify : bouton ESPM+ redesigné — fond mauve (#2D1B2E), "ESPM" blanc, "+" orange (#E86C00), ouvre dans un nouvel onglet (target="_blank")
+
+## [v0.21] - 2026-06-21
+### Added
+- Génération PDF facture : nouvelle Netlify Function `facture-pdf.mjs` — génère un HTML A4 print-ready (logo école, ESPM+, adresse fenêtre droite enveloppe DL, lignes, totaux, IBAN/BIC, échelonnement et organisme tiers si actifs, contacts, pied de page)
+- Logo école (`public/logo-ecole.png`) — converti depuis le fichier .ai fourni par l'économe
+- Bouton "🖨 PDF" dans la vue détail d'une facture (DetailFacture) — visible pour tous les utilisateurs authentifiés
+- Bouton "🖨" par ligne facture dans FicheEleve (onglet Finances)
+- Env vars à configurer sur Netlify : SCHOOL_IBAN, SCHOOL_BIC, SCHOOL_EMAIL_ECO, SCHOOL_TEL_ECO, SCHOOL_EMAIL_AS, SCHOOL_TEL_AS, SCHOOL_BCE
+
+## [v0.21e] — 2026-06-21
+### Facture PDF v1.4
+- FIX contacts : AS et econome toujours affiches, meme avec echelonnement/organisme tiers
+
+## [v0.21d] — 2026-06-21
+### Facture PDF v1.3
+- REMOVE logo ESPM+ de l en-tete (logo ecole seul)
+- FIX footer : email + tel economat + mention "editee depuis ESPM+"
+- ADD Beneficiaire : Pouvoir Organisateur Pluriel (avant IBAN)
+
+## [v0.21c] — 2026-06-21
+### Facture PDF v1.2
+- FIX logo : extraction correcte (Maritime uniquement, sans Karreveld)
+- FIX en-tete : logo + ESPM+ a gauche, nom ecole + adresse a droite
+- FIX RESTE A PAYER : inclut le solde anterieur (montant - solde_avant - paye)
+- ADD nom de l ecole dans en-tete : "Ecole Secondaire Plurielle Maritime"
+
+## [v0.21b] - 2026-06-21
+### Fixed
+- PDF facture : logo école — PNG recadré pour n'afficher que le logo Maritime (supprime le doublon Harreveld)
+- PDF facture : mise en page en-tête — logo + "ESPM+" côte à côte (flex row), suppression de la colonne ESPM+ séparée à droite
+- PDF facture : BIC supprimé des informations de paiement
+- PDF facture : communication = "Nom Prénom Classe" (au lieu du numéro de facture structuré)
+### Changed
+- PDF facture : section contacts conditionnelle — si aucun plan de paiement ni organisme tiers actif, invite à contacter l'AS (M. Mignolet, Smartschool ou 02/210.20.91) + l'économe (M. Lecocq, Smartschool ou 02/210.20.96) ; sinon, uniquement l'économe
+- PDF facture : footer — email économat + téléphone économat uniquement (suppression des coordonnées AS du footer)
+- PDF facture : env vars SCHOOL_EMAIL_AS et SCHOOL_BIC ne sont plus requises (non affichées)
