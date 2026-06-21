@@ -510,3 +510,18 @@ git push origin main
 ### Changed
 - Fiche élève : point orange retiré de l'onglet Social (l'onglet est déjà masqué si pas de données)
 - Fiche élève : retour automatique sur l'onglet Infos à chaque nouvelle fiche ouverte
+
+## [v0.20b] - 2026-06-21
+### Changed
+- Notifications activité : lien deep-link `?open=<id>` pour ouvrir le modal directement
+- Expéditeur configuré sur ESPM+ (compte dédié)
+
+## [v0.20c] - 2026-06-21
+### Fixed
+- `validerFacture` : suppression du guard `smartschool_internal_number` — `callNotify` appelé inconditionnellement (la fonction gère le mode test sans numéro interne)
+
+## [v0.20d] - 2026-06-21
+### Changed
+- `callNotify` : ajout log console de la réponse de la fonction (debug temporaire)
+- Env vars Netlify : `SMARTSCHOOL_ACCESS_CODE` staging → contexte "all" (était "production" uniquement → vide pour branch deploys)
+- Env vars Netlify prod : ajout `SMARTSCHOOL_TEST_RECIPIENT = 0000281` + `SMARTSCHOOL_NOTIFY_SENDER = Null`
