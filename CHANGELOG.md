@@ -691,3 +691,11 @@ git push origin main
 ### Changed
 - Bouton "+ Organisme" → "+ Nouvelle situation" dans la liste des organismes tiers
 - Colonne `adresse` text remplacée par `institution`, `rue`, `code_postal`, `commune`, `repertoire_id` sur `organismes_tiers`
+
+## [v0.30] — 2026-06-21
+### Changed
+- PDF "Demande de prise en charge" : refonte complète du layout
+  - Adresse organisme (institution/rue/CP/commune) dans une box en haut à droite, miroir de la box responsable sur les factures
+  - Section "Coordonnées de l'élève" : grille avec nom, prénom, classe, date de naissance, responsable 1, responsable 2, adresse
+  - Table articles sans catégories, ligne total seule (comme les factures)
+  - Section "Informations de paiement" (bénéficiaire, IBAN, communication, montant demandé) avec fond orangé
