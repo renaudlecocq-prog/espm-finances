@@ -557,3 +557,9 @@ git push origin main
 - Extraction de classe simplifiée et définitive : `a.groups.find(g => g.isKlas === true && g.isOfficial === true)?.name?.trim()`
 - Détection `basisrol` simplifiée : `String(a.basisrol).trim() === '1'` (élève)
 - Message de log nettoyé (plus de `DEBUG:` en suffixe)
+
+## [v0.20l] - 2026-06-21
+### Fixed
+- notify : suppression du paramètre `senderIdentifier` dans l'enveloppe SOAP — le serveur Smartschool retournait ssCode=12 ("utilisateur inexistant") pour toute valeur de `senderIdentifier` (y compris 'ESPM+', 'Null', chaîne vide). Sans ce paramètre, ssCode=0 (succès) et les messages apparaissent comme "Indisponible" (sans expéditeur, impossible de répondre — comportement voulu pour les notifications automatiques)
+- notify : correction du check de succès — `ssCode === 0` au lieu de `ssCode > 0` (0 = succès Smartschool, pas une erreur)
+- notify : suppression de `SMARTSCHOOL_NOTIFY_SENDER` (env var et paramètre `sender`) — devenu inutile
