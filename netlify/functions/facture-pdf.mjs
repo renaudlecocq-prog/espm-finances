@@ -97,7 +97,8 @@ body { font-family:Arial,Helvetica,sans-serif; font-size:10pt; color:#1a1a1a; ba
 .btn-print:hover { background:#3e2640; }
 @media print { .btn-print { display:none !important; } }
 
-.page { width:210mm; min-height:297mm; position:relative; padding:12mm 15mm 28mm 15mm; }
+.page { width:210mm; min-height:297mm; display:flex; flex-direction:column; padding:12mm 15mm 0 15mm; }
+.page-body { flex:1; }
 
 /* EN-TÊTE : logo + ESPM+ côte à côte à gauche */
 .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4mm; }
@@ -160,7 +161,7 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
 .comm { font-family:Arial,Helvetica,sans-serif; font-weight:700; font-size:10pt; color:#2D1B2E; }
 
 /* PIED DE PAGE */
-.footer { position:absolute; bottom:8mm; left:15mm; right:15mm; font-size:7pt; color:#bbb; text-align:center; border-top:1px solid #e8e8e8; padding-top:2mm; }
+.footer { font-size:7pt; color:#bbb; text-align:center; border-top:1px solid #e8e8e8; padding:2mm 0 8mm 0; margin-top:4mm; }
 </style>
 </head>
 <body>
@@ -183,6 +184,7 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
     </div>
   </div>
   <hr class="hr-main">
+  <div class="page-body">
 
   <!-- TITRE + ADRESSE FENÊTRE -->
   <div class="zone-top">
@@ -256,6 +258,7 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
   </div>
 
   <!-- PIED DE PAGE -->
+  </div><!-- /page-body -->
   <div class="footer">
     ${esc(SCHOOL_EMAIL_ECO)} · ${esc(SCHOOL_TEL_ECO)}${SCHOOL_BCE ? ` — BCE N°&nbsp;${esc(SCHOOL_BCE)}` : ''} &nbsp;|&nbsp; Cette facture a été éditée depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
   </div>

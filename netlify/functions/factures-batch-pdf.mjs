@@ -35,8 +35,9 @@ body { font-family:Arial,Helvetica,sans-serif; font-size:10pt; color:#1a1a1a; ba
 .btn-print { position:fixed; top:12px; right:12px; background:#2D1B2E; color:#fff; border:none; padding:9px 18px; cursor:pointer; border-radius:6px; font-size:13px; font-family:Arial,sans-serif; z-index:9999; }
 .btn-print:hover { background:#3e2640; }
 @media print { .btn-print { display:none !important; } }
-.page { width:210mm; min-height:297mm; position:relative; padding:12mm 15mm 28mm 15mm; page-break-after:always; }
+.page { width:210mm; min-height:297mm; display:flex; flex-direction:column; padding:12mm 15mm 0 15mm; page-break-after:always; }
 .page:last-child { page-break-after:auto; }
+.page-body { flex:1; }
 .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4mm; }
 .header-left { display:flex; align-items:center; gap:4mm; }
 .logo-ecole { height:18mm; display:block; }
@@ -79,7 +80,7 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
 .sect p:last-child { margin-bottom:0; }
 .mono { font-family:'Courier New',monospace; font-weight:700; letter-spacing:1px; }
 .comm { font-family:Arial,Helvetica,sans-serif; font-weight:700; font-size:10pt; color:#2D1B2E; }
-.footer { position:absolute; bottom:8mm; left:15mm; right:15mm; font-size:7pt; color:#bbb; text-align:center; border-top:1px solid #e8e8e8; padding-top:2mm; }
+.footer { font-size:7pt; color:#bbb; text-align:center; border-top:1px solid #e8e8e8; padding:2mm 0 8mm 0; margin-top:4mm; }
 `
 
 function genFacture(facture, lignes, ech, org, logoUrl) {
@@ -108,6 +109,7 @@ function genFacture(facture, lignes, ech, org, logoUrl) {
     </div>
   </div>
   <hr class="hr-main">
+  <div class="page-body">
   <div class="zone-top">
     <div class="col-title">
       <h1>FACTURE</h1>
@@ -157,6 +159,7 @@ function genFacture(facture, lignes, ech, org, logoUrl) {
     <p>Les responsables légaux peuvent à tout moment contacter l'<strong>assistant social de l'école, Monsieur Mignolet</strong>, par Smartschool ou au <strong>${esc(SCHOOL_TEL_AS)}</strong> pour prendre un rendez-vous.</p>
     <p>Pour toute précision concernant cette facture, prenez contact avec l'<strong>économe de l'école, Monsieur Lecocq</strong>, par Smartschool ou au <strong>${esc(SCHOOL_TEL_ECO)}</strong>.</p>
   </div>
+  </div><!-- /page-body -->
   <div class="footer">École Secondaire Plurielle Maritime — ASBL${SCHOOL_BCE ? ` — BCE N&deg;&nbsp;${esc(SCHOOL_BCE)}` : ''} — Avenue Jean Dubrucq 175, 1080 Molenbeek-Saint-Jean — ${esc(SCHOOL_EMAIL_ECO)} &middot; ${esc(SCHOOL_TEL_ECO)} &nbsp;|&nbsp; Cette facture a été éditée depuis <strong>ESPM<span style="color:#E86C00">+</span></strong></div>
 </div>`
 }
