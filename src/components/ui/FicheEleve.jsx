@@ -201,7 +201,7 @@ export default function FicheEleve({ eleveId, onClose }) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[92vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl h-[88vh] flex flex-col">
 
         {/* ── Header ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
@@ -257,11 +257,11 @@ export default function FicheEleve({ eleveId, onClose }) {
                   Appels {appels.length > 0 && <span className="ml-1 text-xs text-gray-400 tabular-nums">{appels.length}</span>}
                 </button>
               )}
-              {canSeeRestricted && (
+              {canSeeRestricted && hasAS && (
                 <button onClick={() => setActiveTab('social')}
                   className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
                     activeTab === 'social' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                  Social {hasAS && <span className="ml-1 text-xs text-orange-400">●</span>}
+                  Social <span className="ml-1 text-xs text-orange-400">●</span>
                 </button>
               )}
               {canSeeRestricted && (
@@ -541,7 +541,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                         {finData.paiements.map(p => (
                           <div key={p.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm gap-2">
                             <div className="min-w-0 flex-1">
-                              <p className="font-medium text-gray-700 text-xs">{PAYE_PAR_LABELS[p.paye_par] || p.paye_par || 'Paiement'}</p>
+                              <p className="font-medium text-gray-700 text-xs">Payé par {PAYE_PAR_LABELS[p.paye_par] || p.paye_par || '—'}</p>
                               <p className="text-gray-400 text-[11px]">{fmtDate(p.date)}{p.notes ? ` · ${p.notes}` : ''}</p>
                             </div>
                             <span className="font-semibold text-green-600 tabular-nums shrink-0 text-xs">+{fmtEur(p.montant)}</span>

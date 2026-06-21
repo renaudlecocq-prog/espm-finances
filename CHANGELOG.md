@@ -482,3 +482,9 @@ git push origin main
   - Tab Financier : fix affichage "Responsable" (majuscule) via labels map
 - **HomeResponsable** : même restructuration en 3 onglets (Informations / Suivi social / Financier)
 - **Paiements.jsx** : fix valeur par défaut 'responsable' (lowercase cohérent avec PAYE_PAR_OPTIONS)
+
+## [Session 19b] - 2026-06-21
+### Changed
+- Fiche élève : paiements affichent "Payé par Responsable" / "Payé par CPAS" etc.
+- Fiche élève : onglet Social masqué si aucune donnée (plus d'état vide)
+- Fiche élève : hauteur fixe (88vh) — plus de redimensionnement entre onglets
