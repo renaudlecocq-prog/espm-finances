@@ -547,3 +547,13 @@ git push origin main
 ### Fixed
 - notify : check de succès Smartschool corrigé — extraction du code de retour SOAP (`<return>N</return>`) ; `ok` = true seulement si N > 0 (était basé sur `!includes('<return>-</return>')` qui passait toujours)
 - notify : ajout `ssCode` dans la réponse pour debug (visible dans la console F12)
+## [v0.20j] - 2026-06-21
+### Fixed
+- Sync Smartschool : classe des élèves extraite de `a.groups.find(g => g.isKlas && g.isOfficial).name` — le champ `klas`/`stamklas` n'existe pas dans getAllAccountsExtended, la classe est dans le tableau `groups`
+
+## [v0.20k] - 2026-06-21
+### Changed
+- Sync Smartschool : suppression de tout le code debug temporaire (3 couches : ff75a5d, 5349a95, 4e6518a)
+- Extraction de classe simplifiée et définitive : `a.groups.find(g => g.isKlas === true && g.isOfficial === true)?.name?.trim()`
+- Détection `basisrol` simplifiée : `String(a.basisrol).trim() === '1'` (élève)
+- Message de log nettoyé (plus de `DEBUG:` en suffixe)

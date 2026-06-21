@@ -132,14 +132,13 @@ export default async function handler(req) {
     if (!list.length) throw new Error('Aucun compte retourné par Smartschool')
 
     // ── Split by type ──────────────────────────────────────────────────────
-    // Smartschool types: 'leerling' = élève, everything else = personnel
+    // basisrol: '1' = élève, '0'/'13'/'30' = personnel
     const elevesRows    = []
     const personnelRows = []
 
     for (const a of list) {
-      // Smartschool retourne des noms de champs en néerlandais (getAllAccountsExtended)
-      const type = (a.basisrol || a.type || a.role || '').toLowerCase()
-      const isEleve = type === 'leerling' || type === 'student' || type === 'pupil' || type === '1'
+      const basisrol = String(a.basisrol ?? '').trim()
+      const isEleve  = basisrol === '1'
 
       const smartschool_internal_number = String(
         a.internnummer || a.internnumber || ''
@@ -147,13 +146,17 @@ export default async function handler(req) {
       const smartschool_username = String(
         a.gebruikersnaam || a.username || ''
       ).trim() || null
-      // On skip uniquement si ni username ni numéro interne
       if (!smartschool_username && !smartschool_internal_number) continue
 
-      const nom    = (a.naam    || a.surname  || a.name      || '').trim()
-      const prenom = (a.voornaam || a.firstname || a.givenname || '').trim()
+      const nom    = (a.naam     || a.surname   || a.name      || '').trim()
+      const prenom = (a.voornaam || a.firstname  || a.givenname || '').trim()
       const email  = a.email || null
-      const classe = a.klas || a.stamklas || a.class || a.officialclass || a.classname || null
+
+      // Classe : groupe officiel de type klas (getAllAccountsExtended)
+      const klasGroup = Array.isArray(a.groups)
+        ? a.groups.find(g => g.isKlas === true && g.isOfficial === true)
+        : null
+      const classe = klasGroup?.name?.trim() || null
 
       if (isEleve) {
         elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, actif: true })
