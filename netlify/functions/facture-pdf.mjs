@@ -1,4 +1,4 @@
-// facture-pdf.mjs — v1.1
+// facture-pdf.mjs — v1.2
 // GET /.netlify/functions/facture-pdf?factureId=UUID&token=SUPABASE_JWT
 
 import { createClient } from '@supabase/supabase-js'
@@ -67,7 +67,8 @@ export default async function handler(req) {
   const adresseLigne1 = eleve.rue || ''
   const adresseLigne2 = [eleve.code_postal, eleve.commune].filter(Boolean).join(' ')
   const dateLimite    = addDays(facture.date, 30)
-  const resteApayer   = Number(facture.montant) - Number(facture.paye || 0)
+  const soldeAv       = Number(facture.solde_avant || 0)
+  const resteApayer   = Math.max(0, Number(facture.montant) - soldeAv - Number(facture.paye || 0))
   const articles      = (lignes || []).filter(l => l.type === 'article')
   const activites     = (lignes || []).filter(l => l.type === 'activite')
 
@@ -99,14 +100,15 @@ body { font-family:Arial,Helvetica,sans-serif; font-size:10pt; color:#1a1a1a; ba
 .page { width:210mm; min-height:297mm; position:relative; padding:12mm 15mm 28mm 15mm; }
 
 /* EN-TÊTE : logo + ESPM+ côte à côte à gauche */
-.header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4mm; }
-.header-brand { display:flex; align-items:center; gap:5mm; }
-.logo-ecole { height:16mm; display:block; }
-.brand-text { }
-.espm-logo { font-size:22pt; font-weight:900; line-height:1; }
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4mm; }
+.header-left { display:flex; align-items:center; gap:4mm; }
+.logo-ecole { height:18mm; display:block; }
+.espm-logo { font-size:24pt; font-weight:900; line-height:1; }
 .espm-logo .w { color:#2D1B2E; }
 .espm-logo .o { color:#E86C00; }
-.school-addr { font-size:7.5pt; color:#777; margin-top:1.5mm; line-height:1.5; }
+.header-right { text-align:right; }
+.school-name { font-size:10pt; font-weight:700; color:#2D1B2E; margin-bottom:1mm; }
+.school-addr { font-size:8pt; color:#555; line-height:1.6; }
 
 .hr-main { border:none; border-top:2.5px solid #2D1B2E; margin:0 0 5mm 0; }
 .hr-thin  { border:none; border-top:1px solid #e0e0e0; margin:4mm 0; }
@@ -168,13 +170,17 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
 
 <div class="page">
 
-  <!-- EN-TÊTE : logo + ESPM+ à côté -->
+  <!-- EN-TÊTE : logo + ESPM+ à gauche | nom école + adresse à droite -->
   <div class="header">
-    <div class="header-brand">
+    <div class="header-left">
       <img class="logo-ecole" src="${logoUrl}" alt="École Secondaire Plurielle Maritime">
-      <div class="brand-text">
-        <div class="espm-logo"><span class="w">ESPM</span><span class="o">+</span></div>
-        <div class="school-addr">Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean${SCHOOL_IBAN !== '[IBAN — à configurer dans Netlify]' ? `<br>IBAN : <strong>${esc(SCHOOL_IBAN)}</strong>` : ''}</div>
+      <div class="espm-logo"><span class="w">ESPM</span><span class="o">+</span></div>
+    </div>
+    <div class="header-right">
+      <div class="school-name">École Secondaire Plurielle Maritime</div>
+      <div class="school-addr">
+        Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean<br>
+        ${SCHOOL_IBAN !== '[IBAN — à configurer dans Netlify]' ? `IBAN : <strong>${esc(SCHOOL_IBAN)}</strong>` : ''}
       </div>
     </div>
   </div>

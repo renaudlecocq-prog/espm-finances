@@ -584,6 +584,13 @@ git push origin main
 - Bouton "🖨" par ligne facture dans FicheEleve (onglet Finances)
 - Env vars à configurer sur Netlify : SCHOOL_IBAN, SCHOOL_BIC, SCHOOL_EMAIL_ECO, SCHOOL_TEL_ECO, SCHOOL_EMAIL_AS, SCHOOL_TEL_AS, SCHOOL_BCE
 
+## [v0.21c] — 2026-06-21
+### Facture PDF v1.2
+- FIX logo : extraction correcte (Maritime uniquement, sans Karreveld)
+- FIX en-tete : logo + ESPM+ a gauche, nom ecole + adresse a droite
+- FIX RESTE A PAYER : inclut le solde anterieur (montant - solde_avant - paye)
+- ADD nom de l ecole dans en-tete : "Ecole Secondaire Plurielle Maritime"
+
 ## [v0.21b] - 2026-06-21
 ### Fixed
 - PDF facture : logo école — PNG recadré pour n'afficher que le logo Maritime (supprime le doublon Harreveld)
