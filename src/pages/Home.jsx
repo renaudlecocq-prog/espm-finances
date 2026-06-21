@@ -407,6 +407,7 @@ function HomeResponsable() {
   const [photo, setPhoto]           = useState(null)
   const [loading, setLoading]       = useState(true)
   const [loadingFiche, setLoadingFiche] = useState(false)
+  const [activeTabR, setActiveTabR] = useState('info')
 
   // Données démo pour l'aperçu responsable (mode démo OU aucun élève lié)
   const DEMO_ELEVES = demoData.responsable_eleve.map(r => r.eleve).filter(Boolean)
@@ -547,21 +548,33 @@ function HomeResponsable() {
             <div className="min-w-0">
               <h1 className="text-2xl font-bold text-gray-800 truncate">{eleve.prenom} {eleve.nom}</h1>
               <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                {eleve.classe && (
-                  <span className="text-sm text-gray-500 font-medium">{eleve.classe}</span>
-                )}
-                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-                  majeur ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                }`}>
+                {eleve.classe && <span className="text-sm text-gray-500 font-medium">{eleve.classe}</span>}
+                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${majeur ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                   {majeur ? 'Majeur·e' : 'Mineur·e'}
                 </span>
-                {!eleve.actif && (
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500">Inactif</span>
-                )}
+                {!eleve.actif && <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500">Inactif</span>}
               </div>
             </div>
           </div>
 
+          {/* ── Onglets ── */}
+          <div className="bg-gray-100 rounded-xl p-0.5 flex">
+            <button onClick={() => setActiveTabR('info')}
+              className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTabR === 'info' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              Informations
+            </button>
+            <button onClick={() => setActiveTabR('social')}
+              className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTabR === 'social' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              Suivi social {hasAS && <span className="ml-1 text-xs text-orange-400">●</span>}
+            </button>
+            <button onClick={() => setActiveTabR('financier')}
+              className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTabR === 'financier' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              Financier
+            </button>
+          </div>
+
+          {/* ══ TAB : Informations ══ */}
+          {activeTabR === 'info' && (<>
           {/* ── 1. Identité ── */}
           <RSection icon="👤" title="Identité">
             <RField label="Date de naissance" value={fmtDateR(eleve.date_naissance)} />
@@ -582,11 +595,7 @@ function HomeResponsable() {
           {hasGroupes && (
             <RSection icon="📚" title="Groupes scolaires">
               {eleve.philosophie && (
-                <RField label="RLMO" value={
-                  eleve.groupe_choix_philo
-                    ? `${eleve.philosophie} ${eleve.groupe_choix_philo}`
-                    : eleve.philosophie
-                } />
+                <RField label="RLMO" value={eleve.groupe_choix_philo ? `${eleve.philosophie} ${eleve.groupe_choix_philo}` : eleve.philosophie} />
               )}
               <RField label="OBS D2"          value={eleve.obs_d2} />
               <RField label="AC D2"           value={eleve.ac_d2} />
@@ -612,9 +621,10 @@ function HomeResponsable() {
               </div>
             </RSection>
           )}
+          </>)}
 
-          {/* ── 4. Suivi social (sans notes internes) ── */}
-          {hasAS && (
+          {/* ══ TAB : Suivi social ══ */}
+          {activeTabR === 'social' && (hasAS ? (
             <RSection icon="🤝" title="Suivi social">
               {echs.length > 0 && (
                 <div className={orgs.length > 0 ? 'mb-4' : ''}>
@@ -688,10 +698,15 @@ function HomeResponsable() {
                 </div>
               )}
             </RSection>
-          )}
+          ) : (
+            <div className="py-10 text-center text-gray-400">
+              <div className="text-3xl mb-2">🤝</div>
+              <p className="text-sm">Aucun suivi social pour cet élève.</p>
+            </div>
+          ))}
 
-          {/* ── 5. Financier ── */}
-          <RSection icon="💶" title="Financier">
+          {/* ══ TAB : Financier ══ */}
+          {activeTabR === 'financier' && <RSection icon="💶" title="Financier">
             <div className="flex items-center justify-between py-1">
               <span className="text-sm text-gray-500">Solde actuel</span>
               <span className={`text-xl font-bold ${
@@ -710,7 +725,7 @@ function HomeResponsable() {
                 Un solde positif signifie qu'un crédit est disponible sur le compte de votre enfant.
               </p>
             )}
-          </RSection>
+          </RSection>}
 
         </div>
       ) : null}

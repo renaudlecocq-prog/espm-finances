@@ -473,3 +473,23 @@ git push origin main
 ## [Session 18b] - 2026-06-21
 ### Changed
 - ListeBatches : nom du batch affiché en grand au-dessus, N° en petit en dessous (si nom absent, N° affiché seul en grand)
+
+## [Session 19] - 2026-06-21
+### Changed
+- **Fiche élève** : restructurée en 4 onglets (Infos / Appels / Social / Financier) avec le même style pill que la page Factures
+  - Onglets Appels, Social, Financier visibles uniquement pour admin/financier
+  - MDP ne voit que l'onglet Infos (identité, groupes, responsables sans bouton d'appel)
+  - Tab Financier : fix affichage "Responsable" (majuscule) via labels map
+- **HomeResponsable** : même restructuration en 3 onglets (Informations / Suivi social / Financier)
+- **Paiements.jsx** : fix valeur par défaut 'responsable' (lowercase cohérent avec PAYE_PAR_OPTIONS)
+
+## [Session 19b] - 2026-06-21
+### Changed
+- Fiche élève : paiements affichent "Payé par Responsable" / "Payé par CPAS" etc.
+- Fiche élève : onglet Social masqué si aucune donnée (plus d'état vide)
+- Fiche élève : hauteur fixe (88vh) — plus de redimensionnement entre onglets
+
+## [Session 19c] - 2026-06-21
+### Changed
+- Fiche élève : point orange retiré de l'onglet Social (l'onglet est déjà masqué si pas de données)
+- Fiche élève : retour automatique sur l'onglet Infos à chaque nouvelle fiche ouverte

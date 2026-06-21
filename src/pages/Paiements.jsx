@@ -304,7 +304,7 @@ function EditModal({ paiement, eleves, onClose, onSaved }) {
     eleve_id: paiement.eleve_id || '',
     date: paiement.date || '',
     montant: paiement.montant || '',
-    paye_par: paiement.paye_par || 'Responsable',
+    paye_par: paiement.paye_par || 'responsable',
     mode: paiement.mode || 'virement',
     communication: paiement.communication || '',
     remarque: paiement.remarque || '',
