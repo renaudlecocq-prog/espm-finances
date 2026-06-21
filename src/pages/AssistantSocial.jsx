@@ -246,13 +246,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
                 Fiche élève
               </button>
             )}
-            {onPdf && (
-              <button onClick={onPdf}
-                title="Générer le PDF"
-                className="text-gray-400 hover:text-primary transition-colors p-1">
-                <FileText size={18} />
-              </button>
-            )}
+
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
               <X size={18} />
             </button>
