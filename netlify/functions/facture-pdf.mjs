@@ -1,4 +1,4 @@
-// facture-pdf.mjs — v1.2
+// facture-pdf.mjs — v1.3
 // GET /.netlify/functions/facture-pdf?factureId=UUID&token=SUPABASE_JWT
 
 import { createClient } from '@supabase/supabase-js'
@@ -103,9 +103,7 @@ body { font-family:Arial,Helvetica,sans-serif; font-size:10pt; color:#1a1a1a; ba
 .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4mm; }
 .header-left { display:flex; align-items:center; gap:4mm; }
 .logo-ecole { height:18mm; display:block; }
-.espm-logo { font-size:24pt; font-weight:900; line-height:1; }
-.espm-logo .w { color:#2D1B2E; }
-.espm-logo .o { color:#E86C00; }
+.espm-plus { font-size:13pt; font-weight:900; color:#bbb; letter-spacing:-0.5px; }
 .header-right { text-align:right; }
 .school-name { font-size:10pt; font-weight:700; color:#2D1B2E; margin-bottom:1mm; }
 .school-addr { font-size:8pt; color:#555; line-height:1.6; }
@@ -174,7 +172,7 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
   <div class="header">
     <div class="header-left">
       <img class="logo-ecole" src="${logoUrl}" alt="École Secondaire Plurielle Maritime">
-      <div class="espm-logo"><span class="w">ESPM</span><span class="o">+</span></div>
+
     </div>
     <div class="header-right">
       <div class="school-name">École Secondaire Plurielle Maritime</div>
@@ -232,6 +230,7 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
   <!-- PAIEMENT -->
   <div class="sect">
     <h3>Informations de paiement</h3>
+    <p><strong>Bénéficiaire&nbsp;:</strong> Pouvoir Organisateur Pluriel</p>
     <p><strong>IBAN&nbsp;:</strong> <span class="mono">${esc(SCHOOL_IBAN)}</span></p>
     <p><strong>Communication&nbsp;:</strong> <span class="comm">${esc(comm)}</span></p>
     <p><strong>Date limite&nbsp;:</strong> ${fmtDate(dateLimite)} (30 jours à dater de la facturation)</p>
@@ -258,7 +257,7 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
 
   <!-- PIED DE PAGE -->
   <div class="footer">
-    École Secondaire Plurielle Maritime — ASBL${SCHOOL_BCE ? ` — BCE N°&nbsp;${esc(SCHOOL_BCE)}` : ''} — Avenue Jean Dubrucq 175, 1080 Molenbeek-Saint-Jean — ${esc(SCHOOL_EMAIL_ECO)} · ${esc(SCHOOL_TEL_ECO)}
+    ${esc(SCHOOL_EMAIL_ECO)} · ${esc(SCHOOL_TEL_ECO)}${SCHOOL_BCE ? ` — BCE N°&nbsp;${esc(SCHOOL_BCE)}` : ''} &nbsp;|&nbsp; Cette facture a été éditée depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
   </div>
 
 </div>
