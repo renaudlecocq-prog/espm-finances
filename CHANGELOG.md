@@ -571,3 +571,7 @@ git push origin main
 ## [v0.20n] - 2026-06-21
 ### Changed
 - notify : bouton "↗ ESPM+" orange (#E86C00) dans le corps des messages Smartschool — remplace le lien texte brut (style identique au bouton Smartschool du header)
+
+## [v0.20o] - 2026-06-21
+### Changed
+- notify : bouton ESPM+ redesigné — fond mauve (#2D1B2E), "ESPM" blanc, "+" orange (#E86C00), ouvre dans un nouvel onglet (target="_blank")
