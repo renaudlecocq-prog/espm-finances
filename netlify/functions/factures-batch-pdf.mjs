@@ -31,11 +31,13 @@ function esc(s) {
 const CSS = `
 @page { size: A4; margin: 0; }
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:Arial,Helvetica,sans-serif; font-size:10pt; color:#1a1a1a; background:#fff; }
+body { font-family:Arial,Helvetica,sans-serif; font-size:10pt; color:#1a1a1a; background:#f5f5f5; }
+@media screen { .page { box-shadow:0 2px 16px rgba(0,0,0,.12); margin:20px auto; } }
+@media print { body { background:white; } }
 .btn-print { position:fixed; top:12px; right:12px; background:#2D1B2E; color:#fff; border:none; padding:9px 18px; cursor:pointer; border-radius:6px; font-size:13px; font-family:Arial,sans-serif; z-index:9999; }
 .btn-print:hover { background:#3e2640; }
 @media print { .btn-print { display:none !important; } }
-.page { width:210mm; min-height:297mm; display:flex; flex-direction:column; padding:12mm 15mm 0 15mm; page-break-after:always; }
+.page { width:210mm; min-height:297mm; display:flex; flex-direction:column; padding:12mm 15mm 0 15mm; page-break-after:always; background:white; }
 .page:last-child { page-break-after:auto; }
 .page-body { flex:1; }
 .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4mm; }
