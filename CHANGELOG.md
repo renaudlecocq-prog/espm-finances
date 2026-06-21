@@ -31,7 +31,7 @@ git push origin main
 
 ---
 
-## Session 1 — 2026-06-18 (deploy/fix)
+## v0.1 — 2026-06-18 (deploy/fix)
 
 | Commit | Fichier | Changement | Rollback |
 |--------|---------|------------|----------|
@@ -46,7 +46,7 @@ git push origin main
 
 ---
 
-## Session 2 — 2026-06-18 (workflow + AssistantSocial)
+## v0.2 — 2026-06-18 (workflow + AssistantSocial)
 
 | Commit | Fichier / Périmètre | Changement | Rollback |
 |--------|---------------------|------------|----------|
@@ -65,7 +65,7 @@ git push origin main
 
 ---
 
-## Session 4 — 2026-06-19 (commentaires + UX slide-ins)
+## v0.4 — 2026-06-19 (commentaires + UX slide-ins)
 
 | Commit | Fichier / Périmètre | Changement | Rollback |
 |--------|---------------------|------------|----------|
@@ -79,7 +79,7 @@ git push origin main
 
 ---
 
-## Session 5 — 2026-06-19 (rôles OAuth + UX activités)
+## v0.5 — 2026-06-19 (rôles OAuth + UX activités)
 
 | Commit | Fichier / Périmètre | Changement | Rollback |
 |--------|---------------------|------------|----------|
@@ -103,7 +103,7 @@ git push origin main
 
 ---
 
-## Session 6 — 2026-06-19 (notifications)
+## v0.6 — 2026-06-19 (notifications)
 
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
@@ -115,7 +115,7 @@ git push origin main
 
 ---
 
-## Session 7 — 2026-06-19 (fix documents)
+## v0.7 — 2026-06-19 (fix documents)
 
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
@@ -132,7 +132,7 @@ git push origin main
 
 ---
 
-## Session 8 — 2026-06-20 (logo + fiche responsable)
+## v0.8 — 2026-06-20 (logo + fiche responsable)
 
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
@@ -155,7 +155,7 @@ git push origin main
 
 ---
 
-## Session 9 — 2026-06-20 (mode démo)
+## v0.9 — 2026-06-20 (mode démo)
 
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
@@ -166,13 +166,13 @@ git push origin main
 
 ---
 
-## Session 10 — 2026-06-20 (facturation)
+## v0.10 — 2026-06-20 (facturation)
 
 | Commit | Fichier(s) | Description | Rollback |
 |--------|-----------|-------------|---------|
 | `4151f19` | `Factures.jsx` + migration SQL | Système de facturation complet : table `facture_lignes` + colonnes `solde_avant`/`solde_apres` sur `factures` + `facture_id` sur `article_attributions`. Wizard par élève (articles + activités en attente, sélection, solde avant/après). Vue liste + vue détail facture. Correction des champs (`date` pas `date_emission`, statuts corrects). | `git revert 4151f19` |
 
-## [Session 10b] - 2026-06-20
+## [v0.10b] - 2026-06-20
 
 ### Refactored
 - **Factures — modal slideout** : "Nouvelle facture" ouvre un panneau latéral (plus de navigation de page)
@@ -186,7 +186,7 @@ git push origin main
 
 **Commit :** `1dd7738`
 
-## [Session 10c] - 2026-06-20
+## [v0.10c] - 2026-06-20
 
 ### Changed
 - **Factures — modal centré** : panneau de facturation affiché au centre de la page (max-w-2xl, max-h-90vh) au lieu du slide-in latéral
@@ -196,7 +196,7 @@ git push origin main
 
 **Commit :** `08e4cd6`
 
-## [Session 10d] - 2026-06-20
+## [v0.10d] - 2026-06-20
 
 ### Added
 - **Tag "Partiellement facturé"** : nouveau statut `partiellement_facture` pour articles et activités
@@ -214,7 +214,7 @@ git push origin main
 
 ---
 
-## [Session 10e] - 2026-06-20
+## [v0.10e] - 2026-06-20
 
 ### Added
 - **Logo cercle SVG** dans Header.jsx : remplacement du shield par un cercle mauve avec les initiales "EP", cohérent avec l'identité visuelle
@@ -225,7 +225,7 @@ git push origin main
 ### Fixed
 - **Page blanche HomeResponsable en mode démo** : correction du chargement des données fictives pour le rôle responsable
 
-## [Session 10f] - 2026-06-20
+## [v0.10f] - 2026-06-20
 
 ### Added
 - **Architecture par batch** : chaque run de facturation crée un batch (table `facture_batches`) avec numéro au format `F-AAMMJJ` (ex. `F-260620`). Si plusieurs runs le même jour : `F-260620-2`, etc.
@@ -250,7 +250,7 @@ git push origin main
 
 ---
 
-## [Session 10h] - 2026-06-20
+## [v0.10h] - 2026-06-20
 
 ### Changed — UX DetailBatch
 - **Layout compact** : onglets "En attente / Approuvé", recherche et bouton "Tout approuver" regroupés sur une seule ligne
@@ -259,7 +259,7 @@ git push origin main
 
 ---
 
-## [Session 10g] - 2026-06-20
+## [v0.10g] - 2026-06-20
 
 ### Fixed — Bugs critiques
 - **Statuts articles/activités prématurés** : les items restent `a_facturer` après génération d'un brouillon. Le statut `facture` n'est appliqué qu'à l'approbation effective (Valider ou Tout approuver). Seul `partiellement_facture` est appliqué à la génération (classes ignorées).
@@ -280,9 +280,9 @@ git push origin main
 
 ---
 
-> **Note GitHub** : les commits de sessions 10b-e n'ont pas encore été tous poussés depuis le sandbox. Seule la session 10g sera visible après le prochain push manuel.
+> **Note GitHub** : les commits de v0.10b-e n'ont pas encore été tous poussés depuis le sandbox. Seule la session 10g sera visible après le prochain push manuel.
 
-## [Session 10h] - 2026-06-20
+## [v0.10h] - 2026-06-20
 
 ### Changed — UX DetailBatch
 - **Layout compact** : onglets "En attente / Approuvé", recherche et bouton "Tout approuver" regroupés sur une seule ligne
@@ -292,7 +292,7 @@ git push origin main
 ---
 
 
-## [Session 10i] - 2026-06-20
+## [v0.10i] - 2026-06-20
 
 ### Changed — UX DetailBatch (onglets + bouton)
 - Remplacement des deux pills ovales par un **segmented control** (cadre unique, deux sections, fond gris, section active en blanc avec ombre)
@@ -300,7 +300,7 @@ git push origin main
 - Onglet "Facturé" (renommé depuis "Approuvé"), sans compteur
 - Bouton "Tout approuver" : style outlined (bordure + teinte primaire), plus léger que btn-primary
 
-## [Session 10j] - 2026-06-20
+## [v0.10j] - 2026-06-20
 
 ### Changed — ListeBatches
 - Colonne "N° BATCH" renommée "N° FACTURATION"
@@ -313,7 +313,7 @@ git push origin main
 ### Changed — DetailBatch
 - Bouton "← Retour aux batches" remplacé par bouton "← Retour" intégré dans la barre de contrôles (même ligne que les onglets), coloré en mauve/primary
 
-## [Session 10k] - 2026-06-20
+## [v0.10k] - 2026-06-20
 
 ### Fixed — DetailBatch actions
 - **Ignorer** : mise à jour locale immédiate (optimistic update) — plus de flash "Chargement…" ni d'attente visible
@@ -321,7 +321,7 @@ git push origin main
 - **Supprimer** : la facture disparaît instantanément du tableau sans rechargement complet
 - **Bouton "Tout approuver"** : label devient "Approuver X élèves" (sans "Tout") dès qu'au moins une facture est ignorée, pour refléter que certains sont exclus
 
-## [Session 10l] - 2026-06-20
+## [v0.10l] - 2026-06-20
 
 ### Fixed — DetailBatch
 - **Tout approuver** : remplacement de `.in('id', [644 ids])` par `.eq('batch_id').eq('statut','brouillon')` — évite le dépassement de limite URL PostgREST qui faisait échouer silencieusement l'approbation massive
@@ -332,7 +332,7 @@ git push origin main
 - Le code de génération est correct : `F-AAMMJJ-NN-MATRICULE`
 - Les factures affichant `F-AAAA-NNN` sont des données legacy créées avec l'ancien code
 
-## [Session 10m] - 2026-06-20
+## [v0.10m] - 2026-06-20
 
 ### Fixed — Statut articles/activités après approbation partielle
 - `mettreAJourItemsApresApprobation` gère désormais 3 cas :
@@ -341,7 +341,7 @@ git push origin main
   - Aucune encore approuvée → `a_facturer`
 - Requêtes chunckées par 50 pour éviter les limites URL PostgREST
 
-## [Session 10n] - 2026-06-20
+## [v0.10n] - 2026-06-20
 
 ### Fixed — Race condition ignorerFacture / toutApprouver
 - `ignorerFacture` appelle désormais `setBusy(true/false)` — le bouton "Approuver X élèves" reste désactivé pendant le save Supabase de l'ignore, évitant qu'un étudiant ignoré soit quand même marqué `facture` si l'utilisateur cliquait immédiatement après
@@ -361,14 +361,14 @@ git push origin main
 - La query des soldes utilise maintenant une requête globale (sans `.in()`) pour éviter la limite URL avec 670+ élèves
 
 
-## [Session 10o] - 2026-06-20
+## [v0.10o] - 2026-06-20
 
 ### Fixed — toutApprouver : élèves ignorés quand même facturés (race condition persistante)
 - La correction du `setBusy` en 10n était insuffisante : si deux "Ignorer" sont cliqués en succession rapide, deux `ignorerFacture` tournent en parallèle ; quand le premier se termine, `setBusy(false)` libère le bouton "Approuver" alors que le second save n'a pas encore atteint la DB
 - Solution radicale : `toutApprouver` utilise désormais les IDs **depuis l'état local** (pas un filtre DB `.eq('statut','brouillon')`). L'optimistic update de `ignorerFacture` exclut les élèves ignorés du state local IMMÉDIATEMENT (avant même le save Supabase), donc `ids` ne les contient jamais, quelle que soit la vitesse de la DB
 - Le `.update().in('id', ids)` est découpé en tranches de 50 pour respecter les limites URL PostgREST
 
-## [Session 11] - 2026-06-20
+## [v0.11] - 2026-06-20
 
 ### Fixed — calcStatut : statuts articles/activités toujours "À facturer"
 - Remplacement de l'approche "paginer des milliers d'IDs en chunks de 50" (≥94 requêtes séquentielles pour un seul article avec 7 batches de test) par 2 requêtes parallèles utilisant un JOIN PostgREST
@@ -384,28 +384,28 @@ git push origin main
 - Boutons désactivés (opacité 30%, curseur interdit) quand `statut_facturation === 'facture'`
 
 
-## [Session 11b] - 2026-06-21
+## [v0.11b] - 2026-06-21
 
 ### Fixed
 - **calcStatut** : l'approche par JOIN PostgREST (`factures!inner` + `.eq('factures.statut', ...)` + `head:true`) retournait systématiquement count=0, ce qui forçait le statut à "À facturer". Retour à l'approche chunked fiable : récupère les `facture_id` depuis `facture_lignes`, puis count par statut en lots de 50 avec early-exit dès que les deux catégories sont trouvées.
 - **Statut "Partiel"** : les factures `ignore` comptent désormais comme "non facturé" (comme `brouillon`), donc un article avec des élèves ignorés affiche bien "Partiellement facturé" plutôt que "Facturé".
 
-## [Session 11c] - 2026-06-21
+## [v0.11c] - 2026-06-21
 
 ### Fixed
 - **calcStatut** : `{ count: 'exact', head: true }` retourne `count: null` dans Supabase JS v2, causant un faux "À facturer". Remplacé par `select('id')` sans `head:true` + `.length` sur `data` — fiable et simple (≤50 lignes/chunk).
 
-## [Session 11d] - 2026-06-21
+## [v0.11d] - 2026-06-21
 
 ### Simplified
 - **Statut articles/activités** : suppression du statut "Partiellement facturé". Après approbation d'un batch, les articles et activités sont directement marqués "Facturé". Un élève ignoré = décision consciente, l'article est considéré traité. Approche directe sans calcul de statut complexe.
 
-## [Session 11e] - 2026-06-21
+## [v0.11e] - 2026-06-21
 
 ### Changed
 - **calcStatut** : logique binaire — "Facturé" seulement si TOUS les élèves ont statut='facture' (ignore = non facturé). 1 requête par chunk avec `.neq('statut','facture').limit(1)`, early exit dès le premier élève non-facturé trouvé.
 
-## [Session 12] - 2026-06-21
+## [v0.12] - 2026-06-21
 
 ### Fixed
 - **Crash DetailFacture** : `activByCat` référencé mais jamais défini → ReferenceError. Les activités s'affichent maintenant en liste plate (pas de sous-catégories).
@@ -414,7 +414,7 @@ git push origin main
 ### Changed  
 - **Clic sur N° facture** au lieu du nom élève pour ouvrir le détail — le numéro est maintenant un lien cliquable (texte primaire souligné au survol), le nom reste en texte simple.
 
-## [Session 13] - 2026-06-21
+## [v0.13] - 2026-06-21
 
 ### Added
 - **Auto-tab** : dans `ListeBatches` et `DetailBatch`, passage automatique sur l'onglet "Facturé" au chargement si aucun élément n'est en attente (dans les deux pages).
@@ -426,7 +426,7 @@ git push origin main
 ### Fixed
 - **supprimerFacture** : suppression de `{ count: 'exact', head: true }` (retourne null) et de `partiellement_facture`. Recalcul correct du statut via `calcStatutSuppr` (même logique binaire que `calcStatut`).
 
-## [Session 14] - 2026-06-21
+## [v0.14] - 2026-06-21
 
 ### Added
 - **Calcul des impayés chronologique** : helper `calcImpayes(allFactures, paiementsMap)` — pour chaque élève, les paiements sont alloués aux factures dans l'ordre chronologique (la 1ère facture est couverte en premier). Retourne un map `factureId → montantImpayé`.
@@ -439,12 +439,12 @@ git push origin main
 - `DetailBatch.load()` : charge en parallèle les factures et paiements des élèves du batch (chunked par 50) pour calculer les impayés.
 - `ListeBatches.load()` : charge en parallèle toutes les factures approuvées + paiements pour agréger les impayés par batch.
 
-## [Session 15] - 2026-06-21
+## [v0.15] - 2026-06-21
 
 ### Fixed
 - **FacturationModal** : les activités en statut "Brouillon" n'apparaissaient pas dans la liste des éléments à facturer car le filtre `.eq('statut', 'publie')` les excluait. Suppression de ce filtre — seul `statut_facturation = 'a_facturer'` compte pour la facturation, pas le statut de publication.
 
-## [Session 16] - 2026-06-21
+## [v0.16] - 2026-06-21
 
 ### Changed
 - **Activites.jsx — formulaire** : suppression des boutons Brouillon/Publié dans le corps du formulaire. Remplacé "Enregistrer" par deux boutons dans le footer : **"✓ Publier"** (primary, enregistre avec `statut='publie'`) et **"✎ Brouillon"** (secondaire gris, enregistre avec `statut='brouillon'`).
@@ -455,14 +455,14 @@ git push origin main
 - **Factures.jsx** : rétablissement du filtre `.eq('statut', 'publie')` dans FacturationModal — les activités brouillon n'apparaissent pas dans la facturation (comportement intentionnel).
 - Apostrophe non échappée dans le `title` JSX qui cassait le build.
 
-## [Session 17] - 2026-06-21
+## [v0.17] - 2026-06-21
 
 ### Fixed
 - **Double facturation** : la FacturationModal affichait des articles/activités déjà inclus dans un batch en brouillon (non encore approuvé). Au chargement, les factures en brouillon sont maintenant consultées, et leurs items exclus de la liste — impossible de les facturer deux fois. Si le batch brouillon est supprimé, les items réapparaissent automatiquement.
 - Nettoyage du code mort `billedByAttr`/`billedByActiv` (logique `partiellement_facture` supprimée en session 11e).
 - Filtre `in('statut_facturation', [...])` simplifié en `eq('statut_facturation', 'a_facturer')` (partiellement_facture supprimé).
 
-## [Session 18] - 2026-06-21
+## [v0.18] - 2026-06-21
 ### Added
 - **Nom du batch** : champ texte optionnel dans la modal de facturation (ex : "Photocopies 1H", "Voyage scolaire 3A")
 - Nom affiché sous le N° dans ListeBatches, dans le header de DetailBatch, et inclus dans la recherche
@@ -470,11 +470,11 @@ git push origin main
 ### Technical
 - Migration DB : colonne `nom TEXT` ajoutée à `facture_batches`
 
-## [Session 18b] - 2026-06-21
+## [v0.18b] - 2026-06-21
 ### Changed
 - ListeBatches : nom du batch affiché en grand au-dessus, N° en petit en dessous (si nom absent, N° affiché seul en grand)
 
-## [Session 19] - 2026-06-21
+## [v0.19] - 2026-06-21
 ### Changed
 - **Fiche élève** : restructurée en 4 onglets (Infos / Appels / Social / Financier) avec le même style pill que la page Factures
   - Onglets Appels, Social, Financier visibles uniquement pour admin/financier
@@ -483,13 +483,49 @@ git push origin main
 - **HomeResponsable** : même restructuration en 3 onglets (Informations / Suivi social / Financier)
 - **Paiements.jsx** : fix valeur par défaut 'responsable' (lowercase cohérent avec PAYE_PAR_OPTIONS)
 
-## [Session 19b] - 2026-06-21
+## [v0.19b] - 2026-06-21
 ### Changed
 - Fiche élève : paiements affichent "Payé par Responsable" / "Payé par CPAS" etc.
 - Fiche élève : onglet Social masqué si aucune donnée (plus d'état vide)
 - Fiche élève : hauteur fixe (88vh) — plus de redimensionnement entre onglets
 
-## [Session 19c] - 2026-06-21
+## [v0.20] - 2026-06-21
+
+### Added
+- **Notifications Smartschool** : nouvelle Netlify Function `smartschool-notify.mjs` (SOAP `sendMsg` V3)
+  - Type `facture` : message aux co-comptes parents (co-account 1 et 2) de chaque élève lors d'une approbation
+  - Type `activite` : message à une liste fixe (direction) lors de la première publication d'une activité
+- **Mode test** : variable `SMARTSCHOOL_TEST_RECIPIENT` — redirige tous les messages vers un seul destinataire avec préfixe `[TEST]`
+- `SMARTSCHOOL_NOTIFY_SENDER` : identifiant Smartschool de l'expéditeur (futur compte ESPM+), 'Null' si absent
+- `SMARTSCHOOL_NOTIFY_DIRECTION` : JSON array des identifiants direction pour les notifications activités
+
+### Changed
+- Lien activité dans le message : deep-link `https://espmaritime.netlify.app/activites?open=<id>` (la direction peut accéder à la page)
+- `SMARTSCHOOL_NOTIFY_SENDER` configuré sur le compte dédié **ESPM+**
+- `DetailBatch.load()` : select étendu avec `smartschool_internal_number` sur l'élève (nécessaire pour les notifications)
+- `validerFacture` + `toutApprouver` : appellent `callNotify('facture', ...)` après approbation (fire-and-forget)
+- `ActivityModal.save()` : appelle notify à la première publication d'une activité (`brouillon → publie`)
+
+## [v0.19c] - 2026-06-21
 ### Changed
 - Fiche élève : point orange retiré de l'onglet Social (l'onglet est déjà masqué si pas de données)
 - Fiche élève : retour automatique sur l'onglet Infos à chaque nouvelle fiche ouverte
+
+## [v0.20b] - 2026-06-21
+### Changed
+- Notifications activité : lien deep-link `?open=<id>` pour ouvrir le modal directement
+- Expéditeur configuré sur ESPM+ (compte dédié)
+
+## [v0.20c] - 2026-06-21
+### Fixed
+- `validerFacture` : suppression du guard `smartschool_internal_number` — `callNotify` appelé inconditionnellement (la fonction gère le mode test sans numéro interne)
+
+## [v0.20d] - 2026-06-21
+### Changed
+- `callNotify` : ajout log console de la réponse de la fonction (debug temporaire)
+- Env vars Netlify : `SMARTSCHOOL_ACCESS_CODE` staging → contexte "all" (était "production" uniquement → vide pour branch deploys)
+- Env vars Netlify prod : ajout `SMARTSCHOOL_TEST_RECIPIENT = 0000281` + `SMARTSCHOOL_NOTIFY_SENDER = Null`
+
+## [v0.20e] - 2026-06-21
+### Fixed
+- Sync Smartschool (erreur 19 "Parent-ID bestaat niet!") : `getAllAccountsExtended` nécessite maintenant des paramètres `$code` et `$recursive` explicites depuis la mise à jour Smartschool 2026. Passage de `<soa:code></soa:code><soa:recursive>1</soa:recursive>` pour forcer le retour de tous les comptes de manière récursive.
