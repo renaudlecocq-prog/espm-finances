@@ -584,6 +584,10 @@ git push origin main
 - Bouton "🖨" par ligne facture dans FicheEleve (onglet Finances)
 - Env vars à configurer sur Netlify : SCHOOL_IBAN, SCHOOL_BIC, SCHOOL_EMAIL_ECO, SCHOOL_TEL_ECO, SCHOOL_EMAIL_AS, SCHOOL_TEL_AS, SCHOOL_BCE
 
+## [v0.21e] — 2026-06-21
+### Facture PDF v1.4
+- FIX contacts : AS et econome toujours affiches, meme avec echelonnement/organisme tiers
+
 ## [v0.21d] — 2026-06-21
 ### Facture PDF v1.3
 - REMOVE logo ESPM+ de l en-tete (logo ecole seul)

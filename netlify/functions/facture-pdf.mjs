@@ -1,4 +1,4 @@
-// facture-pdf.mjs — v1.3
+// facture-pdf.mjs — v1.4
 // GET /.netlify/functions/facture-pdf?factureId=UUID&token=SUPABASE_JWT
 
 import { createClient } from '@supabase/supabase-js'
@@ -251,7 +251,7 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
   <!-- CONTACTS -->
   <div class="sect neutre">
     <h3>Nous contacter</h3>
-    ${!hasAide ? `<p>Les responsables légaux peuvent à tout moment contacter l'<strong>assistant social de l'école, Monsieur Mignolet</strong>, par Smartschool ou au <strong>${esc(SCHOOL_TEL_AS)}</strong> pour prendre un rendez-vous.</p>` : ''}
+    <p>Les responsables légaux peuvent à tout moment contacter l'<strong>assistant social de l'école, Monsieur Mignolet</strong>, par Smartschool ou au <strong>${esc(SCHOOL_TEL_AS)}</strong> pour prendre un rendez-vous.</p>
     <p>Pour toute précision concernant cette facture, prenez contact avec l'<strong>économe de l'école, Monsieur Lecocq</strong>, par Smartschool ou au <strong>${esc(SCHOOL_TEL_ECO)}</strong>.</p>
   </div>
 
