@@ -5,7 +5,11 @@ import { useAuth } from '../context/AuthContext'
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
 const fmtEur  = n => Number(n || 0).toLocaleString('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+const addDays = (dateStr, days) => { const d = new Date(dateStr + 'T00:00:00'); d.setDate(d.getDate() + days); return d.toLocaleDateString('fr-BE') }
 const CATEGORIES_ART = ['Frais obligatoires', 'Fournitures scolaires', 'Vêtements', 'Divers']
+const SCHOOL_IBAN    = 'BE17 0910 2167 8721'
+const SCHOOL_TEL_ECO = '02/210.20.96'
+const SCHOOL_TEL_AS  = '02/210.20.91'
 
 const STATUTS = {
   brouillon:       { label: 'En attente',      cls: 'bg-orange-100 text-orange-700' },
@@ -885,6 +889,12 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     setBusy(false)
   }
 
+  const handleBatchPDF = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    window.open(`/.netlify/functions/factures-batch-pdf?batchId=${batchId}&token=${session.access_token}`, '_blank')
+  }
+
   const nbAttente  = factures.filter(f => f.statut === 'brouillon').length
   const nbValide   = factures.filter(f => f.statut === 'facture').length
   const nbImpaye   = factures.filter(f => f.statut === 'facture' && (impayes[f.id] || 0) > 0).length
@@ -968,6 +978,12 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
             ✓ {factures.some(f => f.statut === 'ignore')
               ? `Approuver ${nbAttente} élève${nbAttente > 1 ? 's' : ''}`
               : `Tout approuver (${nbAttente})`}
+          </button>
+        )}
+        {nbValide > 0 && (
+          <button onClick={handleBatchPDF}
+            className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition-colors shrink-0">
+            🖨 PDF groupé ({nbValide})
           </button>
         )}
       </div>
@@ -1282,6 +1298,25 @@ function DetailFacture({ factureId, onBack }) {
           {fmtEur(facture.solde_apres)}
         </span>
       </div>
+
+      {['facture', 'rappel', 'mise_en_demeure'].includes(facture.statut) && (<>
+        <div className="card p-5 mt-4 border-l-4 border-orange-400">
+          <h2 className="text-xs font-semibold text-orange-600 uppercase tracking-wide mb-3">Informations de paiement</h2>
+          <div className="space-y-2 text-sm">
+            <p><span className="text-gray-400">Bénéficiaire :</span> <span className="font-semibold text-gray-800">Pouvoir Organisateur Pluriel</span></p>
+            <p><span className="text-gray-400">IBAN :</span> <span className="font-mono font-bold tracking-wider text-gray-900">{SCHOOL_IBAN}</span></p>
+            <p><span className="text-gray-400">Communication :</span> <span className="font-bold text-gray-900">{facture.eleve?.nom} {facture.eleve?.prenom} {facture.eleve?.classe}</span></p>
+            <p><span className="text-gray-400">Date limite :</span> <span className="font-bold text-orange-600">{addDays(facture.date, 30)}</span> <span className="text-gray-400 text-xs">(30 jours à dater de la facturation)</span></p>
+          </div>
+        </div>
+        <div className="card p-5 mt-2 border-l-4 border-slate-300">
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Contacts</h2>
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>Les responsables légaux peuvent contacter l'<strong>assistant social, M. Mignolet</strong>, par Smartschool ou au <strong>{SCHOOL_TEL_AS}</strong>.</p>
+            <p>Pour toute précision sur cette facture, contactez l'<strong>économe, M. Lecocq</strong>, par Smartschool ou au <strong>{SCHOOL_TEL_ECO}</strong>.</p>
+          </div>
+        </div>
+      </>)}
     </div>
   )
 }

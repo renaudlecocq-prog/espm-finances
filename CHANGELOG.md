@@ -584,6 +584,19 @@ git push origin main
 - Bouton "🖨" par ligne facture dans FicheEleve (onglet Finances)
 - Env vars à configurer sur Netlify : SCHOOL_IBAN, SCHOOL_BIC, SCHOOL_EMAIL_ECO, SCHOOL_TEL_ECO, SCHOOL_EMAIL_AS, SCHOOL_TEL_AS, SCHOOL_BCE
 
+## [v0.22b] — 2026-06-21
+### Vue facture en ligne — nettoyage boutons
+- REMOVE boutons Rappel, Brouillon, Mise en demeure de DetailFacture
+- MOVE bouton PDF dans le coin supérieur droit (à côté de la date)
+- KEEP bouton Valider (brouillon) et Réactiver (ignoré)
+
+## [v0.22] — 2026-06-21
+### PDF groupé + vue facture enrichie
+- ADD factures-batch-pdf.mjs : PDF multi-pages de toutes les factures Facture d un batch
+- ADD Bouton PDF groupe dans DetailBatch (visible si >=1 facture validee)
+- ADD Vue en ligne DetailFacture : section Informations de paiement (beneficiaire, IBAN, communication, date limite)
+- ADD Vue en ligne DetailFacture : section Contacts (assistant social + econome)
+
 ## [v0.21e] — 2026-06-21
 ### Facture PDF v1.4
 - FIX contacts : AS et econome toujours affiches, meme avec echelonnement/organisme tiers
@@ -611,3 +624,9 @@ git push origin main
 - PDF facture : section contacts conditionnelle — si aucun plan de paiement ni organisme tiers actif, invite à contacter l'AS (M. Mignolet, Smartschool ou 02/210.20.91) + l'économe (M. Lecocq, Smartschool ou 02/210.20.96) ; sinon, uniquement l'économe
 - PDF facture : footer — email économat + téléphone économat uniquement (suppression des coordonnées AS du footer)
 - PDF facture : env vars SCHOOL_EMAIL_AS et SCHOOL_BIC ne sont plus requises (non affichées)
+
+## [v0.22c] — 2026-06-21
+### Fixed
+- PDF groupé (et individuel) : dernière facture débordait sur une page vide quand elle contenait un plan d'échelonnement + organisme tiers
+- `.page` passe en `display:flex; flex-direction:column`, contenu dans `.page-body` (flex:1), footer en flux normal (plus de `position:absolute`)
+- Appliqué à `factures-batch-pdf.mjs` et `facture-pdf.mjs`
