@@ -12,13 +12,14 @@
  *
  * Env vars optionnelles :
  *   SMARTSCHOOL_API_URL           (défaut: https://espmaritime.smartschool.be/Webservices/V3)
- *   SMARTSCHOOL_NOTIFY_SENDER     identifiant Smartschool de l'expéditeur (ex: compte ESPM+)
- *                                 Si absent, 'Null' = pas d'expéditeur affiché
  *   SMARTSCHOOL_TEST_RECIPIENT    si défini, TOUS les messages vont uniquement à cet identifiant
  *                                 avec préfixe [TEST] → utiliser pour valider sans spammer
  *   SMARTSCHOOL_NOTIFY_DIRECTION  JSON array des identifiants Smartschool de la direction
- *                                 ex: ["lecocq.r","dupont.m","martin.a","henry.s"]
+ *                                 ex: ["175033","175076"]
  *                                 Ignoré si SMARTSCHOOL_TEST_RECIPIENT est défini
+ *
+ * Note: senderIdentifier omis intentionnellement — les messages apparaissent comme
+ * "Indisponible" (aucune réponse possible), ce qui est le comportement voulu.
  */
 
 const ALLOWED_ORIGINS = [
@@ -45,22 +46,20 @@ function escapeXml(str) {
     .replace(/'/g, '&apos;')
 }
 
-async function sendMsg({ apiUrl, accessCode, recipient, coAccount, title, body, sender }) {
+async function sendMsg({ apiUrl, accessCode, recipient, coAccount, title, body }) {
   const envelope = `<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                  xmlns:soa="http://www.smartschool.be/webservices">
-  <soapenv:Header/>
-  <soapenv:Body>
-    <soa:sendMsg>
-      <soa:accesscode>${escapeXml(accessCode)}</soa:accesscode>
-      <soa:userIdentifier>${escapeXml(recipient)}</soa:userIdentifier>
-      <soa:title>${escapeXml(title)}</soa:title>
-      <soa:body>${escapeXml(body)}</soa:body>
-      <soa:senderIdentifier>${escapeXml(sender || 'Null')}</soa:senderIdentifier>
-      <soa:coaccount>${coAccount ?? 0}</soa:coaccount>
-    </soa:sendMsg>
-  </soapenv:Body>
-</soapenv:Envelope>`
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="https://espmaritime.smartschool.be/Webservices/V3">
+  <SOAP-ENV:Header/>
+  <SOAP-ENV:Body>
+    <ns1:sendMsg SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+      <accesscode xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(accessCode)}</accesscode>
+      <userIdentifier xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(recipient)}</userIdentifier>
+      <title xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(title)}</title>
+      <body xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(body)}</body>
+      <coaccount xsi:type="xsd:int" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${coAccount ?? 0}</coaccount>
+    </ns1:sendMsg>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>`
 
   try {
     const res = await fetch(apiUrl, {
@@ -74,7 +73,7 @@ async function sendMsg({ apiUrl, accessCode, recipient, coAccount, title, body, 
     const text = await res.text()
     const match = text.match(/<return[^>]*>(-?\d+)<\/return>/)
     const ssCode = match ? parseInt(match[1]) : -999
-    const ok = res.ok && ssCode > 0
+    const ok = res.ok && ssCode === 0   // ssCode=0 = succès Smartschool
     return { recipient, coAccount, ok, status: res.status, ssCode }
   } catch (err) {
     return { recipient, coAccount, ok: false, error: err.message }
@@ -94,7 +93,6 @@ export default async function handler(req) {
 
   const accessCode    = process.env.SMARTSCHOOL_ACCESS_CODE
   const apiUrl        = process.env.SMARTSCHOOL_API_URL || 'https://espmaritime.smartschool.be/Webservices/V3'
-  const sender        = process.env.SMARTSCHOOL_NOTIFY_SENDER || 'Null'
   const testRecipient = process.env.SMARTSCHOOL_TEST_RECIPIENT
 
   if (!accessCode) {
@@ -130,12 +128,12 @@ export default async function handler(req) {
       const msgBody   = `Bonjour,\n\nUne nouvelle facture a été émise pour ${student.prenom} ${student.nom}.\n\nConsultez-la sur : https://espmaritime.netlify.app`
 
       if (isTest) {
-        const r = await sendMsg({ apiUrl, accessCode, recipient, coAccount: 0, title: msgTitle, body: msgBody, sender })
+        const r = await sendMsg({ apiUrl, accessCode, recipient, coAccount: 0, title: msgTitle, body: msgBody })
         results.push(r)
       } else {
         const [r1, r2] = await Promise.all([
-          sendMsg({ apiUrl, accessCode, recipient, coAccount: 1, title: msgTitle, body: msgBody, sender }),
-          sendMsg({ apiUrl, accessCode, recipient, coAccount: 2, title: msgTitle, body: msgBody, sender }),
+          sendMsg({ apiUrl, accessCode, recipient, coAccount: 1, title: msgTitle, body: msgBody }),
+          sendMsg({ apiUrl, accessCode, recipient, coAccount: 2, title: msgTitle, body: msgBody }),
         ])
         results.push(r1, r2)
       }
@@ -164,7 +162,7 @@ export default async function handler(req) {
 
     await Promise.all(
       recipients.map(async (r) => {
-        const res = await sendMsg({ apiUrl, accessCode, recipient: r, coAccount: 0, title: msgTitle, body: msgBody, sender })
+        const res = await sendMsg({ apiUrl, accessCode, recipient: r, coAccount: 0, title: msgTitle, body: msgBody })
         results.push(res)
       })
     )
