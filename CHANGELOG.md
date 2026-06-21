@@ -699,3 +699,7 @@ git push origin main
   - Section "Coordonnées de l'élève" : grille avec nom, prénom, classe, date de naissance, responsable 1, responsable 2, adresse
   - Table articles sans catégories, ligne total seule (comme les factures)
   - Section "Informations de paiement" (bénéficiaire, IBAN, communication, montant demandé) avec fond orangé
+
+## [v0.30b] — 2026-06-21
+### Fixed
+- Crash page Assistant social : `reloadRepertoire` injecté par erreur dans le `useEffect` de `TabEchelonnements` au lieu de `TabOrganismesTiers`. `ReferenceError` au montage de l'onglet par défaut (échelonnements).
