@@ -222,6 +222,26 @@ export const handler = async (event) => {
     </table>` : '<p style="color:#9ca3af;font-style:italic;margin-top:4mm">Aucune échéance enregistrée.</p>'}
   </div>
 
+  <div style="margin-top:12mm; padding:0 4mm;">
+    <p style="font-size:8pt; color:#374151; margin-bottom:8mm;">
+      Fait à Molenbeek-Saint-Jean, le ___________________________
+    </p>
+    <div style="display:flex; justify-content:space-between; gap:16mm;">
+      <div style="flex:1; text-align:center;">
+        <p style="font-size:7.5pt; color:#374151; font-weight:600; margin-bottom:18mm;">Signature du responsable légal</p>
+        <div style="border-top:1px solid #374151; padding-top:2mm;">
+          <p style="font-size:7pt; color:#6b7280;">Nom et signature</p>
+        </div>
+      </div>
+      <div style="flex:1; text-align:center;">
+        <p style="font-size:7.5pt; color:#374151; font-weight:600; margin-bottom:18mm;">Signature du représentant de l'école</p>
+        <div style="border-top:1px solid #374151; padding-top:2mm;">
+          <p style="font-size:7pt; color:#6b7280;">Nom et signature</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="footer">
     ${esc(SCHOOL_EMAIL_AS)} · ${esc(SCHOOL_TEL_AS)} &nbsp;|&nbsp; Rapport généré depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
   </div>

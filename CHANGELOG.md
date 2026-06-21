@@ -658,3 +658,7 @@ git push origin main
 - PDF échelonnement : paramètre `echId` (plan individuel uniquement), plus de filtre par statut
 - PDF échelonnement footer : suppression nom/adresse école, email/tél AS au lieu d'économe, "généré" au lieu d'"édité"
 - PDF factures : "Cette facture a été éditée" → "Cette facture a été générée" dans footer (facture-pdf.mjs + factures-batch-pdf.mjs)
+
+## [v0.26] — 2026-06-21
+### Added
+- PDF échelonnement : bloc signature en bas de page — "Fait à Molenbeek-Saint-Jean, le ___", ligne de signature responsable légal (gauche) et représentant de l'école (droite)
