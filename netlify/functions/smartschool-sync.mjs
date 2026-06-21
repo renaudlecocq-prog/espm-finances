@@ -122,7 +122,6 @@ export default async function handler(req) {
 
   let elevesCount    = 0
   let personnelCount = 0
-  let debugInfo      = null
 
   try {
     // ── Fetch all accounts via getAllAccountsExtended ───────────────────────
@@ -132,33 +131,14 @@ export default async function handler(req) {
 
     if (!list.length) throw new Error('Aucun compte retourné par Smartschool')
 
-    // ── DEBUG FOOLPROOF : dump keys du premier compte ───────────────────────
-    {
-      const first = list[0] || {}
-      const keys = Object.keys(first).join(',')
-      // Extraire quelques valeurs sûrement sérialisables
-      const basisrol = String(first.basisrol ?? 'undef')
-      const klas     = String(first.klas ?? 'undef')
-      const groups_t = typeof first.groups
-      const groepen_t = typeof first.groepen
-      const class_v  = String(first.class ?? first.officialclass ?? 'undef')
-      const debugStr = `KEYS:${keys} | basisrol:${basisrol} | klas:${klas} | groups_type:${groups_t} | groepen_type:${groepen_t} | class:${class_v}`
-      await insertSyncLog(SUPABASE_URL, SUPABASE_KEY, {
-        type: 'debug', status: 'info',
-        eleves_upserted: 0, personnel_upserted: 0,
-        details: debugStr,
-      })
-    }
-
     // ── Split by type ──────────────────────────────────────────────────────
-    // Smartschool types: 'leerling' = élève, everything else = personnel
+    // basisrol: '1' = élève, '0'/'13'/'30' = personnel
     const elevesRows    = []
     const personnelRows = []
 
     for (const a of list) {
-      // Smartschool retourne des noms de champs en néerlandais (getAllAccountsExtended)
-      const type = (a.basisrol || a.type || a.role || '').toLowerCase()
-      const isEleve = type === 'leerling' || type === 'student' || type === 'pupil' || type === '1'
+      const basisrol = String(a.basisrol ?? '').trim()
+      const isEleve  = basisrol === '1'
 
       const smartschool_internal_number = String(
         a.internnummer || a.internnumber || ''
@@ -166,30 +146,17 @@ export default async function handler(req) {
       const smartschool_username = String(
         a.gebruikersnaam || a.username || ''
       ).trim() || null
-      // On skip uniquement si ni username ni numéro interne
       if (!smartschool_username && !smartschool_internal_number) continue
 
-      const nom    = (a.naam    || a.surname  || a.name      || '').trim()
-      const prenom = (a.voornaam || a.firstname || a.givenname || '').trim()
+      const nom    = (a.naam     || a.surname   || a.name      || '').trim()
+      const prenom = (a.voornaam || a.firstname  || a.givenname || '').trim()
       const email  = a.email || null
-      // DEBUG TEMPORAIRE — capture structure du premier élève dans le log
-      if (isEleve && elevesRows.length === 0) {
-        debugInfo = {
-          keys: Object.keys(a),
-          basisrol: a.basisrol,
-          groups: a.groups,
-          groepen: a.groepen,
-          klas: a.klas, stamklas: a.stamklas,
-          class: a.class, officialclass: a.officialclass,
-        }
-      }
-      const rawGroups = a.groups || a.groepen || null
-      const klasGroup = Array.isArray(rawGroups) ? rawGroups.find(g =>
-        g.isKlas || g.isKlas === true || g.isklas || g.isklas === true ||
-        g.type === 'klas' || g.type === 'class'
-      ) : null
-      const classe = (klasGroup && (klasGroup.name || klasGroup.naam)?.trim()) ||
-        a.klas || a.stamklas || a.class || a.officialclass || null
+
+      // Classe : groupe officiel de type klas (getAllAccountsExtended)
+      const klasGroup = Array.isArray(a.groups)
+        ? a.groups.find(g => g.isKlas === true && g.isOfficial === true)
+        : null
+      const classe = klasGroup?.name?.trim() || null
 
       if (isEleve) {
         elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, actif: true })
@@ -228,7 +195,7 @@ export default async function handler(req) {
       status:             'success',
       eleves_upserted:    elevesCount,
       personnel_upserted: personnelCount,
-      details:            `OK — ${elevesCount} élèves, ${personnelCount} personnel${debugInfo ? ' | DEBUG:' + JSON.stringify(debugInfo) : ''}`,
+      details:            `OK — ${elevesCount} élèves, ${personnelCount} personnel`,
     })
 
     return new Response(JSON.stringify({ success: true, eleves: elevesCount, personnel: personnelCount }), { status: 200, headers })
