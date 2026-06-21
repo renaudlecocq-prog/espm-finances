@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 
 // ── Constants ──────────────────────────────────────────────────────────────
+const CATEGORIES_ARTICLES = ['Frais obligatoires', 'Fournitures scolaires', 'Vêtements', 'Divers']
 const STATUT_ECH = {
   en_cours:     { label: 'En cours',     cls: 'bg-blue-100 text-blue-700'    },
   attente:      { label: 'En attente',   cls: 'bg-yellow-100 text-yellow-700' },
@@ -1171,28 +1172,41 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                   {isAllowed && (
                     <>
                       {/* Sélection depuis attributions */}
-                      {availArticles.filter(a => !selectedArticleRefIds.has(a.id)).length > 0 && (
-                        <div className="mb-2">
-                          <p className="text-xs text-gray-400 mb-1.5">Catalogue articles :</p>
-                          <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
-                            {availArticles
-                              .filter(a => !selectedArticleRefIds.has(a.id))
-                              .map(a => (
-                                <button key={a.id}
-                                  onClick={() => addArticle(a)}
-                                  className="w-full flex items-center justify-between text-left rounded-lg border border-gray-200 hover:border-primary/40 hover:bg-primary/5 px-3 py-1.5 text-sm transition-colors group">
-                                  <span className="text-gray-700 flex-1 truncate mr-2">
-                                    {a.nom}
-                                    {a.categorie && <span className="text-gray-400 ml-1 text-xs">({a.categorie})</span>}
-                                  </span>
-                                  <span className="text-gray-500 text-xs shrink-0 mr-2">{fmtEur(a.prix_unitaire)}</span>
-                                  <Plus size={13} className="text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                                </button>
-                              ))
-                            }
+                      {(() => {
+                        const remaining = availArticles.filter(a => !selectedArticleRefIds.has(a.id))
+                        if (remaining.length === 0) return null
+                        // Grouper par catégorie dans l'ordre du catalogue
+                        const grouped = CATEGORIES_ARTICLES.map(cat => ({
+                          cat,
+                          items: remaining.filter(a => a.categorie === cat),
+                        })).concat([{
+                          cat: 'Autre',
+                          items: remaining.filter(a => !CATEGORIES_ARTICLES.includes(a.categorie)),
+                        }]).filter(g => g.items.length > 0)
+                        return (
+                          <div className="mb-2">
+                            <p className="text-xs text-gray-400 mb-1.5">Catalogue articles :</p>
+                            <div className="space-y-0 max-h-48 overflow-y-auto pr-1 border border-gray-100 rounded-lg">
+                              {grouped.map(({ cat, items }) => (
+                                <div key={cat}>
+                                  <div className="px-3 py-1 bg-gray-50 text-xs font-semibold text-gray-400 uppercase tracking-wide sticky top-0">
+                                    {cat}
+                                  </div>
+                                  {items.map(a => (
+                                    <button key={a.id}
+                                      onClick={() => addArticle(a)}
+                                      className="w-full flex items-center justify-between text-left border-b border-gray-50 hover:bg-primary/5 px-3 py-1.5 text-sm transition-colors group">
+                                      <span className="text-gray-700 flex-1 truncate mr-2">{a.nom}</span>
+                                      <span className="text-gray-500 text-xs shrink-0 mr-2">{fmtEur(a.prix_unitaire)}</span>
+                                      <Plus size={13} className="text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                    </button>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )
+                      })()}
 
                       {/* Article personnalisé */}
                       {customForm === null
