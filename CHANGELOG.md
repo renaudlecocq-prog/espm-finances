@@ -584,6 +584,13 @@ git push origin main
 - Bouton "🖨" par ligne facture dans FicheEleve (onglet Finances)
 - Env vars à configurer sur Netlify : SCHOOL_IBAN, SCHOOL_BIC, SCHOOL_EMAIL_ECO, SCHOOL_TEL_ECO, SCHOOL_EMAIL_AS, SCHOOL_TEL_AS, SCHOOL_BCE
 
+## [v0.22] — 2026-06-21
+### PDF groupé + vue facture enrichie
+- ADD factures-batch-pdf.mjs : PDF multi-pages de toutes les factures Facture d un batch
+- ADD Bouton PDF groupe dans DetailBatch (visible si >=1 facture validee)
+- ADD Vue en ligne DetailFacture : section Informations de paiement (beneficiaire, IBAN, communication, date limite)
+- ADD Vue en ligne DetailFacture : section Contacts (assistant social + econome)
+
 ## [v0.21e] — 2026-06-21
 ### Facture PDF v1.4
 - FIX contacts : AS et econome toujours affiches, meme avec echelonnement/organisme tiers
