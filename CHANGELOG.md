@@ -543,3 +543,7 @@ git push origin main
 ## [v0.20h] - 2026-06-21
 ### Fixed
 - Sync Smartschool : `basisrol` retourne des codes numériques (`'1'` = élève, `'0'`/`'13'`/`'30'` = personnel) et non du texte (`'leerling'`) — tous les élèves étaient classés en personnel (0 élèves, 763 personnel)
+## [v0.20i] - 2026-06-21
+### Fixed
+- notify : check de succès Smartschool corrigé — extraction du code de retour SOAP (`<return>N</return>`) ; `ok` = true seulement si N > 0 (était basé sur `!includes('<return>-</return>')` qui passait toujours)
+- notify : ajout `ssCode` dans la réponse pour debug (visible dans la console F12)

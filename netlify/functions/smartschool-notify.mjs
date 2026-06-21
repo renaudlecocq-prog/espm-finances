@@ -72,8 +72,10 @@ async function sendMsg({ apiUrl, accessCode, recipient, coAccount, title, body, 
       body: envelope,
     })
     const text = await res.text()
-    const ok = res.ok && !text.includes('<return>-</return>')
-    return { recipient, coAccount, ok, status: res.status }
+    const match = text.match(/<return[^>]*>(-?\d+)<\/return>/)
+    const ssCode = match ? parseInt(match[1]) : -999
+    const ok = res.ok && ssCode > 0
+    return { recipient, coAccount, ok, status: res.status, ssCode }
   } catch (err) {
     return { recipient, coAccount, ok: false, error: err.message }
   }
