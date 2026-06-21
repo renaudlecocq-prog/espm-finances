@@ -624,3 +624,9 @@ git push origin main
 - PDF facture : section contacts conditionnelle — si aucun plan de paiement ni organisme tiers actif, invite à contacter l'AS (M. Mignolet, Smartschool ou 02/210.20.91) + l'économe (M. Lecocq, Smartschool ou 02/210.20.96) ; sinon, uniquement l'économe
 - PDF facture : footer — email économat + téléphone économat uniquement (suppression des coordonnées AS du footer)
 - PDF facture : env vars SCHOOL_EMAIL_AS et SCHOOL_BIC ne sont plus requises (non affichées)
+
+## [v0.22c] — 2026-06-21
+### Fixed
+- PDF groupé (et individuel) : dernière facture débordait sur une page vide quand elle contenait un plan d'échelonnement + organisme tiers
+- `.page` passe en `display:flex; flex-direction:column`, contenu dans `.page-body` (flex:1), footer en flux normal (plus de `position:absolute`)
+- Appliqué à `factures-batch-pdf.mjs` et `facture-pdf.mjs`
