@@ -153,7 +153,8 @@ export default async function handler(req) {
       const nom    = (a.naam    || a.surname  || a.name      || '').trim()
       const prenom = (a.voornaam || a.firstname || a.givenname || '').trim()
       const email  = a.email || null
-      const classe = a.klas || a.stamklas || a.class || a.officialclass || a.classname || null
+      const klasGroup = Array.isArray(a.groups) ? a.groups.find(g => g.isKlas && g.isOfficial) : null
+      const classe = (klasGroup && klasGroup.name?.trim()) || a.klas || a.stamklas || a.class || null
 
       if (isEleve) {
         elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, actif: true })
