@@ -564,6 +564,8 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
   const [search, setSearch]             = useState('')
   const [filters, setFilters]           = useState({})
   const [sort, setSort]                 = useState({ col: 'nom', dir: 'asc' })
+  const [pdfStatut, setPdfStatut]       = useState('')
+  const [pdfLoading, setPdfLoading]     = useState(false)
 
   const toggleFilter = useCallback((key, val) =>
     setFilters(f => {
@@ -621,6 +623,15 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
     await supabase.from('echelonnements').delete().eq('id', id)
     if (detailId === id) setDetailId(null)
     await reload()
+  }
+
+  const handlePdfRapport = async () => {
+    setPdfLoading(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    setPdfLoading(false)
+    if (!session) return
+    const url = `/.netlify/functions/echelonnements-rapport-pdf?token=${session.access_token}${pdfStatut ? '&statut=' + pdfStatut : ''}`
+    window.open(url, '_blank')
   }
 
   const toggleSort = col =>
@@ -681,11 +692,31 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
           <span className="text-xs text-gray-400">{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
         </div>
         <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
-        {isAllowed && (
-          <button onClick={() => setShowForm(v => !v)} className="btn-primary text-sm py-1.5 px-4">
-            + Échelonnement
+        <div className="flex items-center gap-2">
+          <select
+            value={pdfStatut}
+            onChange={e => setPdfStatut(e.target.value)}
+            className="rounded-lg border border-gray-200 text-xs px-2 py-1.5 outline-none focus:border-primary"
+          >
+            <option value="">Tous statuts</option>
+            <option value="en_cours">En cours</option>
+            <option value="attente">En attente</option>
+            <option value="non_respecte">Non respecté</option>
+            <option value="termine">Terminé</option>
+          </select>
+          <button
+            onClick={handlePdfRapport}
+            disabled={pdfLoading}
+            className="btn-secondary text-sm py-1.5 flex items-center gap-1.5 disabled:opacity-50"
+          >
+            🖨 {pdfLoading ? 'Génération…' : 'Rapport PDF'}
           </button>
-        )}
+          {isAllowed && (
+            <button onClick={() => setShowForm(v => !v)} className="btn-primary text-sm py-1.5 px-4">
+              + Échelonnement
+            </button>
+          )}
+        </div>
       </div>
 
       {showForm && (

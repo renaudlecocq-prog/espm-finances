@@ -640,3 +640,14 @@ git push origin main
   - Sections groupées par statut (En cours / Non respecté / Terminé) quand filtre = Tous
   - Cards de synthèse : compteurs par statut + montant total
 - Bouton "🖨 Rapport PDF" + sélecteur de statut dans la page Échelonnements
+
+## [v0.24] — 2026-06-21
+### Added
+- Rapport PDF des plans d'échelonnement (v2.0) depuis AssistantSocial
+  - Une page A4 par plan : info élève, statut, dates, remarque
+  - Cards financières : total prévu, total payé, retard, solde restant
+  - Tableau des échéances individuelles avec statut (À venir / En retard / Payé)
+  - Sélecteur statut + bouton "🖨 Rapport PDF" dans la toolbar de l'onglet Échelonnements
+### Removed
+- Pages orphelines `Echelonnements.jsx` et `OrganismesTiers.jsx` (remplacées depuis longtemps par AssistantSocial)
+- Imports correspondants retirés de App.jsx (les redirections /echelonnements et /organismes vers /assistant-social restent actives)
