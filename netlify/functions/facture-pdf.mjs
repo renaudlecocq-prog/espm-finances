@@ -1,4 +1,4 @@
-// facture-pdf.mjs — v1.0
+// facture-pdf.mjs — v1.1
 // GET /.netlify/functions/facture-pdf?factureId=UUID&token=SUPABASE_JWT
 
 import { createClient } from '@supabase/supabase-js'
@@ -6,11 +6,9 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL      = process.env.SUPABASE_URL
 const SUPABASE_SRK      = process.env.SUPABASE_SERVICE_ROLE_KEY
 const SCHOOL_IBAN       = process.env.SCHOOL_IBAN      || '[IBAN — à configurer dans Netlify]'
-const SCHOOL_BIC        = process.env.SCHOOL_BIC       || '[BIC]'
-const SCHOOL_EMAIL_ECO  = process.env.SCHOOL_EMAIL_ECO || 'economat@espm.be'
-const SCHOOL_TEL_ECO    = process.env.SCHOOL_TEL_ECO   || ''
-const SCHOOL_EMAIL_AS   = process.env.SCHOOL_EMAIL_AS  || 'assistante.sociale@espm.be'
-const SCHOOL_TEL_AS     = process.env.SCHOOL_TEL_AS    || ''
+const SCHOOL_EMAIL_ECO  = process.env.SCHOOL_EMAIL_ECO || 'economat@espmaritime.be'
+const SCHOOL_TEL_ECO    = process.env.SCHOOL_TEL_ECO   || '02/210.20.96'
+const SCHOOL_TEL_AS     = process.env.SCHOOL_TEL_AS    || '02/210.20.91'
 const SCHOOL_BCE        = process.env.SCHOOL_BCE        || ''
 
 const ORG_LABELS = { cpas: 'CPAS', ulb: 'ULB', spj: 'SPJ', autre: 'Organisme tiers' }
@@ -72,8 +70,12 @@ export default async function handler(req) {
   const resteApayer   = Number(facture.montant) - Number(facture.paye || 0)
   const articles      = (lignes || []).filter(l => l.type === 'article')
   const activites     = (lignes || []).filter(l => l.type === 'activite')
-  const comm          = esc(facture.numero || factureId.slice(0, 8).toUpperCase())
-  const logoUrl       = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
+
+  // Communication structurée : Nom Prénom Classe
+  const comm = [eleve.nom, eleve.prenom, eleve.classe].filter(Boolean).join(' ')
+
+  const logoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
+  const hasAide = !!ech || !!org
 
   const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -96,23 +98,20 @@ body { font-family:Arial,Helvetica,sans-serif; font-size:10pt; color:#1a1a1a; ba
 
 .page { width:210mm; min-height:297mm; position:relative; padding:12mm 15mm 28mm 15mm; }
 
-/* EN-TÊTE */
+/* EN-TÊTE : logo + ESPM+ côte à côte à gauche */
 .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4mm; }
-.logo-ecole { height:18mm; display:block; }
-.header-right { text-align:right; }
-.espm-logo { font-size:20pt; font-weight:900; line-height:1; }
+.header-brand { display:flex; align-items:center; gap:5mm; }
+.logo-ecole { height:16mm; display:block; }
+.brand-text { }
+.espm-logo { font-size:22pt; font-weight:900; line-height:1; }
 .espm-logo .w { color:#2D1B2E; }
 .espm-logo .o { color:#E86C00; }
-.school-addr { font-size:7.5pt; color:#777; margin-top:2mm; line-height:1.5; }
+.school-addr { font-size:7.5pt; color:#777; margin-top:1.5mm; line-height:1.5; }
+
 .hr-main { border:none; border-top:2.5px solid #2D1B2E; margin:0 0 5mm 0; }
 .hr-thin  { border:none; border-top:1px solid #e0e0e0; margin:4mm 0; }
 
-/* ZONE TITRE + ADRESSE FENÊTRE DROITE
-   La colonne adresse (.col-adresse) apparaît à droite de la lettre (x ≈ 108 mm depuis bord gauche).
-   Avec l'en-tête (~35 mm) elle commence à ~40 mm du haut de la page A4.
-   Pour enveloppe DL à fenêtre droite : insérer la lettre en pliant en tiers,
-   le tiers supérieur vers l'arrière → la fenêtre montre le tiers du haut (~0–99 mm).
-   Ajuster padding-top de .col-adresse si besoin (ex: padding-top:5mm). */
+/* ZONE TITRE + ADRESSE FENÊTRE DROITE */
 .zone-top { display:flex; align-items:flex-start; gap:8mm; margin-bottom:5mm; }
 .col-title { flex:1; }
 .col-title h1 { font-size:18pt; font-weight:900; color:#2D1B2E; letter-spacing:2px; margin-bottom:2mm; }
@@ -125,7 +124,7 @@ body { font-family:Arial,Helvetica,sans-serif; font-size:10pt; color:#1a1a1a; ba
 .col-adresse {
   width:82mm; flex-shrink:0;
   padding:4mm 5mm;
-  border:1px dashed #ccc; /* repère visuel — transparent à l'impression */
+  border:1px dashed #ccc;
   line-height:1.65; font-size:10.5pt;
 }
 @media print { .col-adresse { border-color:transparent; } }
@@ -151,15 +150,14 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
 /* SECTIONS */
 .sect { padding:3mm 4mm; margin-bottom:3mm; border-left:3px solid #E86C00; background:#fffbf7; }
 .sect.mauve { border-color:#B89AAB; background:#f7f4fa; }
+.sect.neutre { border-color:#cbd5e1; background:#f8fafc; }
 .sect h3 { font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#E86C00; margin-bottom:2mm; }
 .sect.mauve h3 { color:#7a5a8a; }
-.sect p { font-size:8.5pt; line-height:1.5; margin-bottom:1mm; }
+.sect.neutre h3 { color:#64748b; }
+.sect p { font-size:8.5pt; line-height:1.6; margin-bottom:1.5mm; }
+.sect p:last-child { margin-bottom:0; }
 .mono { font-family:'Courier New',monospace; font-weight:700; letter-spacing:1px; }
-.comm { font-family:'Courier New',monospace; font-weight:700; font-size:10pt; color:#2D1B2E; }
-
-/* CONTACTS */
-.contacts { margin-top:4mm; padding:2.5mm 4mm; border:1px solid #e8e8e8; border-radius:3pt; font-size:7.5pt; color:#555; line-height:1.6; }
-.contacts strong { color:#2D1B2E; }
+.comm { font-family:Arial,Helvetica,sans-serif; font-weight:700; font-size:10pt; color:#2D1B2E; }
 
 /* PIED DE PAGE */
 .footer { position:absolute; bottom:8mm; left:15mm; right:15mm; font-size:7pt; color:#bbb; text-align:center; border-top:1px solid #e8e8e8; padding-top:2mm; }
@@ -170,12 +168,14 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
 
 <div class="page">
 
-  <!-- EN-TÊTE -->
+  <!-- EN-TÊTE : logo + ESPM+ à côté -->
   <div class="header">
-    <img class="logo-ecole" src="${logoUrl}" alt="École Secondaire Plurielle Maritime">
-    <div class="header-right">
-      <div class="espm-logo"><span class="w">ESPM</span><span class="o">+</span></div>
-      <div class="school-addr">Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean<br>${SCHOOL_IBAN !== '[IBAN — à configurer dans Netlify]' ? `IBAN : <strong>${esc(SCHOOL_IBAN)}</strong>` : ''}</div>
+    <div class="header-brand">
+      <img class="logo-ecole" src="${logoUrl}" alt="École Secondaire Plurielle Maritime">
+      <div class="brand-text">
+        <div class="espm-logo"><span class="w">ESPM</span><span class="o">+</span></div>
+        <div class="school-addr">Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean${SCHOOL_IBAN !== '[IBAN — à configurer dans Netlify]' ? `<br>IBAN : <strong>${esc(SCHOOL_IBAN)}</strong>` : ''}</div>
+      </div>
     </div>
   </div>
   <hr class="hr-main">
@@ -226,33 +226,33 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
   <!-- PAIEMENT -->
   <div class="sect">
     <h3>Informations de paiement</h3>
-    <p><strong>IBAN&nbsp;:</strong> <span class="mono">${esc(SCHOOL_IBAN)}</span>&nbsp;&nbsp;&nbsp;<strong>BIC&nbsp;:</strong> <span class="mono">${esc(SCHOOL_BIC)}</span></p>
-    <p><strong>Communication&nbsp;:</strong> <span class="comm">+++${comm}+++</span></p>
+    <p><strong>IBAN&nbsp;:</strong> <span class="mono">${esc(SCHOOL_IBAN)}</span></p>
+    <p><strong>Communication&nbsp;:</strong> <span class="comm">${esc(comm)}</span></p>
     <p><strong>Date limite&nbsp;:</strong> ${fmtDate(dateLimite)} (30 jours à dater de la facturation)</p>
   </div>
 
   ${ech ? `<div class="sect mauve">
-    <h3>Plan d'échelonnement accordé</h3>
-    <p>Mensualité&nbsp;: <strong>${fmtEur(ech.mensualite || ech.montant_par_mois)}</strong>${ech.date_debut ? ` — à partir du <strong>${fmtDate(ech.date_debut)}</strong>` : ''}${ech.fin ? ` jusqu'au <strong>${fmtDate(ech.fin)}</strong>` : ''}</p>
+    <h3>Plan d'échelonnement en cours</h3>
+    <p>Un plan de paiement échelonné est actuellement en cours pour cet élève.${ech.mensualite || ech.montant_par_mois ? ` Mensualité&nbsp;: <strong>${fmtEur(ech.mensualite || ech.montant_par_mois)}</strong>` : ''}${ech.date_debut ? ` — à partir du <strong>${fmtDate(ech.date_debut)}</strong>` : ''}${ech.fin ? ` jusqu'au <strong>${fmtDate(ech.fin)}</strong>` : ''}.</p>
     ${ech.remarque ? `<p style="color:#666;font-style:italic">${esc(ech.remarque)}</p>` : ''}
   </div>` : ''}
 
   ${org ? `<div class="sect mauve">
     <h3>Prise en charge par organisme tiers</h3>
-    <p><strong>${esc(ORG_LABELS[org.organisme] || org.organisme)}</strong> — Statut&nbsp;: ${org.statut === 'valide' ? 'Validé ✓' : 'En cours'}${org.montant_accorde ? ` — Montant accordé&nbsp;: <strong>${fmtEur(org.montant_accorde)}</strong>` : ''}</p>
+    <p>Un organisme tiers est impliqué dans le suivi financier de cet élève&nbsp;: <strong>${esc(ORG_LABELS[org.organisme] || org.organisme)}</strong> — Statut&nbsp;: ${org.statut === 'valide' ? 'Validé ✓' : 'En cours'}${org.montant_accorde ? ` — Montant accordé&nbsp;: <strong>${fmtEur(org.montant_accorde)}</strong>` : ''}.</p>
     ${org.notes ? `<p style="color:#666;font-style:italic">${esc(org.notes)}</p>` : ''}
   </div>` : ''}
 
   <!-- CONTACTS -->
-  <div class="contacts">
-    <strong>Économat&nbsp;:</strong> ${esc(SCHOOL_EMAIL_ECO)}${SCHOOL_TEL_ECO ? ` · ${esc(SCHOOL_TEL_ECO)}` : ''}
-    &nbsp;&nbsp;|&nbsp;&nbsp;
-    <strong>Assistance sociale&nbsp;:</strong> ${esc(SCHOOL_EMAIL_AS)}${SCHOOL_TEL_AS ? ` · ${esc(SCHOOL_TEL_AS)}` : ''}
+  <div class="sect neutre">
+    <h3>Nous contacter</h3>
+    ${!hasAide ? `<p>Les responsables légaux peuvent à tout moment contacter l'<strong>assistant social de l'école, Monsieur Mignolet</strong>, par Smartschool ou au <strong>${esc(SCHOOL_TEL_AS)}</strong> pour prendre un rendez-vous.</p>` : ''}
+    <p>Pour toute précision concernant cette facture, prenez contact avec l'<strong>économe de l'école, Monsieur Lecocq</strong>, par Smartschool ou au <strong>${esc(SCHOOL_TEL_ECO)}</strong>.</p>
   </div>
 
   <!-- PIED DE PAGE -->
   <div class="footer">
-    École Secondaire Plurielle Maritime — ASBL${SCHOOL_BCE ? ` — BCE N°&nbsp;${esc(SCHOOL_BCE)}` : ''} — Avenue Jean Dubrucq 175, 1080 Molenbeek-Saint-Jean
+    École Secondaire Plurielle Maritime — ASBL${SCHOOL_BCE ? ` — BCE N°&nbsp;${esc(SCHOOL_BCE)}` : ''} — Avenue Jean Dubrucq 175, 1080 Molenbeek-Saint-Jean — ${esc(SCHOOL_EMAIL_ECO)} · ${esc(SCHOOL_TEL_ECO)}
   </div>
 
 </div>

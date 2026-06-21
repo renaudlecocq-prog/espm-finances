@@ -583,3 +583,14 @@ git push origin main
 - Bouton "🖨 PDF" dans la vue détail d'une facture (DetailFacture) — visible pour tous les utilisateurs authentifiés
 - Bouton "🖨" par ligne facture dans FicheEleve (onglet Finances)
 - Env vars à configurer sur Netlify : SCHOOL_IBAN, SCHOOL_BIC, SCHOOL_EMAIL_ECO, SCHOOL_TEL_ECO, SCHOOL_EMAIL_AS, SCHOOL_TEL_AS, SCHOOL_BCE
+
+## [v0.21b] - 2026-06-21
+### Fixed
+- PDF facture : logo école — PNG recadré pour n'afficher que le logo Maritime (supprime le doublon Harreveld)
+- PDF facture : mise en page en-tête — logo + "ESPM+" côte à côte (flex row), suppression de la colonne ESPM+ séparée à droite
+- PDF facture : BIC supprimé des informations de paiement
+- PDF facture : communication = "Nom Prénom Classe" (au lieu du numéro de facture structuré)
+### Changed
+- PDF facture : section contacts conditionnelle — si aucun plan de paiement ni organisme tiers actif, invite à contacter l'AS (M. Mignolet, Smartschool ou 02/210.20.91) + l'économe (M. Lecocq, Smartschool ou 02/210.20.96) ; sinon, uniquement l'économe
+- PDF facture : footer — email économat + téléphone économat uniquement (suppression des coordonnées AS du footer)
+- PDF facture : env vars SCHOOL_EMAIL_AS et SCHOOL_BIC ne sont plus requises (non affichées)
