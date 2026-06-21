@@ -125,7 +125,7 @@ export default async function handler(req) {
 
       const recipient = testRecipient || internalNumber
       const msgTitle  = isTest ? `[TEST] Nouvelle facture — ESPM+` : `Nouvelle facture — ESPM+`
-      const msgBody   = `Bonjour,\n\nUne nouvelle facture a été émise pour ${student.prenom} ${student.nom}.\n\nConsultez-la sur : https://espmaritime.netlify.app`
+      const msgBody   = `<p>Bonjour,</p><p>Une nouvelle facture a été émise pour <strong>${student.prenom} ${student.nom}</strong>.</p><p><a href="https://espmaritime.netlify.app" style="display:inline-block;background-color:#2D1B2E;padding:9px 18px;border-radius:6px;text-decoration:none;font-weight:bold;font-family:Arial,sans-serif;font-size:14px;" target="_blank" rel="noopener noreferrer"><span style="color:#ffffff;">ESPM</span><span style="color:#E86C00;">+</span></a></p>`
 
       if (isTest) {
         const r = await sendMsg({ apiUrl, accessCode, recipient, coAccount: 0, title: msgTitle, body: msgBody })
@@ -158,7 +158,7 @@ export default async function handler(req) {
     const lienActivite = activiteId
       ? `https://espmaritime.netlify.app/activites?open=${activiteId}`
       : `https://espmaritime.netlify.app/activites`
-    const msgBody  = `Bonjour,\n\nUne nouvelle activité a été publiée par ${responsableNom} : "${intitule}".\n\nConsultez-la sur : ${lienActivite}`
+    const msgBody  = `<p>Bonjour,</p><p>Une nouvelle activité a été publiée par <strong>${responsableNom}</strong> : "${intitule}".</p><p><a href="${lienActivite}" style="display:inline-block;background-color:#2D1B2E;padding:9px 18px;border-radius:6px;text-decoration:none;font-weight:bold;font-family:Arial,sans-serif;font-size:14px;" target="_blank" rel="noopener noreferrer"><span style="color:#ffffff;">ESPM</span><span style="color:#E86C00;">+</span></a></p>`
 
     await Promise.all(
       recipients.map(async (r) => {

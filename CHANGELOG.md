@@ -563,3 +563,15 @@ git push origin main
 - notify : suppression du paramètre `senderIdentifier` dans l'enveloppe SOAP — le serveur Smartschool retournait ssCode=12 ("utilisateur inexistant") pour toute valeur de `senderIdentifier` (y compris 'ESPM+', 'Null', chaîne vide). Sans ce paramètre, ssCode=0 (succès) et les messages apparaissent comme "Indisponible" (sans expéditeur, impossible de répondre — comportement voulu pour les notifications automatiques)
 - notify : correction du check de succès — `ssCode === 0` au lieu de `ssCode > 0` (0 = succès Smartschool, pas une erreur)
 - notify : suppression de `SMARTSCHOOL_NOTIFY_SENDER` (env var et paramètre `sender`) — devenu inutile
+
+## [v0.20m] - 2026-06-21
+### Fixed
+- notify : body des messages converti en HTML (`<p>`, `<strong>`, `<a href>`) — le lien vers espmaritime.netlify.app est maintenant cliquable dans Smartschool (le format texte brut ne génère pas de lien cliquable dans l'interface Smartschool)
+
+## [v0.20n] - 2026-06-21
+### Changed
+- notify : bouton "↗ ESPM+" orange (#E86C00) dans le corps des messages Smartschool — remplace le lien texte brut (style identique au bouton Smartschool du header)
+
+## [v0.20o] - 2026-06-21
+### Changed
+- notify : bouton ESPM+ redesigné — fond mauve (#2D1B2E), "ESPM" blanc, "+" orange (#E86C00), ouvre dans un nouvel onglet (target="_blank")
