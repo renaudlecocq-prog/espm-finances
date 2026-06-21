@@ -118,7 +118,7 @@ export const handler = async (event) => {
   tbody td { padding:3.5px 6px; color:#374151; }
   td.r { text-align:right; }
   .totaux-wrap { display:flex; justify-content:flex-end; margin-top:2mm; margin-bottom:5mm; }
-  .totaux { width:64mm; border-collapse:collapse; font-size:9pt; }
+  .totaux { width:auto; min-width:64mm; border-collapse:collapse; font-size:9pt; }
   .totaux td { padding:2px 6px; color:#374151; }
   .totaux td.r { text-align:right; }
   .totaux tr.final td { font-weight:800; font-size:11pt; color:#2D1B2E; border-top:2px solid #2D1B2E; padding-top:4px; }
@@ -161,9 +161,7 @@ export const handler = async (event) => {
       <div class="title-left">
         <h1 class="doc-title">DEMANDE DE PRISE<br>EN CHARGE</h1>
         <div class="doc-meta">Généré le <strong>${today}</strong></div>
-        <span class="statut-badge" style="background:${sb};color:${sc}">
-          ${esc(STATUT_LABELS[ot.statut] || ot.statut || '')}
-        </span>
+
       </div>
 
       <div class="org-box">
@@ -226,8 +224,8 @@ export const handler = async (event) => {
     <div class="totaux-wrap">
       <table class="totaux">
         <tr class="final">
-          <td>MONTANT DEMANDÉ</td>
-          <td class="r">${fmt(total)}</td>
+          <td style="white-space:nowrap">MONTANT DEMANDÉ</td>
+          <td class="r" style="white-space:nowrap">${fmt(total)}</td>
         </tr>
       </table>
     </div>` : '<p style="color:#9ca3af;font-style:italic;font-size:9pt;margin:3mm 0 5mm">Aucun article renseigné.</p>'}
