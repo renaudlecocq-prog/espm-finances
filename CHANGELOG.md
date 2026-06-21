@@ -669,3 +669,14 @@ git push origin main
 - PDF échelonnement footer : "Jérôme Mignolet, Assistant social" avant email/tél
 - EchelonnementDetail modal : section "Rapport signé" avec upload PDF (drag & drop ou parcourir), liste des documents uploadés avec vue/suppression
 - Supabase : table `echelonnement_documents` + bucket `echelonnement-rapports` avec policies RLS
+
+## [v0.28] — 2026-06-21
+### Added
+- Organismes tiers : sélection articles depuis le catalogue global (décorrélé de la facturation), articles personnalisés (titre + montant), champ adresse organisme, montant demandé calculé automatiquement
+- Organismes tiers : section rapport signé dans le modal (1/3 générer + 2/3 upload, même UX que échelonnements)
+- Organismes tiers : bouton PDF par ligne dans le tableau + icône corbeille par ligne
+- Nouvelle function Netlify `organismes-tiers-rapport-pdf.mjs` : demande de prise en charge A4 (logo, infos élève/organisme, tableau articles, bloc double signature, footer AS)
+- Tables Supabase : `organismes_tiers_articles`, `organismes_tiers_documents`, colonnes `adresse` et `montant_demande` sur `organismes_tiers`
+- Bucket Supabase `organismes-tiers-rapports`
+### Changed
+- Factures : "← Retour au batch" → "← Retour aux factures individuelles"

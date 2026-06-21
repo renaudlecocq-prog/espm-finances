@@ -7,7 +7,7 @@ import FicheEleve from '../components/ui/FicheEleve'
 import Commentaires from '../components/ui/Commentaires'
 import {
   Search, ChevronUp, ChevronDown, ChevronsUpDown, Trash2, X,
-  AlertTriangle, CheckCircle2, Clock, Calendar, FileText, Upload, Eye,
+  AlertTriangle, CheckCircle2, Clock, Calendar, FileText, Upload, Eye, Plus,
 } from 'lucide-react'
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -910,19 +910,127 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
 
 function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
   const { user, profile } = useAuth()
+  const eleve = row.eleve || {}
+
+  // ── Form fields ─────────────────────────────────────────────────────────
   const [form, setForm] = useState({
-    organisme: (row.organisme || 'cpas').toUpperCase(),
-    statut: row.statut || 'en_cours',
-    montant_accorde: row.montant_accorde != null ? String(row.montant_accorde) : '',
-    notes: row.notes || '',
+    organisme: (row.organisme || 'CPAS').toUpperCase(),
+    statut:    row.statut || 'en_cours',
+    adresse:   row.adresse || '',
+    notes:     row.notes || '',
   })
   const [saving, setSaving] = useState(false)
-  const [ficheId, setFicheId] = useState(null)
 
+  // ── Articles ─────────────────────────────────────────────────────────────
+  const [otArticles, setOtArticles]             = useState([])  // depuis DB ot_articles
+  const [availArticles, setAvailArticles] = useState([]) // catalogue articles global (décorrélé de l'élève)
+  const [customForm, setCustomForm]     = useState(null) // {titre:'',montant:''}
+
+  const reloadOtArticles = useCallback(async () => {
+    const { data } = await supabase.from('organismes_tiers_articles')
+      .select('*').eq('ot_id', row.id).order('ordre').order('created_at')
+    setOtArticles(data || [])
+  }, [row.id])
+
+  useEffect(() => {
+    reloadOtArticles()
+    // Charger tous les articles actifs du catalogue — sans lien avec l'élève ou la facturation
+    supabase.from('articles')
+      .select('id, nom, categorie, prix_unitaire')
+      .eq('statut', 'actif')
+      .order('categorie').order('nom')
+      .then(({ data }) => setAvailArticles(data || []))
+  }, [row.id]) // eslint-disable-line
+
+  const totalDemande = useMemo(
+    () => otArticles.reduce((s, a) => s + Number(a.montant), 0),
+    [otArticles]
+  )
+
+  // IDs articles déjà ajoutés (pour éviter les doublons)
+  const selectedArticleRefIds = useMemo(
+    () => new Set(otArticles.map(a => a.article_ref_id).filter(Boolean)),
+    [otArticles]
+  )
+
+  const addArticle = async (article) => {
+    const ordre = otArticles.length
+    await supabase.from('organismes_tiers_articles').insert({
+      ot_id: row.id, article_ref_id: article.id,
+      titre: article.nom, montant: Number(article.prix_unitaire || 0), ordre,
+    })
+    await reloadOtArticles()
+  }
+
+  const removeArticle = async (id) => {
+    await supabase.from('organismes_tiers_articles').delete().eq('id', id)
+    await reloadOtArticles()
+  }
+
+  const addCustomArticle = async () => {
+    if (!customForm || !customForm.titre.trim() || !customForm.montant) return
+    await supabase.from('organismes_tiers_articles').insert({
+      ot_id: row.id, titre: customForm.titre.trim(), montant: Number(customForm.montant), ordre: otArticles.length,
+    })
+    setCustomForm(null)
+    await reloadOtArticles()
+  }
+
+  // ── Documents ─────────────────────────────────────────────────────────────
+  const [docs, setDocs]         = useState([])
+  const [uploading, setUploading] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const fileRef                 = useRef()
+
+  const reloadDocs = useCallback(async () => {
+    const { data } = await supabase.from('organismes_tiers_documents')
+      .select('*').eq('ot_id', row.id).order('created_at', { ascending: false })
+    setDocs(data || [])
+  }, [row.id])
+
+  useEffect(() => { reloadDocs() }, [reloadDocs])
+
+  const uploadFile = async file => {
+    if (!file) return
+    if (file.type !== 'application/pdf') { alert('Seuls les fichiers PDF sont acceptés.'); return }
+    setUploading(true)
+    const uid      = crypto.randomUUID()
+    const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_')
+    const storagePath = `${row.id}/${uid}_${safeName}`
+    const { error: storeErr } = await supabase.storage.from('organismes-tiers-rapports')
+      .upload(storagePath, file, { contentType: 'application/pdf' })
+    if (storeErr) { alert('Erreur upload : ' + storeErr.message); setUploading(false); return }
+    await supabase.from('organismes_tiers_documents').insert({
+      ot_id: row.id, nom_fichier: file.name, storage_path: storagePath, taille: file.size,
+    })
+    await reloadDocs()
+    setUploading(false)
+  }
+
+  const viewDoc = async doc => {
+    const { data } = await supabase.storage.from('organismes-tiers-rapports').createSignedUrl(doc.storage_path, 60)
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+  }
+
+  const deleteDoc = async doc => {
+    if (!window.confirm(`Supprimer "${doc.nom_fichier}" ?`)) return
+    await supabase.storage.from('organismes-tiers-rapports').remove([doc.storage_path])
+    await supabase.from('organismes_tiers_documents').delete().eq('id', doc.id)
+    await reloadDocs()
+  }
+
+  const handlePdfRapport = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    window.open(
+      `/.netlify/functions/organismes-tiers-rapport-pdf?otId=${row.id}&token=${session.access_token}`,
+      '_blank'
+    )
+  }
+
+  // ── Save + delete ─────────────────────────────────────────────────────────
   const logEvent = async (meta) => {
-    const auteurNom = profile
-      ? `${profile.prenom || ''} ${profile.nom || ''}`.trim()
-      : (user?.email || 'Inconnu')
+    const auteurNom = profile ? `${profile.prenom || ''} ${profile.nom || ''}`.trim() : (user?.email || 'Inconnu')
     await supabase.from('commentaires').insert({
       entity_type: 'organisme_tiers', entity_id: row.id,
       auteur_id: user?.id, auteur_nom: auteurNom,
@@ -930,31 +1038,18 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
     })
   }
 
-  const hasChanges =
-    form.organisme.toLowerCase() !== (row.organisme || '') ||
-    form.statut !== row.statut ||
-    (form.montant_accorde !== '' ? Number(form.montant_accorde) : null) !== row.montant_accorde ||
-    (form.notes || null) !== (row.notes || null)
-
   const save = async () => {
     setSaving(true)
     const payload = {
       organisme: form.organisme.toLowerCase(),
-      statut: form.statut,
-      montant_accorde: form.montant_accorde !== '' ? Number(form.montant_accorde) : null,
-      notes: form.notes || null,
+      statut:    form.statut,
+      adresse:   form.adresse || null,
+      notes:     form.notes || null,
+      montant_demande: totalDemande || null,
       updated_at: new Date().toISOString(),
     }
     const { error } = await supabase.from('organismes_tiers').update(payload).eq('id', row.id)
-    if (!error) {
-      const changed = []
-      if (form.organisme.toLowerCase() !== (row.organisme || '')) changed.push('Organisme')
-      if (form.statut !== row.statut) changed.push('Statut')
-      const newMontant = form.montant_accorde !== '' ? Number(form.montant_accorde) : null
-      if (newMontant !== row.montant_accorde) changed.push('Montant accordé')
-      if ((form.notes || null) !== (row.notes || null)) changed.push('Notes')
-      if (changed.length > 0) await logEvent({ action: 'edit', fields: changed })
-    }
+    if (!error) await logEvent({ action: 'edit', fields: ['Organisme/Statut/Adresse'] })
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
     onUpdated()
@@ -967,33 +1062,38 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
     onClose()
   }
 
-  const eleve = row.eleve || {}
+  const [ficheId, setFicheId] = useState(null)
 
   return (
     <>
       <div className="fixed inset-0 z-50 flex justify-end">
         <div className="absolute inset-0 bg-black/25" onClick={onClose} />
-        <div className="relative z-10 w-full max-w-4xl bg-white shadow-2xl flex flex-col h-full overflow-hidden">
+        <div className="relative z-10 w-full max-w-5xl bg-white shadow-2xl flex flex-col h-full overflow-hidden">
+
           {/* Header */}
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
             <div>
-              <div className="font-bold text-gray-800 text-base">
-                {eleve.nom} {eleve.prenom}
+              <div className="font-bold text-gray-800 text-base">{eleve.nom} {eleve.prenom}</div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs text-gray-400">{eleve.classe}</span>
+                <Badge val={form.statut} map={STATUT_OT} />
+                {totalDemande > 0 && (
+                  <span className="text-xs font-semibold text-primary">{fmtEur(totalDemande)} demandé</span>
+                )}
               </div>
-              <div className="text-xs text-gray-400 mt-0.5">{eleve.classe}</div>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => setFicheId(eleve.id)}
                 className="text-xs text-primary border border-primary/30 hover:bg-primary/5 rounded-lg px-2.5 py-1 transition-colors">
                 Fiche élève
               </button>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 ml-1">
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
                 <X size={18} />
               </button>
             </div>
           </div>
 
-          {/* Two-column body */}
+          {/* Body */}
           <div className="flex flex-1 overflow-hidden">
 
             {/* LEFT — Commentaires */}
@@ -1001,86 +1101,209 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
               <Commentaires
                 entityType="organisme_tiers"
                 entityId={row.id}
-                entityLabel={`${(row.eleve?.prenom || '')} ${(row.eleve?.nom || '')}`.trim() || 'Organisme tiers'}
+                entityLabel={`${eleve.prenom || ''} ${eleve.nom || ''}`.trim() || 'Organisme tiers'}
               />
             </div>
 
-            {/* RIGHT — Détails */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
-            {/* Organisme + Statut */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label">Organisme</label>
-                {isAllowed
-                  ? <select className="input" value={form.organisme}
-                      onChange={e => setForm(f => ({ ...f, organisme: e.target.value }))}>
-                      {['CPAS', 'ULB', 'SPJ', 'Autre'].map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  : <div className="input bg-gray-50 font-semibold text-primary">{form.organisme}</div>
-                }
-              </div>
-              <div>
-                <label className="label">Statut</label>
-                {isAllowed
-                  ? <select className="input" value={form.statut}
-                      onChange={e => setForm(f => ({ ...f, statut: e.target.value }))}>
-                      {Object.entries(STATUT_OT).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                    </select>
-                  : <Badge val={form.statut} map={STATUT_OT} />
-                }
-              </div>
-            </div>
+            {/* RIGHT */}
+            <div className="flex-1 overflow-y-auto flex flex-col">
+              <div className="flex-1 px-5 py-5 space-y-5">
 
-            {/* Montant accordé */}
-            <div>
-              <label className="label">Montant accordé (€)</label>
-              {isAllowed
-                ? <input className="input" type="number" step="0.01" value={form.montant_accorde}
-                    onChange={e => setForm(f => ({ ...f, montant_accorde: e.target.value }))}
-                    placeholder="0.00" />
-                : <div className="input bg-gray-50 text-gray-700">
-                    {form.montant_accorde ? fmtEur(Number(form.montant_accorde)) : '—'}
+                {/* Organisme + Statut */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">Organisme</label>
+                    {isAllowed
+                      ? <select className="input" value={form.organisme}
+                          onChange={e => setForm(f => ({ ...f, organisme: e.target.value }))}>
+                          {['CPAS','ULB','SPJ','Autre'].map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      : <div className="input bg-gray-50 font-semibold text-primary">{form.organisme}</div>
+                    }
                   </div>
-              }
-            </div>
-
-            {/* Notes */}
-            <div>
-              <label className="label">Notes</label>
-              {isAllowed
-                ? <textarea className="input resize-none" rows={4} value={form.notes}
-                    onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                    placeholder="Remarques, contacts, numéros de dossier…" />
-                : <div className="input bg-gray-50 text-gray-700 min-h-[80px] whitespace-pre-wrap">
-                    {form.notes || <span className="text-gray-400 italic">Aucune note</span>}
+                  <div>
+                    <label className="label">Statut</label>
+                    {isAllowed
+                      ? <select className="input" value={form.statut}
+                          onChange={e => setForm(f => ({ ...f, statut: e.target.value }))}>
+                          {Object.entries(STATUT_OT).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                        </select>
+                      : <Badge val={form.statut} map={STATUT_OT} />
+                    }
                   </div>
-              }
-            </div>
+                </div>
 
-            {/* Dates */}
-            <div className="text-xs text-gray-400 space-y-0.5 border-t border-gray-100 pt-4">
-              {row.created_at && <div>Créé le {fmtDate(row.created_at.slice(0, 10))}</div>}
-              {row.updated_at && row.updated_at !== row.created_at &&
-                <div>Modifié le {fmtDate(row.updated_at.slice(0, 10))}</div>}
-            </div>
-          </div>
+                {/* Adresse */}
+                <div>
+                  <label className="label">Adresse de l'organisme</label>
+                  {isAllowed
+                    ? <input className="input" value={form.adresse}
+                        onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))}
+                        placeholder="Rue, numéro, code postal, ville…" />
+                    : <div className="input bg-gray-50 text-gray-700">{form.adresse || <span className="text-gray-400 italic">—</span>}</div>
+                  }
+                </div>
 
-          {/* Footer */}
-          {isAllowed && (
-            <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
-              <button onClick={del}
-                className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 transition-colors">
-                <Trash2 size={13} /> Supprimer
-              </button>
-              <button onClick={save} disabled={saving || !hasChanges}
-                className="btn-primary py-1.5 px-4 text-sm disabled:opacity-40">
-                {saving ? 'Enregistrement…' : 'Enregistrer'}
-              </button>
-            </div>
-          )}
+                {/* Articles */}
+                <div className="border-t border-gray-100 pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold text-gray-700">Articles à charge</h3>
+                    <span className="text-sm font-bold text-primary">{fmtEur(totalDemande)}</span>
+                  </div>
+
+                  {/* Articles déjà ajoutés */}
+                  {otArticles.length > 0 && (
+                    <div className="mb-3 space-y-1">
+                      {otArticles.map(a => (
+                        <div key={a.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm">
+                          <span className="text-gray-700 flex-1 truncate mr-2">{a.titre}</span>
+                          <span className="font-semibold text-gray-800 mr-2 shrink-0">{fmtEur(a.montant)}</span>
+                          {isAllowed && (
+                            <button onClick={() => removeArticle(a.id)} className="text-red-300 hover:text-red-500 transition-colors shrink-0">
+                              <X size={13} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {isAllowed && (
+                    <>
+                      {/* Sélection depuis attributions */}
+                      {availArticles.filter(a => !selectedArticleRefIds.has(a.id)).length > 0 && (
+                        <div className="mb-2">
+                          <p className="text-xs text-gray-400 mb-1.5">Catalogue articles :</p>
+                          <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
+                            {availArticles
+                              .filter(a => !selectedArticleRefIds.has(a.id))
+                              .map(a => (
+                                <button key={a.id}
+                                  onClick={() => addArticle(a)}
+                                  className="w-full flex items-center justify-between text-left rounded-lg border border-gray-200 hover:border-primary/40 hover:bg-primary/5 px-3 py-1.5 text-sm transition-colors group">
+                                  <span className="text-gray-700 flex-1 truncate mr-2">
+                                    {a.nom}
+                                    {a.categorie && <span className="text-gray-400 ml-1 text-xs">({a.categorie})</span>}
+                                  </span>
+                                  <span className="text-gray-500 text-xs shrink-0 mr-2">{fmtEur(a.prix_unitaire)}</span>
+                                  <Plus size={13} className="text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                </button>
+                              ))
+                            }
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Article personnalisé */}
+                      {customForm === null
+                        ? <button onClick={() => setCustomForm({ titre: '', montant: '' })}
+                            className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/70 transition-colors mt-1">
+                            <Plus size={13} /> Ajouter un article personnalisé
+                          </button>
+                        : <div className="flex gap-2 mt-2 items-end">
+                            <div className="flex-1">
+                              <input className="input text-sm" placeholder="Titre de l'article"
+                                value={customForm.titre}
+                                onChange={e => setCustomForm(f => ({ ...f, titre: e.target.value }))} />
+                            </div>
+                            <div className="w-28">
+                              <input className="input text-sm" type="number" step="0.01" placeholder="Montant €"
+                                value={customForm.montant}
+                                onChange={e => setCustomForm(f => ({ ...f, montant: e.target.value }))} />
+                            </div>
+                            <button onClick={addCustomArticle} className="btn-primary py-2 px-3 text-sm">OK</button>
+                            <button onClick={() => setCustomForm(null)} className="btn-secondary py-2 px-3 text-sm">✕</button>
+                          </div>
+                      }
+                    </>
+                  )}
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="label">Notes</label>
+                  {isAllowed
+                    ? <textarea className="input resize-none" rows={3} value={form.notes}
+                        onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                        placeholder="Remarques, contacts, numéros de dossier…" />
+                    : <div className="input bg-gray-50 text-gray-700 min-h-[60px] whitespace-pre-wrap">
+                        {form.notes || <span className="text-gray-400 italic">Aucune note</span>}
+                      </div>
+                  }
+                </div>
+
+                {/* Rapport signé */}
+                <div className="border-t border-gray-100 pt-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Rapport signé</h3>
+                  <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
+                    onChange={e => { uploadFile(e.target.files[0]); e.target.value = '' }} />
+                  <div className="flex gap-2 mb-3">
+                    <button onClick={handlePdfRapport} title="Générer le rapport PDF"
+                      className="w-1/3 shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors p-3 text-primary">
+                      <FileText size={18} />
+                      <span className="text-xs font-medium leading-tight text-center">Générer<br/>le rapport</span>
+                    </button>
+                    <div
+                      className={`flex-1 rounded-xl border-2 border-dashed p-3 text-center cursor-pointer transition-colors
+                        ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
+                      onDragOver={e => { e.preventDefault(); setDragging(true) }}
+                      onDragLeave={() => setDragging(false)}
+                      onDrop={e => { e.preventDefault(); setDragging(false); uploadFile(e.dataTransfer.files[0]) }}
+                      onClick={() => fileRef.current.click()}
+                    >
+                      {uploading
+                        ? <p className="text-sm text-primary">Upload en cours…</p>
+                        : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400">
+                            <Upload size={14} />
+                            <span className="text-sm">Glisser-déposer ou <span className="text-primary underline">parcourir</span></span>
+                          </div>
+                      }
+                    </div>
+                  </div>
+                  {docs.length === 0
+                    ? <p className="text-xs text-gray-400 text-center">Aucun document uploadé</p>
+                    : docs.map(d => (
+                        <div key={d.id} className="flex items-center justify-between py-1.5 border-b border-gray-100 text-sm">
+                          <span className="truncate text-gray-700 flex-1 mr-2">{d.nom_fichier}</span>
+                          <div className="flex gap-2 shrink-0">
+                            <button onClick={() => viewDoc(d)} className="text-primary hover:text-primary/70 transition-colors" title="Voir">
+                              <Eye size={14} />
+                            </button>
+                            {isAllowed && (
+                              <button onClick={() => deleteDoc(d)} className="text-red-400 hover:text-red-600 transition-colors" title="Supprimer">
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                  }
+                </div>
+
+                {/* Dates */}
+                <div className="text-xs text-gray-400 space-y-0.5 border-t border-gray-100 pt-3">
+                  {row.created_at && <div>Créé le {fmtDate(row.created_at.slice(0,10))}</div>}
+                  {row.updated_at && row.updated_at !== row.created_at &&
+                    <div>Modifié le {fmtDate(row.updated_at.slice(0,10))}</div>}
+                </div>
+
+              </div>
+
+              {/* Footer */}
+              {isAllowed && (
+                <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
+                  <button onClick={del}
+                    className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 transition-colors">
+                    <Trash2 size={13} /> Supprimer
+                  </button>
+                  <button onClick={save} disabled={saving}
+                    className="btn-primary py-1.5 px-4 text-sm disabled:opacity-40">
+                    {saving ? 'Enregistrement…' : 'Enregistrer'}
+                  </button>
+                </div>
+              )}
             </div>{/* end RIGHT */}
-          </div>{/* end two-column */}
+          </div>
         </div>
       </div>
       <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
@@ -1111,7 +1334,7 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
     { key: 'statut',    label: 'Statut',    options: Object.entries(STATUT_OT).map(([v, m]) => ({ value: v, label: m.label })) },
   ]
   const [sort, setSort] = useState({ col: 'nom', dir: 'asc' })
-  const [form, setForm] = useState({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', montant_accorde: '', notes: '' })
+  const [form, setForm] = useState({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', adresse: '', notes: '' })
   const [saving, setSaving] = useState(false)
 
   const reload = () =>
@@ -1119,6 +1342,15 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
       .select('*, eleve:eleve_id(id,nom,prenom,classe)')
       .order('created_at', { ascending: false })
       .then(({ data }) => setRows(data || []))
+
+  const handlePdfOT = async (otId) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    window.open(
+      `/.netlify/functions/organismes-tiers-rapport-pdf?otId=${otId}&token=${session.access_token}`,
+      '_blank'
+    )
+  }
 
   useEffect(() => {
     Promise.all([
@@ -1138,9 +1370,10 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
     if (!form.eleve_id) return
     setSaving(true)
     const payload = {
-      ...form,
+      eleve_id: form.eleve_id,
       organisme: form.organisme.toLowerCase(),
-      montant_accorde: form.montant_accorde !== '' ? Number(form.montant_accorde) : null,
+      statut: form.statut,
+      adresse: form.adresse || null,
       notes: form.notes || null,
     }
     const { error } = await supabase.from('organismes_tiers').insert(payload)
@@ -1152,7 +1385,7 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
     await reload()
     setSaving(false)
     setShowForm(false)
-    setForm({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', montant_accorde: '', notes: '' })
+    setForm({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', adresse: '', notes: '' })
   }
 
   const del = async (id) => {
@@ -1246,10 +1479,11 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
                     {Object.entries(STATUT_OT).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="label">Montant accordé (€)</label>
-                  <input className="input" type="number" step="0.01" value={form.montant_accorde}
-                    onChange={e => setForm(f => ({ ...f, montant_accorde: e.target.value }))} />
+                <div className="col-span-2 md:col-span-3">
+                  <label className="label">Adresse de l'organisme</label>
+                  <input className="input" value={form.adresse}
+                    onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))}
+                    placeholder="Rue, numéro, code postal, ville…" />
                 </div>
                 <div className="col-span-2 md:col-span-3">
                   <label className="label">Notes</label>
@@ -1277,10 +1511,10 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
               <TH col="prenom"          label="Prénom" />
               <TH col="classe"          label="Classe" />
               <TH col="organisme"       label="Organisme" />
-              <TH col="montant_accorde" label="Montant accordé" />
+              <TH col="montant_demande" label="Montant demandé" />
               <TH col="statut"          label="Statut" />
               <th className="px-3 py-2.5 w-8" />
-              {isAllowed && <th className="px-3 py-2.5 w-10" />}
+              {isAllowed && <th className="px-3 py-2.5 w-8" />}
             </tr>
           </thead>
           <tbody>
@@ -1297,10 +1531,23 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
                   <span className="font-semibold text-primary">{(r.organisme || '').toUpperCase()}</span>
                 </td>
                 <td className="px-3 py-2.5 text-gray-700">
-                  {r.montant_accorde ? fmtEur(r.montant_accorde) : '—'}
+                  {r.montant_demande ? fmtEur(r.montant_demande) : '—'}
                 </td>
                 <td className="px-3 py-2.5"><Badge val={r.statut} map={STATUT_OT} /></td>
-                {isAllowed && <td className="px-2 py-2.5" />}
+                <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => handlePdfOT(r.id)} title="Générer le rapport PDF"
+                    className="text-gray-300 hover:text-primary transition-colors">
+                    <FileText size={14} />
+                  </button>
+                </td>
+                {isAllowed && (
+                  <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => del(r.id)}
+                      className="text-gray-300 hover:text-red-500 transition-colors">
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
