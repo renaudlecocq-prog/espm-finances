@@ -703,9 +703,8 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
   useEffect(() => {
     Promise.all([
       reload(),
-      reloadRepertoire(),
       supabase.from('eleves').select('id,nom,prenom,classe').eq('actif', true).order('nom'),
-    ]).then(([,, e]) => { setEleves(e.data || []); setLoading(false) })
+    ]).then(([, e]) => { setEleves(e.data || []); setLoading(false) })
   }, []) // eslint-disable-line
 
   // Auto-ouvrir le détail si on arrive depuis la fiche élève
@@ -1438,8 +1437,9 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
   useEffect(() => {
     Promise.all([
       reload(),
+      reloadRepertoire(),
       supabase.from('eleves').select('id,nom,prenom,classe').eq('actif', true).order('nom'),
-    ]).then(([, e]) => { setEleves(e.data || []); setLoading(false) })
+    ]).then(([,, e]) => { setEleves(e.data || []); setLoading(false) })
   }, []) // eslint-disable-line
 
   // Auto-ouvrir le détail si on arrive depuis la fiche élève
