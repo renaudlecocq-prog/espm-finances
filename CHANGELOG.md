@@ -584,6 +584,12 @@ git push origin main
 - Bouton "🖨" par ligne facture dans FicheEleve (onglet Finances)
 - Env vars à configurer sur Netlify : SCHOOL_IBAN, SCHOOL_BIC, SCHOOL_EMAIL_ECO, SCHOOL_TEL_ECO, SCHOOL_EMAIL_AS, SCHOOL_TEL_AS, SCHOOL_BCE
 
+## [v0.22b] — 2026-06-21
+### Vue facture en ligne — nettoyage boutons
+- REMOVE boutons Rappel, Brouillon, Mise en demeure de DetailFacture
+- MOVE bouton PDF dans le coin supérieur droit (à côté de la date)
+- KEEP bouton Valider (brouillon) et Réactiver (ignoré)
+
 ## [v0.22] — 2026-06-21
 ### PDF groupé + vue facture enrichie
 - ADD factures-batch-pdf.mjs : PDF multi-pages de toutes les factures Facture d un batch
