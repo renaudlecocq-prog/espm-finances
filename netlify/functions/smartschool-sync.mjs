@@ -29,8 +29,8 @@ function corsHeaders(origin) {
   }
 }
 
-async function supabaseUpsert(url, key, table, rows) {
-  const res = await fetch(`${url}/rest/v1/${table}`, {
+async function supabaseUpsert(url, key, table, rows, onConflict = 'smartschool_username') {
+  const res = await fetch(`${url}/rest/v1/${table}?on_conflict=${onConflict}`, {
     method: 'POST',
     headers: {
       apikey:         key,
