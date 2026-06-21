@@ -567,3 +567,7 @@ git push origin main
 ## [v0.20m] - 2026-06-21
 ### Fixed
 - notify : body des messages converti en HTML (`<p>`, `<strong>`, `<a href>`) — le lien vers espmaritime.netlify.app est maintenant cliquable dans Smartschool (le format texte brut ne génère pas de lien cliquable dans l'interface Smartschool)
+
+## [v0.20n] - 2026-06-21
+### Changed
+- notify : bouton "↗ ESPM+" orange (#E86C00) dans le corps des messages Smartschool — remplace le lien texte brut (style identique au bouton Smartschool du header)
