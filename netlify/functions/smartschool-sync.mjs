@@ -139,7 +139,7 @@ export default async function handler(req) {
     for (const a of list) {
       // Smartschool retourne des noms de champs en néerlandais (getAllAccountsExtended)
       const type = (a.basisrol || a.type || a.role || '').toLowerCase()
-      const isEleve = type === 'leerling' || type === 'student' || type === 'pupil'
+      const isEleve = type === 'leerling' || type === 'student' || type === 'pupil' || type === '1'
 
       const smartschool_internal_number = String(
         a.internnummer || a.internnumber || ''

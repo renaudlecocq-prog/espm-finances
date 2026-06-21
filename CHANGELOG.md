@@ -535,3 +535,11 @@ git push origin main
 - Sync Smartschool : champs JSON en néerlandais (`internnummer` → `smartschool_internal_number`, `gebruikersnaam` → `smartschool_username`, `naam` → `nom`, `voornaam` → `prenom`, `klas`/`stamklas` → `classe`) — retournait 0 élèves/0 personnel
 - Upsert rows : colonnes DB corrigées (`smartschool_username` + `smartschool_internal_number` au lieu de `smartschool_id` inexistant)
 - Désactivation des élèves absents : filtre sur `smartschool_username` au lieu de `smartschool_id`
+
+## [v0.20g] - 2026-06-21
+### Fixed
+- Sync Smartschool : `supabaseUpsert` ajout `?on_conflict=smartschool_username` — résolution du 409 "23505 unique constraint violation" sur `personnel` (et `eleves`)
+
+## [v0.20h] - 2026-06-21
+### Fixed
+- Sync Smartschool : `basisrol` retourne des codes numériques (`'1'` = élève, `'0'`/`'13'`/`'30'` = personnel) et non du texte (`'leerling'`) — tous les élèves étaient classés en personnel (0 élèves, 763 personnel)
