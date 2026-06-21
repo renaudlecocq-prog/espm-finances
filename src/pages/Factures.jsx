@@ -702,11 +702,13 @@ function ListeBatches({ onNew, onSelect }) {
 // ── Helper notifications Smartschool ─────────────────────────────────────────
 async function callNotify(type, data) {
   try {
-    await fetch('/.netlify/functions/smartschool-notify', {
+    const res = await fetch('/.netlify/functions/smartschool-notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type, ...data }),
     })
+    const result = await res.json()
+    console.log('[notify] réponse:', JSON.stringify(result, null, 2))
   } catch (e) {
     console.warn('[notify] erreur (non bloquante):', e.message)
   }
