@@ -703,3 +703,15 @@ git push origin main
 ## [v0.30b] — 2026-06-21
 ### Fixed
 - Crash page Assistant social : `reloadRepertoire` injecté par erreur dans le `useEffect` de `TabEchelonnements` au lieu de `TabOrganismesTiers`. `ReferenceError` au montage de l'onglet par défaut (échelonnements).
+
+## [0.31] — 2026-06-22
+
+### Added
+- **Rapport PDF Activités** : nouveau bouton "📄 Rapport PDF" dans la page Activités (admin/financier uniquement)
+  - Statistiques : nb activités par type, par responsable, par classe
+  - Coûts totaux par type + coût moyen par élève (après déduction POP)
+  - Intervention POP par type + total
+  - Graphique SVG (barres groupées par mois, couleurs par type)
+  - Liste des activités classées par type (intramuros / extramuros / voyage) avec : titre, date, heures, classes, responsable, accompagnants, prix total, prix/élève, POP, transport
+  - Footer avec email et téléphone de l'école (variables `SCHOOL_EMAIL_SCHOOL` et `SCHOOL_TEL_SCHOOL`)
+  - Orientation paysage A4

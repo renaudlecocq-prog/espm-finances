@@ -1103,6 +1103,15 @@ export default function Activites() {
             <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} className="rounded" />
             Archives
           </label>
+          {(isAdmin || isFinancier) && (
+            <button
+              onClick={async () => {
+                const { data:{ session } } = await supabase.auth.getSession()
+                window.open(`/.netlify/functions/activites-rapport-pdf?token=${session.access_token}`, '_blank')
+              }}
+              className="btn-secondary text-sm py-1.5 px-4"
+            >📄 Rapport PDF</button>
+          )}
           {canCreate && <button onClick={openNew} className="btn-primary text-sm py-1.5 px-4">+ Activité</button>}
         </div>
       </div>
