@@ -799,3 +799,17 @@ git push origin main
     activités → liste `SMARTSCHOOL_NOTIFY_DIRECTION`
   - `SOAPAction` : `"urn:sendMsg"` → `"urn:sendNotification"`
   - Aucun changement dans `Factures.jsx` ni `Activites.jsx` — même endpoint, même payload
+
+## [v0.38] — 2026-06-22
+
+### Fixed
+- **smartschool-notify.mjs** : revert `sendNotification` → `sendMsg` (SOAP V3)
+  - `sendNotification` n'existe pas dans le WSDL SOAP V3 Smartschool (confirmé en inspectant
+    le WSDL live) — la méthode renvoie un SOAP fault → ssCode: -999 systématique
+  - Le scope `sendnotif` activé par Smartschool (ticket #198282) est réservé à l'**API OAuth2**
+    (client credentials), pas au SOAP V3 avec access code — deux systèmes distincts
+  - `sendMsg` (messages inbox) est la seule méthode d'envoi disponible en SOAP V3 + access code
+  - Ajout de `https://espmaritime-staging.netlify.app` dans les origines CORS autorisées
+    (manquait, causait des blocages potentiels sur staging)
+  - TODO (chantier futur) : implémenter OAuth2 Smartschool pour accéder à `sendNotification`
+    via token Bearer — nécessite client_id + client_secret + flow token exchange

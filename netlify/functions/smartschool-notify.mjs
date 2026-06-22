@@ -1,19 +1,22 @@
 /**
  * netlify/functions/smartschool-notify.mjs
  *
- * Envoie des notifications Smartschool (sendNotification SOAP V3, scope sendnotif)
+ * Envoie des messages Smartschool (sendMsg SOAP V3, scope sendmsg)
  * lors d'événements ESPM+.
  *
+ * Note: sendNotification n'existe pas dans l'API SOAP V3 Smartschool.
+ * sendMsg envoie un message interne dans la boîte de réception Smartschool.
+ *
  * Types supportés :
- *   - "facture"  → notification aux co-accounts (parents) de chaque élève facturé
- *   - "activite" → notification à la liste direction fixe
+ *   - "facture"  → message aux co-accounts (parents) de chaque élève facturé
+ *   - "activite" → message à la liste direction fixe
  *
  * Env vars requises :
  *   SMARTSCHOOL_ACCESS_CODE       mot de passe du profil WS NetlifyApp
  *
  * Env vars optionnelles :
  *   SMARTSCHOOL_API_URL           (défaut: https://espmaritime.smartschool.be/Webservices/V3)
- *   SMARTSCHOOL_TEST_RECIPIENT    si défini, TOUTES les notifications vont uniquement à cet
+ *   SMARTSCHOOL_TEST_RECIPIENT    si défini, TOUS les messages vont uniquement à cet
  *                                 identifiant → mode bêta (Renaud uniquement)
  *   SMARTSCHOOL_NOTIFY_DIRECTION  JSON array des identifiants Smartschool de la direction
  *                                 ex: ["175033","175076"]
@@ -23,6 +26,7 @@
 const ALLOWED_ORIGINS = [
   'https://espmaritime.netlify.app',
   'https://develop--espmaritime.netlify.app',
+  'https://espmaritime-staging.netlify.app',
   'http://localhost:5173',
 ]
 
@@ -45,31 +49,20 @@ function escapeXml(str) {
 }
 
 /**
- * Envoie une notification via l'API SOAP V3 Smartschool (sendNotification).
- * Requiert le scope "sendnotif" sur le token OAuth.
- *
- * @param {object} opts
- * @param {string} opts.apiUrl        URL de l'endpoint SOAP
- * @param {string} opts.accessCode    Code d'accès WS
- * @param {string} opts.recipient     Identifiant interne Smartschool de l'élève/utilisateur
- * @param {number} opts.coAccount     0 = compte principal, 1 = co-account 1, 2 = co-account 2
- * @param {string} opts.title         Titre de la notification (court)
- * @param {string} opts.description   Corps de la notification (plain text, pas de HTML)
- * @param {string} opts.link          URL à ouvrir lors du clic sur la notification
+ * Envoie un message interne via l'API SOAP V3 Smartschool (sendMsg).
  */
-async function sendNotification({ apiUrl, accessCode, recipient, coAccount, title, description, link }) {
+async function sendMsg({ apiUrl, accessCode, recipient, coAccount, title, body }) {
   const envelope = `<?xml version="1.0" encoding="UTF-8"?>
 <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="https://espmaritime.smartschool.be/Webservices/V3">
   <SOAP-ENV:Header/>
   <SOAP-ENV:Body>
-    <ns1:sendNotification SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+    <ns1:sendMsg SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
       <accesscode xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(accessCode)}</accesscode>
-      <title xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(title)}</title>
-      <description xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(description)}</description>
       <userIdentifier xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(recipient)}</userIdentifier>
+      <title xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(title)}</title>
+      <body xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(body)}</body>
       <coaccount xsi:type="xsd:int" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${coAccount ?? 0}</coaccount>
-      <link xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(link ?? '')}</link>
-    </ns1:sendNotification>
+    </ns1:sendMsg>
   </SOAP-ENV:Body>
 </SOAP-ENV:Envelope>`
 
@@ -78,12 +71,11 @@ async function sendNotification({ apiUrl, accessCode, recipient, coAccount, titl
       method:  'POST',
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
-        SOAPAction:     '"urn:sendNotification"',
+        SOAPAction:     '"urn:sendMsg"',
       },
       body: envelope,
     })
     const text = await res.text()
-    console.log(`[sendNotification raw] status=${res.status} body=`, text.substring(0, 1000))
     const match = text.match(/<return[^>]*>(-?\d+)<\/return>/)
     const ssCode = match ? parseInt(match[1]) : -999
     const ok = res.ok && ssCode === 0
@@ -106,7 +98,7 @@ export default async function handler(req) {
 
   const accessCode    = process.env.SMARTSCHOOL_ACCESS_CODE
   const apiUrl        = process.env.SMARTSCHOOL_API_URL || 'https://espmaritime.smartschool.be/Webservices/V3'
-  const testRecipient = process.env.SMARTSCHOOL_TEST_RECIPIENT   // ex: "renaud.lecocq" (mode bêta)
+  const testRecipient = process.env.SMARTSCHOOL_TEST_RECIPIENT
 
   if (!accessCode) {
     return new Response(JSON.stringify({ error: 'SMARTSCHOOL_ACCESS_CODE non configuré' }), {
@@ -137,22 +129,21 @@ export default async function handler(req) {
       const internalNumber = student.internal_number
       if (!internalNumber && !isTest) continue
 
-      const recipient   = testRecipient || internalNumber
-      const title       = 'Nouvelle facture — ESPM+'
-      const description = isTest
-        ? `[TEST] Facture émise pour ${student.prenom} ${student.nom}. Consultez ESPM+ pour les détails.`
-        : `Une facture a été émise pour ${student.prenom} ${student.nom}. Consultez ESPM+ pour les détails.`
-      const link = 'https://espmaritime.netlify.app'
+      const recipient = testRecipient || internalNumber
+      const title     = 'Nouvelle facture — ESPM+'
+      const body      = isTest
+        ? `[TEST] Une facture a été émise pour ${student.prenom} ${student.nom}.\n\nConsultez ESPM+ pour les détails : https://espmaritime.netlify.app`
+        : `Une facture a été émise pour ${student.prenom} ${student.nom}.\n\nConsultez ESPM+ pour les détails : https://espmaritime.netlify.app`
 
       if (isTest) {
-        // Mode bêta : une seule notif au compte principal de Renaud
-        const r = await sendNotification({ apiUrl, accessCode, recipient, coAccount: 0, title, description, link })
+        // Mode bêta : un seul message au compte principal de Renaud
+        const r = await sendMsg({ apiUrl, accessCode, recipient, coAccount: 0, title, body })
         results.push(r)
       } else {
-        // Production : notif aux deux co-accounts (parents) de l'élève
+        // Production : message aux deux co-accounts (parents) de l'élève
         const [r1, r2] = await Promise.all([
-          sendNotification({ apiUrl, accessCode, recipient, coAccount: 1, title, description, link }),
-          sendNotification({ apiUrl, accessCode, recipient, coAccount: 2, title, description, link }),
+          sendMsg({ apiUrl, accessCode, recipient, coAccount: 1, title, body }),
+          sendMsg({ apiUrl, accessCode, recipient, coAccount: 2, title, body }),
         ])
         results.push(r1, r2)
       }
@@ -169,17 +160,14 @@ export default async function handler(req) {
           catch { return [] }
         })()
 
-    const title       = 'Nouvelle activité — ESPM+'
-    const description = isTest
-      ? `[TEST] ${responsableNom} a publié une activité : "${intitule}".`
-      : `${responsableNom} a publié une activité : "${intitule}".`
-    const link = activiteId
-      ? `https://espmaritime.netlify.app/activites?open=${activiteId}`
-      : 'https://espmaritime.netlify.app/activites'
+    const title = 'Nouvelle activité — ESPM+'
+    const body  = isTest
+      ? `[TEST] ${responsableNom} a publié une activité : "${intitule}".\n\nConsultez ESPM+ : https://espmaritime.netlify.app/activites${activiteId ? `?open=${activiteId}` : ''}`
+      : `${responsableNom} a publié une activité : "${intitule}".\n\nConsultez ESPM+ : https://espmaritime.netlify.app/activites${activiteId ? `?open=${activiteId}` : ''}`
 
     await Promise.all(
       recipients.map(async (r) => {
-        const res = await sendNotification({ apiUrl, accessCode, recipient: r, coAccount: 0, title, description, link })
+        const res = await sendMsg({ apiUrl, accessCode, recipient: r, coAccount: 0, title, body })
         results.push(res)
       })
     )
