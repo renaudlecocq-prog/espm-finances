@@ -445,12 +445,11 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
 }
 
 // ── Onglet Attributions ─────────────────────────────────────────────────────
-function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveOptions, isFinancier }) {
+function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveOptions, isFinancier, search, onSearch, formOpen, onFormClose }) {
   const [data, setData]           = useState([])
   const [loading, setLoading]     = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editRow, setEditRow]     = useState(null)
-  const [search, setSearch]       = useState('')
 
   const reload = useCallback(() =>
     supabase.from('article_attributions')
@@ -461,7 +460,9 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
 
   useEffect(() => { reload() }, [reload])
 
-  const openNew  = () => { setEditRow(null); setShowModal(true) }
+  // Sync formOpen prop → ouvrir le modal si le parent l'a demandé
+  useEffect(() => { if (formOpen) { setEditRow(null); setShowModal(true) } }, [formOpen])
+  const handleModalClose = () => { setShowModal(false); onFormClose?.() }
   const openEdit = r => { setEditRow(r); setShowModal(true) }
   const deleteAttribution = async r => {
     if (!confirm('Supprimer cette attribution ? Cette action est irréversible.')) return
@@ -494,25 +495,6 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
 
   return (
     <div>
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 mb-4">
-        {isFinancier && (
-          <button onClick={openNew} className="btn-primary text-sm py-1.5 px-4">+ Attribution</button>
-        )}
-        <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <input className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5 outline-none w-56 focus:border-primary transition-colors"
-            placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        {search && (
-          <button onClick={() => setSearch('')}
-            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 rounded-full px-2.5 py-1">
-            <span className="text-sm leading-none">✕</span> Tout effacer
-          </button>
-        )}
-        <span className="ml-auto text-xs text-gray-400">{filtered.length} attribution{filtered.length !== 1 ? 's' : ''}</span>
-      </div>
-
       {/* Table */}
       <div className="card p-0 overflow-hidden">
         <div style={{ height: 'calc(100vh - 260px)', overflowY: 'auto' }}>
@@ -580,7 +562,7 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
           articles={articles} allEleves={allEleves}
           allClasses={allClasses} groupOptions={groupOptions} eleveOptions={eleveOptions}
           editRow={editRow}
-          onClose={() => setShowModal(false)} onSaved={reload}
+          onClose={handleModalClose} onSaved={() => { handleModalClose(); reload() }}
         />
       )}
     </div>
@@ -588,12 +570,11 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
 }
 
 // ── Onglet Catalogue ────────────────────────────────────────────────────────
-function CatalogueTab({ isFinancier }) {
+function CatalogueTab({ isFinancier, search, onSearch, formOpen, onFormClose }) {
   const [data, setData]         = useState([])
   const [loading, setLoading]   = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editRow, setEditRow]   = useState(null)
-  const [search, setSearch]     = useState('')
 
   const reload = useCallback(() =>
     supabase.from('articles').select('*').order('categorie').order('nom')
@@ -617,8 +598,9 @@ function CatalogueTab({ isFinancier }) {
     items: filtered.filter(d => d.categorie === cat),
   })).filter(g => g.items.length > 0)
 
+  useEffect(() => { if (formOpen) { setEditRow(null); setShowModal(true) } }, [formOpen])
+  const handleModalClose = () => { setShowModal(false); onFormClose?.() }
   const openEdit = row => { setEditRow(row); setShowModal(true) }
-  const openNew  = () => { setEditRow(null); setShowModal(true) }
   const deleteArticle = async a => {
     if (!confirm(`Supprimer « ${a.nom} » ? Cette action est irréversible.`)) return
     await supabase.from('articles').delete().eq('id', a.id)
@@ -629,24 +611,6 @@ function CatalogueTab({ isFinancier }) {
 
   return (
     <div>
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 mb-4">
-        {isFinancier && (
-          <button onClick={openNew} className="btn-primary text-sm py-1.5 px-4">+ Article</button>
-        )}
-        <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <input className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5 outline-none w-56 focus:border-primary transition-colors"
-            placeholder="Rechercher par nom, catégorie…" value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        {search && (
-          <button onClick={() => setSearch('')}
-            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 rounded-full px-2.5 py-1">
-            <span className="text-sm leading-none">✕</span> Tout effacer
-          </button>
-        )}
-        <span className="ml-auto text-xs text-gray-400">{filtered.length} article{filtered.length !== 1 ? 's' : ''}</span>
-      </div>
 
       {filtered.length === 0 && (
         <div className="card p-8 text-center text-gray-400">Aucun article trouvé</div>
@@ -711,7 +675,7 @@ function CatalogueTab({ isFinancier }) {
       )}
 
       {showModal && (
-        <ArticleModal editRow={editRow} onClose={() => setShowModal(false)} onSaved={reload} />
+        <ArticleModal editRow={editRow} onClose={handleModalClose} onSaved={() => { handleModalClose(); reload() }} />
       )}
     </div>
   )
@@ -759,6 +723,20 @@ export default function Articles() {
     })
   }, [])
 
+  const [tabSearch, setTabSearch]       = useState('')
+  const [attrFormOpen, setAttrFormOpen] = useState(false)
+  const [catFormOpen, setCatFormOpen]   = useState(false)
+
+  // Reset search quand on change d'onglet
+  const handleTabChange = t => { setTab(t); setTabSearch('') }
+
+  const tabSearchPlaceholder = tab === 'attributions' ? 'Rechercher attribution, élève…' : 'Rechercher par nom, catégorie…'
+  const tabActions = fin ? (
+    tab === 'attributions'
+      ? <button onClick={() => setAttrFormOpen(true)} className="btn-primary text-xs py-1.5 px-3">+ Attribution</button>
+      : <button onClick={() => setCatFormOpen(true)} className="btn-primary text-xs py-1.5 px-3">+ Article</button>
+  ) : null
+
   return (
     <>
     <PageHeader
@@ -769,13 +747,21 @@ export default function Articles() {
         { key: 'catalogue',    label: 'Catalogue' },
       ]}
       activeTab={tab}
-      onTabChange={setTab}
+      onTabChange={handleTabChange}
+      search={tabSearch}
+      onSearch={setTabSearch}
+      searchPlaceholder={tabSearchPlaceholder}
+      actions={tabActions}
     />
     <div className="p-6 max-w-screen-xl mx-auto">
       {tab === 'attributions'
         ? <AttributionsTab articles={articles} allEleves={allEleves} allClasses={allClasses}
-            groupOptions={groupOptions} eleveOptions={eleveOptions} isFinancier={fin} />
-        : <CatalogueTab isFinancier={fin} />
+            groupOptions={groupOptions} eleveOptions={eleveOptions} isFinancier={fin}
+            search={tabSearch} onSearch={setTabSearch}
+            formOpen={attrFormOpen} onFormClose={() => setAttrFormOpen(false)} />
+        : <CatalogueTab isFinancier={fin}
+            search={tabSearch} onSearch={setTabSearch}
+            formOpen={catFormOpen} onFormClose={() => setCatFormOpen(false)} />
       }
     </div>
     </>

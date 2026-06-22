@@ -115,19 +115,18 @@ export default function Admin() {
 
   return (
     <>
-    <PageHeader title="Administration" subtitle="Gestion des utilisateurs et synchronisation Smartschool" />
+    <PageHeader
+      title="Administration"
+      subtitle="Gestion des utilisateurs et synchronisation Smartschool"
+      tabs={[
+        { key: 'utilisateurs',  label: 'Utilisateurs' },
+        { key: 'droits',        label: 'Droits' },
+        { key: 'synchronisation', label: 'Synchronisation' },
+      ]}
+      activeTab={tab}
+      onTabChange={setTab}
+    />
     <div className="p-6 max-w-screen-xl mx-auto">
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200">
-        {[['utilisateurs','Utilisateurs'], ['droits','Droits'], ['synchronisation','Synchronisation']].map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg -mb-px border border-b-0 transition-colors
-              ${tab === k ? 'bg-white border-gray-200 text-primary' : 'text-gray-500 border-transparent hover:text-primary'}`}>
-            {l}
-          </button>
-        ))}
-      </div>
 
       {/* ── UTILISATEURS ─────────────────────────────── */}
       {tab === 'utilisateurs' && (

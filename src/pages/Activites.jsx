@@ -1092,76 +1092,72 @@ export default function Activites() {
 
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
+  const generatePDF = async () => {
+    const { data:{ session } } = await supabase.auth.getSession()
+    if (!session?.access_token) { alert('Session expirée, veuillez vous reconnecter.'); return }
+    try {
+      const resp = await fetch('/.netlify/functions/activites-rapport-pdf', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      })
+      if (!resp.ok) { alert(`Erreur ${resp.status}: ${await resp.text()}`); return }
+      const html = await resp.text()
+      const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+      window.open(URL.createObjectURL(blob), '_blank')
+    } catch(e) { alert('Erreur lors de la génération du rapport.') }
+  }
+
+  const quickTabs = [
+    { key: 'avenir',  label: '🟢 À venir' },
+    { key: 'passees', label: '🔴 Passées' },
+    ...(isAdmin || isFinancier ? [{ key: 'mes', label: '👤 Mes activités' }] : []),
+  ]
+
   return (
     <>
-    <PageHeader title="Activités" subtitle="Gestion des activités scolaires et extrascolaires" />
-    <div className="p-6 max-w-screen-xl mx-auto">
-      <div className="flex items-start justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
-            <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} className="rounded" />
-            Archives
-          </label>
-          {(isAdmin || isFinancier) && (
-            <button
-              onClick={async () => {
-                const { data:{ session } } = await supabase.auth.getSession()
-                if (!session?.access_token) { alert('Session expirée, veuillez vous reconnecter.'); return }
-                try {
-                  const resp = await fetch('/.netlify/functions/activites-rapport-pdf', {
-                    headers: { 'Authorization': `Bearer ${session.access_token}` },
-                  })
-                  if (!resp.ok) { alert(`Erreur ${resp.status}: ${await resp.text()}`); return }
-                  const html = await resp.text()
-                  const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
-                  window.open(URL.createObjectURL(blob), '_blank')
-                } catch(e) { alert('Erreur lors de la génération du rapport.') }
-              }}
-              className="btn-secondary text-sm py-1.5 px-4"
-            >📄 Rapport PDF</button>
-          )}
-          {canCreate && <button onClick={openNew} className="btn-primary text-sm py-1.5 px-4">+ Activité</button>}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
-        <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <input className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5 outline-none w-56 focus:border-primary transition-colors"
-            placeholder="Rechercher par intitulé, responsable…"
-            value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        <MasterFilter
+    <PageHeader
+      title="Activités"
+      subtitle="Gestion des activités scolaires et extrascolaires"
+      leftActions={
+        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
+          style={{ color: 'rgba(255,255,255,0.70)' }}>
+          <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)}
+            className="rounded" style={{ accentColor: 'white' }} />
+          Archives
+        </label>
+      }
+      tabs={quickTabs}
+      activeTab={quickFilter || ''}
+      onTabChange={k => setQuickFilter(q => q === k ? null : k)}
+      search={search}
+      onSearch={setSearch}
+      searchPlaceholder="Rechercher par intitulé, responsable…"
+      filters={
+        <MasterFilter dark
           filters={filters}
           filterDefs={filterDefs}
           onChange={toggleFilter}
           onClearAll={() => setFilters({})}
         />
-        {/* Pills de filtre rapide */}
-        {[
-          { id: 'avenir',  label: '🟢 À venir' },
-          { id: 'passees', label: '🔴 Passées' },
-          ...(isAdmin || isFinancier ? [{ id: 'mes', label: '👤 Mes activités' }] : []),
-        ].map(p => (
-          <button key={p.id}
-            onClick={() => setQuickFilter(q => q === p.id ? null : p.id)}
-            className={`text-xs rounded-full px-3 py-1.5 border font-medium transition-colors ${
-              quickFilter === p.id
-                ? 'bg-primary text-white border-primary'
-                : 'bg-white text-gray-500 border-gray-200 hover:border-primary hover:text-primary'
-            }`}>
-            {p.label}
-          </button>
-        ))}
-
-        {hasFilters && (
-          <button onClick={() => { setSearch(''); setFilters({}); setQuickFilter(null) }}
-            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors">
-            <X size={11} /> Tout effacer
-          </button>
-        )}
-        <span className="ml-auto text-xs text-gray-400">{displayed.length} résultat{displayed.length !== 1 ? 's' : ''}</span>
-      </div>
+      }
+      info={`${displayed.length} résultat${displayed.length !== 1 ? 's' : ''}`}
+      actions={
+        (isAdmin || isFinancier) || canCreate ? (
+          <>
+            {(isAdmin || isFinancier) && (
+              <button onClick={generatePDF}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+                📄 Rapport PDF
+              </button>
+            )}
+            {canCreate && (
+              <button onClick={openNew} className="btn-primary text-xs py-1.5 px-3">+ Activité</button>
+            )}
+          </>
+        ) : null
+      }
+    />
+    <div className="p-6 max-w-screen-xl mx-auto">
       <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
 
       <div className="grid gap-3">

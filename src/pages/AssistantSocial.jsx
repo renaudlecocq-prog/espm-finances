@@ -651,32 +651,17 @@ function EchelonnementForm({ eleves, onSaved, onClose }) {
 }
 
 // ── Tab Échelonnements ────────────────────────────────────────────────────
-function TabEchelonnements({ isAllowed, openEleveId }) {
+function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, onToggleFilter, onClearFilters, showForm, onToggleForm }) {
   const [rows, setRows]                 = useState([])
   const [echeancesMap, setEcheancesMap] = useState({})
   const [paiementsMap, setPaiementsMap] = useState({})
   const [eleves, setEleves]             = useState([])
   const [loading, setLoading]           = useState(true)
-  const [showForm, setShowForm]         = useState(false)
   const [detailId, setDetailId]         = useState(null)
   const [ficheId, setFicheId]           = useState(null)
-  const [search, setSearch]             = useState('')
-  const [filters, setFilters]           = useState({})
   const [sort, setSort]                 = useState({ col: 'nom', dir: 'asc' })
 
-  const toggleFilter = useCallback((key, val) =>
-    setFilters(f => {
-      const cur  = Array.isArray(f[key]) ? f[key] : []
-      const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
-      return next.length === 0
-        ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== key))
-        : { ...f, [key]: next }
-    })
-  , [])
-
-  const filterDefs = [
-    { key: 'statut', label: 'Statut', options: Object.entries(STATUT_ECH).map(([v, m]) => ({ value: v, label: m.label })) },
-  ]
+  // search/filters/form gérés par le parent
 
   const reload = async () => {
     const [{ data: echs }, { data: echData }, { data: paies }] = await Promise.all([
@@ -767,37 +752,15 @@ function TabEchelonnements({ isAllowed, openEleveId }) {
     </th>
   )
 
+  const echFilterDefs = [
+    { key: 'statut', label: 'Statut', options: Object.entries(STATUT_ECH).map(([v, m]) => ({ value: v, label: m.label })) },
+  ]
+
   return (
     <div>
-      {/* Toolbar */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input
-              className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5 outline-none w-48 focus:border-primary transition-colors"
-              placeholder="Rechercher par nom, prénom…"
-              value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <MasterFilter filters={filters} filterDefs={filterDefs} onChange={toggleFilter} onClearAll={() => setFilters({})} />
-          {(search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)) && (
-            <button onClick={() => { setSearch(''); setFilters({}) }}
-              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors">
-              <X size={11} /> Tout effacer
-            </button>
-          )}
-          <span className="text-xs text-gray-400">{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
-        </div>
-        <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
-        {isAllowed && (
-          <button onClick={() => setShowForm(v => !v)} className="btn-primary text-sm py-1.5 px-4">
-            + Échelonnement
-          </button>
-        )}
-      </div>
-
+      <ActiveFilterChips filters={filters} filterDefs={echFilterDefs} onChange={onToggleFilter} />
       {showForm && (
-        <EchelonnementForm eleves={eleves} onSaved={reload} onClose={() => setShowForm(false)} />
+        <EchelonnementForm eleves={eleves} onSaved={reload} onClose={() => onToggleForm?.(false)} />
       )}
 
       {/* Table */}
@@ -1387,12 +1350,10 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
   )
 }
 
-function TabOrganismesTiers({ isAllowed, openEleveId }) {
+function TabOrganismesTiers({ isAllowed, openEleveId, search, onSearch, filters, onToggleFilter, onClearFilters, showForm, onToggleForm, showOrgModal, onToggleOrgModal }) {
   const [rows, setRows]     = useState([])
   const [eleves, setEleves] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm]       = useState(false)
-  const [showOrgModal, setShowOrgModal] = useState(false)
   const [orgForm, setOrgForm]           = useState({ type: 'CPAS', institution: '', rue: '', code_postal: '', commune: '' })
   const [orgSaving, setOrgSaving]       = useState(false)
   const [repertoire, setRepertoire]     = useState([])
@@ -1401,21 +1362,6 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
       .then(({ data }) => setRepertoire(data || []))
   const [ficheId, setFicheId]   = useState(null)
   const [detailOTId, setDetailOTId] = useState(null)
-  const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState({})
-  const toggleFilter = useCallback((key, val) =>
-    setFilters(f => {
-      const cur  = Array.isArray(f[key]) ? f[key] : []
-      const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
-      return next.length === 0
-        ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== key))
-        : { ...f, [key]: next }
-    })
-  , [])
-  const filterDefs = [
-    { key: 'organisme', label: 'Organisme', options: ['CPAS', 'ULB', 'SPJ', 'Autre'] },
-    { key: 'statut',    label: 'Statut',    options: Object.entries(STATUT_OT).map(([v, m]) => ({ value: v, label: m.label })) },
-  ]
   const [sort, setSort] = useState({ col: 'nom', dir: 'asc' })
   const [form, setForm] = useState({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', institution: '', rue: '', code_postal: '', commune: '', notes: '' })
   const [saving, setSaving] = useState(false)
@@ -1471,7 +1417,7 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
     }
     await reload()
     setSaving(false)
-    setShowForm(false)
+    onToggleForm?.(false)
     setForm({ eleve_id: '', organisme: 'CPAS', statut: 'en_cours', institution: '', rue: '', code_postal: '', commune: '', notes: '' })
   }
 
@@ -1508,46 +1454,23 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
     </th>
   )
 
+  const otFilterDefs = [
+    { key: 'organisme', label: 'Organisme', options: ['CPAS', 'ULB', 'SPJ', 'Autre'] },
+    { key: 'statut',    label: 'Statut',    options: Object.entries(STATUT_OT).map(([v, m]) => ({ value: v, label: m.label })) },
+  ]
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5 outline-none w-48 focus:border-primary transition-colors"
-              placeholder="Rechercher par nom, prénom…" value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <MasterFilter filters={filters} filterDefs={filterDefs} onChange={toggleFilter} onClearAll={() => setFilters({})} />
-          {(search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)) && (
-            <button onClick={() => { setSearch(''); setFilters({}) }}
-              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors">
-              <X size={11} /> Tout effacer
-            </button>
-          )}
-          <span className="text-xs text-gray-400">{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
-        </div>
-        <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
-        {isAllowed && (
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowOrgModal(true)}
-              className="btn-secondary text-sm py-1.5 px-4">
-              + Nouvel organisme
-            </button>
-            <button onClick={() => setShowForm(v => !v)} className="btn-primary text-sm py-1.5 px-4">
-              + Nouvelle situation
-            </button>
-          </div>
-        )}
-      </div>
+      <ActiveFilterChips filters={filters} filterDefs={otFilterDefs} onChange={onToggleFilter} />
 
       {/* Modal Nouvel Organisme (répertoire) */}
       {showOrgModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
-          onClick={e => e.target === e.currentTarget && setShowOrgModal(false)}>
+          onClick={e => e.target === e.currentTarget && onToggleOrgModal?.(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-800 text-lg">Nouvel organisme</h2>
-              <button onClick={() => setShowOrgModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+              <button onClick={() => onToggleOrgModal?.(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
             <div className="px-6 py-5 space-y-3">
               <div>
@@ -1596,11 +1519,11 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
                     await reloadRepertoire()
                     setOrgForm({ type: 'CPAS', institution: '', rue: '', code_postal: '', commune: '' })
                     setOrgSaving(false)
-                    setShowOrgModal(false)
+                    onToggleOrgModal?.(false)
                   }}>
                   {orgSaving ? 'Enregistrement…' : 'Enregistrer'}
                 </button>
-                <button onClick={() => setShowOrgModal(false)} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
+                <button onClick={() => onToggleOrgModal?.(false)} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
               </div>
             </div>
           </div>
@@ -1609,11 +1532,11 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
-          onClick={e => e.target === e.currentTarget && setShowForm(false)}>
+          onClick={e => e.target === e.currentTarget && onToggleForm?.(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl my-8 flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
               <h2 className="font-bold text-gray-800 text-lg">Nouvelle situation</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+              <button onClick={() => onToggleForm?.(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
             <div className="px-6 py-5 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1686,7 +1609,7 @@ function TabOrganismesTiers({ isAllowed, openEleveId }) {
                   className="btn-primary py-1.5 px-4 text-sm disabled:opacity-50">
                   {saving ? 'Enregistrement…' : 'Enregistrer'}
                 </button>
-                <button onClick={() => setShowForm(false)} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
+                <button onClick={() => onToggleForm?.(false)} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
               </div>
             </div>
           </div>
@@ -1764,7 +1687,65 @@ export default function AssistantSocial() {
   const isAllowed = isFinancier || isMdp
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') || 'echelonnements'
-  const setTab = t => setSearchParams({ tab: t }, { replace: true })
+  const handleTabChange = t => { setSearchParams({ tab: t }, { replace: true }); setEchSearch(''); setOtSearch('') }
+
+  // État search + filters levés depuis les onglets
+  const [echSearch, setEchSearch]       = useState('')
+  const [echFilters, setEchFilters]     = useState({})
+  const [echFormOpen, setEchFormOpen]   = useState(false)
+  const [otSearch, setOtSearch]         = useState('')
+  const [otFilters, setOtFilters]       = useState({})
+  const [otFormOpen, setOtFormOpen]     = useState(false)
+  const [otOrgModalOpen, setOtOrgModalOpen] = useState(false)
+
+  const toggleEchFilter = useCallback((key, val) =>
+    setEchFilters(f => {
+      const cur = Array.isArray(f[key]) ? f[key] : []
+      const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
+      return next.length === 0 ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== key)) : { ...f, [key]: next }
+    }), [])
+
+  const toggleOtFilter = useCallback((key, val) =>
+    setOtFilters(f => {
+      const cur = Array.isArray(f[key]) ? f[key] : []
+      const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
+      return next.length === 0 ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== key)) : { ...f, [key]: next }
+    }), [])
+
+  const echFilterDefs = [
+    { key: 'statut', label: 'Statut', options: Object.entries(STATUT_ECH).map(([v, m]) => ({ value: v, label: m.label })) },
+  ]
+  const otFilterDefs = [
+    { key: 'organisme', label: 'Organisme', options: ['CPAS', 'ULB', 'SPJ', 'Autre'] },
+    { key: 'statut',    label: 'Statut',    options: Object.entries(STATUT_OT).map(([v, m]) => ({ value: v, label: m.label })) },
+  ]
+
+  const isEch = tab === 'echelonnements'
+  const activeSearch  = isEch ? echSearch  : otSearch
+  const setActiveSearch = isEch ? setEchSearch : setOtSearch
+  const activeFilters = isEch ? echFilters : otFilters
+  const activeFilterDefs = isEch ? echFilterDefs : otFilterDefs
+  const activeToggleFilter = isEch ? toggleEchFilter : toggleOtFilter
+  const activeClearFilters = isEch ? () => setEchFilters({}) : () => setOtFilters({})
+
+  const headerActions = isAllowed ? (
+    isEch ? (
+      <button onClick={() => setEchFormOpen(v => !v)} className="btn-primary text-xs py-1.5 px-3">
+        + Échelonnement
+      </button>
+    ) : (
+      <>
+        <button onClick={() => setOtOrgModalOpen(true)}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+          style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+          + Organisme
+        </button>
+        <button onClick={() => setOtFormOpen(v => !v)} className="btn-primary text-xs py-1.5 px-3">
+          + Situation
+        </button>
+      </>
+    )
+  ) : null
 
   return (
     <>
@@ -1776,11 +1757,36 @@ export default function AssistantSocial() {
         { key: 'organismes',     label: 'Organismes tiers' },
       ]}
       activeTab={tab}
-      onTabChange={setTab}
+      onTabChange={handleTabChange}
+      search={activeSearch}
+      onSearch={setActiveSearch}
+      searchPlaceholder="Rechercher par nom, prénom…"
+      filters={
+        <MasterFilter dark
+          filters={activeFilters}
+          filterDefs={activeFilterDefs}
+          onChange={activeToggleFilter}
+          onClearAll={activeClearFilters}
+        />
+      }
+      actions={headerActions}
     />
     <div className="p-6 max-w-screen-xl mx-auto">
-      {tab === 'echelonnements' && <TabEchelonnements isAllowed={isAllowed} openEleveId={searchParams.get('eleve')} />}
-      {tab === 'organismes'     && <TabOrganismesTiers isAllowed={isAllowed} openEleveId={searchParams.get('eleve')} />}
+      {tab === 'echelonnements' && (
+        <TabEchelonnements isAllowed={isAllowed} openEleveId={searchParams.get('eleve')}
+          search={echSearch} onSearch={setEchSearch}
+          filters={echFilters} onToggleFilter={toggleEchFilter} onClearFilters={() => setEchFilters({})}
+          showForm={echFormOpen} onToggleForm={v => setEchFormOpen(v !== false ? (prev => !prev) : false)}
+        />
+      )}
+      {tab === 'organismes' && (
+        <TabOrganismesTiers isAllowed={isAllowed} openEleveId={searchParams.get('eleve')}
+          search={otSearch} onSearch={setOtSearch}
+          filters={otFilters} onToggleFilter={toggleOtFilter} onClearFilters={() => setOtFilters({})}
+          showForm={otFormOpen} onToggleForm={v => setOtFormOpen(v !== false ? (prev => !prev) : false)}
+          showOrgModal={otOrgModalOpen} onToggleOrgModal={v => setOtOrgModalOpen(!!v)}
+        />
+      )}
     </div>
     </>
   )

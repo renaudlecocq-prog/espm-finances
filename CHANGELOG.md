@@ -755,3 +755,24 @@ git push origin main
   - **Assistant social** : onglets Échelonnements / Organismes tiers → PageHeader ; div tabs supprimée du corps
 - **MasterFilter** : nouvelle prop `dark` pour fond sombre — bouton déclencheur adapte son style (translucide blanc, badge blanc)
 - **App.jsx** : `overflow-hidden` sur le panel droit + `overflow-y-auto min-h-0` sur `<main>` → layout CSS flex correct pour pages avec tableau scrollable
+
+## [v0.35] — 2026-06-22
+
+### Changed
+- **PageHeader : single-row layout** — titre + sous-titre empilés à gauche, séparateur vertical, puis toolbar (tabs / search / filters / info / actions) sur la même ligne. Suppression du 2ème row.
+- **Activités** : migration complète vers PageHeader
+  - Checkbox Archives, bouton Rapport PDF, bouton + Activité → `leftActions` / `actions`
+  - Recherche + MasterFilter dark → search/filters du PageHeader
+  - Pills À venir / Passées / Mes activités → `tabs` du PageHeader (toggle : clic = activer, re-clic = désactiver)
+  - Compteur résultats → `info`
+  - `ActiveFilterChips` reste dans le corps de page
+- **Articles** : search + actions (+Attribution / +Article) migrés vers PageHeader
+  - État `search` levé au niveau Articles (reset lors du changement d'onglet)
+  - État `formOpen` levé au niveau Articles → tabs reçoivent `formOpen` + `onFormClose` comme props
+  - Toolbar interne supprimé dans `AttributionsTab` et `CatalogueTab`
+- **Assistant social** : search + MasterFilter dark + actions migrés vers PageHeader
+  - États `search`, `filters`, `formOpen`, `orgModalOpen` levés vers le composant parent pour les 2 onglets
+  - Toolbar interne supprimé dans `TabEchelonnements` et `TabOrganismesTiers`
+  - `filterDefs` définis au niveau parent (ECH et OT)
+  - `ActiveFilterChips` reste dans le corps de page
+- **Administration** : onglets Utilisateurs / Droits / Synchronisation → PageHeader
