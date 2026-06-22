@@ -1107,7 +1107,8 @@ export default function Activites() {
             <button
               onClick={async () => {
                 const { data:{ session } } = await supabase.auth.getSession()
-                window.open(`/.netlify/functions/activites-rapport-pdf?token=${session.access_token}`, '_blank')
+                if (!session?.access_token) { alert('Session expirée, veuillez vous reconnecter.'); return }
+                window.open(`/.netlify/functions/activites-rapport-pdf?token=${encodeURIComponent(session.access_token)}`, '_blank')
               }}
               className="btn-secondary text-sm py-1.5 px-4"
             >📄 Rapport PDF</button>

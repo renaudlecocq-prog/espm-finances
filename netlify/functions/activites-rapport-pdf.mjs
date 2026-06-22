@@ -21,13 +21,16 @@ const MOIS_SCOLAIRE = [8,9,10,11,0,1,2,3,4,5,6,7]
 
 export const handler = async (event) => {
   const params = event.queryStringParameters || {}
-  const token  = params.token
+  const token  = params.token ? decodeURIComponent(params.token) : null
 
   if (!token) return { statusCode:401, body:'Token manquant' }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
   const { data:{ user }, error:authErr } = await supabase.auth.getUser(token)
-  if (authErr || !user) return { statusCode:403, body:'Non autorisé' }
+  if (authErr || !user) return {
+    statusCode:403,
+    body: `Non autorisé${authErr ? ': ' + authErr.message : ''}`,
+  }
 
   const logoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
 
