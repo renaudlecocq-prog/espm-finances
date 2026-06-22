@@ -1108,7 +1108,15 @@ export default function Activites() {
               onClick={async () => {
                 const { data:{ session } } = await supabase.auth.getSession()
                 if (!session?.access_token) { alert('Session expirée, veuillez vous reconnecter.'); return }
-                window.open(`/.netlify/functions/activites-rapport-pdf?token=${encodeURIComponent(session.access_token)}`, '_blank')
+                try {
+                  const resp = await fetch('/.netlify/functions/activites-rapport-pdf', {
+                    headers: { 'Authorization': `Bearer ${session.access_token}` },
+                  })
+                  if (!resp.ok) { alert(`Erreur ${resp.status}: ${await resp.text()}`); return }
+                  const html = await resp.text()
+                  const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+                  window.open(URL.createObjectURL(blob), '_blank')
+                } catch(e) { alert('Erreur lors de la génération du rapport.') }
               }}
               className="btn-secondary text-sm py-1.5 px-4"
             >📄 Rapport PDF</button>

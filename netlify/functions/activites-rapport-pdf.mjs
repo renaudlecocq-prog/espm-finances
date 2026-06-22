@@ -20,8 +20,12 @@ const MOIS_FR       = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','
 const MOIS_SCOLAIRE = [8,9,10,11,0,1,2,3,4,5,6,7]
 
 export const handler = async (event) => {
-  const params = event.queryStringParameters || {}
-  const token  = params.token ? decodeURIComponent(params.token) : null
+  // Token : Authorization header (prioritaire) ou query param (fallback)
+  const authHeader = event.headers?.authorization || event.headers?.Authorization || ''
+  const params     = event.queryStringParameters || {}
+  const token      = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7)
+    : (params.token ? decodeURIComponent(params.token) : null)
 
   if (!token) return { statusCode:401, body:'Token manquant' }
 
