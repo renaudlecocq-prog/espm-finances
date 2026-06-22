@@ -941,7 +941,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
             {filtered.map(f => (
               <tr key={f.id}
                 onClick={() => onSelectFacture(f.id)}
-                className={`border-b border-gray-50 transition-colors cursor-pointer ${f.statut === 'ignore' ? 'opacity-40' : 'hover:bg-primary/5'}`}>
+                className={`border-b border-gray-50 transition-colors cursor-pointer ${f.statut === 'ignore' ? 'opacity-40' : 'hover:bg-gray-50'}`}>
                 <td className="px-4 py-3">
                   <span className="font-mono text-xs text-primary underline">
                     {f.numero || '—'}
