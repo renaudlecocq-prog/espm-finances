@@ -784,3 +784,74 @@ git push origin main
   - Wrapper `h-full flex flex-col` (remplace fragment `<>`)
   - Zone contenu `flex-1 min-h-0` + tableau `flex-1 overflow-auto min-h-0`
   - `thead` sticky (`sticky top-0 z-10`) dans les deux vues
+
+## [v0.37] — 2026-06-22
+
+### Changed
+- **smartschool-notify.mjs** : migration `sendMsg` → `sendNotification` (scope `sendnotif`)
+  - Scope `sendnotif` activé par Smartschool le 22/06/2026 (ticket #198282)
+  - La fonction SOAP `sendNotification` envoie une notification push dans l'app Smartschool
+    au lieu d'un message dans la boîte de réception — moins intrusif, plus adapté
+  - Corps en **plain text** (plus de HTML) + nouveau paramètre `link` (URL cliquable)
+  - **Mode bêta (actuel)** : si `SMARTSCHOOL_TEST_RECIPIENT` est défini, 100% des notifs
+    vont uniquement à ce compte (Renaud) — comportement inchangé depuis le frontend
+  - **Mode production (V1 futur)** : factures → co-accounts 1 & 2 de chaque élève facturé ;
+    activités → liste `SMARTSCHOOL_NOTIFY_DIRECTION`
+  - `SOAPAction` : `"urn:sendMsg"` → `"urn:sendNotification"`
+  - Aucun changement dans `Factures.jsx` ni `Activites.jsx` — même endpoint, même payload
+
+## [v0.38] — 2026-06-22
+
+### Fixed
+- **smartschool-notify.mjs** : revert `sendNotification` → `sendMsg` (SOAP V3)
+  - `sendNotification` n'existe pas dans le WSDL SOAP V3 Smartschool (confirmé en inspectant
+    le WSDL live) — la méthode renvoie un SOAP fault → ssCode: -999 systématique
+  - Le scope `sendnotif` activé par Smartschool (ticket #198282) est réservé à l'**API OAuth2**
+    (client credentials), pas au SOAP V3 avec access code — deux systèmes distincts
+  - `sendMsg` (messages inbox) est la seule méthode d'envoi disponible en SOAP V3 + access code
+  - Ajout de `https://espmaritime-staging.netlify.app` dans les origines CORS autorisées
+    (manquait, causait des blocages potentiels sur staging)
+  - TODO (chantier futur) : implémenter OAuth2 Smartschool pour accéder à `sendNotification`
+    via token Bearer — nécessite client_id + client_secret + flow token exchange
+
+## [v0.39] — 2026-06-22
+
+### Changed
+- **smartschool-notify.mjs** : implémentation OAuth2 `client_credentials` pour `sendNotification`
+  - Remplace `sendMsg` (inbox) par `sendNotification` (push notification mobile/desktop)
+  - Authentification via OAuth2 `client_credentials` (machine-to-machine, sans redirect URI)
+    → fonctionne sur staging ET production (contrairement au login OAuth utilisateur)
+  - Flow : `POST /OAuth/index/token` (scope=sendnotif) → Bearer token → SOAP `sendNotification`
+    avec `Authorization: Bearer {token}` — Smartschool retourne HTTP 200 + body vide = succès
+  - `<accesscode>` dans le SOAP body positionné à `"OAUTH"` (ignoré par Smartschool quand
+    le header Bearer est présent)
+  - Nouvelles env vars Netlify (staging + production) :
+    - `SMARTSCHOOL_CLIENT_ID` = identifiant OAuth2 ESPM+
+    - `SMARTSCHOOL_CLIENT_SECRET` = secret OAuth2 ESPM+
+  - Env var optionnelle `SMARTSCHOOL_OAUTH_URL` (défaut : `…/OAuth/index/token`)
+  - Structure SOAP `sendNotification` : `accesscode`, `title`, `description`,
+    `userIdentifier`, `coaccount`, `link`
+  - `link` = URL vers ESPM+ (racine ou page activité avec `?open={id}`)
+  - Token OAuth obtenu une fois par invocation de la fonction (serverless = pas de cache)
+
+## [v0.40] — 2026-06-22
+
+### Reverted
+- **smartschool-notify.mjs** : retour à `sendMsg` SOAP V3 (message inbox)
+  - `sendNotification` SOAP V3 + Bearer OAuth → HTTP 200 + body vide mais aucune
+    notification réellement envoyée (action inconnue dans le WSDL, ignorée silencieusement)
+  - REST `/Api/V1/sendNotification` + Bearer OAuth → HTTP 500 systématique
+    (token `client_credentials` avec `sub: ""` → Smartschool refuse sans identité expéditeur)
+  - `sendMsg` (message inbox Smartschool) est la seule méthode fiable avec les droits actuels
+  - Suppression des env vars `SMARTSCHOOL_CLIENT_ID` / `SMARTSCHOOL_CLIENT_SECRET` (non utilisées)
+  - Correction `SMARTSCHOOL_TEST_RECIPIENT` → "Renaud Lecocq" (identifiant Smartschool réel)
+  - TODO : ouvrir ticket Smartschool pour demander endpoint REST sendnotif + payload attendu
+
+## [v0.41] — 2026-06-22
+
+### Fixed
+- **smartschool-notify.mjs** : restauration de la version fonctionnelle depuis main
+  - ssCode 12 causé par déclaration des namespaces XML (`xmlns:xsi`, `xmlns:xsd`) au niveau
+    de l'enveloppe SOAP au lieu d'inline sur chaque élément — Smartschool l'exige inline
+  - Corps du message en HTML restauré (bouton ESPM+ orange/sombre)
+  - Ajout `https://espmaritime-staging.netlify.app` dans CORS origins

@@ -25,6 +25,7 @@
 const ALLOWED_ORIGINS = [
   'https://espmaritime.netlify.app',
   'https://develop--espmaritime.netlify.app',
+  'https://espmaritime-staging.netlify.app',
   'http://localhost:5173',
 ]
 
