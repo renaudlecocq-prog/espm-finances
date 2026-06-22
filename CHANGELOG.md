@@ -784,3 +784,18 @@ git push origin main
   - Wrapper `h-full flex flex-col` (remplace fragment `<>`)
   - Zone contenu `flex-1 min-h-0` + tableau `flex-1 overflow-auto min-h-0`
   - `thead` sticky (`sticky top-0 z-10`) dans les deux vues
+
+## [v0.37] — 2026-06-22
+
+### Changed
+- **smartschool-notify.mjs** : migration `sendMsg` → `sendNotification` (scope `sendnotif`)
+  - Scope `sendnotif` activé par Smartschool le 22/06/2026 (ticket #198282)
+  - La fonction SOAP `sendNotification` envoie une notification push dans l'app Smartschool
+    au lieu d'un message dans la boîte de réception — moins intrusif, plus adapté
+  - Corps en **plain text** (plus de HTML) + nouveau paramètre `link` (URL cliquable)
+  - **Mode bêta (actuel)** : si `SMARTSCHOOL_TEST_RECIPIENT` est défini, 100% des notifs
+    vont uniquement à ce compte (Renaud) — comportement inchangé depuis le frontend
+  - **Mode production (V1 futur)** : factures → co-accounts 1 & 2 de chaque élève facturé ;
+    activités → liste `SMARTSCHOOL_NOTIFY_DIRECTION`
+  - `SOAPAction` : `"urn:sendMsg"` → `"urn:sendNotification"`
+  - Aucun changement dans `Factures.jsx` ni `Activites.jsx` — même endpoint, même payload
