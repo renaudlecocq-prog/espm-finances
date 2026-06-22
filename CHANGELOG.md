@@ -924,3 +924,20 @@ git push origin main
 ### Migration DB
 - `activites` : nouvelles colonnes `eleves_exclus UUID[]`, `gare_depart TEXT`,
   `gare_arrivee TEXT`, `pmr VARCHAR(3)`, `ligne_tec TEXT`
+
+## [v0.46] — 2026-06-22
+
+### Changed
+- **Activites.jsx** — suppressions, validations et transport enrichi
+  - **Archiver supprimé** : bouton "Archiver" retiré du footer du modal ; fonction `archive()`
+    retirée du composant principal ; `canEdit` ne vérifie plus le statut `archive`
+  - **Type "Voyage scolaire" masqué** depuis le modal Intra-Extramuros : `allowedTypes`
+    et `defaultType` correctement passés selon l'onglet actif
+  - **Tél. organisateur.trice** renommé + rendu obligatoire pour les types extramuros/voyage
+  - **Transport — champs contextuels étendus** :
+    - Flixbus → Gare de départ, Gare d'arrivée, Heure de départ (retour)
+    - SNCB → + Heure de départ (retour) (s'ajoute aux champs existants)
+    - TEC → + Heure de départ (retour) (s'ajoute aux champs existants)
+
+### Migration DB
+- `activites` : nouvelle colonne `heure_depart_retour TIME`

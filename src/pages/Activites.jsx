@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
-import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2, Trash2, CheckCheck } from 'lucide-react'
+import { Search, X, FileText, Receipt, ChevronDown, Plus, Loader2, Trash2, CheckCheck } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
@@ -75,7 +75,7 @@ const EMPTY = {
   intitule: '', description: '', type: 'extramuros',
   date_debut: '', date_fin: '',
   lieu: '', heure_depart: '', heure_retour: '',
-  lieu_rdv: '', lieu_retour: '', type_transport: '', type_transport_list: [], transport_autre_texte: '', tel_organisateur: '', tel_sejour: '',
+  lieu_rdv: '', lieu_retour: '', type_transport: '', type_transport_list: [], transport_autre_texte: '', heure_depart_retour: '', tel_organisateur: '', tel_sejour: '',
   local: '', heure_debut: '', heure_fin: '',
   montant_total: '', pop: '',
   statut: 'brouillon', statut_facturation: 'en_attente',
@@ -97,6 +97,7 @@ function validate(form) {
     if (!form.heure_retour) miss.push('heure_retour')
     if (!form.lieu_rdv) miss.push('lieu_rdv')
     if (!form.type_transport_list?.length) miss.push('type_transport')
+    if (!form.tel_organisateur) miss.push('tel_organisateur')
   }
   if (form.type === 'extramuros' && !form.lieu_retour) miss.push('lieu_retour')
   if (form.type === 'voyage' && !form.date_fin) miss.push('date_fin')
@@ -384,7 +385,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
   const FIELD_LABELS = {
     intitule: 'Intitulé', type: 'Type', date_debut: 'Date de début',
     lieu: 'Lieu', heure_depart: 'Heure de départ', heure_retour: 'Heure de retour',
-    lieu_rdv: 'Lieu de RDV', lieu_retour: 'Lieu de retour', type_transport: 'Type de transport',
+    lieu_rdv: 'Lieu de RDV', lieu_retour: 'Lieu de retour', type_transport: 'Type de transport', tel_organisateur: 'Tél. organisateur.trice',
     date_fin: 'Date de retour', local: 'Local',
     heure_debut: 'Heure de début', heure_fin: 'Heure de fin',
     statut: 'Statut', description: 'Description', nb_eleves: 'Nb élèves',
@@ -714,7 +715,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                       onChange={e => f('transport_autre_texte', e.target.value)} />
                   )}
 
-                  {/* SNCB — gares + PMR */}
+                  {/* SNCB — gares + heure retour + PMR */}
                   {(form.type_transport_list || []).includes('sncb') && (
                     <div className="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-200 space-y-3">
                       <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">SNCB</p>
@@ -726,6 +727,10 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                         <div>
                           <label className="label">Gare d'arrivée</label>
                           <input className="input" value={form.gare_arrivee || ''} onChange={e => f('gare_arrivee', e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="label">Heure de départ (retour)</label>
+                          <input className="input" type="time" value={form.heure_depart_retour || ''} onChange={e => f('heure_depart_retour', e.target.value)} />
                         </div>
                       </div>
                       <div>
@@ -742,7 +747,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                     </div>
                   )}
 
-                  {/* TEC — gares + ligne */}
+                  {/* TEC — gares + heure retour + ligne */}
                   {(form.type_transport_list || []).includes('tec') && (
                     <div className="mt-3 p-3 bg-green-50 rounded-xl border border-green-200 space-y-3">
                       <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">TEC</p>
@@ -755,7 +760,11 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                           <label className="label">Gare d'arrivée</label>
                           <input className="input" value={form.gare_arrivee || ''} onChange={e => f('gare_arrivee', e.target.value)} />
                         </div>
-                        <div className="col-span-2">
+                        <div>
+                          <label className="label">Heure de départ (retour)</label>
+                          <input className="input" type="time" value={form.heure_depart_retour || ''} onChange={e => f('heure_depart_retour', e.target.value)} />
+                        </div>
+                        <div>
                           <label className="label">Ligne empruntée</label>
                           <input className="input" value={form.ligne_tec || ''} onChange={e => f('ligne_tec', e.target.value)} />
                         </div>
@@ -772,8 +781,29 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                       </p>
                     </div>
                   )}
+
+                  {/* Flixbus — gares + heure retour */}
+                  {(form.type_transport_list || []).includes('flixbus') && (
+                    <div className="mt-3 p-3 bg-green-50 rounded-xl border border-green-300 space-y-3">
+                      <p className="text-xs font-semibold text-green-800 uppercase tracking-wide">Flixbus</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="label">Gare de départ</label>
+                          <input className="input" value={form.gare_depart || ''} onChange={e => f('gare_depart', e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="label">Gare d'arrivée</label>
+                          <input className="input" value={form.gare_arrivee || ''} onChange={e => f('gare_arrivee', e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="label">Heure de départ (retour)</label>
+                          <input className="input" type="time" value={form.heure_depart_retour || ''} onChange={e => f('heure_depart_retour', e.target.value)} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div><label className="label">Tél. organisateur</label>
+                <div><label className="label">Tél. organisateur.trice *</label>
                   <input className="input" value={form.tel_organisateur} onChange={e => f('tel_organisateur', e.target.value)} />
                 </div>
                 {form.type === 'voyage' && (
@@ -907,15 +937,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
           </button>
           <button onClick={onClose} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
           <div className="flex-1" />
-          {isFinancier && editRow?.id && form.statut !== 'archive' && (
-            <button type="button" onClick={async () => {
-              if (!confirm('Archiver cette activité ?')) return
-              await supabase.from('activites').update({ statut: 'archive' }).eq('id', editRow.id)
-              onSaved(); onClose()
-            }} className="flex items-center gap-1.5 text-xs text-orange-500 hover:text-orange-700 border border-orange-200 hover:border-orange-400 rounded-lg px-3 py-1.5 transition-colors">
-              <Archive size={13} /> Archiver
-            </button>
-          )}
+
           {isFinancier && editRow?.id && (
             <button type="button" onClick={async () => {
               if (!confirm('Supprimer définitivement cette activité ? Cette action est irréversible.')) return
@@ -1168,11 +1190,6 @@ export default function Activites() {
   }
   const openDocs = (row, cat) => { setDocsRow(row); setDocsCategorie(cat) }
 
-  const archive = async id => {
-    if (!confirm('Archiver cette activité ?')) return
-    await supabase.from('activites').update({ statut: 'archive' }).eq('id', id)
-    await reload()
-  }
 
   const toggleFacturation = async (e, row) => {
     e.stopPropagation()
@@ -1181,7 +1198,7 @@ export default function Activites() {
     reload()
   }
 
-  const canEdit   = row => isAdmin || isFinancier || (isMdp && row.created_by === user?.id && row.statut !== 'archive')
+  const canEdit   = row => isAdmin || isFinancier || (isMdp && row.created_by === user?.id)
   const canView   = row => isAdmin || isFinancier || (isMdp && (
     row.created_by === user?.id ||
     row.responsable_id === user?.id ||
@@ -1462,6 +1479,8 @@ export default function Activites() {
           allClasses={allClasses}
           onClose={() => setShowModal(false)}
           onSaved={reload}
+          allowedTypes={mainTab === 'intra_extra' ? ['extramuros', 'intramuros'] : ['voyage']}
+          defaultType={mainTab === 'intra_extra' ? 'extramuros' : 'voyage'}
         />
       )}
       {docsRow && <DocsModal row={docsRow} categorie={docsCategorie} onClose={() => setDocsRow(null)} onDocsChanged={reloadDocsSets} />}
