@@ -257,22 +257,27 @@ function calcNbEleves(allEleves, form) {
 
 // ── Staged file upload avec drag & drop ────────────────────────────────────
 function AvisGenerator({ activiteId, intitule }) {
-  const { supabase } = useAuth()
   const [loading, setLoading] = useState(false)
 
   const generate = async () => {
     setLoading(true)
     try {
-      const { data:{ session } } = await supabase.auth.getSession()
-      if (!session?.access_token) { alert('Session expirée, veuillez vous reconnecter.'); return }
-      const token = encodeURIComponent(session.access_token)
-      const url = `/.netlify/functions/activite-avis-pdf?id=${activiteId}&token=${token}`
-      const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${session.access_token}` } })
-      if (!resp.ok) { alert(`Erreur ${resp.status}: ${await resp.text()}`); return }
-      const html = await resp.text()
-      const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
-      window.open(URL.createObjectURL(blob), '_blank')
-    } catch(e) { alert("Erreur lors de la génération de l'avis.") }
+      const { data } = await supabase.auth.getSession()
+      const session = data?.session
+      if (!session?.access_token) { alert('Session expirée, veuillez vous reconnecter.'); setLoading(false); return }
+      const resp = await fetch(
+        `/.netlify/functions/activite-avis-pdf?id=${encodeURIComponent(activiteId)}`,
+        { headers: { 'Authorization': `Bearer ${session.access_token}` } }
+      )
+      const body = await resp.text()
+      if (!resp.ok) { alert(`Erreur ${resp.status}: ${body}`); setLoading(false); return }
+      const blob = new Blob([body], { type: 'text/html; charset=utf-8' })
+      const win = window.open(URL.createObjectURL(blob), '_blank')
+      if (!win) alert("Le navigateur a bloqué l'ouverture du PDF. Autorisez les popups pour ce site.")
+    } catch(e) {
+      console.error('[AvisGenerator]', e)
+      alert('Erreur : ' + (e?.message || String(e)))
+    }
     finally { setLoading(false) }
   }
 
