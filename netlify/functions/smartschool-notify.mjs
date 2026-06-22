@@ -83,6 +83,7 @@ async function sendNotification({ apiUrl, accessCode, recipient, coAccount, titl
       body: envelope,
     })
     const text = await res.text()
+    console.log(`[sendNotification raw] status=${res.status} body=`, text.substring(0, 1000))
     const match = text.match(/<return[^>]*>(-?\d+)<\/return>/)
     const ssCode = match ? parseInt(match[1]) : -999
     const ok = res.ok && ssCode === 0
