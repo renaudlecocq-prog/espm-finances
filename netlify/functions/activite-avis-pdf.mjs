@@ -106,21 +106,7 @@ export const handler = async (event) => {
     const hasSncb    = tList.some(t => t === 'sncb')
     const hasTec     = tList.some(t => t === 'tec')
     const hasFlixbus = tList.some(t => t === 'flixbus')
-    if ((hasSncb || hasTec || hasFlixbus) && act.gare_depart) {
-      transportRows += `<tr><th>Gare de départ</th><td>${esc(act.gare_depart)}</td></tr>`
-    }
-    if ((hasSncb || hasTec || hasFlixbus) && act.gare_arrivee) {
-      transportRows += `<tr><th>Gare d'arrivée</th><td>${esc(act.gare_arrivee)}</td></tr>`
-    }
-    if ((hasSncb || hasTec || hasFlixbus) && act.heure_depart_retour) {
-      transportRows += `<tr><th>Heure départ (retour)</th><td>${fmtTime(act.heure_depart_retour)}</td></tr>`
-    }
-    if (hasSncb && act.pmr) {
-      transportRows += `<tr><th>Accessibilité PMR</th><td>${esc(act.pmr)}</td></tr>`
-    }
-    if (hasTec && act.ligne_tec) {
-      transportRows += `<tr><th>Ligne TEC</th><td>${esc(act.ligne_tec)}</td></tr>`
-    }
+    // Détails transport (gares, PMR, etc.) intentionnellement omis de l'avis parents
   }
 
   // Montant
@@ -157,7 +143,7 @@ export const handler = async (event) => {
   .logo-ecole { height:16mm; width:auto; display:block }
   .header-right { text-align:right }
   .school-name-bold { font-size:11pt; font-weight:700; color:#1a1a2e; margin-bottom:1.5mm }
-  .school-addr { font-size:8pt; color:${typeColor}; line-height:1.5 }
+  .school-addr { font-size:8pt; color:#888; line-height:1.5 }
   /* Type + Titre inline */
   .title-row { display:flex; align-items:baseline; gap:3mm; margin-bottom:2mm }
   .type-badge {
@@ -197,8 +183,7 @@ export const handler = async (event) => {
   /* Spacer + footer */
   .spacer { flex:1 }
   .footer { border-top:1px solid #e5e7eb; padding-top:3mm; display:flex; justify-content:space-between; align-items:center; font-size:7pt; color:#9ca3af }
-  .footer-brand { font-weight:600; color:#6b7280 }
-  .footer-brand span { color:#f97316 }
+  .footer-brand span { color:#f97316; font-weight:700 }
   @media print {
     body { background:#fff; padding:0 }
     .page { box-shadow:none; margin:0; width:100%; min-height:100vh }
@@ -219,8 +204,8 @@ export const handler = async (event) => {
 
   <!-- Type badge + Titre inline -->
   <div class="title-row">
-    <span class="type-badge">${esc(typeLabel)}</span>
     <h1>${esc(act.intitule)}</h1>
+    <span class="type-badge">${esc(typeLabel)}</span>
   </div>
   <div class="date-line">${dateHtml}</div>
 
