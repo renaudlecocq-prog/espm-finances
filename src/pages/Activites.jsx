@@ -31,6 +31,32 @@ const FACT_LABELS = {
 }
 const TYPE_LABELS = { extramuros: 'Extramuros', intramuros: 'Intramuros', voyage: 'Voyage' }
 
+const TRANSPORT_OPTIONS = [
+  { value: 'stib',        label: 'STIB' },
+  { value: 'sncb',        label: 'SNCB' },
+  { value: 'de_lijn',     label: 'De Lijn' },
+  { value: 'tec',         label: 'TEC' },
+  { value: 'flixbus',     label: 'Flixbus' },
+  { value: 'societe_car', label: 'Société de car' },
+  { value: 'a_pied',      label: 'À pied' },
+  { value: 'autre',       label: 'Autre' },
+]
+const TRANSPORT_KNOWN = TRANSPORT_OPTIONS.map(o => o.value)
+const TRANSPORT_LEGACY = { bus_scolaire: 'societe_car', train: 'sncb' }
+
+const parseTransport = str => {
+  if (!str) return { list: [], autre: '' }
+  const parts = str.split(',').map(s => s.trim()).filter(Boolean)
+  const list = []; let autre = ''
+  for (const p of parts) {
+    if (p.startsWith('autre:')) { list.push('autre'); autre = p.slice(6) }
+    else if (TRANSPORT_KNOWN.includes(p)) list.push(p)
+    else if (TRANSPORT_LEGACY[p]) list.push(TRANSPORT_LEGACY[p])
+    else { list.push('autre'); autre = p }
+  }
+  return { list: [...new Set(list)], autre }
+}
+
 // Colonnes de groupes — synchronisé avec Groupes.jsx
 const GROUP_COLS = [
   { key: 'rlmo',            label: 'RLMO' },
@@ -49,8 +75,8 @@ const getRlmo = e => [e.philosophie, e.groupe_choix_philo].filter(Boolean).join(
 const EMPTY = {
   intitule: '', description: '', type: 'extramuros',
   date_debut: '', date_fin: '',
-  lieu: '', heure_rdv: '', heure_depart: '', heure_retour: '',
-  lieu_rdv: '', lieu_retour: '', type_transport: '', tel_organisateur: '', tel_sejour: '',
+  lieu: '', heure_depart: '', heure_retour: '',
+  lieu_rdv: '', lieu_retour: '', type_transport: '', type_transport_list: [], transport_autre_texte: '', tel_organisateur: '', tel_sejour: '',
   local: '', heure_debut: '', heure_fin: '',
   montant_total: '', pop: '',
   statut: 'brouillon', statut_facturation: 'en_attente',
@@ -69,8 +95,9 @@ function validate(form) {
     if (!form.heure_depart) miss.push('heure_depart')
     if (!form.heure_retour) miss.push('heure_retour')
     if (!form.lieu_rdv) miss.push('lieu_rdv')
-    if (!form.type_transport) miss.push('type_transport')
+    if (!form.type_transport_list?.length) miss.push('type_transport')
   }
+  if (form.type === 'extramuros' && !form.lieu_retour) miss.push('lieu_retour')
   if (form.type === 'voyage' && !form.date_fin) miss.push('date_fin')
   if (form.type === 'intramuros') {
     if (!form.local) miss.push('local')
@@ -271,8 +298,10 @@ function FileStage({ label, files, setFiles }) {
 }
 
 // ── Activity form modal ────────────────────────────────────────────────────
-function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, groupOptions, allClasses, onClose, onSaved, allowedTypes, defaultType }) {
+function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staffList, groupOptions, allClasses, onClose, onSaved, allowedTypes, defaultType }) {
   const { user, profile } = useAuth()
+  const canChooseResponsable = isAdmin || isFinancier
+  const { list: initTransportList, autre: initTransportAutre } = parseTransport(editRow?.type_transport || '')
   const initForm = editRow ? {
     ...EMPTY, ...editRow,
     accompagnateur_ids: editRow.accompagnateur_ids || [],
@@ -280,7 +309,13 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     groupes_inclus:   editRow.groupes_inclus   || [],
     classes_exclues:  editRow.classes_exclues  || [],
     groupes_exclus:   editRow.groupes_exclus   || [],
-  } : { ...EMPTY, type: defaultType || EMPTY.type }
+    type_transport_list: initTransportList,
+    transport_autre_texte: initTransportAutre,
+  } : {
+    ...EMPTY,
+    type: defaultType || EMPTY.type,
+    responsable_id: canChooseResponsable ? null : (userId || null),
+  }
 
   const [form, setForm]             = useState(initForm)
   const [errors, setErrors]         = useState([])
@@ -339,7 +374,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
   const FIELD_LABELS = {
     intitule: 'Intitulé', type: 'Type', date_debut: 'Date de début',
     lieu: 'Lieu', heure_depart: 'Heure de départ', heure_retour: 'Heure de retour',
-    lieu_rdv: 'Lieu de RDV', type_transport: 'Type de transport',
+    lieu_rdv: 'Lieu de RDV', lieu_retour: 'Lieu de retour', type_transport: 'Type de transport',
     date_fin: 'Date de retour', local: 'Local',
     heure_debut: 'Heure de début', heure_fin: 'Heure de fin',
     statut: 'Statut', description: 'Description', nb_eleves: 'Nb élèves',
@@ -394,13 +429,20 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     setSaving(true); setSaveError(null)
     if (targetStatut) setSavingAs(targetStatut)
 
+    const transportStr = form.type_transport_list.length
+      ? form.type_transport_list.map(v => v === 'autre' ? 'autre:' + (form.transport_autre_texte || '') : v).join(',')
+      : ''
     const payload = Object.fromEntries(
       Object.entries({
         ...form,
         ...(targetStatut ? { statut: targetStatut } : {}),
         nb_eleves: hasSelection ? nbEleves : (form.nb_eleves || null),
         montant_par_eleve: montantParEleve ? montantParEleve.toFixed(2) : null,
-      }).map(([k, v]) => [k, v === '' ? null : v])
+        type_transport: transportStr,
+        type_transport_list: undefined,
+        transport_autre_texte: undefined,
+      }).map(([k, v]) => [k, v === '' ? null : v === undefined ? undefined : v])
+      .filter(([, v]) => v !== undefined)
     )
     if (!isFinancier) delete payload.pop
     if (!isFinancier) delete payload.statut_facturation
@@ -446,6 +488,9 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
   const handleBackdropClose = async () => {
     const isNew = !editRow?.id
     if (isNew && form.intitule?.trim()) {
+      const bkTransportStr = form.type_transport_list.length
+        ? form.type_transport_list.map(v => v === 'autre' ? 'autre:' + (form.transport_autre_texte || '') : v).join(',')
+        : ''
       const payload = Object.fromEntries(
         Object.entries({
           ...form,
@@ -453,7 +498,11 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
           created_by: userId,
           nb_eleves: hasSelection ? nbEleves : (form.nb_eleves || null),
           montant_par_eleve: montantParEleve ? montantParEleve.toFixed(2) : null,
-        }).map(([k, v]) => [k, v === '' ? null : v])
+          type_transport: bkTransportStr,
+          type_transport_list: undefined,
+          transport_autre_texte: undefined,
+        }).map(([k, v]) => [k, v === '' ? null : v === undefined ? undefined : v])
+        .filter(([, v]) => v !== undefined)
       )
       if (!isFinancier) delete payload.pop
     if (!isFinancier) delete payload.statut_facturation
@@ -464,18 +513,22 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     onClose()
   }
 
+  const modalTitle = editRow
+    ? (form.type === 'voyage' ? 'Modifier le voyage' : "Modifier l'activité")
+    : (form.type === 'voyage' ? 'Nouveau voyage' : 'Nouvelle activité')
+
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={handleBackdropClose} />
-      <div className="relative z-10 w-full max-w-5xl bg-white shadow-2xl flex flex-col h-full">
+      <div className="relative z-10 w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-          <h2 className="font-bold text-gray-800 text-lg">{editRow ? 'Modifier' : 'Nouvelle'} activité</h2>
+          <h2 className="font-bold text-gray-800 text-lg">{modalTitle}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
         </div>
 
         {/* Two-column body */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden min-h-0">
 
           {/* LEFT — Commentaires (mode édition uniquement) */}
           {editRow?.id && (
@@ -539,24 +592,29 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
             <div className="grid grid-cols-2 gap-4">
               <div className="min-w-0">
                 <label className="label">Responsable</label>
+                {canChooseResponsable ? (
                 <MultiSearchSelect
                   options={staffList}
                   value={form.responsable_id}
                   onChange={v => {
-                    // Si la personne est déjà accompagnatrice, la retirer
                     f('responsable_id', v)
                     if (v && (form.accompagnateur_ids || []).includes(v))
                       f('accompagnateur_ids', (form.accompagnateur_ids || []).filter(id => id !== v))
                   }}
                   placeholder="Choisir un·e responsable…" single />
+                ) : (
+                <div className="input bg-gray-50 text-gray-600 text-sm py-2">
+                  {staffList.find(s => s.value === form.responsable_id)?.label || '—'}
+                </div>
+                )}
               </div>
               <div className="min-w-0">
-                <label className="label">Accompagnateur·rice·s</label>
+                <label className="label">Accompagnants</label>
                 <MultiSearchSelect
                   options={staffList.filter(s => s.value !== form.responsable_id)}
                   value={form.accompagnateur_ids}
                   onChange={v => f('accompagnateur_ids', v)}
-                  placeholder="Choisir des accompagnateur·rices…" />
+                  placeholder="Choisir des accompagnants…" />
               </div>
             </div>
           </div>
@@ -598,9 +656,6 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
                   <label className="label">Lieu *</label>
                   <input className="input" value={form.lieu} onChange={e => f('lieu', e.target.value)} />
                 </div>
-                <div><label className="label">Heure RDV</label>
-                  <input className="input" type="time" value={form.heure_rdv} onChange={e => f('heure_rdv', e.target.value)} />
-                </div>
                 <div><label className="label">Heure de départ *</label>
                   <input className="input" type="time" value={form.heure_depart} onChange={e => f('heure_depart', e.target.value)} />
                 </div>
@@ -610,17 +665,32 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
                 <div><label className="label">Lieu de RDV *</label>
                   <input className="input" value={form.lieu_rdv} onChange={e => f('lieu_rdv', e.target.value)} />
                 </div>
-                <div><label className="label">Lieu de retour</label>
+                <div><label className="label">Lieu de retour{form.type === 'extramuros' ? ' *' : ''}</label>
                   <input className="input" value={form.lieu_retour} onChange={e => f('lieu_retour', e.target.value)} />
                 </div>
-                <div><label className="label">Type de transport *</label>
-                  <select className="input" value={form.type_transport} onChange={e => f('type_transport', e.target.value)}>
-                    <option value="">— Choisir —</option>
-                    <option value="bus_scolaire">Bus scolaire</option>
-                    <option value="train">Train</option>
-                    <option value="a_pied">À pied</option>
-                    <option value="autre">Autre</option>
-                  </select>
+                <div className="col-span-2">
+                  <label className="label">Type de transport *</label>
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1">
+                    {TRANSPORT_OPTIONS.map(opt => (
+                      <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer select-none">
+                        <input type="checkbox"
+                          className="rounded border-gray-300"
+                          checked={(form.type_transport_list || []).includes(opt.value)}
+                          onChange={e => {
+                            const cur = form.type_transport_list || []
+                            f('type_transport_list', e.target.checked
+                              ? [...cur, opt.value]
+                              : cur.filter(v => v !== opt.value))
+                          }} />
+                        <span className="text-sm text-gray-700">{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {(form.type_transport_list || []).includes('autre') && (
+                    <input className="input mt-2" placeholder="Préciser le transport…"
+                      value={form.transport_autre_texte || ''}
+                      onChange={e => f('transport_autre_texte', e.target.value)} />
+                  )}
                 </div>
                 <div><label className="label">Tél. organisateur</label>
                   <input className="input" value={form.tel_organisateur} onChange={e => f('tel_organisateur', e.target.value)} />
@@ -1083,7 +1153,6 @@ export default function Activites() {
   const hasFilters = search || quickFilter || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
 
   const filterDefs = useMemo(() => [
-    ...(mainTab === 'intra_extra' ? [{ key: 'type', label: 'Type', options: [{ value: 'extramuros', label: 'Extramuros' }, { value: 'intramuros', label: 'Intramuros' }] }] : []),
     ...(isAdmin || isFinancier ? [{ key: 'statut_facturation', label: 'Facturation', options: [
         { value: 'en_attente', label: 'En attente' },
         { value: 'a_facturer', label: 'À facturer' },

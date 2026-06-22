@@ -885,3 +885,21 @@ git push origin main
     les activités archivées ne sont plus affichées
   - Bouton "+ Activité" renommé **"Nouvelle activité"** sur l'onglet Intra-Extramuros
     et **"Nouveau voyage"** sur l'onglet Voyages
+
+## [v0.44] — 2026-06-22
+
+### Changed
+- **Activites.jsx** : refonte modale + formulaire intra-extramuros
+  - **Modal centré** : passage du slide-in latéral vers une modale centrale (max 90vh,
+    arrondie) pour la création et l'édition des deux types d'activités
+  - **Filtre "Type" supprimé** du panneau Filtres (redondant avec les onglets principaux)
+  - **Responsable verrouillé** : pour les profils non-admin/non-financier, le responsable
+    est toujours le créateur (champ en lecture seule) ; admin et financier conservent
+    la sélection libre
+  - **"Accompagnateur·rice·s" → "Accompagnants"** (label + placeholder)
+  - **Heure RDV supprimée** du formulaire logistique
+  - **Lieu de retour obligatoire** pour les extramuros (validation + astérisque)
+  - **Type de transport multi-sélection** : STIB, SNCB, De Lijn, TEC, Flixbus,
+    Société de car, À pied, Autre (champ texte libre si Autre coché) — stocké en
+    chaîne CSV dans la colonne `type_transport` ; rétrocompatible avec les anciennes
+    valeurs (`bus_scolaire` → `societe_car`, `train` → `sncb`)
