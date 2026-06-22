@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { DemoProvider, useDemo } from './context/DemoContext'
-import Header from './components/layout/Header'
+import Sidebar from './components/layout/Sidebar'
 import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
 import Home from './pages/Home'
@@ -19,11 +19,9 @@ function RequireAuth({ children, require = 'user' }) {
   const { user, loading, role, effectiveRole } = useAuth()
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
   if (!user) return <Navigate to="/login" replace />
-  // On utilise effectiveRole pour que l'aperçu de rôle restreigne vraiment l'accès aux pages
-  // Exception : /admin reste basé sur le vrai role (un admin ne perd jamais son accès admin)
-  if (require === 'admin'     && role !== 'admin')                                   return <Navigate to="/" replace />
-  if (require === 'financier' && !['admin','financier'].includes(effectiveRole))      return <Navigate to="/" replace />
-  if (require === 'mdp'       && !['admin','financier','mdp'].includes(effectiveRole))return <Navigate to="/" replace />
+  if (require === 'admin'     && role !== 'admin')                                    return <Navigate to="/" replace />
+  if (require === 'financier' && !['admin','financier'].includes(effectiveRole))       return <Navigate to="/" replace />
+  if (require === 'mdp'       && !['admin','financier','mdp'].includes(effectiveRole)) return <Navigate to="/" replace />
   return children
 }
 
@@ -38,18 +36,23 @@ function Layout({ children }) {
   const { previewRole, setPreviewRole, role } = useAuth()
   const { demoMode, toggleDemo } = useDemo()
 
-  const isAdmin = role === 'admin'
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 pb-safe" style={demoMode ? { paddingBottom: '3rem' } : {}}>
-        {children}
-      </main>
-      <footer className="max-w-screen-xl mx-auto w-full px-4 py-4 mt-8 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
-        <span>© 2026 École Secondaire Plurielle Maritime</span>
-        <Link to="/mentions-legales" className="hover:text-primary transition-colors">Mentions légales</Link>
-      </footer>
+    <div className="flex h-screen bg-surface overflow-hidden">
+      <Sidebar />
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <main
+          className="flex-1"
+          style={demoMode ? { paddingBottom: '3rem' } : {}}
+        >
+          {children}
+        </main>
+        <footer className="px-6 py-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400 shrink-0">
+          <span>© 2026 École Secondaire Plurielle Maritime</span>
+          <Link to="/mentions-legales" className="hover:text-primary transition-colors">
+            Mentions légales
+          </Link>
+        </footer>
+      </div>
 
       {/* ── Bannière mode démo (avec switcher de rôle) ── */}
       {demoMode && (
@@ -57,7 +60,6 @@ function Layout({ children }) {
           style={{ background: '#7a3800', borderTop: '2px solid #E86C00' }}>
           <span className="text-white/70 text-xs font-semibold shrink-0">🎭 DÉMO</span>
           <span className="text-white/40 text-xs shrink-0">Vue :</span>
-          {/* Switcher de rôle */}
           <div className="flex gap-1">
             {DEMO_ROLES.map(({ key, label }) => {
               const active = previewRole === key
@@ -91,7 +93,7 @@ function Layout({ children }) {
           <span className="flex items-center gap-2">
             <span>👁</span>
             <span>Aperçu en tant que <strong>
-              {{ financier:'Financier', mdp:'Membre du personnel', responsable:'Responsable' }[previewRole] || previewRole}
+              {{ financier: 'Financier', mdp: 'Membre du personnel', responsable: 'Responsable' }[previewRole] || previewRole}
             </strong> — les menus et accès reflètent ce rôle</span>
           </span>
           <button onClick={() => setPreviewRole(null)}
