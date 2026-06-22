@@ -258,7 +258,7 @@ function calcNbEleves(allEleves, form) {
 // ── Staged file upload avec drag & drop ────────────────────────────────────
 function AvisGenerator({ activiteId, intitule }) {
   const { supabase } = useAuth()
-  const [loading, setLoading] = React.useState(false)
+  const [loading, setLoading] = useState(false)
 
   const generate = async () => {
     setLoading(true)
