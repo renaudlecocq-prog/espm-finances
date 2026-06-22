@@ -846,3 +846,12 @@ git push origin main
   - Suppression des env vars `SMARTSCHOOL_CLIENT_ID` / `SMARTSCHOOL_CLIENT_SECRET` (non utilisées)
   - Correction `SMARTSCHOOL_TEST_RECIPIENT` → "Renaud Lecocq" (identifiant Smartschool réel)
   - TODO : ouvrir ticket Smartschool pour demander endpoint REST sendnotif + payload attendu
+
+## [v0.41] — 2026-06-22
+
+### Fixed
+- **smartschool-notify.mjs** : restauration de la version fonctionnelle depuis main
+  - ssCode 12 causé par déclaration des namespaces XML (`xmlns:xsi`, `xmlns:xsd`) au niveau
+    de l'enveloppe SOAP au lieu d'inline sur chaque élément — Smartschool l'exige inline
+  - Corps du message en HTML restauré (bouton ESPM+ orange/sombre)
+  - Ajout `https://espmaritime-staging.netlify.app` dans CORS origins

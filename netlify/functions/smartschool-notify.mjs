@@ -1,23 +1,25 @@
 /**
  * netlify/functions/smartschool-notify.mjs
  *
- * Envoie des messages Smartschool (inbox) via SOAP V3 sendMsg.
+ * Envoie des messages Smartschool (sendMsg SOAP V3) lors d'événements ESPM+.
  *
- * Note : sendNotification (push) n'est pas disponible via SOAP V3 ni via REST
- * client_credentials (sub vide → HTTP 500). sendMsg (inbox) est la seule méthode
- * fiable avec les droits actuels.
- *
- * Types :
+ * Types supportés :
  *   - "facture"  → message aux co-accounts (parents) de chaque élève facturé
  *   - "activite" → message à la liste direction fixe
  *
  * Env vars requises :
- *   SMARTSCHOOL_ACCESS_CODE  code d'accès SOAP V3
+ *   SMARTSCHOOL_ACCESS_CODE       mot de passe du profil WS NetlifyApp
  *
  * Env vars optionnelles :
  *   SMARTSCHOOL_API_URL           (défaut: https://espmaritime.smartschool.be/Webservices/V3)
- *   SMARTSCHOOL_TEST_RECIPIENT    si défini → mode bêta (tous les messages vont à ce compte)
+ *   SMARTSCHOOL_TEST_RECIPIENT    si défini, TOUS les messages vont uniquement à cet identifiant
+ *                                 avec préfixe [TEST] → utiliser pour valider sans spammer
  *   SMARTSCHOOL_NOTIFY_DIRECTION  JSON array des identifiants Smartschool de la direction
+ *                                 ex: ["175033","175076"]
+ *                                 Ignoré si SMARTSCHOOL_TEST_RECIPIENT est défini
+ *
+ * Note: senderIdentifier omis intentionnellement — les messages apparaissent comme
+ * "Indisponible" (aucune réponse possible), ce qui est le comportement voulu.
  */
 
 const ALLOWED_ORIGINS = [
@@ -47,41 +49,48 @@ function escapeXml(str) {
 
 async function sendMsg({ apiUrl, accessCode, recipient, coAccount, title, body }) {
   const envelope = `<?xml version="1.0" encoding="UTF-8"?>
-<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="https://espmaritime.smartschool.be/Webservices/V3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/">
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="https://espmaritime.smartschool.be/Webservices/V3">
+  <SOAP-ENV:Header/>
   <SOAP-ENV:Body>
     <ns1:sendMsg SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
-      <accesscode xsi:type="xsd:string">${escapeXml(accessCode)}</accesscode>
-      <userIdentifier xsi:type="xsd:string">${escapeXml(recipient)}</userIdentifier>
-      <title xsi:type="xsd:string">${escapeXml(title)}</title>
-      <body xsi:type="xsd:string">${escapeXml(body)}</body>
-      <coaccount xsi:type="xsd:int">${coAccount ?? 0}</coaccount>
+      <accesscode xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(accessCode)}</accesscode>
+      <userIdentifier xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(recipient)}</userIdentifier>
+      <title xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(title)}</title>
+      <body xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${escapeXml(body)}</body>
+      <coaccount xsi:type="xsd:int" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">${coAccount ?? 0}</coaccount>
     </ns1:sendMsg>
   </SOAP-ENV:Body>
 </SOAP-ENV:Envelope>`
 
   try {
-    const res  = await fetch(apiUrl, {
+    const res = await fetch(apiUrl, {
       method:  'POST',
-      headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"urn:sendMsg"' },
-      body:    envelope,
+      headers: {
+        'Content-Type': 'text/xml; charset=utf-8',
+        SOAPAction:     '"urn:sendMsg"',
+      },
+      body: envelope,
     })
     const text = await res.text()
     const match = text.match(/<return[^>]*>(-?\d+)<\/return>/)
-    const ssCode = match ? parseInt(match[1], 10) : null
-    const ok = ssCode === 0
-    console.log(`[sendMsg] recipient=${recipient} coAccount=${coAccount} ssCode=${ssCode} ok=${ok}`)
-    return { recipient, coAccount, ok, ssCode }
+    const ssCode = match ? parseInt(match[1]) : -999
+    const ok = res.ok && ssCode === 0   // ssCode=0 = succès Smartschool
+    return { recipient, coAccount, ok, status: res.status, ssCode }
   } catch (err) {
     return { recipient, coAccount, ok: false, error: err.message }
   }
 }
 
 export default async function handler(req) {
-  const origin  = req.headers.get('origin') || ''
+  const origin = req.headers.get('origin') || ''
   const headers = corsHeaders(origin)
 
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers })
-  if (req.method !== 'POST')    return new Response('Method not allowed', { status: 405, headers })
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers })
+  }
+  if (req.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405, headers })
+  }
 
   const accessCode    = process.env.SMARTSCHOOL_ACCESS_CODE
   const apiUrl        = process.env.SMARTSCHOOL_API_URL || 'https://espmaritime.smartschool.be/Webservices/V3'
@@ -89,80 +98,88 @@ export default async function handler(req) {
 
   if (!accessCode) {
     return new Response(JSON.stringify({ error: 'SMARTSCHOOL_ACCESS_CODE non configuré' }), {
-      status:  500,
+      status: 500,
       headers: { ...headers, 'Content-Type': 'application/json' },
     })
   }
 
   let payload
-  try { payload = await req.json() }
-  catch { return new Response(JSON.stringify({ error: 'JSON invalide' }), { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } }) }
+  try {
+    payload = await req.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'JSON invalide' }), {
+      status: 400,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    })
+  }
 
   const { type } = payload
   const results  = []
-  const isTest   = Boolean(testRecipient)
 
-  // ── Facture validée ──────────────────────────────────────────────────────────
   if (type === 'facture') {
     const { students = [] } = payload
+    const isTest = Boolean(testRecipient)
 
     for (const student of students) {
       const internalNumber = student.internal_number
       if (!internalNumber && !isTest) continue
 
       const recipient = testRecipient || internalNumber
-      const title     = 'Nouvelle facture — ESPM+'
-      const body      = isTest
-        ? `[TEST] Une facture a été émise pour ${student.prenom} ${student.nom}.\nConsultez ESPM+ pour les détails : https://espmaritime.netlify.app`
-        : `Une facture a été émise pour ${student.prenom} ${student.nom}.\nConsultez ESPM+ pour les détails : https://espmaritime.netlify.app`
+      const msgTitle  = isTest ? `[TEST] Nouvelle facture — ESPM+` : `Nouvelle facture — ESPM+`
+      const msgBody   = `<p>Bonjour,</p><p>Une nouvelle facture a été émise pour <strong>${student.prenom} ${student.nom}</strong>.</p><p><a href="https://espmaritime.netlify.app" style="display:inline-block;background-color:#2D1B2E;padding:9px 18px;border-radius:6px;text-decoration:none;font-weight:bold;font-family:Arial,sans-serif;font-size:14px;" target="_blank" rel="noopener noreferrer"><span style="color:#ffffff;">ESPM</span><span style="color:#E86C00;">+</span></a></p>`
 
       if (isTest) {
-        const r = await sendMsg({ apiUrl, accessCode, recipient, coAccount: 0, title, body })
+        const r = await sendMsg({ apiUrl, accessCode, recipient, coAccount: 0, title: msgTitle, body: msgBody })
         results.push(r)
       } else {
         const [r1, r2] = await Promise.all([
-          sendMsg({ apiUrl, accessCode, recipient, coAccount: 1, title, body }),
-          sendMsg({ apiUrl, accessCode, recipient, coAccount: 2, title, body }),
+          sendMsg({ apiUrl, accessCode, recipient, coAccount: 1, title: msgTitle, body: msgBody }),
+          sendMsg({ apiUrl, accessCode, recipient, coAccount: 2, title: msgTitle, body: msgBody }),
         ])
         results.push(r1, r2)
       }
     }
 
-  // ── Activité publiée ─────────────────────────────────────────────────────────
   } else if (type === 'activite') {
     const { intitule, responsableNom, activiteId } = payload
+    const isTest = Boolean(testRecipient)
 
-    const recipients = isTest
-      ? [testRecipient]
-      : (() => { try { return JSON.parse(process.env.SMARTSCHOOL_NOTIFY_DIRECTION || '[]') } catch { return [] } })()
+    let recipients = []
+    if (isTest) {
+      recipients = [testRecipient]
+    } else {
+      try {
+        recipients = JSON.parse(process.env.SMARTSCHOOL_NOTIFY_DIRECTION || '[]')
+      } catch {
+        recipients = []
+      }
+    }
 
-    const link  = activiteId
+    const msgTitle = isTest ? `[TEST] Nouvelle activité — ESPM+` : `Nouvelle activité — ESPM+`
+    const lienActivite = activiteId
       ? `https://espmaritime.netlify.app/activites?open=${activiteId}`
-      : 'https://espmaritime.netlify.app/activites'
-    const title = 'Nouvelle activité — ESPM+'
-    const body  = isTest
-      ? `[TEST] ${responsableNom} a publié une activité : "${intitule}".\n${link}`
-      : `${responsableNom} a publié une activité : "${intitule}".\n${link}`
+      : `https://espmaritime.netlify.app/activites`
+    const msgBody  = `<p>Bonjour,</p><p>Une nouvelle activité a été publiée par <strong>${responsableNom}</strong> : "${intitule}".</p><p><a href="${lienActivite}" style="display:inline-block;background-color:#2D1B2E;padding:9px 18px;border-radius:6px;text-decoration:none;font-weight:bold;font-family:Arial,sans-serif;font-size:14px;" target="_blank" rel="noopener noreferrer"><span style="color:#ffffff;">ESPM</span><span style="color:#E86C00;">+</span></a></p>`
 
     await Promise.all(
       recipients.map(async (r) => {
-        const res = await sendMsg({ apiUrl, accessCode, recipient: r, coAccount: 0, title, body })
+        const res = await sendMsg({ apiUrl, accessCode, recipient: r, coAccount: 0, title: msgTitle, body: msgBody })
         results.push(res)
       })
     )
 
   } else {
     return new Response(JSON.stringify({ error: `Type inconnu : ${type}` }), {
-      status:  400,
+      status: 400,
       headers: { ...headers, 'Content-Type': 'application/json' },
     })
   }
 
   const nbOk = results.filter(r => r.ok).length
-  console.log(`[smartschool-notify] type=${type} sent=${nbOk}/${results.length}${isTest ? ' [BETA/TEST]' : ''}`)
+  console.log(`[smartschool-notify] type=${type} sent=${nbOk}/${results.length}${testRecipient ? ' [TEST]' : ''}`)
 
   return new Response(JSON.stringify({ ok: true, sent: nbOk, total: results.length, results }), {
-    status:  200,
+    status: 200,
     headers: { ...headers, 'Content-Type': 'application/json' },
   })
 }
