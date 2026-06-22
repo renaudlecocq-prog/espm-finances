@@ -941,3 +941,16 @@ git push origin main
 
 ### Migration DB
 - `activites` : nouvelle colonne `heure_depart_retour TIME`
+
+## [v0.47] — 2026-06-22
+
+### Added
+- **activite-avis-pdf.mjs** — nouvelle fonction Netlify générant un avis parental PDF (format A4)
+  pour une activité intramuros ou extramuros. Contenu : logo + coordonnées école + date,
+  badge de type, titre, date, salutation "Chers parents…", description, tableau
+  d'informations pratiques (lieu, heures, lieu RDV/retour, transport + détails SNCB/TEC/Flixbus,
+  montant par élève), encadré responsable + accompagnants, mention contact Smartschool, footer.
+  S'ouvre en nouvelle fenêtre avec `window.print()` automatique.
+- **Activites.jsx — section "Documents & Factures"** : passage de 2 à 3 colonnes avec ajout
+  d'une colonne "Générer avis" (composant `AvisGenerator`). Disponible uniquement pour les
+  activités sauvegardées de type intramuros ou extramuros.

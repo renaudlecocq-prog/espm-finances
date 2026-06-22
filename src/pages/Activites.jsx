@@ -256,6 +256,43 @@ function calcNbEleves(allEleves, form) {
 }
 
 // ── Staged file upload avec drag & drop ────────────────────────────────────
+function AvisGenerator({ activiteId, intitule }) {
+  const { supabase } = useAuth()
+  const [loading, setLoading] = React.useState(false)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const { data:{ session } } = await supabase.auth.getSession()
+      if (!session?.access_token) { alert('Session expirée, veuillez vous reconnecter.'); return }
+      const token = encodeURIComponent(session.access_token)
+      const url = `/.netlify/functions/activite-avis-pdf?id=${activiteId}&token=${token}`
+      const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${session.access_token}` } })
+      if (!resp.ok) { alert(`Erreur ${resp.status}: ${await resp.text()}`); return }
+      const html = await resp.text()
+      const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+      window.open(URL.createObjectURL(blob), '_blank')
+    } catch(e) { alert("Erreur lors de la génération de l'avis.") }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={generate}
+        disabled={loading}
+        className="flex items-center gap-1.5 text-xs font-medium text-orange-600 hover:text-orange-800 border border-orange-200 hover:border-orange-400 bg-orange-50 hover:bg-orange-100 rounded-lg px-3 py-2 transition-colors disabled:opacity-50">
+        {loading ? <Loader2 size={12} className="animate-spin" /> : '📄'}
+        {loading ? 'Génération…' : "Générer l'avis"}
+      </button>
+      <p className="text-xs text-gray-400 mt-1.5 leading-tight">
+        Ouvre un PDF imprimable à destination des parents.
+      </p>
+    </div>
+  )
+}
+
 function FileStage({ label, files, setFiles }) {
   const ref = useRef()
   const [dragging, setDragging] = useState(false)
@@ -887,7 +924,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
           {/* Documents & Factures */}
           <div>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Documents & Factures</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <FileStage label="Documents (PDF)" files={pendingDocs} setFiles={setPendingDocs} />
                 {savedDocs.length > 0 && (
@@ -914,6 +951,16 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                       </li>
                     ))}
                   </ul>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-2">Générer avis</p>
+                {editRow?.id && (form.type === 'extramuros' || form.type === 'intramuros') ? (
+                  <AvisGenerator activiteId={editRow.id} intitule={form.intitule} />
+                ) : (
+                  <p className="text-xs text-gray-400 italic">
+                    {editRow?.id ? 'Non disponible pour les voyages.' : 'Disponible après sauvegarde.'}
+                  </p>
                 )}
               </div>
             </div>
