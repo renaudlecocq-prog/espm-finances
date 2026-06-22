@@ -885,3 +885,85 @@ git push origin main
     les activités archivées ne sont plus affichées
   - Bouton "+ Activité" renommé **"Nouvelle activité"** sur l'onglet Intra-Extramuros
     et **"Nouveau voyage"** sur l'onglet Voyages
+
+## [v0.44] — 2026-06-22
+
+### Changed
+- **Activites.jsx** : refonte modale + formulaire intra-extramuros
+  - **Modal centré** : passage du slide-in latéral vers une modale centrale (max 90vh,
+    arrondie) pour la création et l'édition des deux types d'activités
+  - **Filtre "Type" supprimé** du panneau Filtres (redondant avec les onglets principaux)
+  - **Responsable verrouillé** : pour les profils non-admin/non-financier, le responsable
+    est toujours le créateur (champ en lecture seule) ; admin et financier conservent
+    la sélection libre
+  - **"Accompagnateur·rice·s" → "Accompagnants"** (label + placeholder)
+  - **Heure RDV supprimée** du formulaire logistique
+  - **Lieu de retour obligatoire** pour les extramuros (validation + astérisque)
+  - **Type de transport multi-sélection** : STIB, SNCB, De Lijn, TEC, Flixbus,
+    Société de car, À pied, Autre (champ texte libre si Autre coché) — stocké en
+    chaîne CSV dans la colonne `type_transport` ; rétrocompatible avec les anciennes
+    valeurs (`bus_scolaire` → `societe_car`, `train` → `sncb`)
+
+## [v0.45] — 2026-06-22
+
+### Changed
+- **Activites.jsx** — recherche multi-critères + transport détaillé + exclusion élèves
+  - **Filtres supprimés** du PageHeader (MasterFilter + ActiveFilterChips)
+  - **Recherche étendue** : titre · responsable/accompagnants (nom staff) · classes
+    incluses · groupes inclus (label) · élèves participants (nom+prénom via classes/groupes)
+  - **Participants — "Retirer spécifiquement"** : section amber identique à Articles.jsx
+    permettant d'exclure des élèves individuels ; stocké dans `eleves_exclus UUID[]` ;
+    pris en compte dans le calcul automatique du nombre d'élèves
+  - **Transport — champs contextuels** selon les modes sélectionnés :
+    - SNCB → Gare de départ, Gare d'arrivée, PMR (oui/non)
+    - TEC → Gare de départ, Gare d'arrivée, Ligne empruntée
+    - De Lijn → message informatif "Contacter l'économe…"
+    - Autre → champ texte libre (inchangé)
+  - Affichage simultané des blocs si plusieurs transports combinés (ex: SNCB + TEC)
+
+### Migration DB
+- `activites` : nouvelles colonnes `eleves_exclus UUID[]`, `gare_depart TEXT`,
+  `gare_arrivee TEXT`, `pmr VARCHAR(3)`, `ligne_tec TEXT`
+
+## [v0.46] — 2026-06-22
+
+### Changed
+- **Activites.jsx** — suppressions, validations et transport enrichi
+  - **Archiver supprimé** : bouton "Archiver" retiré du footer du modal ; fonction `archive()`
+    retirée du composant principal ; `canEdit` ne vérifie plus le statut `archive`
+  - **Type "Voyage scolaire" masqué** depuis le modal Intra-Extramuros : `allowedTypes`
+    et `defaultType` correctement passés selon l'onglet actif
+  - **Tél. organisateur.trice** renommé + rendu obligatoire pour les types extramuros/voyage
+  - **Transport — champs contextuels étendus** :
+    - Flixbus → Gare de départ, Gare d'arrivée, Heure de départ (retour)
+    - SNCB → + Heure de départ (retour) (s'ajoute aux champs existants)
+    - TEC → + Heure de départ (retour) (s'ajoute aux champs existants)
+
+### Migration DB
+- `activites` : nouvelle colonne `heure_depart_retour TIME`
+
+## [v0.47] — 2026-06-22
+
+### Added
+- **activite-avis-pdf.mjs** — nouvelle fonction Netlify générant un avis parental PDF (format A4)
+  pour une activité intramuros ou extramuros. Contenu : logo + coordonnées école + date,
+  badge de type, titre, date, salutation "Chers parents…", description, tableau
+  d'informations pratiques (lieu, heures, lieu RDV/retour, transport + détails SNCB/TEC/Flixbus,
+  montant par élève), encadré responsable + accompagnants, mention contact Smartschool, footer.
+  S'ouvre en nouvelle fenêtre avec `window.print()` automatique.
+- **Activites.jsx — section "Documents & Factures"** : passage de 2 à 3 colonnes avec ajout
+  d'une colonne "Générer avis" (composant `AvisGenerator`). Disponible uniquement pour les
+  activités sauvegardées de type intramuros ou extramuros.
+
+## [v0.48] — 2026-06-22
+
+### Added
+- **activites** DB : nouvelle colonne `informations_supplementaires TEXT`
+- **Activites.jsx** — section "Informations supplémentaires" (textarea, 3 lignes) insérée
+  entre "Finances" et "Documents & Factures" dans le modal activité
+- **activite-avis-pdf.mjs** — refonte visuelle complète de l'avis parental :
+  - Header : logo seul à gauche · nom école (gras) + adresse (couleur type) à droite
+  - Titre : badge de type compact inline à gauche du titre (sur la même ligne)
+  - "Chers parents…" et description : même police/taille (10.5pt)
+  - Section "Informations supplémentaires" affichée si renseignée (encadré gris)
+  - Footer : "Avis généré par ESPM**+** le [date]" avec le + en orange
