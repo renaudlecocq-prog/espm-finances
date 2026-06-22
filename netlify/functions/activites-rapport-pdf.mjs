@@ -251,7 +251,7 @@ export const handler = async (event) => {
     <img src="${logoUrl}" alt="Logo" class="logo-ecole"/>
     <div class="header-right">
       <div class="school-name">École Secondaire Plurielle Maritime</div>
-      <div class="school-addr">Rue de la Victoire 26 — 1060 Saint-Gilles</div>
+      <div class="school-addr">Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean</div>
       <div class="school-addr">${esc(SCHOOL_TEL)} — ${esc(SCHOOL_EMAIL)}</div>
     </div>
   </div>
@@ -318,7 +318,7 @@ export const handler = async (event) => {
 
   <div class="footer">
     <span>École Secondaire Plurielle Maritime — ${esc(SCHOOL_TEL)} — ${esc(SCHOOL_EMAIL)}</span>
-    <span>Rapport généré le ${today}</span>
+    <span>Rapport généré par ESPM<span style="color:#f97316;font-weight:700">+</span> le ${today}</span>
   </div>
 </div>
 </body>
