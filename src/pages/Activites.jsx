@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
-import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2, Trash2, CheckCheck } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 
@@ -80,8 +79,10 @@ const EMPTY = {
   local: '', heure_debut: '', heure_fin: '',
   montant_total: '', pop: '',
   statut: 'brouillon', statut_facturation: 'en_attente',
+  gare_depart: '', gare_arrivee: '', pmr: '', ligne_tec: '',
   responsable_id: null,
   accompagnateur_ids: [],
+  eleves_exclus: [],
   classes_incluses: [],
   groupes_inclus: [],   // text[] format "col:valeur"
   classes_exclues: [],
@@ -217,7 +218,7 @@ function SelectionEleves({ badge, classes, setClasses, groupes, setGroupes, allC
 
 // ── Calcul nb élèves ────────────────────────────────────────────────────────
 function calcNbEleves(allEleves, form) {
-  const { classes_incluses, groupes_inclus, classes_exclues, groupes_exclus } = form
+  const { classes_incluses, groupes_inclus, classes_exclues, groupes_exclus, eleves_exclus } = form
   if (!allEleves.length) return 0
   const hasAddC = classes_incluses.length > 0
   const hasAddG = groupes_inclus.length > 0
@@ -246,6 +247,7 @@ function calcNbEleves(allEleves, form) {
   const removeSet = new Set()
   allEleves.filter(e => classes_exclues.includes(e.classe)).forEach(e => removeSet.add(e.id))
   if (groupes_exclus.length > 0) allEleves.filter(e => matchesGroups(e, groupes_exclus)).forEach(e => removeSet.add(e.id))
+  ;(eleves_exclus || []).forEach(id => removeSet.add(id))
 
   let count = 0
   addSet.forEach(id => !removeSet.has(id) && count++)
@@ -305,6 +307,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
   const initForm = editRow ? {
     ...EMPTY, ...editRow,
     accompagnateur_ids: editRow.accompagnateur_ids || [],
+    eleves_exclus:    editRow.eleves_exclus    || [],
     classes_incluses: editRow.classes_incluses || [],
     groupes_inclus:   editRow.groupes_inclus   || [],
     classes_exclues:  editRow.classes_exclues  || [],
@@ -364,7 +367,14 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
   const hasSelection = form.classes_incluses.length > 0 || form.groupes_inclus.length > 0
   const nbEleves = useMemo(() => calcNbEleves(allEleves, form),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allEleves, form.classes_incluses, form.groupes_inclus, form.classes_exclues, form.groupes_exclus])
+    [allEleves, form.classes_incluses, form.groupes_inclus, form.classes_exclues, form.groupes_exclus, form.eleves_exclus])
+
+  const eleveOptions = useMemo(() =>
+    allEleves
+      .map(e => ({ value: e.id, label: `${e.nom || ''} ${e.prenom || ''} (${e.classe || ''})`.trim() }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+    [allEleves]
+  )
 
   const nb = hasSelection ? nbEleves : (parseInt(form.nb_eleves) || 0)
   const montantParEleve = nb > 0 && form.montant_total
@@ -632,6 +642,18 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                 groupes={form.groupes_exclus}  setGroupes={v => f('groupes_exclus', v)}
                 allClasses={allClasses} groupOptions={groupOptions} />
 
+              <div className="rounded-xl border-2 border-amber-200 bg-amber-50/30 p-4">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                  − Retirer spécifiquement
+                </span>
+                <div className="mt-3">
+                  <label className="label">Élèves à exclure</label>
+                  <MultiSearchSelect options={eleveOptions} value={form.eleves_exclus}
+                    onChange={v => f('eleves_exclus', v)}
+                    placeholder="Rechercher des élèves à exclure…" />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4 pt-1">
                 <div>
                   <label className="label">
@@ -690,6 +712,65 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                     <input className="input mt-2" placeholder="Préciser le transport…"
                       value={form.transport_autre_texte || ''}
                       onChange={e => f('transport_autre_texte', e.target.value)} />
+                  )}
+
+                  {/* SNCB — gares + PMR */}
+                  {(form.type_transport_list || []).includes('sncb') && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-200 space-y-3">
+                      <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">SNCB</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="label">Gare de départ</label>
+                          <input className="input" value={form.gare_depart || ''} onChange={e => f('gare_depart', e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="label">Gare d'arrivée</label>
+                          <input className="input" value={form.gare_arrivee || ''} onChange={e => f('gare_arrivee', e.target.value)} />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="label">Accessibilité PMR</label>
+                        <div className="flex gap-4 mt-1">
+                          {['oui', 'non'].map(v => (
+                            <label key={v} className="flex items-center gap-1.5 cursor-pointer select-none">
+                              <input type="radio" name="pmr" checked={form.pmr === v} onChange={() => f('pmr', v)} />
+                              <span className="text-sm capitalize">{v}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TEC — gares + ligne */}
+                  {(form.type_transport_list || []).includes('tec') && (
+                    <div className="mt-3 p-3 bg-green-50 rounded-xl border border-green-200 space-y-3">
+                      <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">TEC</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="label">Gare de départ</label>
+                          <input className="input" value={form.gare_depart || ''} onChange={e => f('gare_depart', e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="label">Gare d'arrivée</label>
+                          <input className="input" value={form.gare_arrivee || ''} onChange={e => f('gare_arrivee', e.target.value)} />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="label">Ligne empruntée</label>
+                          <input className="input" value={form.ligne_tec || ''} onChange={e => f('ligne_tec', e.target.value)} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* De Lijn — message informatif */}
+                  {(form.type_transport_list || []).includes('de_lijn') && (
+                    <div className="mt-3 p-3 bg-yellow-50 rounded-xl border border-yellow-200 flex items-start gap-2">
+                      <span className="text-yellow-600 text-base mt-0.5">ℹ️</span>
+                      <p className="text-sm text-yellow-800">
+                        Contacter l'économe pour réserver les tickets sur l'application De Lijn.
+                      </p>
+                    </div>
                   )}
                 </div>
                 <div><label className="label">Tél. organisateur</label>
@@ -971,16 +1052,6 @@ export default function Activites() {
   const [quickFilter, setQuickFilter]     = useState(null) // null | 'passees' | 'avenir' | 'mes'
   const [mainTab, setMainTab]               = useState('intra_extra') // 'intra_extra' | 'voyages'
   const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState({})
-  const toggleFilter = useCallback((key, val) =>
-    setFilters(f => {
-      const cur  = Array.isArray(f[key]) ? f[key] : []
-      const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
-      return next.length === 0
-        ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== key))
-        : { ...f, [key]: next }
-    })
-  , [])
 
   // Données pour le formulaire
   const [allEleves, setAllEleves]     = useState([])
@@ -1139,10 +1210,27 @@ export default function Activites() {
     .filter(r => mainTypes.includes(r.type))
     .filter(r => r.statut !== 'archive')
     .filter(r => isAdmin || isFinancier || r.created_by === user?.id || r.responsable_id === user?.id || (r.accompagnateur_ids || []).includes(user?.id) || r.statut === 'publie')
-    .filter(r => !search || `${r.intitule} ${r.description || ''} ${r.responsable || ''}`.toLowerCase().includes(search.toLowerCase()))
-    .filter(r => !filters.type?.length || filters.type.includes(r.type))
-    .filter(r => !filters.statut_facturation?.length || filters.statut_facturation.includes(r.statut_facturation))
-    .filter(r => !filters.classe?.length || filters.classe.some(c => (r.classes_incluses || []).includes(c)))
+    .filter(r => {
+      if (!search) return true
+      const q = search.toLowerCase()
+      if ((r.intitule || '').toLowerCase().includes(q)) return true
+      const staffIds = [r.responsable_id, ...(r.accompagnateur_ids || [])].filter(Boolean)
+      if (staffIds.some(id => (staffById[id] || '').toLowerCase().includes(q))) return true
+      if ((r.classes_incluses || []).some(c => c.toLowerCase().includes(q))) return true
+      if ((r.groupes_inclus || []).some(g => {
+        const opt = groupOptions.find(o => o.value === g)
+        return opt?.label.toLowerCase().includes(q)
+      })) return true
+      return allEleves.some(e => {
+        const name = `${e.nom || ''} ${e.prenom || ''}`.toLowerCase().trim()
+        if (!name.includes(q)) return false
+        if ((r.classes_incluses || []).includes(e.classe)) return true
+        return (r.groupes_inclus || []).some(g => {
+          const [col, val] = g.split(':')
+          return (col === 'rlmo' ? getRlmo(e) : e[col]) === val
+        })
+      })
+    })
     .filter(r => {
       if (quickFilter === 'passees')  return isPast(r)
       if (quickFilter === 'avenir')   return isUpcoming(r)
@@ -1150,18 +1238,7 @@ export default function Activites() {
       return true
     })
 
-  const hasFilters = search || quickFilter || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
 
-  const filterDefs = useMemo(() => [
-    ...(isAdmin || isFinancier ? [{ key: 'statut_facturation', label: 'Facturation', options: [
-        { value: 'en_attente', label: 'En attente' },
-        { value: 'a_facturer', label: 'À facturer' },
-        { value: 'facture',             label: 'Facturé' },
-        { value: 'partiellement_facture', label: 'Partiel' },
-        { value: 'non_payant',          label: 'Non payant' },
-      ]}] : []),
-    { key: 'classe', label: 'Classe', options: allClasses },
-  ], [allClasses])
 
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
@@ -1222,15 +1299,7 @@ export default function Activites() {
       }
       search={search}
       onSearch={setSearch}
-      searchPlaceholder="Rechercher par intitulé, responsable…"
-      filters={
-        <MasterFilter dark
-          filters={filters}
-          filterDefs={filterDefs}
-          onChange={toggleFilter}
-          onClearAll={() => setFilters({})}
-        />
-      }
+      searchPlaceholder="Rechercher par titre, staff, classe, groupe, élève…"
       info={`${displayed.length} résultat${displayed.length !== 1 ? 's' : ''}`}
       actions={
         (isAdmin || isFinancier) || canCreate ? (
@@ -1252,8 +1321,6 @@ export default function Activites() {
       }
     />
     <div className="p-6 max-w-screen-xl mx-auto">
-      <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
-
       <div className="grid gap-3">
         {displayed.length === 0 && <div className="card p-8 text-center text-gray-400">Aucune activité</div>}
         {displayed.map(row => {

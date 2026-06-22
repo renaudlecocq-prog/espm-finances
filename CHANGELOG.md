@@ -903,3 +903,24 @@ git push origin main
     Société de car, À pied, Autre (champ texte libre si Autre coché) — stocké en
     chaîne CSV dans la colonne `type_transport` ; rétrocompatible avec les anciennes
     valeurs (`bus_scolaire` → `societe_car`, `train` → `sncb`)
+
+## [v0.45] — 2026-06-22
+
+### Changed
+- **Activites.jsx** — recherche multi-critères + transport détaillé + exclusion élèves
+  - **Filtres supprimés** du PageHeader (MasterFilter + ActiveFilterChips)
+  - **Recherche étendue** : titre · responsable/accompagnants (nom staff) · classes
+    incluses · groupes inclus (label) · élèves participants (nom+prénom via classes/groupes)
+  - **Participants — "Retirer spécifiquement"** : section amber identique à Articles.jsx
+    permettant d'exclure des élèves individuels ; stocké dans `eleves_exclus UUID[]` ;
+    pris en compte dans le calcul automatique du nombre d'élèves
+  - **Transport — champs contextuels** selon les modes sélectionnés :
+    - SNCB → Gare de départ, Gare d'arrivée, PMR (oui/non)
+    - TEC → Gare de départ, Gare d'arrivée, Ligne empruntée
+    - De Lijn → message informatif "Contacter l'économe…"
+    - Autre → champ texte libre (inchangé)
+  - Affichage simultané des blocs si plusieurs transports combinés (ex: SNCB + TEC)
+
+### Migration DB
+- `activites` : nouvelles colonnes `eleves_exclus UUID[]`, `gare_depart TEXT`,
+  `gare_arrivee TEXT`, `pmr VARCHAR(3)`, `ligne_tec TEXT`
