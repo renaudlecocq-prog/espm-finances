@@ -726,3 +726,9 @@ git push origin main
   - Sections : navigation + séparateur + Smartschool / notifications + admin + profil + déconnexion
   - Layout passe en `flex h-screen` : sidebar fixe à gauche, contenu scrollable à droite
   - `NotificationBell` : nouvelle prop `dropdownAlign` ('right' par défaut, 'left' pour sidebar) afin que le dropdown s'ouvre dans le bon sens
+
+### Fixed
+- `App.jsx` définissait son propre composant `Layout` inline qui continuait d'importer `Header` — le fichier `Layout.jsx` modifié n'était jamais utilisé. `App.jsx` importe désormais directement `Sidebar` et utilise le nouveau layout.
+
+### Fixed
+- `App.jsx` définissait son propre composant `Layout` inline qui continuait d'importer `Header` — le fichier `Layout.jsx` modifié n'était jamais utilisé. `App.jsx` importe désormais directement `Sidebar` et utilise le nouveau layout.
