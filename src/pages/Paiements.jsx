@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 import FicheEleve from '../components/ui/FicheEleve'
+import PageHeader from '../components/ui/PageHeader'
 import { Search, Upload, ChevronUp, ChevronDown, ChevronsUpDown, Pencil, Trash2, X, AlertTriangle } from 'lucide-react'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
