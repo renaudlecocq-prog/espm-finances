@@ -271,7 +271,7 @@ function FileStage({ label, files, setFiles }) {
 }
 
 // ── Activity form modal ────────────────────────────────────────────────────
-function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, groupOptions, allClasses, onClose, onSaved }) {
+function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, groupOptions, allClasses, onClose, onSaved, allowedTypes, defaultType }) {
   const { user, profile } = useAuth()
   const initForm = editRow ? {
     ...EMPTY, ...editRow,
@@ -280,7 +280,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     groupes_inclus:   editRow.groupes_inclus   || [],
     classes_exclues:  editRow.classes_exclues  || [],
     groupes_exclus:   editRow.groupes_exclus   || [],
-  } : { ...EMPTY }
+  } : { ...EMPTY, type: defaultType || EMPTY.type }
 
   const [form, setForm]             = useState(initForm)
   const [errors, setErrors]         = useState([])
@@ -514,10 +514,11 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
             </div>
             <div>
               <label className="label">Type *</label>
-              <select className="input" value={form.type} onChange={e => f('type', e.target.value)}>
-                <option value="extramuros">Extramuros</option>
-                <option value="intramuros">Intramuros</option>
-                <option value="voyage">Voyage</option>
+              <select className="input" value={form.type} onChange={e => f('type', e.target.value)}
+                disabled={allowedTypes && allowedTypes.length === 1}>
+                {(!allowedTypes || allowedTypes.includes('extramuros')) && <option value="extramuros">Extramuros</option>}
+                {(!allowedTypes || allowedTypes.includes('intramuros')) && <option value="intramuros">Intramuros</option>}
+                {(!allowedTypes || allowedTypes.includes('voyage')) && <option value="voyage">Voyage scolaire</option>}
               </select>
             </div>
             <div>
@@ -897,8 +898,8 @@ export default function Activites() {
   const [activitiesWithFactures, setActivitiesWithFactures] = useState(new Set())
   const [docsRow, setDocsRow]     = useState(null)
   const [docsCategorie, setDocsCategorie] = useState('document')
-  const [showArchived, setShowArchived]   = useState(false)
   const [quickFilter, setQuickFilter]     = useState(null) // null | 'passees' | 'avenir' | 'mes'
+  const [mainTab, setMainTab]               = useState('intra_extra') // 'intra_extra' | 'voyages'
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({})
   const toggleFilter = useCallback((key, val) =>
@@ -1062,8 +1063,11 @@ export default function Activites() {
     return `Il y a ${Math.abs(diff)} jour${Math.abs(diff) > 1 ? 's' : ''}`
   }
 
+  const mainTypes = mainTab === 'intra_extra' ? ['extramuros', 'intramuros'] : ['voyage']
+
   const displayed = data
-    .filter(r => showArchived ? true : r.statut !== 'archive')
+    .filter(r => mainTypes.includes(r.type))
+    .filter(r => r.statut !== 'archive')
     .filter(r => isAdmin || isFinancier || r.created_by === user?.id || r.responsable_id === user?.id || (r.accompagnateur_ids || []).includes(user?.id) || r.statut === 'publie')
     .filter(r => !search || `${r.intitule} ${r.description || ''} ${r.responsable || ''}`.toLowerCase().includes(search.toLowerCase()))
     .filter(r => !filters.type?.length || filters.type.includes(r.type))
@@ -1079,7 +1083,7 @@ export default function Activites() {
   const hasFilters = search || quickFilter || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
 
   const filterDefs = useMemo(() => [
-    { key: 'type', label: 'Type', options: Object.entries(TYPE_LABELS).map(([v, l]) => ({ value: v, label: l })) },
+    ...(mainTab === 'intra_extra' ? [{ key: 'type', label: 'Type', options: [{ value: 'extramuros', label: 'Extramuros' }, { value: 'intramuros', label: 'Intramuros' }] }] : []),
     ...(isAdmin || isFinancier ? [{ key: 'statut_facturation', label: 'Facturation', options: [
         { value: 'en_attente', label: 'En attente' },
         { value: 'a_facturer', label: 'À facturer' },
@@ -1106,10 +1110,14 @@ export default function Activites() {
     } catch(e) { alert('Erreur lors de la génération du rapport.') }
   }
 
+  const mainTabs = [
+    { key: 'intra_extra', label: 'Intra-Extramuros' },
+    { key: 'voyages',     label: 'Voyages' },
+  ]
   const quickTabs = [
-    { key: 'avenir',  label: '🟢 À venir' },
-    { key: 'passees', label: '🔴 Passées' },
-    ...(isAdmin || isFinancier ? [{ key: 'mes', label: '👤 Mes activités' }] : []),
+    { key: 'avenir',  label: 'À venir',       color: '#22c55e' },
+    { key: 'passees', label: 'Passées',        color: '#ef4444' },
+    ...(isAdmin || isFinancier ? [{ key: 'mes', label: 'Mes activités', color: '#f97316' }] : []),
   ]
 
   return (
@@ -1118,16 +1126,31 @@ export default function Activites() {
       title="Activités"
       subtitle="Gestion des activités scolaires et extrascolaires"
       leftActions={
-        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
-          style={{ color: 'rgba(255,255,255,0.70)' }}>
-          <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)}
-            className="rounded" style={{ accentColor: 'white' }} />
-          Archives
-        </label>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center p-0.5 rounded-lg shrink-0"
+            style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
+            {mainTabs.map(t => (
+              <button key={t.key} onClick={() => { setMainTab(t.key); setQuickFilter(null) }}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${mainTab === t.key ? 'bg-white text-green-700 shadow-sm' : 'text-white/60 hover:text-white/90'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="w-px self-stretch" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
+          {quickTabs.map(t => (
+            <button key={t.key}
+              onClick={() => setQuickFilter(q => q === t.key ? null : t.key)}
+              className="text-xs cursor-pointer select-none transition-all"
+              style={{
+                color: quickFilter === t.key ? t.color : 'rgba(255,255,255,0.50)',
+                fontWeight: quickFilter === t.key ? 600 : 400,
+                background: 'none', border: 'none', padding: 0
+              }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
       }
-      tabs={quickTabs}
-      activeTab={quickFilter || ''}
-      onTabChange={k => setQuickFilter(q => q === k ? null : k)}
       search={search}
       onSearch={setSearch}
       searchPlaceholder="Rechercher par intitulé, responsable…"
@@ -1151,7 +1174,9 @@ export default function Activites() {
               </button>
             )}
             {canCreate && (
-              <button onClick={openNew} className="btn-primary text-xs py-1.5 px-3">+ Activité</button>
+              <button onClick={openNew} className="btn-primary text-xs py-1.5 px-3">
+                {mainTab === 'voyages' ? 'Nouveau voyage' : 'Nouvelle activité'}
+              </button>
             )}
           </>
         ) : null
