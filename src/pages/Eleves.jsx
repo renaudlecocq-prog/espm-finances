@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import FicheEleve from '../components/ui/FicheEleve'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 import { ChevronUp, ChevronDown, ChevronsUpDown, Search, X } from 'lucide-react'
+import PageHeader from '../components/ui/PageHeader'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
 
@@ -139,9 +140,9 @@ export default function Eleves() {
   const hasFilters = search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 80px)' }}>
-      <h1 className="text-2xl font-bold text-primary mb-0.5 shrink-0">Élèves</h1>
-      <p className="text-sm text-gray-400 mb-4 shrink-0">Liste des élèves et leurs soldes</p>
+    <>
+    <PageHeader title="Élèves" subtitle="Liste des élèves et leurs soldes" />
+    <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 88px)' }}>
 
       {/* Toolbar */}
       <div className="flex items-center gap-2 mb-2 shrink-0">
@@ -265,6 +266,7 @@ export default function Eleves() {
       <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
 
     </div>
+    </>
   )
 }
 

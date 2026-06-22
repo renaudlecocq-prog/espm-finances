@@ -495,13 +495,11 @@ export default function Paiements() {
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 56px)' }}>
+    <>
+    <PageHeader title="Paiements" subtitle="Historique des paiements reçus" />
+    <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 88px)' }}>
       {/* Header */}
       <div className="flex items-start justify-between mb-5 flex-shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-primary">Paiements</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Historique des paiements reçus</p>
-        </div>
         {isFinancier && (
           <div className="flex items-center gap-3">
             <button onClick={() => setShowImport(true)}
@@ -660,5 +658,6 @@ export default function Paiements() {
       )}
       <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
     </div>
+    </>
   )
 }

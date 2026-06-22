@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import FicheEleve from '../components/ui/FicheEleve'
 import { Search, ChevronDown, ChevronUp, ChevronsUpDown, X } from 'lucide-react'
+import PageHeader from '../components/ui/PageHeader'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 
 // ── Column config ──────────────────────────────────────────────────────────
@@ -94,12 +95,9 @@ export default function Groupes() {
 
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 80px)' }}>
-      {/* Header */}
-      <h1 className="text-2xl font-bold text-primary mb-0.5 shrink-0">Groupes</h1>
-      <p className="text-sm text-gray-400 mb-4 shrink-0">
-        Groupes Smartschool — <strong>{rows.length}</strong> élèves actifs
-      </p>
+    <>
+    <PageHeader title="Groupes" subtitle={`Groupes Smartschool — ${rows.length} élèves actifs`} />
+    <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 88px)' }}>
 
       {/* Toolbar */}
       <div className="flex items-center gap-2 mb-2 shrink-0">
@@ -218,5 +216,6 @@ export default function Groupes() {
 
       <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
     </div>
+    </>
   )
 }

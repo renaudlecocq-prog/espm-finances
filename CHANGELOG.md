@@ -730,5 +730,10 @@ git push origin main
 ### Fixed
 - `App.jsx` définissait son propre composant `Layout` inline qui continuait d'importer `Header` — le fichier `Layout.jsx` modifié n'était jamais utilisé. `App.jsx` importe désormais directement `Sidebar` et utilise le nouveau layout.
 
-### Fixed
-- `App.jsx` définissait son propre composant `Layout` inline qui continuait d'importer `Header` — le fichier `Layout.jsx` modifié n'était jamais utilisé. `App.jsx` importe désormais directement `Sidebar` et utilise le nouveau layout.
+## [v0.33] — 2026-06-22
+
+### Added
+- **PageHeader** : nouveau composant `src/components/ui/PageHeader.jsx` — barre sticky sombre (`#2D1B2E`) en haut de chaque page avec titre (blanc) et sous-titre (blanc 50%)
+  - Prop `actions` pour injecter des boutons côté droit (ex. bouton "+ Facturer" sur Factures)
+  - Intégré sur les 9 pages : Élèves, Paiements, Activités, Factures, Articles, Groupes, Assistant social, Administration, Accueil (Tableau de bord + Bonjour)
+  - Hauteur de calcul `calc(100vh - Xpx)` ajustée à `88px` pour les pages avec tableau scrollable

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { RefreshCw, UserPlus, Shield } from "lucide-react"
+import PageHeader from "../components/ui/PageHeader"
 import { useDemo } from "../context/DemoContext"
 
 const ROLES = ['admin','financier','mdp','responsable']
@@ -113,9 +114,9 @@ export default function Admin() {
   const countByRole = r => users.filter(u => u.role === r).length
 
   return (
+    <>
+    <PageHeader title="Administration" subtitle="Gestion des utilisateurs et synchronisation Smartschool" />
     <div className="p-6 max-w-screen-xl mx-auto">
-      <h1 className="text-2xl font-bold text-primary mb-1">Administration</h1>
-      <p className="text-sm text-gray-400 mb-6">Gestion des utilisateurs et synchronisation Smartschool</p>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200">
@@ -447,5 +448,6 @@ export default function Admin() {
         </div>
       )}
     </div>
+    </>
   )
 }

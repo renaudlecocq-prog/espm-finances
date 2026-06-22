@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import PageHeader from '../components/ui/PageHeader'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useDemo } from '../context/DemoContext'
@@ -108,12 +109,10 @@ function HomeMdp() {
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement...</div>
   const nonLiees = activites.filter(a => a.statut === 'publie' && (!a.montant_total || a.montant_total == 0))
   return (
+    <>
+    <PageHeader title="Bonjour" subtitle={`Année scolaire ${anneeScolaire()}`} />
     <div className="p-6 max-w-screen-xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Bonjour</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Année scolaire {anneeScolaire()}</p>
-        </div>
         <Link to="/activites" className="btn-primary">Mes activités</Link>
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -121,6 +120,7 @@ function HomeMdp() {
         <StatCard icon="⚠️" label="Sans facture liée" value={nonLiees.length} to="/activites" color="orange" sub="Activités publiées sans montant" />
       </div>
     </div>
+    </>
   )
 }
 function HomeFinancier() {
@@ -221,11 +221,9 @@ function HomeFinancier() {
   const totA = aFacturer.frais + aFacturer.materiel + aFacturer.activites + aFacturer.autres
   const totF = facture.frais + facture.materiel + facture.activites + facture.autres
   return (
+    <>
+    <PageHeader title="Tableau de bord" subtitle={`Année scolaire ${as}`} />
     <div className="p-6 max-w-screen-xl mx-auto space-y-10">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Tableau de bord</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Année scolaire {as}</p>
-      </div>
       <section>
         <SectionTitle icon="💰" title="Vue financière" subtitle={`Année scolaire ${as}`} />
         <div className="grid grid-cols-2 gap-4">
@@ -304,6 +302,7 @@ function HomeFinancier() {
         </section>
       )}
     </div>
+    </>
   )
 }
 export default function Home() {

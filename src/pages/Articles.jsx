@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { Search, X, ChevronDown, Loader2 } from 'lucide-react'
+import PageHeader from '../components/ui/PageHeader'
 
 const CATEGORIES = ['Frais obligatoires', 'Fournitures scolaires', 'Vêtements', 'Divers']
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
@@ -759,9 +760,9 @@ export default function Articles() {
   }, [])
 
   return (
+    <>
+    <PageHeader title="Articles" subtitle="Catalogue et attributions aux élèves" />
     <div className="p-6 max-w-screen-xl mx-auto">
-      <h1 className="text-2xl font-bold text-primary mb-1">Articles</h1>
-      <p className="text-sm text-gray-400 mb-5">Catalogue et attributions aux élèves</p>
 
       {/* Onglets — Attributions en premier */}
       <div className="flex gap-2 mb-6">
@@ -779,5 +780,6 @@ export default function Articles() {
         : <CatalogueTab isFinancier={fin} />
       }
     </div>
+    </>
   )
 }

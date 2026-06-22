@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import PageHeader from '../components/ui/PageHeader'
 import { useAuth } from '../context/AuthContext'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -577,23 +578,13 @@ function ListeBatches({ onNew, onSelect }) {
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
   return (
+    <>
+    <PageHeader
+      title="Factures"
+      subtitle={`${totalFacs} facture${totalFacs !== 1 ? 's' : ''} générée${totalFacs !== 1 ? 's' : ''} · ${fmtEur(batches.reduce((s, b) => s + stats(b).total, 0))}`}
+      actions={isFinancier ? <button onClick={onNew} className="btn-primary text-sm px-4 py-2">+ Facturer</button> : null}
+    />
     <div className="p-6 max-w-screen-xl mx-auto">
-      {/* Header */}
-      <div className="flex items-baseline gap-3 mb-1 flex-wrap justify-between">
-        <div className="flex items-baseline gap-3 flex-wrap">
-          <h1 className="text-2xl font-bold text-gray-800">Factures</h1>
-          <p className="text-sm text-gray-400">
-            {totalFacs} facture{totalFacs !== 1 ? 's' : ''} générée{totalFacs !== 1 ? 's' : ''}
-            <span className="mx-1.5">·</span>
-            <span className="font-semibold text-primary">
-              {fmtEur(batches.reduce((s, b) => s + stats(b).total, 0))}
-            </span>
-          </p>
-        </div>
-        {isFinancier && (
-          <button onClick={onNew} className="btn-primary">+ Facturer</button>
-        )}
-      </div>
 
       {/* Barre : Tabs + Recherche */}
       <div className="flex items-center gap-3 my-4">
@@ -700,6 +691,7 @@ function ListeBatches({ onNew, onSelect }) {
         </div>
       )}
     </div>
+    </>
   )
 }
 

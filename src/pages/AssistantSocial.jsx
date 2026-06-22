@@ -9,6 +9,7 @@ import {
   Search, ChevronUp, ChevronDown, ChevronsUpDown, Trash2, X,
   AlertTriangle, CheckCircle2, Clock, Calendar, FileText, Upload, Eye, Plus,
 } from 'lucide-react'
+import PageHeader from '../components/ui/PageHeader'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const CATEGORIES_ARTICLES = ['Frais obligatoires', 'Fournitures scolaires', 'Vêtements', 'Divers']
@@ -1766,11 +1767,9 @@ export default function AssistantSocial() {
   const setTab = t => setSearchParams({ tab: t }, { replace: true })
 
   return (
+    <>
+    <PageHeader title="Assistant social" subtitle="Échelonnements de paiement et organismes tiers de prise en charge" />
     <div className="p-6 max-w-screen-xl mx-auto">
-      <h1 className="text-2xl font-bold text-primary mb-1">Assistant social</h1>
-      <p className="text-sm text-gray-400 mb-5">
-        Échelonnements de paiement et organismes tiers de prise en charge
-      </p>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200">
@@ -1791,5 +1790,6 @@ export default function AssistantSocial() {
       {tab === 'echelonnements' && <TabEchelonnements isAllowed={isAllowed} openEleveId={searchParams.get('eleve')} />}
       {tab === 'organismes'     && <TabOrganismesTiers isAllowed={isAllowed} openEleveId={searchParams.get('eleve')} />}
     </div>
+    </>
   )
 }

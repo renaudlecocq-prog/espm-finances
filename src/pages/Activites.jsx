@@ -5,6 +5,7 @@ import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 import { Search, X, FileText, Archive, Receipt, ChevronDown, Plus, Loader2, Trash2, CheckCheck } from 'lucide-react'
+import PageHeader from '../components/ui/PageHeader'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
@@ -1092,12 +1093,10 @@ export default function Activites() {
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
   return (
+    <>
+    <PageHeader title="Activités" subtitle="Gestion des activités scolaires et extrascolaires" />
     <div className="p-6 max-w-screen-xl mx-auto">
       <div className="flex items-start justify-between mb-5">
-        <div>
-          <h1 className="text-2xl font-bold text-primary">Activités</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Gestion des activités scolaires et extrascolaires</p>
-        </div>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
             <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} className="rounded" />
@@ -1310,5 +1309,6 @@ export default function Activites() {
       )}
       {docsRow && <DocsModal row={docsRow} categorie={docsCategorie} onClose={() => setDocsRow(null)} onDocsChanged={reloadDocsSets} />}
     </div>
+    </>
   )
 }
