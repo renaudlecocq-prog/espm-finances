@@ -77,7 +77,7 @@ const EMPTY = {
   lieu: '', heure_depart: '', heure_retour: '',
   lieu_rdv: '', lieu_retour: '', type_transport: '', type_transport_list: [], transport_autre_texte: '', heure_depart_retour: '', tel_organisateur: '', tel_sejour: '',
   local: '', heure_debut: '', heure_fin: '',
-  montant_total: '', pop: '',
+  montant_total: '', pop: '', informations_supplementaires: '',
   statut: 'brouillon', statut_facturation: 'en_attente',
   gare_depart: '', gare_arrivee: '', pmr: '', ligne_tec: '',
   responsable_id: null,
@@ -924,6 +924,18 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
               )}
 
             </div>
+          </div>
+
+          {/* Informations supplémentaires */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Informations supplémentaires</h3>
+            <textarea
+              className="input resize-none"
+              rows={3}
+              placeholder="Informations complémentaires à destination des parents (matériel, consignes, …)"
+              value={form.informations_supplementaires || ''}
+              onChange={e => f('informations_supplementaires', e.target.value)}
+            />
           </div>
 
           {/* Documents & Factures */}

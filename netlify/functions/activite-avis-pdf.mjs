@@ -153,30 +153,32 @@ export const handler = async (event) => {
     box-shadow:0 2px 16px rgba(0,0,0,.12);
   }
   /* Header */
-  .header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10mm; padding-bottom:6mm; border-bottom:2px solid #e5e7eb }
-  .header-left { display:flex; align-items:center; gap:4mm }
-  .logo-ecole { height:14mm; width:auto }
-  .school-name { font-size:10pt; font-weight:700; color:#2D1B2E }
-  .school-addr { font-size:7.5pt; color:#666; margin-top:1mm; line-height:1.5 }
-  .header-right { text-align:right; font-size:7.5pt; color:#888 }
-  /* Badge type */
+  .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10mm; padding-bottom:6mm; border-bottom:1.5px solid #e5e7eb }
+  .logo-ecole { height:16mm; width:auto; display:block }
+  .header-right { text-align:right }
+  .school-name-bold { font-size:11pt; font-weight:700; color:#1a1a2e; margin-bottom:1.5mm }
+  .school-addr { font-size:8pt; color:${typeColor}; line-height:1.5 }
+  /* Type + Titre inline */
+  .title-row { display:flex; align-items:baseline; gap:3mm; margin-bottom:2mm }
   .type-badge {
     display:inline-block;
     background:${typeBg};
     color:${typeColor};
     border:1px solid ${typeColor}40;
-    border-radius:6px;
-    font-size:8pt; font-weight:700;
-    padding:1.5mm 4mm;
-    text-transform:uppercase; letter-spacing:.5px;
-    margin-bottom:4mm;
+    border-radius:5px;
+    font-size:7.5pt; font-weight:700;
+    padding:1mm 3mm;
+    text-transform:uppercase; letter-spacing:.4px;
+    white-space:nowrap;
+    flex-shrink:0;
   }
-  /* Titre */
-  h1 { font-size:18pt; font-weight:800; color:#1a1a2e; margin-bottom:2mm; line-height:1.2 }
+  h1 { font-size:16pt; font-weight:800; color:#1a1a2e; line-height:1.2; margin:0 }
   .date-line { font-size:9pt; color:#888; margin-bottom:6mm }
   /* Salutation + description */
-  .salutation { font-size:10.5pt; color:#374151; margin-bottom:3mm }
-  .description { font-size:10pt; color:#374151; line-height:1.6; margin-bottom:7mm; white-space:pre-wrap }
+  .salutation { font-size:10.5pt; color:#374151; margin-bottom:3mm; font-family:'Helvetica Neue',Arial,sans-serif }
+  .description { font-size:10.5pt; color:#374151; line-height:1.6; margin-bottom:7mm; white-space:pre-wrap; font-family:'Helvetica Neue',Arial,sans-serif }
+  /* Infos supplémentaires */
+  .infos-sup { font-size:9.5pt; color:#374151; line-height:1.6; margin-bottom:6mm; white-space:pre-wrap; background:#f9fafb; border-left:3px solid #e5e7eb; padding:2.5mm 4mm; border-radius:0 4px 4px 0 }
   /* Tableau infos pratiques */
   .section-title { font-size:8pt; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#6b7280; margin-bottom:2mm }
   .info-table { width:100%; border-collapse:collapse; margin-bottom:6mm }
@@ -194,7 +196,9 @@ export const handler = async (event) => {
   .question-box { background:#f0f9ff; border-left:3px solid #3b82f6; padding:3mm 4mm; font-size:9pt; color:#1e40af; margin-bottom:6mm; line-height:1.5 }
   /* Spacer + footer */
   .spacer { flex:1 }
-  .footer { border-top:1px solid #e5e7eb; padding-top:3mm; display:flex; justify-content:space-between; font-size:7pt; color:#9ca3af }
+  .footer { border-top:1px solid #e5e7eb; padding-top:3mm; display:flex; justify-content:space-between; align-items:center; font-size:7pt; color:#9ca3af }
+  .footer-brand { font-weight:600; color:#6b7280 }
+  .footer-brand span { color:#f97316 }
   @media print {
     body { background:#fff; padding:0 }
     .page { box-shadow:none; margin:0; width:100%; min-height:100vh }
@@ -206,21 +210,18 @@ export const handler = async (event) => {
 <div class="page">
   <!-- Header -->
   <div class="header">
-    <div class="header-left">
-      <img src="${logoUrl}" alt="Logo" class="logo-ecole">
-      <div>
-        <div class="school-name">École Secondaire Plurielle Maritime</div>
-        <div class="school-addr">Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean<br>${esc(SCHOOL_TEL)} — ${esc(SCHOOL_EMAIL)}</div>
-      </div>
-    </div>
+    <img src="${logoUrl}" alt="Logo" class="logo-ecole">
     <div class="header-right">
-      Généré le ${today}
+      <div class="school-name-bold">École Secondaire Plurielle Maritime</div>
+      <div class="school-addr">Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean</div>
     </div>
   </div>
 
-  <!-- Type badge + Titre -->
-  <div class="type-badge">${esc(typeLabel)}</div>
-  <h1>${esc(act.intitule)}</h1>
+  <!-- Type badge + Titre inline -->
+  <div class="title-row">
+    <span class="type-badge">${esc(typeLabel)}</span>
+    <h1>${esc(act.intitule)}</h1>
+  </div>
   <div class="date-line">${dateHtml}</div>
 
   <!-- Salutation + description -->
@@ -251,6 +252,11 @@ export const handler = async (event) => {
     </div>
   </div>
 
+  ${act.informations_supplementaires ? `
+  <!-- Informations supplémentaires -->
+  <div class="section-title">Informations supplémentaires</div>
+  <div class="infos-sup">${esc(act.informations_supplementaires)}</div>` : ''}
+
   <!-- Question -->
   <div class="question-box">
     Pour toute question, veuillez vous adresser par Smartschool à l'éducateur.trice de votre enfant.
@@ -261,7 +267,7 @@ export const handler = async (event) => {
   <!-- Footer -->
   <div class="footer">
     <span>École Secondaire Plurielle Maritime — ${esc(SCHOOL_TEL)} — ${esc(SCHOOL_EMAIL)}</span>
-    <span>Avis généré le ${today}</span>
+    <span class="footer-brand">Avis généré par ESPM<span>+</span> le ${today}</span>
   </div>
 </div>
 <script>

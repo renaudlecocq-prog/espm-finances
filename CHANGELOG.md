@@ -954,3 +954,16 @@ git push origin main
 - **Activites.jsx — section "Documents & Factures"** : passage de 2 à 3 colonnes avec ajout
   d'une colonne "Générer avis" (composant `AvisGenerator`). Disponible uniquement pour les
   activités sauvegardées de type intramuros ou extramuros.
+
+## [v0.48] — 2026-06-22
+
+### Added
+- **activites** DB : nouvelle colonne `informations_supplementaires TEXT`
+- **Activites.jsx** — section "Informations supplémentaires" (textarea, 3 lignes) insérée
+  entre "Finances" et "Documents & Factures" dans le modal activité
+- **activite-avis-pdf.mjs** — refonte visuelle complète de l'avis parental :
+  - Header : logo seul à gauche · nom école (gras) + adresse (couleur type) à droite
+  - Titre : badge de type compact inline à gauche du titre (sur la même ligne)
+  - "Chers parents…" et description : même police/taille (10.5pt)
+  - Section "Informations supplémentaires" affichée si renseignée (encadré gris)
+  - Footer : "Avis généré par ESPM**+** le [date]" avec le + en orange
