@@ -871,3 +871,17 @@ git push origin main
     - Voyages scolaires → `Voyage scolaire` uniquement (sélecteur désactivé)
   - Type par défaut à la création = cohérent avec l'onglet actif
     (`extramuros` sur Intra-Extramuros, `voyage` sur Voyages scolaires)
+
+## [v0.43] — 2026-06-22
+
+### Changed
+- **Activites.jsx** : refonte UI header onglets + filtres rapides
+  - Onglets principaux (Intra-Extramuros / Voyages) déplacés à gauche des filtres rapides,
+    avant "À venir / Passées / Mes activités"
+  - Onglet "Voyages scolaires" renommé "Voyages"
+  - Filtres rapides sans emoji ; texte coloré dynamique (vert = À venir, rouge = Passées,
+    orange = Mes activités) — actif = couleur vive, inactif = blanc atténué
+  - Suppression de la feature "Archives" (checkbox + filtre `showArchived`) ;
+    les activités archivées ne sont plus affichées
+  - Bouton "+ Activité" renommé **"Nouvelle activité"** sur l'onglet Intra-Extramuros
+    et **"Nouveau voyage"** sur l'onglet Voyages

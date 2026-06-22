@@ -898,7 +898,6 @@ export default function Activites() {
   const [activitiesWithFactures, setActivitiesWithFactures] = useState(new Set())
   const [docsRow, setDocsRow]     = useState(null)
   const [docsCategorie, setDocsCategorie] = useState('document')
-  const [showArchived, setShowArchived]   = useState(false)
   const [quickFilter, setQuickFilter]     = useState(null) // null | 'passees' | 'avenir' | 'mes'
   const [mainTab, setMainTab]               = useState('intra_extra') // 'intra_extra' | 'voyages'
   const [search, setSearch] = useState('')
@@ -1068,7 +1067,7 @@ export default function Activites() {
 
   const displayed = data
     .filter(r => mainTypes.includes(r.type))
-    .filter(r => showArchived ? true : r.statut !== 'archive')
+    .filter(r => r.statut !== 'archive')
     .filter(r => isAdmin || isFinancier || r.created_by === user?.id || r.responsable_id === user?.id || (r.accompagnateur_ids || []).includes(user?.id) || r.statut === 'publie')
     .filter(r => !search || `${r.intitule} ${r.description || ''} ${r.responsable || ''}`.toLowerCase().includes(search.toLowerCase()))
     .filter(r => !filters.type?.length || filters.type.includes(r.type))
@@ -1113,12 +1112,12 @@ export default function Activites() {
 
   const mainTabs = [
     { key: 'intra_extra', label: 'Intra-Extramuros' },
-    { key: 'voyages',     label: 'Voyages scolaires' },
+    { key: 'voyages',     label: 'Voyages' },
   ]
   const quickTabs = [
-    { key: 'avenir',  label: '🟢 À venir' },
-    { key: 'passees', label: '🔴 Passées' },
-    ...(isAdmin || isFinancier ? [{ key: 'mes', label: '👤 Mes activités' }] : []),
+    { key: 'avenir',  label: 'À venir',       color: '#22c55e' },
+    { key: 'passees', label: 'Passées',        color: '#ef4444' },
+    ...(isAdmin || isFinancier ? [{ key: 'mes', label: 'Mes activités', color: '#f97316' }] : []),
   ]
 
   return (
@@ -1127,27 +1126,31 @@ export default function Activites() {
       title="Activités"
       subtitle="Gestion des activités scolaires et extrascolaires"
       leftActions={
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center p-0.5 rounded-lg shrink-0"
+            style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
+            {mainTabs.map(t => (
+              <button key={t.key} onClick={() => { setMainTab(t.key); setQuickFilter(null) }}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${mainTab === t.key ? 'bg-white text-green-700 shadow-sm' : 'text-white/60 hover:text-white/90'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="w-px self-stretch" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
           {quickTabs.map(t => (
             <button key={t.key}
               onClick={() => setQuickFilter(q => q === t.key ? null : t.key)}
-              className="text-xs cursor-pointer select-none transition-opacity"
-              style={{ color: quickFilter === t.key ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.55)',
-                       fontWeight: quickFilter === t.key ? 600 : 400, background: 'none', border: 'none', padding: 0 }}>
+              className="text-xs cursor-pointer select-none transition-all"
+              style={{
+                color: quickFilter === t.key ? t.color : 'rgba(255,255,255,0.50)',
+                fontWeight: quickFilter === t.key ? 600 : 400,
+                background: 'none', border: 'none', padding: 0
+              }}>
               {t.label}
             </button>
           ))}
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
-            style={{ color: 'rgba(255,255,255,0.70)' }}>
-            <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)}
-              className="rounded" style={{ accentColor: 'white' }} />
-            Archives
-          </label>
         </div>
       }
-      tabs={mainTabs}
-      activeTab={mainTab}
-      onTabChange={k => { setMainTab(k); setQuickFilter(null) }}
       search={search}
       onSearch={setSearch}
       searchPlaceholder="Rechercher par intitulé, responsable…"
@@ -1171,7 +1174,9 @@ export default function Activites() {
               </button>
             )}
             {canCreate && (
-              <button onClick={openNew} className="btn-primary text-xs py-1.5 px-3">+ Activité</button>
+              <button onClick={openNew} className="btn-primary text-xs py-1.5 px-3">
+                {mainTab === 'voyages' ? 'Nouveau voyage' : 'Nouvelle activité'}
+              </button>
             )}
           </>
         ) : null
