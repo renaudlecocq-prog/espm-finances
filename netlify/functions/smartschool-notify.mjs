@@ -1,24 +1,22 @@
 /**
  * netlify/functions/smartschool-notify.mjs
  *
- * Envoie des notifications Smartschool lors d'événements ESPM+.
+ * Envoie des messages Smartschool (inbox) via SOAP V3 sendMsg.
  *
- * Méthode : SOAP V3 sendNotification avec authentification OAuth2 Bearer
- *   - Le token est obtenu via client_credentials (machine-to-machine, sans redirect)
- *   - Smartschool retourne HTTP 200 + body vide = succès
+ * Note : sendNotification (push) n'est pas disponible via SOAP V3 ni via REST
+ * client_credentials (sub vide → HTTP 500). sendMsg (inbox) est la seule méthode
+ * fiable avec les droits actuels.
  *
- * Types supportés :
- *   - "facture"  → notification aux co-accounts (parents) de chaque élève facturé
- *   - "activite" → notification à la liste direction fixe
+ * Types :
+ *   - "facture"  → message aux co-accounts (parents) de chaque élève facturé
+ *   - "activite" → message à la liste direction fixe
  *
  * Env vars requises :
- *   SMARTSCHOOL_CLIENT_ID       identifiant OAuth2 de l'application ESPM+
- *   SMARTSCHOOL_CLIENT_SECRET   secret OAuth2
+ *   SMARTSCHOOL_ACCESS_CODE  code d'accès SOAP V3
  *
  * Env vars optionnelles :
  *   SMARTSCHOOL_API_URL           (défaut: https://espmaritime.smartschool.be/Webservices/V3)
- *   SMARTSCHOOL_OAUTH_URL         (défaut: https://espmaritime.smartschool.be/OAuth/index/token)
- *   SMARTSCHOOL_TEST_RECIPIENT    si défini → mode bêta (toutes les notifs vont à cet identifiant)
+ *   SMARTSCHOOL_TEST_RECIPIENT    si défini → mode bêta (tous les messages vont à ce compte)
  *   SMARTSCHOOL_NOTIFY_DIRECTION  JSON array des identifiants Smartschool de la direction
  */
 
@@ -47,83 +45,51 @@ function escapeXml(str) {
     .replace(/'/g, '&apos;')
 }
 
-/**
- * Obtient un token OAuth2 via client_credentials (machine-to-machine).
- * Scope : sendnotif — ne nécessite pas de redirect URI ni d'intervention utilisateur.
- */
-async function getOAuthToken(oauthUrl, clientId, clientSecret) {
-  const res = await fetch(oauthUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type:    'client_credentials',
-      client_id:     clientId,
-      client_secret: clientSecret,
-      scope:         'sendnotif',
-    }).toString(),
-  })
-  if (!res.ok) throw new Error(`OAuth token error: HTTP ${res.status}`)
-  const data = await res.json()
-  if (!data.access_token) throw new Error('Pas de access_token dans la réponse OAuth')
-  return data.access_token
-}
-
-/**
- * Envoie une notification push via SOAP V3 sendNotification authentifié OAuth Bearer.
- * Smartschool retourne HTTP 200 avec body vide = succès.
- */
-async function sendNotification({ apiUrl, oauthToken, recipient, coAccount, title, description, link }) {
+async function sendMsg({ apiUrl, accessCode, recipient, coAccount, title, body }) {
   const envelope = `<?xml version="1.0" encoding="UTF-8"?>
-<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="https://espmaritime.smartschool.be/Webservices/V3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <SOAP-ENV:Header/>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="https://espmaritime.smartschool.be/Webservices/V3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/">
   <SOAP-ENV:Body>
-    <ns1:sendNotification SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
-      <accesscode xsi:type="xsd:string">OAUTH</accesscode>
-      <title xsi:type="xsd:string">${escapeXml(title)}</title>
-      <description xsi:type="xsd:string">${escapeXml(description)}</description>
+    <ns1:sendMsg SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+      <accesscode xsi:type="xsd:string">${escapeXml(accessCode)}</accesscode>
       <userIdentifier xsi:type="xsd:string">${escapeXml(recipient)}</userIdentifier>
+      <title xsi:type="xsd:string">${escapeXml(title)}</title>
+      <body xsi:type="xsd:string">${escapeXml(body)}</body>
       <coaccount xsi:type="xsd:int">${coAccount ?? 0}</coaccount>
-      <link xsi:type="xsd:string">${escapeXml(link ?? '')}</link>
-    </ns1:sendNotification>
+    </ns1:sendMsg>
   </SOAP-ENV:Body>
 </SOAP-ENV:Envelope>`
 
   try {
-    const res = await fetch(apiUrl, {
+    const res  = await fetch(apiUrl, {
       method:  'POST',
-      headers: {
-        'Content-Type':  'text/xml; charset=utf-8',
-        'SOAPAction':    '"urn:sendNotification"',
-        'Authorization': `Bearer ${oauthToken}`,
-      },
-      body: envelope,
+      headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '"urn:sendMsg"' },
+      body:    envelope,
     })
     const text = await res.text()
-    // Smartschool retourne HTTP 200 + body vide = succès (authentification OAuth)
-    const ok = res.ok && text.trim() === ''
-    console.log(`[sendNotification] recipient=${recipient} coAccount=${coAccount} HTTP=${res.status} bodyLen=${text.length} ok=${ok}`)
-    return { recipient, coAccount, ok, status: res.status }
+    const match = text.match(/<return[^>]*>(-?\d+)<\/return>/)
+    const ssCode = match ? parseInt(match[1], 10) : null
+    const ok = ssCode === 0
+    console.log(`[sendMsg] recipient=${recipient} coAccount=${coAccount} ssCode=${ssCode} ok=${ok}`)
+    return { recipient, coAccount, ok, ssCode }
   } catch (err) {
     return { recipient, coAccount, ok: false, error: err.message }
   }
 }
 
 export default async function handler(req) {
-  const origin = req.headers.get('origin') || ''
+  const origin  = req.headers.get('origin') || ''
   const headers = corsHeaders(origin)
 
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers })
-  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers })
+  if (req.method !== 'POST')    return new Response('Method not allowed', { status: 405, headers })
 
-  const clientId     = process.env.SMARTSCHOOL_CLIENT_ID
-  const clientSecret = process.env.SMARTSCHOOL_CLIENT_SECRET
-  const apiUrl       = process.env.SMARTSCHOOL_API_URL   || 'https://espmaritime.smartschool.be/Webservices/V3'
-  const oauthUrl     = process.env.SMARTSCHOOL_OAUTH_URL || 'https://espmaritime.smartschool.be/OAuth/index/token'
+  const accessCode    = process.env.SMARTSCHOOL_ACCESS_CODE
+  const apiUrl        = process.env.SMARTSCHOOL_API_URL || 'https://espmaritime.smartschool.be/Webservices/V3'
   const testRecipient = process.env.SMARTSCHOOL_TEST_RECIPIENT
 
-  if (!clientId || !clientSecret) {
-    return new Response(JSON.stringify({ error: 'SMARTSCHOOL_CLIENT_ID / CLIENT_SECRET non configurés' }), {
-      status: 500,
+  if (!accessCode) {
+    return new Response(JSON.stringify({ error: 'SMARTSCHOOL_ACCESS_CODE non configuré' }), {
+      status:  500,
       headers: { ...headers, 'Content-Type': 'application/json' },
     })
   }
@@ -131,19 +97,6 @@ export default async function handler(req) {
   let payload
   try { payload = await req.json() }
   catch { return new Response(JSON.stringify({ error: 'JSON invalide' }), { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } }) }
-
-  // Obtenir un token OAuth frais pour cette invocation
-  let oauthToken
-  try {
-    oauthToken = await getOAuthToken(oauthUrl, clientId, clientSecret)
-    console.log('[smartschool-notify] OAuth token OK')
-  } catch (err) {
-    console.error('[smartschool-notify] OAuth token error:', err.message)
-    return new Response(JSON.stringify({ error: 'Impossible d\'obtenir le token OAuth: ' + err.message }), {
-      status: 500,
-      headers: { ...headers, 'Content-Type': 'application/json' },
-    })
-  }
 
   const { type } = payload
   const results  = []
@@ -157,20 +110,19 @@ export default async function handler(req) {
       const internalNumber = student.internal_number
       if (!internalNumber && !isTest) continue
 
-      const recipient   = testRecipient || internalNumber
-      const title       = 'Nouvelle facture — ESPM+'
-      const description = isTest
-        ? `[TEST] Une facture a été émise pour ${student.prenom} ${student.nom}. Consultez ESPM+ pour les détails.`
-        : `Une facture a été émise pour ${student.prenom} ${student.nom}. Consultez ESPM+ pour les détails.`
-      const link = 'https://espmaritime.netlify.app'
+      const recipient = testRecipient || internalNumber
+      const title     = 'Nouvelle facture — ESPM+'
+      const body      = isTest
+        ? `[TEST] Une facture a été émise pour ${student.prenom} ${student.nom}.\nConsultez ESPM+ pour les détails : https://espmaritime.netlify.app`
+        : `Une facture a été émise pour ${student.prenom} ${student.nom}.\nConsultez ESPM+ pour les détails : https://espmaritime.netlify.app`
 
       if (isTest) {
-        const r = await sendNotification({ apiUrl, oauthToken, recipient, coAccount: 0, title, description, link })
+        const r = await sendMsg({ apiUrl, accessCode, recipient, coAccount: 0, title, body })
         results.push(r)
       } else {
         const [r1, r2] = await Promise.all([
-          sendNotification({ apiUrl, oauthToken, recipient, coAccount: 1, title, description, link }),
-          sendNotification({ apiUrl, oauthToken, recipient, coAccount: 2, title, description, link }),
+          sendMsg({ apiUrl, accessCode, recipient, coAccount: 1, title, body }),
+          sendMsg({ apiUrl, accessCode, recipient, coAccount: 2, title, body }),
         ])
         results.push(r1, r2)
       }
@@ -184,24 +136,24 @@ export default async function handler(req) {
       ? [testRecipient]
       : (() => { try { return JSON.parse(process.env.SMARTSCHOOL_NOTIFY_DIRECTION || '[]') } catch { return [] } })()
 
-    const title       = 'Nouvelle activité — ESPM+'
-    const description = isTest
-      ? `[TEST] ${responsableNom} a publié une activité : "${intitule}".`
-      : `${responsableNom} a publié une activité : "${intitule}".`
-    const link = activiteId
+    const link  = activiteId
       ? `https://espmaritime.netlify.app/activites?open=${activiteId}`
       : 'https://espmaritime.netlify.app/activites'
+    const title = 'Nouvelle activité — ESPM+'
+    const body  = isTest
+      ? `[TEST] ${responsableNom} a publié une activité : "${intitule}".\n${link}`
+      : `${responsableNom} a publié une activité : "${intitule}".\n${link}`
 
     await Promise.all(
       recipients.map(async (r) => {
-        const res = await sendNotification({ apiUrl, oauthToken, recipient: r, coAccount: 0, title, description, link })
+        const res = await sendMsg({ apiUrl, accessCode, recipient: r, coAccount: 0, title, body })
         results.push(res)
       })
     )
 
   } else {
     return new Response(JSON.stringify({ error: `Type inconnu : ${type}` }), {
-      status: 400,
+      status:  400,
       headers: { ...headers, 'Content-Type': 'application/json' },
     })
   }
@@ -210,7 +162,7 @@ export default async function handler(req) {
   console.log(`[smartschool-notify] type=${type} sent=${nbOk}/${results.length}${isTest ? ' [BETA/TEST]' : ''}`)
 
   return new Response(JSON.stringify({ ok: true, sent: nbOk, total: results.length, results }), {
-    status: 200,
+    status:  200,
     headers: { ...headers, 'Content-Type': 'application/json' },
   })
 }

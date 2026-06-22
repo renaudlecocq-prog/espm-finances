@@ -833,3 +833,16 @@ git push origin main
     `userIdentifier`, `coaccount`, `link`
   - `link` = URL vers ESPM+ (racine ou page activité avec `?open={id}`)
   - Token OAuth obtenu une fois par invocation de la fonction (serverless = pas de cache)
+
+## [v0.40] — 2026-06-22
+
+### Reverted
+- **smartschool-notify.mjs** : retour à `sendMsg` SOAP V3 (message inbox)
+  - `sendNotification` SOAP V3 + Bearer OAuth → HTTP 200 + body vide mais aucune
+    notification réellement envoyée (action inconnue dans le WSDL, ignorée silencieusement)
+  - REST `/Api/V1/sendNotification` + Bearer OAuth → HTTP 500 systématique
+    (token `client_credentials` avec `sub: ""` → Smartschool refuse sans identité expéditeur)
+  - `sendMsg` (message inbox Smartschool) est la seule méthode fiable avec les droits actuels
+  - Suppression des env vars `SMARTSCHOOL_CLIENT_ID` / `SMARTSCHOOL_CLIENT_SECRET` (non utilisées)
+  - Correction `SMARTSCHOOL_TEST_RECIPIENT` → "Renaud Lecocq" (identifiant Smartschool réel)
+  - TODO : ouvrir ticket Smartschool pour demander endpoint REST sendnotif + payload attendu
