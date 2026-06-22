@@ -715,3 +715,14 @@ git push origin main
   - Liste des activités classées par type (intramuros / extramuros / voyage) avec : titre, date, heures, classes, responsable, accompagnants, prix total, prix/élève, POP, transport
   - Footer avec email et téléphone de l'école (variables `SCHOOL_EMAIL_SCHOOL` et `SCHOOL_TEL_SCHOOL`)
   - Orientation paysage A4
+
+## [v0.32] — 2026-06-22
+
+### Changed
+- **Layout : sidebar latérale collapsible** remplace le header horizontal
+  - Nouveau composant `Sidebar.jsx` : menu vertical avec icônes SVG pour chaque section
+  - Mode déplié (224 px) : icône + libellé — mode réduit (64 px) : icônes seules avec tooltip
+  - Bascule via double-chevron, état persisté en `localStorage`
+  - Sections : navigation + séparateur + Smartschool / notifications + admin + profil + déconnexion
+  - Layout passe en `flex h-screen` : sidebar fixe à gauche, contenu scrollable à droite
+  - `NotificationBell` : nouvelle prop `dropdownAlign` ('right' par défaut, 'left' pour sidebar) afin que le dropdown s'ouvre dans le bon sens
