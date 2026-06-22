@@ -855,3 +855,19 @@ git push origin main
     de l'enveloppe SOAP au lieu d'inline sur chaque élément — Smartschool l'exige inline
   - Corps du message en HTML restauré (bouton ESPM+ orange/sombre)
   - Ajout `https://espmaritime-staging.netlify.app` dans CORS origins
+
+## [v0.42] — 2026-06-22
+
+### Changed
+- **Activites.jsx** : séparation en deux onglets principaux
+  - Onglet **Intra-Extramuros** : affiche uniquement les activités de type `extramuros`
+    et `intramuros` ; filtre Type limité à ces deux options
+  - Onglet **Voyages scolaires** : affiche uniquement les activités de type `voyage`
+  - Changement d'onglet principal réinitialise le quick filter (À venir / Passées / Mes)
+  - Quick filters (🟢 À venir, 🔴 Passées, 👤 Mes activités) déplacés dans `leftActions`
+    (à gauche du header) en remplacement des anciens tabs PageHeader
+  - **Modal** : options de type restreintes selon l'onglet actif
+    - Intra-Extramuros → `Extramuros` / `Intramuros` (sélecteur actif)
+    - Voyages scolaires → `Voyage scolaire` uniquement (sélecteur désactivé)
+  - Type par défaut à la création = cohérent avec l'onglet actif
+    (`extramuros` sur Intra-Extramuros, `voyage` sur Voyages scolaires)

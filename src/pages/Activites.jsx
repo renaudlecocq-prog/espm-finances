@@ -271,7 +271,7 @@ function FileStage({ label, files, setFiles }) {
 }
 
 // ── Activity form modal ────────────────────────────────────────────────────
-function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, groupOptions, allClasses, onClose, onSaved }) {
+function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, groupOptions, allClasses, onClose, onSaved, allowedTypes, defaultType }) {
   const { user, profile } = useAuth()
   const initForm = editRow ? {
     ...EMPTY, ...editRow,
@@ -280,7 +280,7 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
     groupes_inclus:   editRow.groupes_inclus   || [],
     classes_exclues:  editRow.classes_exclues  || [],
     groupes_exclus:   editRow.groupes_exclus   || [],
-  } : { ...EMPTY }
+  } : { ...EMPTY, type: defaultType || EMPTY.type }
 
   const [form, setForm]             = useState(initForm)
   const [errors, setErrors]         = useState([])
@@ -514,10 +514,11 @@ function ActivityModal({ editRow, isFinancier, userId, allEleves, staffList, gro
             </div>
             <div>
               <label className="label">Type *</label>
-              <select className="input" value={form.type} onChange={e => f('type', e.target.value)}>
-                <option value="extramuros">Extramuros</option>
-                <option value="intramuros">Intramuros</option>
-                <option value="voyage">Voyage</option>
+              <select className="input" value={form.type} onChange={e => f('type', e.target.value)}
+                disabled={allowedTypes && allowedTypes.length === 1}>
+                {(!allowedTypes || allowedTypes.includes('extramuros')) && <option value="extramuros">Extramuros</option>}
+                {(!allowedTypes || allowedTypes.includes('intramuros')) && <option value="intramuros">Intramuros</option>}
+                {(!allowedTypes || allowedTypes.includes('voyage')) && <option value="voyage">Voyage scolaire</option>}
               </select>
             </div>
             <div>
@@ -899,6 +900,7 @@ export default function Activites() {
   const [docsCategorie, setDocsCategorie] = useState('document')
   const [showArchived, setShowArchived]   = useState(false)
   const [quickFilter, setQuickFilter]     = useState(null) // null | 'passees' | 'avenir' | 'mes'
+  const [mainTab, setMainTab]               = useState('intra_extra') // 'intra_extra' | 'voyages'
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({})
   const toggleFilter = useCallback((key, val) =>
@@ -1062,7 +1064,10 @@ export default function Activites() {
     return `Il y a ${Math.abs(diff)} jour${Math.abs(diff) > 1 ? 's' : ''}`
   }
 
+  const mainTypes = mainTab === 'intra_extra' ? ['extramuros', 'intramuros'] : ['voyage']
+
   const displayed = data
+    .filter(r => mainTypes.includes(r.type))
     .filter(r => showArchived ? true : r.statut !== 'archive')
     .filter(r => isAdmin || isFinancier || r.created_by === user?.id || r.responsable_id === user?.id || (r.accompagnateur_ids || []).includes(user?.id) || r.statut === 'publie')
     .filter(r => !search || `${r.intitule} ${r.description || ''} ${r.responsable || ''}`.toLowerCase().includes(search.toLowerCase()))
@@ -1079,7 +1084,7 @@ export default function Activites() {
   const hasFilters = search || quickFilter || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
 
   const filterDefs = useMemo(() => [
-    { key: 'type', label: 'Type', options: Object.entries(TYPE_LABELS).map(([v, l]) => ({ value: v, label: l })) },
+    ...(mainTab === 'intra_extra' ? [{ key: 'type', label: 'Type', options: [{ value: 'extramuros', label: 'Extramuros' }, { value: 'intramuros', label: 'Intramuros' }] }] : []),
     ...(isAdmin || isFinancier ? [{ key: 'statut_facturation', label: 'Facturation', options: [
         { value: 'en_attente', label: 'En attente' },
         { value: 'a_facturer', label: 'À facturer' },
@@ -1106,6 +1111,10 @@ export default function Activites() {
     } catch(e) { alert('Erreur lors de la génération du rapport.') }
   }
 
+  const mainTabs = [
+    { key: 'intra_extra', label: 'Intra-Extramuros' },
+    { key: 'voyages',     label: 'Voyages scolaires' },
+  ]
   const quickTabs = [
     { key: 'avenir',  label: '🟢 À venir' },
     { key: 'passees', label: '🔴 Passées' },
@@ -1118,16 +1127,27 @@ export default function Activites() {
       title="Activités"
       subtitle="Gestion des activités scolaires et extrascolaires"
       leftActions={
-        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
-          style={{ color: 'rgba(255,255,255,0.70)' }}>
-          <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)}
-            className="rounded" style={{ accentColor: 'white' }} />
-          Archives
-        </label>
+        <div className="flex items-center gap-3">
+          {quickTabs.map(t => (
+            <button key={t.key}
+              onClick={() => setQuickFilter(q => q === t.key ? null : t.key)}
+              className="text-xs cursor-pointer select-none transition-opacity"
+              style={{ color: quickFilter === t.key ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.55)',
+                       fontWeight: quickFilter === t.key ? 600 : 400, background: 'none', border: 'none', padding: 0 }}>
+              {t.label}
+            </button>
+          ))}
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
+            style={{ color: 'rgba(255,255,255,0.70)' }}>
+            <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)}
+              className="rounded" style={{ accentColor: 'white' }} />
+            Archives
+          </label>
+        </div>
       }
-      tabs={quickTabs}
-      activeTab={quickFilter || ''}
-      onTabChange={k => setQuickFilter(q => q === k ? null : k)}
+      tabs={mainTabs}
+      activeTab={mainTab}
+      onTabChange={k => { setMainTab(k); setQuickFilter(null) }}
       search={search}
       onSearch={setSearch}
       searchPlaceholder="Rechercher par intitulé, responsable…"
