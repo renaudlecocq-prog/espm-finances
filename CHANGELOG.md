@@ -813,3 +813,23 @@ git push origin main
     (manquait, causait des blocages potentiels sur staging)
   - TODO (chantier futur) : implémenter OAuth2 Smartschool pour accéder à `sendNotification`
     via token Bearer — nécessite client_id + client_secret + flow token exchange
+
+## [v0.39] — 2026-06-22
+
+### Changed
+- **smartschool-notify.mjs** : implémentation OAuth2 `client_credentials` pour `sendNotification`
+  - Remplace `sendMsg` (inbox) par `sendNotification` (push notification mobile/desktop)
+  - Authentification via OAuth2 `client_credentials` (machine-to-machine, sans redirect URI)
+    → fonctionne sur staging ET production (contrairement au login OAuth utilisateur)
+  - Flow : `POST /OAuth/index/token` (scope=sendnotif) → Bearer token → SOAP `sendNotification`
+    avec `Authorization: Bearer {token}` — Smartschool retourne HTTP 200 + body vide = succès
+  - `<accesscode>` dans le SOAP body positionné à `"OAUTH"` (ignoré par Smartschool quand
+    le header Bearer est présent)
+  - Nouvelles env vars Netlify (staging + production) :
+    - `SMARTSCHOOL_CLIENT_ID` = identifiant OAuth2 ESPM+
+    - `SMARTSCHOOL_CLIENT_SECRET` = secret OAuth2 ESPM+
+  - Env var optionnelle `SMARTSCHOOL_OAUTH_URL` (défaut : `…/OAuth/index/token`)
+  - Structure SOAP `sendNotification` : `accesscode`, `title`, `description`,
+    `userIdentifier`, `coaccount`, `link`
+  - `link` = URL vers ESPM+ (racine ou page activité avec `?open={id}`)
+  - Token OAuth obtenu une fois par invocation de la fonction (serverless = pas de cache)
