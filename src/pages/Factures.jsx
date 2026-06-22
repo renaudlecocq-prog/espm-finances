@@ -578,7 +578,7 @@ function ListeBatches({ onNew, onSelect }) {
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
   return (
-    <>
+    <div className="h-full flex flex-col">
     <PageHeader
       title="Factures"
       subtitle={`${totalFacs} facture${totalFacs !== 1 ? 's' : ''} générée${totalFacs !== 1 ? 's' : ''} · ${fmtEur(batches.reduce((s, b) => s + stats(b).total, 0))}`}
@@ -594,7 +594,7 @@ function ListeBatches({ onNew, onSelect }) {
       searchPlaceholder="Rechercher un élève, une classe ou un N°…"
       actions={isFinancier ? <button onClick={onNew} className="btn-primary text-xs px-3 py-1.5">+ Facturer</button> : null}
     />
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="flex-1 min-h-0 p-6 max-w-screen-xl mx-auto w-full flex flex-col">
 
       {batches.length === 0 ? (
         <div className="card p-12 text-center text-gray-400">
@@ -605,9 +605,9 @@ function ListeBatches({ onNew, onSelect }) {
       ) : filtered.length === 0 ? (
         <div className="card p-8 text-center text-gray-400 text-sm">Aucun résultat pour cette recherche.</div>
       ) : (
-        <div className="card p-0 overflow-hidden">
+        <div className="card p-0 flex-1 overflow-auto min-h-0">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
               <tr>
                 {['N° Facturation','Date','Élèves','Total','Impayés','Répartition','Statut'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
@@ -661,7 +661,7 @@ function ListeBatches({ onNew, onSelect }) {
         </div>
       )}
     </div>
-    </>
+    </div>
   )
 }
 
@@ -898,7 +898,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
   )
 
   return (
-    <>
+    <div className="h-full flex flex-col">
     <PageHeader
       title={`Factures ${batch?.numero || ''}${batch?.nom ? ` — ${batch.nom}` : ''}`}
       subtitle={`${factures.length} facture${factures.length !== 1 ? 's' : ''} au total · ${fmtDate(batch?.date)} · ${fmtEur(totalBatch)}`}
@@ -921,11 +921,11 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
       searchPlaceholder="Rechercher un élève ou un numéro…"
       actions={batchActions}
     />
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="flex-1 min-h-0 p-6 max-w-screen-xl mx-auto w-full flex flex-col">
 
-      <div className="card p-0 overflow-hidden">
+      <div className="card p-0 flex-1 overflow-auto min-h-0">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100">
+          <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">N° Facture</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Élève</th>
@@ -1034,7 +1034,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         </div>
       )}
     </div>
-    </>
+    </div>
   )
 }
 

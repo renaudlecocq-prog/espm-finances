@@ -776,3 +776,11 @@ git push origin main
   - `filterDefs` définis au niveau parent (ECH et OT)
   - `ActiveFilterChips` reste dans le corps de page
 - **Administration** : onglets Utilisateurs / Droits / Synchronisation → PageHeader
+
+## [v0.36] — 2026-06-22
+
+### Changed
+- **Factures — ListeBatches et DetailBatch** : layout scrollable identique à Élèves/Groupes
+  - Wrapper `h-full flex flex-col` (remplace fragment `<>`)
+  - Zone contenu `flex-1 min-h-0` + tableau `flex-1 overflow-auto min-h-0`
+  - `thead` sticky (`sticky top-0 z-10`) dans les deux vues
