@@ -496,23 +496,36 @@ export default function Paiements() {
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
   return (
-    <>
-    <PageHeader title="Paiements" subtitle="Historique des paiements reçus" />
-    <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 88px)' }}>
-      {/* Header */}
-      <div className="flex items-start justify-between mb-5 flex-shrink-0">
-        {isFinancier && (
-          <div className="flex items-center gap-3">
-            <button onClick={() => setShowImport(true)}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary transition-colors">
-              <Upload size={14} /> Import CSV Belfius
-            </button>
-            <button onClick={() => setShowForm(v => !v)} className="btn-primary text-sm py-1.5 px-4">
-              + Paiement
-            </button>
-          </div>
-        )}
-      </div>
+    <div className="h-full flex flex-col">
+    <PageHeader
+      title="Paiements"
+      subtitle="Historique des paiements reçus"
+      search={search}
+      onSearch={setSearch}
+      searchPlaceholder="Rechercher par nom, prénom, payeur…"
+      filters={
+        <MasterFilter dark
+          filters={filters}
+          filterDefs={filterDefs}
+          onChange={toggleFilter}
+          onClearAll={() => setFilters({})}
+        />
+      }
+      info={`${filtered.length} résultat${filtered.length !== 1 ? 's' : ''}`}
+      actions={isFinancier ? (
+        <>
+          <button onClick={() => setShowImport(true)}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+            style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+            <Upload size={12} /> Import CSV
+          </button>
+          <button onClick={() => setShowForm(v => !v)} className="btn-primary text-xs py-1.5 px-3">
+            + Paiement
+          </button>
+        </>
+      ) : null}
+    />
+    <div className="flex-1 min-h-0 p-6 max-w-screen-xl mx-auto w-full flex flex-col">
 
       {/* Manual form */}
       {showForm && (
@@ -558,30 +571,6 @@ export default function Paiements() {
         </div>
       )}
 
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 mb-3 flex-shrink-0 flex-wrap">
-        <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <input className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5 outline-none w-52 focus:border-primary transition-colors"
-            placeholder="Rechercher par nom, prénom, payeur…"
-            value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        <MasterFilter
-          filters={filters}
-          filterDefs={filterDefs}
-          onChange={toggleFilter}
-          onClearAll={() => setFilters({})}
-        />
-        {hasFilters && (
-          <button onClick={() => { setSearch(''); setFilters({}) }}
-            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors whitespace-nowrap">
-            <X size={11} /> Tout effacer
-          </button>
-        )}
-        <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">
-          {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
-        </span>
-      </div>
       <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
 
       {/* Table */}
@@ -659,6 +648,6 @@ export default function Paiements() {
       )}
       <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
     </div>
-    </>
+    </div>
   )
 }

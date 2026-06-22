@@ -140,47 +140,24 @@ export default function Eleves() {
   const hasFilters = search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
 
   return (
-    <>
-    <PageHeader title="Élèves" subtitle="Liste des élèves et leurs soldes" />
-    <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 88px)' }}>
-
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 mb-2 shrink-0">
-        <div className="relative shrink-0">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <input
-            className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5
-              outline-none w-48 focus:border-primary transition-colors"
-            placeholder="Rechercher par nom, prénom…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          {search && (
-            <button onClick={() => setSearch('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              <X size={11} />
-            </button>
-          )}
-        </div>
-
-        <MasterFilter
+    <div className="h-full flex flex-col">
+    <PageHeader
+      title="Élèves"
+      subtitle="Liste des élèves et leurs soldes"
+      search={search}
+      onSearch={setSearch}
+      searchPlaceholder="Rechercher par nom, prénom…"
+      filters={
+        <MasterFilter dark
           filters={filters}
           filterDefs={filterDefs}
           onChange={toggleFilter}
           onClearAll={() => setFilters({})}
         />
-
-        {hasFilters && (
-          <button onClick={() => { setSearch(''); setFilters({}) }}
-            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600
-              border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors whitespace-nowrap">
-            <X size={11} /> Tout effacer
-          </button>
-        )}
-        <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">
-          {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
-        </span>
-      </div>
+      }
+      info={`${filtered.length} résultat${filtered.length !== 1 ? 's' : ''}`}
+    />
+    <div className="flex-1 min-h-0 p-6 max-w-screen-xl mx-auto w-full flex flex-col">
 
       {/* Active filter chips */}
       <ActiveFilterChips filters={filters} filterDefs={filterDefs} onChange={toggleFilter} />
@@ -266,7 +243,7 @@ export default function Eleves() {
       <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
 
     </div>
-    </>
+    </div>
   )
 }
 

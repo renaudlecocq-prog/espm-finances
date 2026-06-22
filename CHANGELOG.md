@@ -737,3 +737,21 @@ git push origin main
   - Prop `actions` pour injecter des boutons côté droit (ex. bouton "+ Facturer" sur Factures)
   - Intégré sur les 9 pages : Élèves, Paiements, Activités, Factures, Articles, Groupes, Assistant social, Administration, Accueil (Tableau de bord + Bonjour)
   - Hauteur de calcul `calc(100vh - Xpx)` ajustée à `88px` pour les pages avec tableau scrollable
+
+## [v0.34] — 2026-06-22
+
+### Changed
+- **PageHeader : toolbar intégrée** — tous les éléments de filtrage/navigation migrent du corps de page vers la 2e ligne du PageHeader (fond sombre `#2D1B2E`)
+  - `PageHeader` reçoit désormais : `tabs`, `activeTab`, `onTabChange`, `leftActions`, `search`, `onSearch`, `searchPlaceholder`, `filters`, `info`, `actions`
+  - Onglets : style segment control sur fond translucide blanc — actif : fond blanc, couleur selon `tab.color` (orange/red/vert) ; inactif : blanc 60%
+  - Champ de recherche : fond translucide, texte blanc, icône loupe + bouton clear ×
+  - `info` s'aligne à droite si pas d'`actions`, sinon avant les actions
+  - **Élèves** : recherche + MasterFilter (dark) + info nb résultats → PageHeader ; wrapper `h-full flex flex-col` ; `flex-1 min-h-0` pour le tableau scrollable ; calcul hauteur supprimé
+  - **Groupes** : même migration que Élèves
+  - **Paiements** : recherche + MasterFilter (dark) + actions Import CSV / + Paiement (visibles financier uniquement) + info nb résultats → PageHeader
+  - **Factures — ListeBatches** : onglets (En attente · Facturé · Impayés) + recherche + "+ Facturer" → PageHeader
+  - **Factures — DetailBatch** : ← Retour (leftActions) + onglets + recherche + actions conditionnelles (Tout approuver / PDF groupé) → PageHeader
+  - **Articles** : onglets Attributions / Catalogue → PageHeader ; div tabs supprimée du corps
+  - **Assistant social** : onglets Échelonnements / Organismes tiers → PageHeader ; div tabs supprimée du corps
+- **MasterFilter** : nouvelle prop `dark` pour fond sombre — bouton déclencheur adapte son style (translucide blanc, badge blanc)
+- **App.jsx** : `overflow-hidden` sur le panel droit + `overflow-y-auto min-h-0` sur `<main>` → layout CSS flex correct pour pages avec tableau scrollable

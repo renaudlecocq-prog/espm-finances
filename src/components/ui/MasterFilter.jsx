@@ -21,7 +21,7 @@ const getSelected = (filters, key) => {
   return Array.isArray(v) ? v : (v ? [v] : [])
 }
 
-export default function MasterFilter({ filters, filterDefs, onChange, onClearAll }) {
+export default function MasterFilter({ filters, filterDefs, onChange, onClearAll, dark = false }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -42,17 +42,17 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
       {/* ── Trigger ─────────────────────────────────────────────────── */}
       <button
         onClick={() => setOpen(o => !o)}
-        className={`inline-flex items-center gap-1.5 rounded-full border text-xs font-medium
-          px-3 py-1.5 whitespace-nowrap transition-colors select-none
-          ${totalActive > 0
-            ? 'border-primary bg-primary/10 text-primary'
-            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-800'}`}
+        className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 whitespace-nowrap transition-colors select-none ${
+          dark
+            ? 'rounded-lg ' + (totalActive > 0 ? 'text-white' : 'text-white/60 hover:text-white/90')
+            : 'rounded-full border ' + (totalActive > 0 ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-800')
+        }`}
+        style={dark ? { backgroundColor: `rgba(255,255,255,${totalActive > 0 ? '0.18' : '0.10'})`, border: `1px solid rgba(255,255,255,${totalActive > 0 ? '0.25' : '0.12'})` } : {}}
       >
         <SlidersHorizontal size={12} />
         Filtres
         {totalActive > 0 && (
-          <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1
-            rounded-full bg-primary text-white text-[10px] font-bold leading-none">
+          <span className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold leading-none ${dark ? 'bg-white text-primary' : 'bg-primary text-white'}`}>
             {totalActive}
           </span>
         )}

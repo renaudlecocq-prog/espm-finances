@@ -761,19 +761,17 @@ export default function Articles() {
 
   return (
     <>
-    <PageHeader title="Articles" subtitle="Catalogue et attributions aux élèves" />
+    <PageHeader
+      title="Articles"
+      subtitle="Catalogue et attributions aux élèves"
+      tabs={[
+        { key: 'attributions', label: 'Attributions' },
+        { key: 'catalogue',    label: 'Catalogue' },
+      ]}
+      activeTab={tab}
+      onTabChange={setTab}
+    />
     <div className="p-6 max-w-screen-xl mx-auto">
-
-      {/* Onglets — Attributions en premier */}
-      <div className="flex gap-2 mb-6">
-        {[['attributions', 'Attributions'], ['catalogue', 'Catalogue']].map(([v, l]) => (
-          <button key={v} onClick={() => setTab(v)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${tab === v ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-            {l}
-          </button>
-        ))}
-      </div>
-
       {tab === 'attributions'
         ? <AttributionsTab articles={articles} allEleves={allEleves} allClasses={allClasses}
             groupOptions={groupOptions} eleveOptions={eleveOptions} isFinancier={fin} />

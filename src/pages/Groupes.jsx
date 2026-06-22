@@ -95,46 +95,24 @@ export default function Groupes() {
 
 
   return (
-    <>
-    <PageHeader title="Groupes" subtitle={`Groupes Smartschool — ${rows.length} élèves actifs`} />
-    <div className="p-6 max-w-screen-xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 88px)' }}>
-
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 mb-2 shrink-0">
-        {/* Search */}
-        <div className="relative shrink-0">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <input
-            className="rounded-full border border-gray-200 bg-white text-xs pl-7 pr-3 py-1.5
-              outline-none w-36 focus:border-primary transition-colors"
-            placeholder="Rechercher…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-
-        {/* Master filter */}
-        <MasterFilter
+    <div className="h-full flex flex-col">
+    <PageHeader
+      title="Groupes"
+      subtitle={`Groupes Smartschool — ${rows.length} élèves actifs`}
+      search={search}
+      onSearch={setSearch}
+      searchPlaceholder="Rechercher…"
+      filters={
+        <MasterFilter dark
           filters={filters}
           filterDefs={FILTER_COLS.map(c => ({ key: c.key, label: c.label, options: opts[c.key] || [] }))}
           onChange={toggleFilter}
           onClearAll={() => setFilters({})}
         />
-
-        {(search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)) && (
-          <button
-            onClick={() => { setSearch(''); setFilters({}) }}
-            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600
-              border border-red-200 hover:border-red-400 rounded-full px-2.5 py-1 transition-colors whitespace-nowrap"
-          >
-            <X size={11} /> Tout effacer
-          </button>
-        )}
-
-        <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">
-          {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
-        </span>
-      </div>
+      }
+      info={`${filtered.length} résultat${filtered.length !== 1 ? 's' : ''}`}
+    />
+    <div className="flex-1 min-h-0 p-6 max-w-screen-xl mx-auto w-full flex flex-col">
 
       {/* Active filter chips */}
       <ActiveFilterChips
@@ -216,6 +194,6 @@ export default function Groupes() {
 
       <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
     </div>
-    </>
+    </div>
   )
 }

@@ -582,49 +582,19 @@ function ListeBatches({ onNew, onSelect }) {
     <PageHeader
       title="Factures"
       subtitle={`${totalFacs} facture${totalFacs !== 1 ? 's' : ''} générée${totalFacs !== 1 ? 's' : ''} · ${fmtEur(batches.reduce((s, b) => s + stats(b).total, 0))}`}
-      actions={isFinancier ? <button onClick={onNew} className="btn-primary text-sm px-4 py-2">+ Facturer</button> : null}
+      tabs={[
+        { key: 'attente', label: 'En attente', count: nbAttenteTot, color: 'orange' },
+        { key: 'valide',  label: 'Facturé' },
+        { key: 'impaye',  label: 'Impayés', count: nbImpayeTot, color: 'red' },
+      ]}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      search={search}
+      onSearch={setSearch}
+      searchPlaceholder="Rechercher un élève, une classe ou un N°…"
+      actions={isFinancier ? <button onClick={onNew} className="btn-primary text-xs px-3 py-1.5">+ Facturer</button> : null}
     />
     <div className="p-6 max-w-screen-xl mx-auto">
-
-      {/* Barre : Tabs + Recherche */}
-      <div className="flex items-center gap-3 my-4">
-        <div className="flex items-center bg-gray-100 rounded-lg p-0.5 shrink-0">
-          <button onClick={() => setActiveTab('attente')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-all
-              ${activeTab === 'attente'
-                ? 'bg-white text-orange-600 shadow-sm ring-1 ring-orange-200'
-                : 'text-gray-500 hover:text-gray-700'}`}>
-            En attente
-            <span className={`text-xs font-semibold tabular-nums
-              ${activeTab === 'attente' ? 'text-orange-500' : 'text-gray-400'}`}>
-              {nbAttenteTot}
-            </span>
-          </button>
-          <button onClick={() => setActiveTab('valide')}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-all
-              ${activeTab === 'valide'
-                ? 'bg-white text-green-700 shadow-sm ring-1 ring-green-200'
-                : 'text-gray-500 hover:text-gray-700'}`}>
-            Facturé
-          </button>
-          <button onClick={() => setActiveTab('impaye')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-all
-              ${activeTab === 'impaye'
-                ? 'bg-white text-red-600 shadow-sm ring-1 ring-red-200'
-                : 'text-gray-500 hover:text-gray-700'}`}>
-            Impayés
-            <span className={`text-xs font-semibold tabular-nums
-              ${activeTab === 'impaye' ? 'text-red-500' : 'text-gray-400'}`}>
-              {nbImpayeTot}
-            </span>
-          </button>
-        </div>
-        <input
-          type="text" placeholder="Rechercher un élève, une classe ou un N°…"
-          value={search} onChange={e => setSearch(e.target.value)}
-          className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
-        />
-      </div>
 
       {batches.length === 0 ? (
         <div className="card p-12 text-center text-gray-400">
@@ -906,79 +876,52 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
 
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
 
-  return (
-    <div className="p-6 max-w-screen-xl mx-auto">
-      <div className="flex items-baseline gap-3 mb-1 flex-wrap">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Factures <span className="text-gray-400 font-medium">{batch?.numero}</span>
-          {batch?.nom && <span className="text-xl font-normal text-gray-500 ml-2">— {batch.nom}</span>}
-        </h1>
-        <p className="text-sm text-gray-400">
-          {factures.length} facture{factures.length !== 1 ? 's' : ''} au total
-          <span className="mx-1.5">·</span>{fmtDate(batch?.date)}
-          <span className="mx-1.5">·</span><span className="font-semibold text-primary">{fmtEur(totalBatch)}</span>
-        </p>
-      </div>
+  const batchActions = (
+    <>
+      {isFinancier && nbAttente > 0 && (
+        <button onClick={toutApprouver} disabled={busy}
+          className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors shrink-0 disabled:opacity-50"
+          style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.90)' }}>
+          ✓ {factures.some(f => f.statut === 'ignore')
+            ? `Approuver ${nbAttente}`
+            : `Tout approuver (${nbAttente})`}
+        </button>
+      )}
+      {nbValide > 0 && (
+        <button onClick={handleBatchPDF}
+          className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors shrink-0"
+          style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+          🖨 PDF groupé ({nbValide})
+        </button>
+      )}
+    </>
+  )
 
-      {/* Retour + Tabs + Recherche + Tout approuver sur une ligne */}
-      <div className="flex items-center gap-3 my-4">
-        {/* Bouton Retour */}
+  return (
+    <>
+    <PageHeader
+      title={`Factures ${batch?.numero || ''}${batch?.nom ? ` — ${batch.nom}` : ''}`}
+      subtitle={`${factures.length} facture${factures.length !== 1 ? 's' : ''} au total · ${fmtDate(batch?.date)} · ${fmtEur(totalBatch)}`}
+      leftActions={
         <button onClick={onBack}
-          className="flex items-center gap-1 px-3 py-1 rounded-md text-sm font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors shrink-0">
+          className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-colors shrink-0"
+          style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.85)' }}>
           ← Retour
         </button>
-        {/* Segmented control */}
-        <div className="flex items-center bg-gray-100 rounded-lg p-0.5 shrink-0">
-          <button onClick={() => setActiveTab('attente')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-all
-              ${activeTab === 'attente'
-                ? 'bg-white text-orange-600 shadow-sm ring-1 ring-orange-200'
-                : 'text-gray-500 hover:text-gray-700'}`}>
-            En attente
-            <span className={`text-xs font-semibold tabular-nums
-              ${activeTab === 'attente' ? 'text-orange-500' : 'text-gray-400'}`}>
-              {nbAttente + factures.filter(f => f.statut === 'ignore').length}
-            </span>
-          </button>
-          <button onClick={() => setActiveTab('valide')}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-all
-              ${activeTab === 'valide'
-                ? 'bg-white text-green-700 shadow-sm ring-1 ring-green-200'
-                : 'text-gray-500 hover:text-gray-700'}`}>
-            Facturé
-          </button>
-          <button onClick={() => setActiveTab('impaye')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-all
-              ${activeTab === 'impaye'
-                ? 'bg-white text-red-600 shadow-sm ring-1 ring-red-200'
-                : 'text-gray-500 hover:text-gray-700'}`}>
-            Impayés
-            <span className={`text-xs font-semibold tabular-nums
-              ${activeTab === 'impaye' ? 'text-red-500' : 'text-gray-400'}`}>
-              {nbImpaye}
-            </span>
-          </button>
-        </div>
-        <input
-          type="text" placeholder="Rechercher un élève ou un numéro…"
-          value={search} onChange={e => setSearch(e.target.value)}
-          className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
-        />
-        {isFinancier && nbAttente > 0 && (
-          <button onClick={toutApprouver} disabled={busy}
-            className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-green-300 text-green-700 bg-green-50 hover:bg-green-100 transition-colors shrink-0 disabled:opacity-50">
-            ✓ {factures.some(f => f.statut === 'ignore')
-              ? `Approuver ${nbAttente} élève${nbAttente > 1 ? 's' : ''}`
-              : `Tout approuver (${nbAttente})`}
-          </button>
-        )}
-        {nbValide > 0 && (
-          <button onClick={handleBatchPDF}
-            className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition-colors shrink-0">
-            🖨 PDF groupé ({nbValide})
-          </button>
-        )}
-      </div>
+      }
+      tabs={[
+        { key: 'attente', label: 'En attente', count: nbAttente + factures.filter(f => f.statut === 'ignore').length, color: 'orange' },
+        { key: 'valide',  label: 'Facturé' },
+        { key: 'impaye',  label: 'Impayés', count: nbImpaye, color: 'red' },
+      ]}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      search={search}
+      onSearch={setSearch}
+      searchPlaceholder="Rechercher un élève ou un numéro…"
+      actions={batchActions}
+    />
+    <div className="p-6 max-w-screen-xl mx-auto">
 
       <div className="card p-0 overflow-hidden">
         <table className="w-full text-sm">
@@ -1091,6 +1034,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         </div>
       )}
     </div>
+    </>
   )
 }
 
