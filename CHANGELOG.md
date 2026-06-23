@@ -1108,3 +1108,8 @@ git push origin main
 
 ### Changed
 - **activite-avance-pdf.mjs** : badge "Demande d'avance" déplacé à droite du titre, "Document généré le" supprimé, champ "École" retiré, formulaire coordonnées plus compact
+
+## [v0.62] — 2026-06-23
+
+### Changed
+- **activite-avance-pdf.mjs** : formulaire coordonnées restructuré en 2 colonnes — gauche : Nom, Prénom, IBAN, Téléphone — droite : Adresse (grande zone)

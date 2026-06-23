@@ -85,12 +85,13 @@ export const handler = async (event) => {
   /* Section titles */
   .section-title { font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#6b7280; margin-bottom:1.5mm; margin-top:4mm }
   /* Identity 2-col grid */
-  .id-grid { display:grid; grid-template-columns:1fr 1fr; gap:1mm 6mm; margin-bottom:4mm }
-  .id-field { display:flex; flex-direction:column; gap:0.5mm }
-  .id-field-full { grid-column:1 / -1 }
+  .id-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 6mm; margin-bottom:4mm; align-items:stretch }
+  .id-col { display:flex; flex-direction:column; gap:2mm }
+  .id-field { display:flex; flex-direction:column; gap:0.5mm; flex:1 }
   .id-label { font-size:7.5pt; color:#6b7280; font-weight:600 }
   .id-blank { border-bottom:1px solid #374151; min-height:5mm; padding-bottom:0.5mm; font-size:8.5pt; color:#111827 }
-  .id-prefill { color:#374151 }
+  .id-blank-tall { border:1px solid #d1d5db; border-radius:3px; flex:1; min-height:32mm; padding:2mm; font-size:8.5pt; color:#111827 }
+  .id-col-right { display:flex; flex-direction:column; gap:0.5mm }
   /* Date field */
   .date-blank { display:inline-block; border-bottom:1px solid #374151; width:50mm; vertical-align:bottom }
   /* Dépenses table */
@@ -141,28 +142,26 @@ export const handler = async (event) => {
   <!-- Identité -->
   <div class="section-title">Coordonnées du membre du personnel</div>
   <div class="id-grid">
-    <div class="id-field">
-      <div class="id-label">Nom</div><div class="id-blank"></div>
+    <!-- Col gauche : Nom, Prénom, IBAN, Téléphone -->
+    <div class="id-col">
+      <div class="id-field">
+        <div class="id-label">Nom</div><div class="id-blank"></div>
+      </div>
+      <div class="id-field">
+        <div class="id-label">Prénom</div><div class="id-blank"></div>
+      </div>
+      <div class="id-field">
+        <div class="id-label">IBAN</div><div class="id-blank"></div>
+      </div>
+      <div class="id-field">
+        <div class="id-label">Téléphone</div><div class="id-blank"></div>
+      </div>
     </div>
-    <div class="id-field">
-      <div class="id-label">Prénom</div><div class="id-blank"></div>
+    <!-- Col droite : Adresse (grande zone) -->
+    <div class="id-col-right">
+      <div class="id-label">Adresse</div>
+      <div class="id-blank-tall"></div>
     </div>
-    <div class="id-field id-field-full">
-      <div class="id-label">IBAN</div><div class="id-blank"></div>
-    </div>
-    <div class="id-field id-field-full">
-      <div class="id-label">Adresse</div><div class="id-blank"></div>
-    </div>
-    <div class="id-field">
-      <div class="id-label">Code Postal</div><div class="id-blank"></div>
-    </div>
-    <div class="id-field">
-      <div class="id-label">Localité</div><div class="id-blank"></div>
-    </div>
-    <div class="id-field">
-      <div class="id-label">Téléphone</div><div class="id-blank"></div>
-    </div>
-    <div class="id-field"></div>
   </div>
 
   <!-- Date de remise -->
