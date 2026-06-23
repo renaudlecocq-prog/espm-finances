@@ -987,3 +987,14 @@ git push origin main
   - Mode réduit : carré orange 40×40 avec icône lien externe (plus d'image externe)
   - Mode étendu : bouton card `#1a0f2e` h=44px, carré orange flush gauche, texte blanc `tracking-wide`
   - `w-full` ajouté pour occuper toute la largeur disponible
+
+---
+
+## [sidebar-smartschool-v3] — Smartschool : icône S-carré, style nav simple
+
+### Changed
+- **Sidebar.jsx** — refonte du lien Smartschool, retour au style "nav link" :
+  - Nouveau composant `SmartschoolIcon` : carré orange (rx=4) avec lettre "S" blanche, 20×20px
+  - Mode étendu : lien simple (gap-3, px-2, py-2.5, rounded-lg) avec icône + texte orange `#E86C00`
+  - Mode réduit : même icône S-carré, sans fond supplémentaire — cohérent avec les autres items réduits
+  - Suppression du fond card sombre `#1a0f2e` et du carré flush gauche 44px
