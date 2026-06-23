@@ -967,3 +967,34 @@ git push origin main
   - "Chers parents…" et description : même police/taille (10.5pt)
   - Section "Informations supplémentaires" affichée si renseignée (encadré gris)
   - Footer : "Avis généré par ESPM**+** le [date]" avec le + en orange
+
+---
+
+## [sidebar-smartschool-button] — Bouton Smartschool redesigné dans la sidebar
+
+### Changed
+- **Sidebar.jsx** — lien Smartschool converti en bouton stylisé :
+  - Fond sombre (`#120f1a`) avec coins arrondis (`rounded-xl`)
+  - Mode étendu : carré orange avec icône lien externe + texte "Smartschool" en blanc
+  - Mode réduit : logo Smartschool (image officielle) centré
+
+---
+
+## [sidebar-smartschool-v2] — Bouton Smartschool affiné
+
+### Changed
+- **Sidebar.jsx** — redesign du bouton Smartschool :
+  - Mode réduit : carré orange 40×40 avec icône lien externe (plus d'image externe)
+  - Mode étendu : bouton card `#1a0f2e` h=44px, carré orange flush gauche, texte blanc `tracking-wide`
+  - `w-full` ajouté pour occuper toute la largeur disponible
+
+---
+
+## [sidebar-smartschool-v3] — Smartschool : icône S-carré, style nav simple
+
+### Changed
+- **Sidebar.jsx** — refonte du lien Smartschool, retour au style "nav link" :
+  - Nouveau composant `SmartschoolIcon` : carré orange (rx=4) avec lettre "S" blanche, 20×20px
+  - Mode étendu : lien simple (gap-3, px-2, py-2.5, rounded-lg) avec icône + texte orange `#E86C00`
+  - Mode réduit : même icône S-carré, sans fond supplémentaire — cohérent avec les autres items réduits
+  - Suppression du fond card sombre `#1a0f2e` et du carré flush gauche 44px
