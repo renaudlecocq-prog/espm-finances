@@ -1103,3 +1103,8 @@ git push origin main
   - Header identique à l'avis (adresse école au lieu du tel/email)
   - Footer identique à l'avis ("Document généré par ESPM+ le [date]")
   - Coordonnées du personnel en grille 2 colonnes (moins de place)
+
+## [v0.61] — 2026-06-23
+
+### Changed
+- **activite-avance-pdf.mjs** : badge "Demande d'avance" déplacé à droite du titre, "Document généré le" supprimé, champ "École" retiré, formulaire coordonnées plus compact

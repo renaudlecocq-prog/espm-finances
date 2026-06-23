@@ -83,13 +83,13 @@ export const handler = async (event) => {
   h1 { font-size:15pt; font-weight:800; color:#1a1a2e; line-height:1.2; margin:0 }
   .date-line { font-size:9pt; color:#888; margin-bottom:6mm }
   /* Section titles */
-  .section-title { font-size:8pt; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#6b7280; margin-bottom:2mm; margin-top:5mm }
+  .section-title { font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#6b7280; margin-bottom:1.5mm; margin-top:4mm }
   /* Identity 2-col grid */
-  .id-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5mm 6mm; margin-bottom:5mm }
-  .id-field { display:flex; flex-direction:column; gap:1mm }
+  .id-grid { display:grid; grid-template-columns:1fr 1fr; gap:1mm 6mm; margin-bottom:4mm }
+  .id-field { display:flex; flex-direction:column; gap:0.5mm }
   .id-field-full { grid-column:1 / -1 }
-  .id-label { font-size:8pt; color:#6b7280; font-weight:600 }
-  .id-blank { border-bottom:1px solid #374151; min-height:6mm; padding-bottom:1mm; font-size:9pt; color:#111827 }
+  .id-label { font-size:7.5pt; color:#6b7280; font-weight:600 }
+  .id-blank { border-bottom:1px solid #374151; min-height:5mm; padding-bottom:0.5mm; font-size:8.5pt; color:#111827 }
   .id-prefill { color:#374151 }
   /* Date field */
   .date-blank { display:inline-block; border-bottom:1px solid #374151; width:50mm; vertical-align:bottom }
@@ -134,10 +134,9 @@ export const handler = async (event) => {
 
   <!-- Title -->
   <div class="title-row">
-    <span class="type-badge">Demande d'avance</span>
     <h1>${esc(act.intitule)}</h1>
+    <span class="type-badge">Demande d'avance</span>
   </div>
-  <div class="date-line">Document généré le ${today}</div>
 
   <!-- Identité -->
   <div class="section-title">Coordonnées du membre du personnel</div>
@@ -147,9 +146,6 @@ export const handler = async (event) => {
     </div>
     <div class="id-field">
       <div class="id-label">Prénom</div><div class="id-blank"></div>
-    </div>
-    <div class="id-field id-field-full">
-      <div class="id-label">École</div><div class="id-blank"><span class="id-prefill">École Secondaire Plurielle Maritime</span></div>
     </div>
     <div class="id-field id-field-full">
       <div class="id-label">IBAN</div><div class="id-blank"></div>
