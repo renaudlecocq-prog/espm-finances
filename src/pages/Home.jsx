@@ -203,9 +203,9 @@ function HomeFinancier() {
           <StatCard icon="⚠️" label="Impayés" value={fmtShort(impayes)}
             sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" />
           <StatCard icon="📋" label="Échelonnements" value={fmtShort(echMontant)}
-            sub="Montant en cours / non respecté" to="/assistant-social" color="orange" />
+            sub="Montant en cours / non respecté" to="/eleves?suivi=echelonnement" color="orange" />
           <StatCard icon="🤝" label="Organismes tiers" value={fmtShort(orgMontant)}
-            sub="Demandes actives (en cours / validé)" to="/assistant-social" color="amber" />
+            sub="Demandes actives (en cours / validé)" to="/eleves?suivi=organisme" color="amber" />
           <StatCard icon="🏦" label="En réserve" value={fmtShort(enReserve)}
             sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" />
         </div>

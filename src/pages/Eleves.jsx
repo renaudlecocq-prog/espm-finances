@@ -65,7 +65,7 @@ export default function Eleves() {
       supabase.from('eleves').select('*').eq('actif', true).order('nom'),
       supabase.from('factures').select('eleve_id, montant'),
       supabase.from('paiements').select('eleve_id, montant'),
-      supabase.from('echelonnements').select('eleve_id, montant'),
+      supabase.from('echelonnements').select('eleve_id, montant, statut'),
       supabase.from('organismes_tiers').select('eleve_id, organisme, statut').in('statut', ['en_cours', 'valide']),
     ])
     const sumBy = (data) => {
@@ -74,6 +74,10 @@ export default function Eleves() {
       return m
     }
     const mF = sumBy(facturesRes.data), mP = sumBy(paiementsRes.data), mE = sumBy(echRes.data)
+    // Set of eleve_id who have an active échelonnement (en_cours or non_respecte)
+    const activeEchIds = new Set(
+      (echRes.data || []).filter(e => ['en_cours', 'non_respecte'].includes(e.statut)).map(e => e.eleve_id)
+    )
     // Map eleve_id → liste d'organismes actifs (en_cours ou valide)
     const mAS = new Map()
     for (const r of (otRes.data || [])) {
@@ -91,6 +95,8 @@ export default function Eleves() {
         _paiements: paiements,
         _ech:       ech,
         _asOrganismes: mAS.get(e.id) || [],
+        _echActif: activeEchIds.has(e.id),
+        _otActif:  (mAS.get(e.id) || []).length > 0,
       }
     }))
     setLoading(false)
@@ -100,6 +106,9 @@ export default function Eleves() {
     const solde = searchParams.get('solde')
     if (solde === 'negatif') setFilters(f => ({ ...f, solde: ['Négatif'] }))
     else if (solde === 'positif') setFilters(f => ({ ...f, solde: ['Positif'] }))
+    const suivi = searchParams.get('suivi')
+    if (suivi === 'echelonnement') setFilters(f => ({ ...f, suivi: ['Échelonnement actif'] }))
+    else if (suivi === 'organisme') setFilters(f => ({ ...f, suivi: ['Organisme tiers actif'] }))
     loadData()
   }, [loadData, searchParams])  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -108,6 +117,7 @@ export default function Eleves() {
   const filterDefs = useMemo(() => [
     { key: 'classe', label: 'Classe',  options: classes },
     { key: 'solde',  label: 'Solde',   options: ['Négatif', 'Neutre', 'Positif'] },
+    { key: 'suivi',  label: 'Suivi social', options: ['Échelonnement actif', 'Organisme tiers actif'] },
   ], [classes])
 
   const filtered = useMemo(() => {
@@ -122,6 +132,12 @@ export default function Eleves() {
         const n = Number(r.solde || 0)
         return filters.solde.some(s => s === 'Négatif' ? n < 0 : s === 'Neutre' ? n === 0 : n > 0)
       })
+    }
+    if (filters.suivi?.length) {
+      d = d.filter(r => filters.suivi.some(s =>
+        s === 'Échelonnement actif' ? r._echActif :
+        s === 'Organisme tiers actif' ? r._otActif : false
+      ))
     }
     const { col, dir } = sort
     return [...d].sort((a, b) => {

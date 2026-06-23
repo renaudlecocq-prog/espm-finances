@@ -1165,3 +1165,9 @@ git push origin main
 ### Changed
 - Renommage "Assistant social" → "Suivi social" dans la sidebar, le header, la page AssistantSocial, et la section de l'accueil
 - Fix : liens des cards Vue financière corrigés (`/assist-social` → `/assistant-social`)
+
+## [v0.69] — 2026-06-23
+
+### Added
+- **Élèves** : nouveau filtre "Suivi social" avec deux options — "Échelonnement actif" et "Organisme tiers actif"
+- **Home.jsx** : cards Échelonnements et Organismes tiers pointent vers `/eleves?suivi=échelonnement` / `/eleves?suivi=organisme` (pré-filtre automatique)
