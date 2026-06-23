@@ -998,3 +998,18 @@ git push origin main
   - Mode étendu : lien simple (gap-3, px-2, py-2.5, rounded-lg) avec icône + texte orange `#E86C00`
   - Mode réduit : même icône S-carré, sans fond supplémentaire — cohérent avec les autres items réduits
   - Suppression du fond card sombre `#1a0f2e` et du carré flush gauche 44px
+
+## [v0.50] — 2026-06-23
+
+### Changed
+- **Activites.jsx — onglet Voyages** :
+  - Champ "Type" masqué (un seul type possible : Voyage scolaire)
+  - Section Finances remplacée pour les voyages :
+    - "Montant par élève (annoncé)" : sélecteur D1 (150€) / D2 (350€) / D3 (550€)
+    - "Montant total annoncé" : calculé automatiquement (tier × nb élèves, lecture seule)
+    - POP supprimé pour les voyages
+  - Logique inversée : c'est le tier par élève qui détermine le montant total
+  - Intramuros/Extramuros : comportement inchangé (montant total + POP → calcul par élève)
+
+### Migration DB
+- `activites` : nouvelle colonne `montant_par_eleve_annonce NUMERIC`

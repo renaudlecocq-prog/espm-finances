@@ -41,6 +41,12 @@ const TRANSPORT_OPTIONS = [
   { value: 'autre',       label: 'Autre' },
 ]
 const TRANSPORT_KNOWN = TRANSPORT_OPTIONS.map(o => o.value)
+
+const VOYAGE_TIERS = [
+  { value: '150', label: 'D1 — 150 €' },
+  { value: '350', label: 'D2 — 350 €' },
+  { value: '550', label: 'D3 — 550 €' },
+]
 const TRANSPORT_LEGACY = { bus_scolaire: 'societe_car', train: 'sncb' }
 
 const parseTransport = str => {
@@ -77,7 +83,7 @@ const EMPTY = {
   lieu: '', heure_depart: '', heure_retour: '',
   lieu_rdv: '', lieu_retour: '', type_transport: '', type_transport_list: [], transport_autre_texte: '', heure_depart_retour: '', tel_organisateur: '', tel_sejour: '',
   local: '', heure_debut: '', heure_fin: '',
-  montant_total: '', pop: '', informations_supplementaires: '',
+  montant_total: '', pop: '', montant_par_eleve_annonce: '', informations_supplementaires: '',
   statut: 'brouillon', statut_facturation: 'en_attente',
   gare_depart: '', gare_arrivee: '', pmr: '', ligne_tec: '',
   responsable_id: null,
@@ -396,6 +402,17 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
   const f = (k, v) => setForm(p => {
     const next = { ...p, [k]: v }
+    // Pour les voyages : auto-calculer montant_total depuis le tier sélectionné
+    if (next.type === 'voyage' && (k === 'montant_par_eleve_annonce' || k === 'nb_eleves')) {
+      const nb     = parseInt(next.nb_eleves || 0)
+      const tier   = parseFloat(next.montant_par_eleve_annonce || 0)
+      next.montant_total = nb > 0 && tier > 0 ? (nb * tier).toFixed(2) : ''
+      if (next.montant_total) {
+        if (p.statut_facturation === 'non_payant') next.statut_facturation = 'en_attente'
+      } else {
+        next.statut_facturation = 'non_payant'
+      }
+    }
     if (k === 'montant_total') {
       const montant = parseFloat(v)
       if (!v || montant === 0) {
@@ -618,15 +635,15 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
               <label className="label">Description</label>
               <textarea className="input" rows={2} value={form.description} onChange={e => f('description', e.target.value)} />
             </div>
-            <div>
-              <label className="label">Type *</label>
-              <select className="input" value={form.type} onChange={e => f('type', e.target.value)}
-                disabled={allowedTypes && allowedTypes.length === 1}>
-                {(!allowedTypes || allowedTypes.includes('extramuros')) && <option value="extramuros">Extramuros</option>}
-                {(!allowedTypes || allowedTypes.includes('intramuros')) && <option value="intramuros">Intramuros</option>}
-                {(!allowedTypes || allowedTypes.includes('voyage')) && <option value="voyage">Voyage scolaire</option>}
-              </select>
-            </div>
+            {(!allowedTypes || allowedTypes.length > 1) && (
+              <div>
+                <label className="label">Type *</label>
+                <select className="input" value={form.type} onChange={e => f('type', e.target.value)}>
+                  {(!allowedTypes || allowedTypes.includes('extramuros')) && <option value="extramuros">Extramuros</option>}
+                  {(!allowedTypes || allowedTypes.includes('intramuros')) && <option value="intramuros">Intramuros</option>}
+                </select>
+              </div>
+            )}
             <div>
               <label className="label">{form.type === 'voyage' ? 'Date de départ' : 'Date'} *</label>
               <input className="input" type="date" value={form.date_debut} onChange={e => f('date_debut', e.target.value)} />
@@ -879,19 +896,39 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
           <div>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Finances</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="label">Montant total (€)</label>
-                <input className="input" type="number" step="0.01" value={form.montant_total} onChange={e => f('montant_total', e.target.value)} />
-              </div>
-              <div>
-                <label className="label">POP (€)</label>
-                {isFinancier
-                  ? <input className="input" type="number" step="0.01" value={form.pop} onChange={e => f('pop', e.target.value)} />
-                  : <div className="input bg-gray-50 text-gray-600">{form.pop ? fmt(parseFloat(form.pop)) : '—'}</div>
-                }
-              </div>
-              <div><label className="label">Montant par élève (calculé)</label>
-                <div className="input bg-gray-50 text-gray-600">{montantParEleve !== null ? fmt(montantParEleve) : '—'}</div>
-              </div>
+              {form.type === 'voyage' ? (<>
+                {/* Voyage : tier par élève → calcul montant total */}
+                <div><label className="label">Montant par élève (annoncé)</label>
+                  <select className="input" value={form.montant_par_eleve_annonce || ''} onChange={e => f('montant_par_eleve_annonce', e.target.value)}>
+                    <option value="">— Choisir —</option>
+                    {VOYAGE_TIERS.map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div><label className="label">Montant total annoncé</label>
+                  <div className="input bg-gray-50 text-gray-600">
+                    {form.montant_par_eleve_annonce && form.nb_eleves
+                      ? fmt(parseFloat(form.montant_par_eleve_annonce) * parseInt(form.nb_eleves || 0))
+                      : '—'}
+                  </div>
+                </div>
+              </>) : (<>
+                {/* Intramuros / Extramuros : montant total + POP → calcul par élève */}
+                <div><label className="label">Montant total (€)</label>
+                  <input className="input" type="number" step="0.01" value={form.montant_total} onChange={e => f('montant_total', e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">POP (€)</label>
+                  {isFinancier
+                    ? <input className="input" type="number" step="0.01" value={form.pop} onChange={e => f('pop', e.target.value)} />
+                    : <div className="input bg-gray-50 text-gray-600">{form.pop ? fmt(parseFloat(form.pop)) : '—'}</div>
+                  }
+                </div>
+                <div><label className="label">Montant par élève (calculé)</label>
+                  <div className="input bg-gray-50 text-gray-600">{montantParEleve !== null ? fmt(montantParEleve) : '—'}</div>
+                </div>
+              </>)}
 
 
               {isFinancier && (
