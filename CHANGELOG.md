@@ -977,3 +977,13 @@ git push origin main
   - Fond sombre (`#120f1a`) avec coins arrondis (`rounded-xl`)
   - Mode étendu : carré orange avec icône lien externe + texte "Smartschool" en blanc
   - Mode réduit : logo Smartschool (image officielle) centré
+
+---
+
+## [sidebar-smartschool-v2] — Bouton Smartschool affiné
+
+### Changed
+- **Sidebar.jsx** — redesign du bouton Smartschool :
+  - Mode réduit : carré orange 40×40 avec icône lien externe (plus d'image externe)
+  - Mode étendu : bouton card `#1a0f2e` h=44px, carré orange flush gauche, texte blanc `tracking-wide`
+  - `w-full` ajouté pour occuper toute la largeur disponible

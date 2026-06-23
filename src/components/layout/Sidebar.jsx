@@ -183,34 +183,39 @@ export default function Sidebar() {
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', margin: '6px 4px' }} />
 
         {/* Smartschool */}
-        <a
-          href="https://espmaritime.smartschool.be/"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Smartschool"
-          className="flex items-center rounded-xl overflow-hidden transition-opacity hover:opacity-80"
-          style={{ backgroundColor: '#120f1a' }}
-        >
-          {collapsed ? (
-            <img
-              src="https://www.smartschool.be/wp/wp-content/uploads/2016/06/smartschool_app_300x300.png"
-              alt="Smartschool"
-              style={{ width: 40, height: 40, objectFit: 'contain', display: 'block', margin: '0 auto' }}
-            />
-          ) : (
-            <>
-              <span
-                className="flex items-center justify-center shrink-0"
-                style={{ backgroundColor: '#E86C00', width: 40, height: 40 }}
-              >
-                <SvgIcon name="smartschool" size={16} style={{ color: 'white' }} />
-              </span>
-              <span className="text-white text-sm font-semibold px-3 whitespace-nowrap">
-                Smartschool
-              </span>
-            </>
-          )}
-        </a>
+        {collapsed ? (
+          /* Mode réduit : carré orange centré */
+          <a
+            href="https://espmaritime.smartschool.be/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Smartschool"
+            className="flex items-center justify-center rounded-xl transition-opacity hover:opacity-80 mx-auto"
+            style={{ backgroundColor: '#E86C00', width: 40, height: 40 }}
+          >
+            <SvgIcon name="smartschool" size={16} />
+          </a>
+        ) : (
+          /* Mode étendu : bouton card sombre */
+          <a
+            href="https://espmaritime.smartschool.be/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Smartschool"
+            className="w-full flex items-center rounded-xl overflow-hidden transition-opacity hover:opacity-85"
+            style={{ backgroundColor: '#1a0f2e', height: 44 }}
+          >
+            <span
+              className="flex items-center justify-center shrink-0"
+              style={{ backgroundColor: '#E86C00', width: 44, height: 44 }}
+            >
+              <SvgIcon name="smartschool" size={16} />
+            </span>
+            <span className="text-white text-sm font-semibold px-3 tracking-wide whitespace-nowrap">
+              Smartschool
+            </span>
+          </a>
+        )}
       </nav>
 
       {/* ── Pied : notifications, admin, profil, déconnexion ─────────── */}
