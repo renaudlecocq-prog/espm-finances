@@ -1022,3 +1022,8 @@ git push origin main
   - Fix : `hasSelection` et `nbEleves` déplacés avant `f()` et utilisés dans la closure
   - Ajout d'un `useEffect` pour recalculer quand `nbEleves` change (ajout/retrait de classe)
   - Statut facturation passe correctement à "En attente" dès qu'un tier est sélectionné
+
+## [v0.52] — 2026-06-23
+
+### Changed
+- **Activites.jsx** : section "Documents & Factures" masquée lors de la création d'une activité (uniquement visible en mode édition)

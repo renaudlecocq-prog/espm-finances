@@ -991,8 +991,8 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
             />
           </div>
 
-          {/* Documents & Factures */}
-          <div>
+          {/* Documents & Factures — masqué à la création */}
+          {editRow?.id && <div>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Documents & Factures</h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -1037,7 +1037,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
             {(pendingDocs.length > 0 || pendingFactures.length > 0) && (
               <p className="text-xs text-gray-400 mt-2">Uploadés automatiquement après sauvegarde.</p>
             )}
-          </div>
+          </div>}
         </div>
 
         {/* Footer */}
