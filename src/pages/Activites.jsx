@@ -472,6 +472,8 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
 
   const montantTotalReel = depenses.reduce((s, d) => s + parseFloat(d.montant_total || 0), 0)
   const montantParEleveReel = nbTotalEleves > 0 ? montantTotalReel / nbTotalEleves : 0
+  const montantIncompressibleTotal = depenses.filter(d => d.incompressible).reduce((s, d) => s + parseFloat(d.montant_total || 0), 0)
+  const montantAbsentsReel = nbTotalEleves > 0 ? montantIncompressibleTotal / nbTotalEleves : 0
 
   const PAYE_PAR_OPTIONS = [
     ...staffPeople.map(p => p.label),
@@ -648,7 +650,7 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
 
             {/* Totals */}
             <div className="mt-3 pt-3 border-t border-gray-200">
-              <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="grid grid-cols-3 gap-2 mb-3">
                 <div className="bg-white rounded-lg border border-gray-200 px-3 py-2 text-center">
                   <p className="text-[10px] text-gray-400 mb-0.5">Montant total réel</p>
                   <p className="font-bold text-sm text-gray-800">{fmt(montantTotalReel)}</p>
@@ -656,6 +658,12 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
                 <div className="bg-white rounded-lg border border-gray-200 px-3 py-2 text-center">
                   <p className="text-[10px] text-gray-400 mb-0.5">Par élève réel</p>
                   <p className="font-bold text-sm text-gray-800">{fmt(montantParEleveReel)}</p>
+                </div>
+                <div className={`rounded-lg border px-3 py-2 text-center ${absents.length > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200 opacity-40'}`}>
+                  <p className="text-[10px] text-gray-400 mb-0.5">Absents réel</p>
+                  <p className={`font-bold text-sm ${absents.length > 0 ? 'text-amber-700' : 'text-gray-400'}`}>
+                    {absents.length > 0 ? fmt(montantAbsentsReel) : '—'}
+                  </p>
                 </div>
               </div>
 

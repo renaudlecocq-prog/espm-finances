@@ -1073,3 +1073,11 @@ git push origin main
   - L'effet DOM remet à zéro `padding`, `maxWidth`, `margin`, `width` de `<main>` en mode édition (au lieu de marges négatives)  
   - Le conteneur d'édition utilise `flex: 1 1 0 / minHeight: 0` au lieu de `height: calc(100vh - 50px)`
   - Le wrapper du return Activites passe en `flex flex-col h-full overflow-hidden` en mode édition → le contenu occupe exactement l'espace disponible sans débordement
+
+## [v0.58] — 2026-06-23
+
+### Added
+- **DepensesPanel (voyages)** : ajout colonne "Absents réel" dans la ligne des totaux
+  - 3 colonnes : Montant total réel | Par élève réel | Absents réel
+  - "Absents réel" = somme des dépenses incompressibles / nb total élèves
+  - Affiché en amber si des absents sont signalés, grisé avec "—" sinon
