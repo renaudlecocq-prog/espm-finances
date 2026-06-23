@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
-import { Search, X, FileText, Receipt, ChevronDown, Plus, Loader2, Trash2, CheckCheck } from 'lucide-react'
+import { Search, X, FileText, Receipt, ChevronDown, Plus, Loader2, Trash2, CheckCheck, ChevronLeft } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
@@ -63,6 +63,15 @@ const parseTransport = str => {
 }
 
 // Colonnes de groupes — synchronisé avec Groupes.jsx
+const DEPENSES_CATEGORIES = [
+  { value: 'activite',    label: 'Activité' },
+  { value: 'hebergement', label: 'Hébergement' },
+  { value: 'nourriture',  label: 'Nourriture' },
+  { value: 'transport',   label: 'Transport' },
+  { value: 'urgences',    label: 'Urgences' },
+  { value: 'autres',      label: 'Autres' },
+]
+
 const GROUP_COLS = [
   { key: 'rlmo',            label: 'RLMO' },
   { key: 'obs_d2',          label: 'OBS D2' },
@@ -261,6 +270,40 @@ function calcNbEleves(allEleves, form) {
   return count
 }
 
+function getParticipantEleves(allEleves, form) {
+  const { classes_incluses, groupes_inclus, classes_exclues, groupes_exclus, eleves_exclus } = form
+  if (!allEleves.length) return []
+  const hasAddC = classes_incluses.length > 0
+  const hasAddG = groupes_inclus.length > 0
+  if (!hasAddC && !hasAddG) return []
+
+  const matchesGroups = (eleve, groupKeys) =>
+    groupKeys.some(key => {
+      const [col, val] = key.split(':')
+      const eleveVal = col === 'rlmo' ? getRlmo(eleve) : eleve[col]
+      return eleveVal === val
+    })
+
+  let addSet = new Set()
+  if (hasAddC && hasAddG) {
+    const inC = new Set(allEleves.filter(e => classes_incluses.includes(e.classe)).map(e => e.id))
+    allEleves.filter(e => inC.has(e.id) && matchesGroups(e, groupes_inclus)).forEach(e => addSet.add(e.id))
+  } else if (hasAddC) {
+    allEleves.filter(e => classes_incluses.includes(e.classe)).forEach(e => addSet.add(e.id))
+  } else {
+    allEleves.filter(e => matchesGroups(e, groupes_inclus)).forEach(e => addSet.add(e.id))
+  }
+  const removeSet = new Set()
+  allEleves.filter(e => classes_exclues.includes(e.classe)).forEach(e => removeSet.add(e.id))
+  if (groupes_exclus.length > 0) allEleves.filter(e => matchesGroups(e, groupes_exclus)).forEach(e => removeSet.add(e.id))
+  ;(eleves_exclus || []).forEach(id => removeSet.add(id))
+
+  return allEleves
+    .filter(e => addSet.has(e.id) && !removeSet.has(e.id))
+    .map(e => ({ value: e.id, label: `${e.nom || ''} ${e.prenom || ''} (${e.classe || ''})`.trim() }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
+
 // ── Staged file upload avec drag & drop ────────────────────────────────────
 function AvisGenerator({ activiteId, intitule }) {
   const [loading, setLoading] = useState(false)
@@ -349,7 +392,297 @@ function FileStage({ label, files, setFiles }) {
 }
 
 // ── Activity form modal ────────────────────────────────────────────────────
-function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staffList, groupOptions, allClasses, onClose, onSaved, allowedTypes, defaultType }) {
+
+// ── DepensesPanel ────────────────────────────────────────────────────────
+function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participantEleves,
+                         pendingDocs, setPendingDocs, savedDocs, viewDoc, delSavedDoc,
+                         pendingFactures, setPendingFactures, savedFactures,
+                         intitule, formType }) {
+  const [depenses, setDepenses]     = useState([])
+  const [absents, setAbsents]       = useState([])
+  const [loadingDep, setLoadingDep] = useState(true)
+  const [uploadingRow, setUploadingRow] = useState(null)
+  const fileRefs = useRef({})
+
+  useEffect(() => {
+    if (!activiteId) return
+    Promise.all([
+      supabase.from('activite_depenses').select('*').eq('activite_id', activiteId).order('ordre').order('created_at'),
+      supabase.from('activite_absents').select('eleve_id').eq('activite_id', activiteId),
+    ]).then(([depRes, absRes]) => {
+      setDepenses(depRes.data || [])
+      setAbsents((absRes.data || []).map(r => r.eleve_id))
+      setLoadingDep(false)
+    })
+  }, [activiteId])
+
+  const nbPresents = Math.max(0, nbTotalEleves - absents.length)
+
+  const effectiveNb = dep => {
+    if (dep.nb_eleves_override != null) return dep.nb_eleves_override
+    return dep.incompressible ? nbTotalEleves : nbPresents
+  }
+
+  const addDepense = async () => {
+    const { data, error } = await supabase.from('activite_depenses').insert({
+      activite_id: activiteId, categorie: 'autres', intitule: '',
+      montant_total: 0, incompressible: true, paye_par: '', ordre: depenses.length,
+    }).select().single()
+    if (!error && data) setDepenses(prev => [...prev, data])
+  }
+
+  const updateDepense = async (id, updates) => {
+    setDepenses(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d))
+    await supabase.from('activite_depenses').update(updates).eq('id', id)
+  }
+
+  const deleteDepense = async (id) => {
+    if (!confirm('Supprimer cette dépense ?')) return
+    setDepenses(prev => prev.filter(d => d.id !== id))
+    await supabase.from('activite_depenses').delete().eq('id', id)
+  }
+
+  const toggleAbsent = async (eleveId) => {
+    const isAbsent = absents.includes(eleveId)
+    if (isAbsent) {
+      setAbsents(prev => prev.filter(id => id !== eleveId))
+      await supabase.from('activite_absents').delete().eq('activite_id', activiteId).eq('eleve_id', eleveId)
+    } else {
+      setAbsents(prev => [...prev, eleveId])
+      await supabase.from('activite_absents').insert({ activite_id: activiteId, eleve_id: eleveId })
+    }
+  }
+
+  const uploadDepenseDoc = async (depId, file) => {
+    if (!file || file.type !== 'application/pdf') return
+    setUploadingRow(depId)
+    try {
+      const path = `${activiteId}/${depId}/${file.name}`
+      const { error: upErr } = await supabase.storage.from('activite-depenses').upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      await updateDepense(depId, { document_path: path })
+    } catch(e) { alert('Erreur upload: ' + (e?.message || e)) }
+    finally { setUploadingRow(null) }
+  }
+
+  const viewDepenseDoc = async (path) => {
+    const { data } = await supabase.storage.from('activite-depenses').createSignedUrl(path, 300)
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+  }
+
+  const montantTotalReel = depenses.reduce((s, d) => s + parseFloat(d.montant_total || 0), 0)
+  const montantParEleveReel = nbTotalEleves > 0 ? montantTotalReel / nbTotalEleves : 0
+
+  const PAYE_PAR_OPTIONS = [
+    ...staffPeople.map(p => p.label),
+    'Econome', 'POP',
+  ]
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden bg-white border-l border-gray-100">
+      <div className="px-4 py-3 border-b border-gray-100 shrink-0">
+        <h3 className="font-semibold text-sm text-gray-700">Documents & Factures</h3>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {/* Top row: Documents + Avis */}
+        <div className="grid grid-cols-2 gap-3 p-3 border-b border-gray-100">
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Documents PDF</p>
+            <FileStage label="Documents (PDF)" files={pendingDocs} setFiles={setPendingDocs} compact />
+            {savedDocs.length > 0 && (
+              <ul className="mt-1.5 space-y-1">
+                {savedDocs.map(d => (
+                  <li key={d.id} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 rounded px-2 py-1">
+                    <span className="flex-1 truncate text-[11px]">{d.nom_fichier}</span>
+                    <button onClick={() => viewDoc(d)} className="text-primary hover:underline text-[11px] shrink-0">Voir</button>
+                    <button onClick={() => delSavedDoc(d)} className="text-red-400 hover:underline text-[11px] shrink-0">✕</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Générer avis</p>
+            {formType === 'extramuros' || formType === 'intramuros' ? (
+              <AvisGenerator activiteId={activiteId} intitule={intitule} />
+            ) : (
+              <p className="text-xs text-gray-400 italic text-[11px]">Non disponible pour les voyages.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Factures section */}
+        {savedFactures.length > 0 && (
+          <div className="px-3 py-2 border-b border-gray-100">
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Factures PDF</p>
+            <ul className="space-y-1">
+              {savedFactures.map(d => (
+                <li key={d.id} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 rounded px-2 py-1">
+                  <span className="flex-1 truncate text-[11px]">{d.nom_fichier}</span>
+                  <button onClick={() => viewDoc(d)} className="text-primary hover:underline text-[11px] shrink-0">Voir</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {pendingFactures.length > 0 && (
+          <div className="px-3 py-2 border-b border-gray-100">
+            <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} compact />
+          </div>
+        )}
+        {pendingFactures.length === 0 && savedFactures.length === 0 && (
+          <div className="px-3 py-2 border-b border-gray-100">
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Factures PDF</p>
+            <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} compact />
+          </div>
+        )}
+
+        {/* Dépenses (voyages only) */}
+        {type === 'voyage' && (
+          <div className="p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Dépenses</h4>
+              <button onClick={addDepense}
+                className="flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 font-medium">
+                <Plus size={12} /> Ajouter
+              </button>
+            </div>
+
+            {loadingDep ? (
+              <p className="text-xs text-gray-400 text-center py-3">Chargement…</p>
+            ) : depenses.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-3 italic">Aucune dépense enregistrée</p>
+            ) : (
+              <div className="space-y-2">
+                {depenses.map(dep => {
+                  const effNb = effectiveNb(dep)
+                  const mpe   = effNb > 0 ? parseFloat(dep.montant_total || 0) / effNb : 0
+                  return (
+                    <div key={dep.id} className="border border-gray-200 rounded-lg p-2 text-xs bg-gray-50/50">
+                      {/* Row 1: Catégorie + Intitulé */}
+                      <div className="grid grid-cols-2 gap-1 mb-1.5">
+                        <select className="input text-xs py-1 px-2" value={dep.categorie}
+                          onChange={e => updateDepense(dep.id, { categorie: e.target.value })}>
+                          {DEPENSES_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                        </select>
+                        <input className="input text-xs py-1 px-2" placeholder="Intitulé"
+                          defaultValue={dep.intitule}
+                          onBlur={e => { if (e.target.value !== dep.intitule) updateDepense(dep.id, { intitule: e.target.value }) }} />
+                      </div>
+                      {/* Row 2: Montant + Nb élèves + Par élève */}
+                      <div className="grid grid-cols-3 gap-1 mb-1.5">
+                        <div>
+                          <p className="text-[10px] text-gray-400 mb-0.5">Montant (€)</p>
+                          <input className="input text-xs py-1 px-2" type="number" step="0.01" min="0"
+                            defaultValue={dep.montant_total}
+                            onBlur={e => {
+                              const v = parseFloat(e.target.value) || 0
+                              if (v !== parseFloat(dep.montant_total || 0)) updateDepense(dep.id, { montant_total: v })
+                            }} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-gray-400 mb-0.5">Nb élèves</p>
+                          <input className="input text-xs py-1 px-2" type="number" min="0"
+                            value={dep.nb_eleves_override != null ? dep.nb_eleves_override : effNb}
+                            onChange={e => {
+                              const raw = e.target.value
+                              const v = raw === '' ? null : (parseInt(raw) || 0)
+                              updateDepense(dep.id, { nb_eleves_override: v })
+                            }} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-gray-400 mb-0.5">Par élève</p>
+                          <div className="input text-xs py-1 px-2 bg-gray-100 text-gray-500 select-none">
+                            {mpe > 0 ? `${mpe.toFixed(2)} €` : '—'}
+                          </div>
+                        </div>
+                      </div>
+                      {/* Row 3: Incompressible + Payé par */}
+                      <div className="grid grid-cols-2 gap-1 mb-1.5">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="checkbox" checked={!!dep.incompressible}
+                            onChange={e => updateDepense(dep.id, { incompressible: e.target.checked })}
+                            className="rounded" />
+                          <span className="text-[11px] text-gray-600">Incompressible</span>
+                        </label>
+                        <select className="input text-xs py-1 px-2" value={dep.paye_par || ''}
+                          onChange={e => updateDepense(dep.id, { paye_par: e.target.value })}>
+                          <option value="">— Payé par —</option>
+                          {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                      {/* Row 4: Doc + Delete */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <input type="file" accept="application/pdf" className="hidden"
+                            ref={el => { if (el) fileRefs.current[dep.id] = el }}
+                            onChange={e => { const f = e.target.files[0]; e.target.value=''; if(f) uploadDepenseDoc(dep.id, f) }} />
+                          {dep.document_path ? (
+                            <button onClick={() => viewDepenseDoc(dep.document_path)}
+                              className="text-primary text-[11px] hover:underline">
+                              📎 Voir justificatif
+                            </button>
+                          ) : (
+                            <button onClick={() => fileRefs.current[dep.id]?.click()}
+                              disabled={uploadingRow === dep.id}
+                              className="text-gray-400 text-[11px] hover:text-primary transition-colors disabled:opacity-50">
+                              {uploadingRow === dep.id ? 'Upload…' : '📎 Joindre justificatif'}
+                            </button>
+                          )}
+                        </div>
+                        <button onClick={() => deleteDepense(dep.id)}
+                          className="text-red-300 hover:text-red-500 transition-colors p-0.5 rounded">
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Totals */}
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="bg-white rounded-lg border border-gray-200 px-3 py-2 text-center">
+                  <p className="text-[10px] text-gray-400 mb-0.5">Montant total réel</p>
+                  <p className="font-bold text-sm text-gray-800">{fmt(montantTotalReel)}</p>
+                </div>
+                <div className="bg-white rounded-lg border border-gray-200 px-3 py-2 text-center">
+                  <p className="text-[10px] text-gray-400 mb-0.5">Par élève réel</p>
+                  <p className="font-bold text-sm text-gray-800">{fmt(montantParEleveReel)}</p>
+                </div>
+              </div>
+
+              {/* Élèves absents */}
+              {participantEleves.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                    Élèves absents {absents.length > 0 && <span className="text-orange-500 normal-case font-normal">({absents.length} absent{absents.length > 1 ? 's' : ''}, {nbPresents} présents)</span>}
+                  </p>
+                  <MultiSearchSelect
+                    options={participantEleves}
+                    value={absents}
+                    onChange={ids => {
+                      const toAdd    = ids.filter(id => !absents.includes(id))
+                      const toRemove = absents.filter(id => !ids.includes(id))
+                      toAdd.forEach(id => toggleAbsent(id))
+                      toRemove.forEach(id => toggleAbsent(id))
+                    }}
+                    placeholder="Rechercher des élèves absents…"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staffList, groupOptions, allClasses, onClose, onSaved, allowedTypes, defaultType, isPage = false }) {
   const { user, profile } = useAuth()
   const canChooseResponsable = isAdmin || isFinancier
   const { list: initTransportList, autre: initTransportAutre } = parseTransport(editRow?.type_transport || '')
@@ -444,6 +777,23 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
       }
     }
   }, [nbEleves, form.type, form.montant_par_eleve_annonce]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const participantEleves = useMemo(() => getParticipantEleves(allEleves, form),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allEleves, form.classes_incluses, form.groupes_inclus, form.classes_exclues, form.groupes_exclus, form.eleves_exclus])
+
+  const staffPeopleForDepenses = useMemo(() => {
+    const people = []
+    if (form.responsable_id) {
+      const s = staffList.find(s => s.value === form.responsable_id)
+      if (s) people.push(s)
+    }
+    ;(form.accompagnateur_ids || []).forEach(id => {
+      const s = staffList.find(s => s.value === id)
+      if (s && !people.find(p => p.value === id)) people.push(s)
+    })
+    return people
+  }, [form.responsable_id, form.accompagnateur_ids, staffList])
 
   const eleveOptions = useMemo(() =>
     allEleves
@@ -603,43 +953,9 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
     ? (form.type === 'voyage' ? 'Modifier le voyage' : "Modifier l'activité")
     : (form.type === 'voyage' ? 'Nouveau voyage' : 'Nouvelle activité')
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={handleBackdropClose} />
-      <div className="relative z-10 w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-          <h2 className="font-bold text-gray-800 text-lg">{modalTitle}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
-        </div>
+  const formFields = (
+    <>
 
-        {/* Two-column body */}
-        <div className="flex flex-1 overflow-hidden min-h-0">
-
-          {/* LEFT — Commentaires (mode édition uniquement) */}
-          {editRow?.id && (
-            <div className="w-[26rem] shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
-              <Commentaires
-                entityType="activite"
-                entityId={editRow.id}
-                entityLabel={editRow.intitule || 'Activité'}
-              />
-            </div>
-          )}
-
-          {/* RIGHT — Formulaire */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 px-6 py-5 space-y-4 overflow-y-auto">
-          {errors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-              Champs manquants : {errors.map(e => FIELD_LABELS[e] || e).join(', ')}
-            </div>
-          )}
-          {saveError && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-              Erreur : {saveError}
-            </div>
-          )}
 
           {/* Infos générales */}
           <div className="grid grid-cols-2 gap-4">
@@ -991,8 +1307,8 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
             />
           </div>
 
-          {/* Documents & Factures — masqué à la création */}
-          {editRow?.id && <div>
+          {/* Documents & Factures — uniquement en mode modal */}
+          {!isPage && editRow?.id && <div>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Documents & Factures</h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -1038,33 +1354,135 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
               <p className="text-xs text-gray-400 mt-2">Uploadés automatiquement après sauvegarde.</p>
             )}
           </div>}
+
+    </>
+  )
+
+  // ── Shared: footer buttons ──────────────────────────────────────────────
+  const formFooter = (
+    <div className="flex gap-2 px-6 py-4 border-t border-gray-100 shrink-0 flex-wrap">
+      <button onClick={() => save('publie')} disabled={saving}
+        className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
+        {saving && savingAs === 'publie' && <Loader2 size={14} className="animate-spin" />}
+        {saving && savingAs === 'publie' ? 'Publication…' : '✓ Publier'}
+      </button>
+      <button onClick={() => save('brouillon')} disabled={saving}
+        className="py-1.5 px-4 text-sm rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5 font-medium">
+        {saving && savingAs === 'brouillon' && <Loader2 size={14} className="animate-spin" />}
+        {saving && savingAs === 'brouillon' ? 'Enregistrement…' : '✎ Brouillon'}
+      </button>
+      {!isPage && <button onClick={onClose} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>}
+      <div className="flex-1" />
+      {isFinancier && editRow?.id && (
+        <button type="button" onClick={async () => {
+          if (!confirm('Supprimer définitivement cette activité ? Cette action est irréversible.')) return
+          await supabase.from('activites').delete().eq('id', editRow.id)
+          onSaved(); onClose()
+        }} className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-lg px-3 py-1.5 transition-colors">
+          <Trash2 size={13} /> Supprimer
+        </button>
+      )}
+    </div>
+  )
+
+  // ── PAGE MODE (3 colonnes pleine page) ────────────────────────────────
+  if (isPage) {
+    const nbForPanel = hasSelection ? nbEleves : (parseInt(form.nb_eleves) || 0)
+    return (
+      <div className="flex h-full overflow-hidden">
+        {/* Col 1/4 — Messagerie */}
+        <div className="w-1/4 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden bg-white">
+          <Commentaires
+            entityType="activite"
+            entityId={editRow.id}
+            entityLabel={editRow.intitule || 'Activité'}
+          />
         </div>
 
-        {/* Footer */}
-        <div className="flex gap-2 px-6 py-4 border-t border-gray-100 shrink-0 flex-wrap">
-          <button onClick={() => save('publie')} disabled={saving}
-            className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
-            {saving && savingAs === 'publie' && <Loader2 size={14} className="animate-spin" />}
-            {saving && savingAs === 'publie' ? 'Publication…' : '✓ Publier'}
-          </button>
-          <button onClick={() => save('brouillon')} disabled={saving}
-            className="py-1.5 px-4 text-sm rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5 font-medium">
-            {saving && savingAs === 'brouillon' && <Loader2 size={14} className="animate-spin" />}
-            {saving && savingAs === 'brouillon' ? 'Enregistrement…' : '✎ Brouillon'}
-          </button>
-          <button onClick={onClose} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>
-          <div className="flex-1" />
+        {/* Col 2/4 — Formulaire */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-white">
+          <div className="flex-1 px-6 py-5 space-y-4 overflow-y-auto">
+            {errors.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+                Champs manquants : {errors.map(e => FIELD_LABELS[e] || e).join(', ')}
+              </div>
+            )}
+            {saveError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+                Erreur : {saveError}
+              </div>
+            )}
+            {formFields}
+          </div>
+          {formFooter}
+        </div>
 
-          {isFinancier && editRow?.id && (
-            <button type="button" onClick={async () => {
-              if (!confirm('Supprimer définitivement cette activité ? Cette action est irréversible.')) return
-              await supabase.from('activites').delete().eq('id', editRow.id)
-              onSaved(); onClose()
-            }} className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-lg px-3 py-1.5 transition-colors">
-              <Trash2 size={13} /> Supprimer
-            </button>
+        {/* Col 3-4/4 — Documents & Factures */}
+        <div className="w-1/4 shrink-0 overflow-hidden flex flex-col">
+          <DepensesPanel
+            activiteId={editRow.id}
+            type={form.type}
+            nbTotalEleves={nbForPanel}
+            staffPeople={staffPeopleForDepenses}
+            participantEleves={participantEleves}
+            pendingDocs={pendingDocs}
+            setPendingDocs={setPendingDocs}
+            savedDocs={savedDocs}
+            viewDoc={viewDoc}
+            delSavedDoc={delSavedDoc}
+            pendingFactures={pendingFactures}
+            setPendingFactures={setPendingFactures}
+            savedFactures={savedFactures}
+            intitule={form.intitule}
+            formType={form.type}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // ── MODAL MODE (overlay classique) ────────────────────────────────────
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={handleBackdropClose} />
+      <div className="relative z-10 w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+          <h2 className="font-bold text-gray-800 text-lg">{modalTitle}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+        </div>
+
+        {/* Two-column body */}
+        <div className="flex flex-1 overflow-hidden min-h-0">
+
+          {/* LEFT — Commentaires (mode édition uniquement) */}
+          {editRow?.id && (
+            <div className="w-[26rem] shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+              <Commentaires
+                entityType="activite"
+                entityId={editRow.id}
+                entityLabel={editRow.intitule || 'Activité'}
+              />
+            </div>
           )}
+
+          {/* RIGHT — Formulaire */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 px-6 py-5 space-y-4 overflow-y-auto">
+          {errors.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+              Champs manquants : {errors.map(e => FIELD_LABELS[e] || e).join(', ')}
+            </div>
+          )}
+          {saveError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+              Erreur : {saveError}
+            </div>
+          )}
+          {formFields}
         </div>
+
+        {formFooter}
           </div>{/* end RIGHT */}
         </div>{/* end two-column */}
       </div>
@@ -1190,6 +1608,7 @@ export default function Activites() {
   const [docsCategorie, setDocsCategorie] = useState('document')
   const [quickFilter, setQuickFilter]     = useState(null) // null | 'passees' | 'avenir' | 'mes'
   const [mainTab, setMainTab]               = useState('intra_extra') // 'intra_extra' | 'voyages'
+  const isEditPage = !!(editRow?.id && showModal)
   const [search, setSearch] = useState('')
 
   // Données pour le formulaire
@@ -1407,17 +1826,27 @@ export default function Activites() {
       subtitle="Gestion des activités scolaires et extrascolaires"
       leftActions={
         <div className="flex items-center gap-2">
+          {isEditPage && (
+            <>
+              <button
+                onClick={() => { setShowModal(false); setEditRow(null) }}
+                className="flex items-center gap-1 text-white/80 hover:text-white text-xs font-medium transition-colors px-2 py-1 rounded-lg hover:bg-white/10">
+                <ChevronLeft size={15} /> Retour
+              </button>
+              <div className="w-px self-stretch" style={{ backgroundColor: 'rgba(255,255,255,0.20)' }} />
+            </>
+          )}
           <div className="flex items-center p-0.5 rounded-lg shrink-0"
             style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
             {mainTabs.map(t => (
-              <button key={t.key} onClick={() => { setMainTab(t.key); setQuickFilter(null) }}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${mainTab === t.key ? 'bg-white text-green-700 shadow-sm' : 'text-white/60 hover:text-white/90'}`}>
+              <button key={t.key} onClick={() => { if (!isEditPage) { setMainTab(t.key); setQuickFilter(null) } }}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${mainTab === t.key ? 'bg-white text-green-700 shadow-sm' : 'text-white/60 hover:text-white/90'} ${isEditPage ? 'opacity-50 cursor-default' : ''}`}>
                 {t.label}
               </button>
             ))}
           </div>
-          <div className="w-px self-stretch" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
-          {quickTabs.map(t => (
+          {!isEditPage && <div className="w-px self-stretch" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />}
+          {!isEditPage && quickTabs.map(t => (
             <button key={t.key}
               onClick={() => setQuickFilter(q => q === t.key ? null : t.key)}
               className="text-xs cursor-pointer select-none transition-all"
@@ -1454,6 +1883,25 @@ export default function Activites() {
         ) : null
       }
     />
+    {isEditPage ? (
+      <div className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 72px)' }}>
+        <ActivityModal
+          isPage={true}
+          editRow={editRow}
+          isAdmin={isAdmin}
+          isFinancier={isFinancier || isAdmin}
+          userId={user?.id}
+          allEleves={allEleves}
+          staffList={staffList}
+          groupOptions={groupOptions}
+          allClasses={allClasses}
+          onClose={() => { setShowModal(false); setEditRow(null); reload() }}
+          onSaved={reload}
+          allowedTypes={mainTab === 'intra_extra' ? ['extramuros', 'intramuros'] : ['voyage']}
+          defaultType={mainTab === 'intra_extra' ? 'extramuros' : 'voyage'}
+        />
+      </div>
+    ) : (
     <div className="p-6 max-w-screen-xl mx-auto">
       <div className="grid gap-3">
         {displayed.length === 0 && <div className="card p-8 text-center text-gray-400">Aucune activité</div>}
@@ -1585,9 +2033,11 @@ export default function Activites() {
         })}
       </div>
 
-      {showModal && (
+      {showModal && !editRow?.id && (
         <ActivityModal
+          isPage={false}
           editRow={editRow}
+          isAdmin={isAdmin}
           isFinancier={isFinancier || isAdmin}
           userId={user?.id}
           allEleves={allEleves}
@@ -1602,6 +2052,7 @@ export default function Activites() {
       )}
       {docsRow && <DocsModal row={docsRow} categorie={docsCategorie} onClose={() => setDocsRow(null)} onDocsChanged={reloadDocsSets} />}
     </div>
+    )}
     </>
   )
 }

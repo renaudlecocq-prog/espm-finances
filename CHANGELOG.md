@@ -1027,3 +1027,20 @@ git push origin main
 
 ### Changed
 - **Activites.jsx** : section "Documents & Factures" masquée lors de la création d'une activité (uniquement visible en mode édition)
+
+## [v0.53] — 2026-06-23
+
+### Added
+- **Activites.jsx — Édition en page entière** :
+  - Modal d'édition transformé en page 3 colonnes (1/4 Messages | 2/4 Formulaire | 1/4 Documents & Dépenses)
+  - Bouton "Retour" dans le PageHeader à gauche des onglets Intra-Extramuros / Voyages
+  - Création reste en modal (sans l'ID de l'activité)
+- **Composant DepensesPanel** (colonne droite) :
+  - Documents PDF : upload glisser-déposer
+  - Factures PDF : idem
+  - Générer avis : uniquement pour intramuros/extramuros
+  - Table dépenses (voyages uniquement) : Catégorie, Intitulé, Montant, Nb élèves, Par élève, Incompressible, Payé par, Justificatif PDF
+  - Calculs automatiques : Montant total réel, Montant par élève réel
+  - Élèves absents : réduction des dépenses non-incompressibles
+- **DB** : tables `activite_depenses` + `activite_absents` avec RLS
+- **Helpers** : `getParticipantEleves()` pour filtrer les élèves participants
