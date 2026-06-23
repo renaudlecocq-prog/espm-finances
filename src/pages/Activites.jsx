@@ -1614,13 +1614,37 @@ export default function Activites() {
   const [mainTab, setMainTab]               = useState('intra_extra') // 'intra_extra' | 'voyages'
   const isEditPage = !!(editRow?.id && showModal)
 
-  // Bloquer le scroll général quand on est en mode page d'édition
+  // Bloquer le scroll + supprimer padding/maxWidth de main en mode page
   useEffect(() => {
-    const el = document.getElementById('page-content-scroll')
-    if (!el) return
-    if (isEditPage) el.style.overflowY = 'hidden'
-    else el.style.overflowY = ''
-    return () => { if (el) el.style.overflowY = '' }
+    const scrollEl = document.getElementById('page-content-scroll')
+    const mainEl   = document.getElementById('page-main-content')
+    if (!scrollEl) return
+    if (isEditPage) {
+      scrollEl.style.overflow = 'hidden'
+      if (mainEl) {
+        mainEl.style.padding  = '0'
+        mainEl.style.maxWidth = 'none'
+        mainEl.style.margin   = '0'
+        mainEl.style.width    = '100%'
+      }
+    } else {
+      scrollEl.style.overflow = ''
+      if (mainEl) {
+        mainEl.style.padding  = ''
+        mainEl.style.maxWidth = ''
+        mainEl.style.margin   = ''
+        mainEl.style.width    = ''
+      }
+    }
+    return () => {
+      if (scrollEl) scrollEl.style.overflow = ''
+      if (mainEl) {
+        mainEl.style.padding  = ''
+        mainEl.style.maxWidth = ''
+        mainEl.style.margin   = ''
+        mainEl.style.width    = ''
+      }
+    }
   }, [isEditPage])
   const [search, setSearch] = useState('')
 
@@ -1833,7 +1857,8 @@ export default function Activites() {
   ]
 
   return (
-    <>
+    <div className={isEditPage ? 'flex flex-col h-full overflow-hidden' : ''}
+    >
     <PageHeader
       title="Activités"
       subtitle="Gestion des activités scolaires et extrascolaires"
@@ -1897,7 +1922,7 @@ export default function Activites() {
       }
     />
     {isEditPage ? (
-      <div style={{ margin: '-2rem -1.5rem 0', height: 'calc(100vh - 50px)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: '1 1 0', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <ActivityModal
           isPage={true}
           editRow={editRow}
@@ -2066,6 +2091,6 @@ export default function Activites() {
       {docsRow && <DocsModal row={docsRow} categorie={docsCategorie} onClose={() => setDocsRow(null)} onDocsChanged={reloadDocsSets} />}
     </div>
     )}
-    </>
+    </div>
   )
 }

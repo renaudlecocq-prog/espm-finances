@@ -1064,3 +1064,12 @@ git push origin main
 ### Fixed
 - **Activites.jsx — dropdowns élèves** : noms des élèves affichés correctement dans "Élèves absents", "Élèves à exclure" (ajout de `nom, prenom` dans la requête Supabase `eleves`)
 - **DepensesPanel** : section "Factures PDF" masquée pour les voyages (les factures sont attachées aux dépenses) ; conservée pour intramuros/extramuros
+
+## [v0.57] — 2026-06-23
+
+### Fixed
+- **Layout.jsx** : ajout `id="page-main-content"` + `flex flex-col` sur `<main>` pour permettre la gestion du layout en mode page
+- **Activites.jsx — page d'édition** : suppression des scrollbars horizontal et vertical parasites
+  - L'effet DOM remet à zéro `padding`, `maxWidth`, `margin`, `width` de `<main>` en mode édition (au lieu de marges négatives)  
+  - Le conteneur d'édition utilise `flex: 1 1 0 / minHeight: 0` au lieu de `height: calc(100vh - 50px)`
+  - Le wrapper du return Activites passe en `flex flex-col h-full overflow-hidden` en mode édition → le contenu occupe exactement l'espace disponible sans débordement
