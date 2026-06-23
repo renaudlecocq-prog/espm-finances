@@ -252,7 +252,7 @@ export const handler = async (event) => {
   <!-- Footer -->
   <div class="footer">
     <span>École Secondaire Plurielle Maritime — ${esc(SCHOOL_TEL)} — ${esc(SCHOOL_EMAIL)}</span>
-    <span class="footer-brand">Avis généré par ESPM<span>+</span> le ${today}</span>
+    <span class="footer-brand">Document généré par ESPM<span>+</span> le ${today}</span>
   </div>
 </div>
 <script>

@@ -1094,3 +1094,12 @@ git push origin main
 - **Générer rapport** : nouveau bouton + Netlify function `activite-voyage-rapport-pdf.mjs`
   - Rapport complet : KPIs, infos, tableau dépenses détaillé, totaux
 - **Dépenses** : checkbox "Avance" (bleu) à côté de "Incompressible" dans chaque ligne de dépense
+
+## [v0.60] — 2026-06-23
+
+### Changed
+- **activite-avis-pdf.mjs** : footer "Avis généré par" → "Document généré par"
+- **activite-avance-pdf.mjs** :
+  - Header identique à l'avis (adresse école au lieu du tel/email)
+  - Footer identique à l'avis ("Document généré par ESPM+ le [date]")
+  - Coordonnées du personnel en grille 2 colonnes (moins de place)

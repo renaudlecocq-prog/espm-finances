@@ -11,17 +11,6 @@ const SCHOOL_TEL           = process.env.SCHOOL_TEL_SCHOOL   || '02/210.20.91'
 const esc  = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 const fmt  = n => Number(n||0).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €'
 
-function fieldRow(label, value = '', wide = false) {
-  const valueCell = value
-    ? `<span class="field-value">${esc(value)}</span>`
-    : `<span class="field-blank"></span>`
-  return `
-  <tr class="${wide ? 'field-wide' : ''}">
-    <td class="field-label">${esc(label)}</td>
-    <td class="field-cell">${valueCell}</td>
-  </tr>`
-}
-
 export const handler = async (event) => {
   const authHeader = event.headers?.authorization || event.headers?.Authorization || ''
   const params     = event.queryStringParameters || {}
@@ -95,17 +84,14 @@ export const handler = async (event) => {
   .date-line { font-size:9pt; color:#888; margin-bottom:6mm }
   /* Section titles */
   .section-title { font-size:8pt; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#6b7280; margin-bottom:2mm; margin-top:5mm }
-  /* Identity table */
-  .id-table { width:100%; border-collapse:collapse; margin-bottom:5mm }
-  .id-table tr { border-bottom:1px solid #f0f0f0 }
-  .id-table .field-label { width:45mm; font-size:9pt; color:#6b7280; font-weight:600; padding:2.5mm 3mm 2.5mm 0; white-space:nowrap }
-  .id-table .field-cell { padding:2.5mm 0 }
-  .field-blank { display:block; border-bottom:1px solid #374151; min-width:60mm; height:5mm }
-  .field-value { font-size:9pt; color:#111827 }
-  .field-wide .field-cell { }
+  /* Identity 2-col grid */
+  .id-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5mm 6mm; margin-bottom:5mm }
+  .id-field { display:flex; flex-direction:column; gap:1mm }
+  .id-field-full { grid-column:1 / -1 }
+  .id-label { font-size:8pt; color:#6b7280; font-weight:600 }
+  .id-blank { border-bottom:1px solid #374151; min-height:6mm; padding-bottom:1mm; font-size:9pt; color:#111827 }
+  .id-prefill { color:#374151 }
   /* Date field */
-  .date-row { margin-bottom:5mm }
-  .date-row .field-label { font-size:9pt; color:#6b7280; font-weight:600; margin-right:3mm }
   .date-blank { display:inline-block; border-bottom:1px solid #374151; width:50mm; vertical-align:bottom }
   /* Dépenses table */
   .dep-table { width:100%; border-collapse:collapse; margin-bottom:4mm; font-size:9pt }
@@ -142,10 +128,7 @@ export const handler = async (event) => {
     <img src="${logoUrl}" alt="Logo" class="logo-ecole">
     <div class="header-right">
       <div class="school-name-bold">École Secondaire Plurielle Maritime</div>
-      <div class="school-addr">
-        ${SCHOOL_TEL}<br>
-        ${SCHOOL_EMAIL}
-      </div>
+      <div class="school-addr">Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean</div>
     </div>
   </div>
 
@@ -158,16 +141,33 @@ export const handler = async (event) => {
 
   <!-- Identité -->
   <div class="section-title">Coordonnées du membre du personnel</div>
-  <table class="id-table">
-    ${fieldRow('Nom')}
-    ${fieldRow('Prénom')}
-    ${fieldRow('École', 'École Secondaire Plurielle Maritime')}
-    ${fieldRow('IBAN')}
-    ${fieldRow('Adresse')}
-    ${fieldRow('Code Postal')}
-    ${fieldRow('Localité')}
-    ${fieldRow('Téléphone')}
-  </table>
+  <div class="id-grid">
+    <div class="id-field">
+      <div class="id-label">Nom</div><div class="id-blank"></div>
+    </div>
+    <div class="id-field">
+      <div class="id-label">Prénom</div><div class="id-blank"></div>
+    </div>
+    <div class="id-field id-field-full">
+      <div class="id-label">École</div><div class="id-blank"><span class="id-prefill">École Secondaire Plurielle Maritime</span></div>
+    </div>
+    <div class="id-field id-field-full">
+      <div class="id-label">IBAN</div><div class="id-blank"></div>
+    </div>
+    <div class="id-field id-field-full">
+      <div class="id-label">Adresse</div><div class="id-blank"></div>
+    </div>
+    <div class="id-field">
+      <div class="id-label">Code Postal</div><div class="id-blank"></div>
+    </div>
+    <div class="id-field">
+      <div class="id-label">Localité</div><div class="id-blank"></div>
+    </div>
+    <div class="id-field">
+      <div class="id-label">Téléphone</div><div class="id-blank"></div>
+    </div>
+    <div class="id-field"></div>
+  </div>
 
   <!-- Date de remise -->
   <div class="date-row section-title" style="display:flex; align-items:center; gap:3mm; flex-wrap:wrap">
@@ -218,8 +218,8 @@ export const handler = async (event) => {
 
   <!-- Footer -->
   <div class="footer">
-    <div class="footer-brand">Généré via <span>ESPM+</span> le ${today}</div>
-    <div>${SCHOOL_EMAIL} — ${SCHOOL_TEL}</div>
+    <span>École Secondaire Plurielle Maritime — ${esc(SCHOOL_TEL)} — ${esc(SCHOOL_EMAIL)}</span>
+    <span class="footer-brand">Document généré par ESPM<span>+</span> le ${today}</span>
   </div>
 </div>
 </body>
