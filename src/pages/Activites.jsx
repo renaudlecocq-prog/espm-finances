@@ -1609,6 +1609,15 @@ export default function Activites() {
   const [quickFilter, setQuickFilter]     = useState(null) // null | 'passees' | 'avenir' | 'mes'
   const [mainTab, setMainTab]               = useState('intra_extra') // 'intra_extra' | 'voyages'
   const isEditPage = !!(editRow?.id && showModal)
+
+  // Bloquer le scroll général quand on est en mode page d'édition
+  useEffect(() => {
+    const el = document.getElementById('page-content-scroll')
+    if (!el) return
+    if (isEditPage) el.style.overflowY = 'hidden'
+    else el.style.overflowY = ''
+    return () => { if (el) el.style.overflowY = '' }
+  }, [isEditPage])
   const [search, setSearch] = useState('')
 
   // Données pour le formulaire
@@ -1884,7 +1893,7 @@ export default function Activites() {
       }
     />
     {isEditPage ? (
-      <div className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 72px)' }}>
+      <div style={{ margin: '-2rem -1.5rem 0', height: 'calc(100vh - 50px)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <ActivityModal
           isPage={true}
           editRow={editRow}

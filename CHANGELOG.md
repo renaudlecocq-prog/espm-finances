@@ -1049,3 +1049,12 @@ git push origin main
 
 ### Changed
 - **Activites.jsx — page d'édition** : colonnes réorganisées en 1/5 Messagerie | 2/5 Documents & Factures | 2/5 Formulaire
+
+## [v0.55] — 2026-06-23
+
+### Fixed
+- **Activites.jsx — page d'édition** : suppression du slider global de la page
+  - `overflow-y: hidden` sur le conteneur de scroll (#page-content-scroll) en mode page
+  - Marges négatives pour échapper au padding du Layout (`px-6 py-8`)
+  - Hauteur corrigée à `calc(100vh - 50px)` (viewport moins le PageHeader)
+- **Layout.jsx** : ajout id `page-content-scroll` sur le conteneur scrollable
