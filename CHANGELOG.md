@@ -1044,3 +1044,8 @@ git push origin main
   - Élèves absents : réduction des dépenses non-incompressibles
 - **DB** : tables `activite_depenses` + `activite_absents` avec RLS
 - **Helpers** : `getParticipantEleves()` pour filtrer les élèves participants
+
+## [v0.54] — 2026-06-23
+
+### Changed
+- **Activites.jsx — page d'édition** : colonnes réorganisées en 1/5 Messagerie | 2/5 Documents & Factures | 2/5 Formulaire

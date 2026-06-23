@@ -1390,8 +1390,8 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
     const nbForPanel = hasSelection ? nbEleves : (parseInt(form.nb_eleves) || 0)
     return (
       <div className="flex h-full overflow-hidden">
-        {/* Col 1/4 — Messagerie */}
-        <div className="w-1/4 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden bg-white">
+        {/* Col 1/5 — Messagerie */}
+        <div className="w-1/5 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden bg-white">
           <Commentaires
             entityType="activite"
             entityId={editRow.id}
@@ -1399,26 +1399,8 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
           />
         </div>
 
-        {/* Col 2/4 — Formulaire */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-white">
-          <div className="flex-1 px-6 py-5 space-y-4 overflow-y-auto">
-            {errors.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-                Champs manquants : {errors.map(e => FIELD_LABELS[e] || e).join(', ')}
-              </div>
-            )}
-            {saveError && (
-              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-                Erreur : {saveError}
-              </div>
-            )}
-            {formFields}
-          </div>
-          {formFooter}
-        </div>
-
-        {/* Col 3-4/4 — Documents & Factures */}
-        <div className="w-1/4 shrink-0 overflow-hidden flex flex-col">
+        {/* Col 2-3/5 — Documents & Factures */}
+        <div className="w-2/5 shrink-0 overflow-hidden flex flex-col border-r border-gray-100">
           <DepensesPanel
             activiteId={editRow.id}
             type={form.type}
@@ -1436,6 +1418,24 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
             intitule={form.intitule}
             formType={form.type}
           />
+        </div>
+
+        {/* Col 4-5/5 — Formulaire */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-white">
+          <div className="flex-1 px-6 py-5 space-y-4 overflow-y-auto">
+            {errors.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+                Champs manquants : {errors.map(e => FIELD_LABELS[e] || e).join(', ')}
+              </div>
+            )}
+            {saveError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+                Erreur : {saveError}
+              </div>
+            )}
+            {formFields}
+          </div>
+          {formFooter}
         </div>
       </div>
     )
