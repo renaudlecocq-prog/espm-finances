@@ -203,9 +203,9 @@ function HomeFinancier() {
           <StatCard icon="⚠️" label="Impayés" value={fmtShort(impayes)}
             sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" />
           <StatCard icon="📋" label="Échelonnements" value={fmtShort(echMontant)}
-            sub="Montant en cours / non respecté" to="/assist-social" color="orange" />
+            sub="Montant en cours / non respecté" to="/assistant-social" color="orange" />
           <StatCard icon="🤝" label="Organismes tiers" value={fmtShort(orgMontant)}
-            sub="Demandes actives (en cours / validé)" to="/assist-social" color="amber" />
+            sub="Demandes actives (en cours / validé)" to="/assistant-social" color="amber" />
           <StatCard icon="🏦" label="En réserve" value={fmtShort(enReserve)}
             sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" />
         </div>
@@ -223,7 +223,7 @@ function HomeFinancier() {
         </div>
       </section>
       <section>
-        <SectionTitle icon="🤝" title="Assistant social" subtitle="Situations financières particulières en cours" />
+        <SectionTitle icon="🤝" title="Suivi social" subtitle="Situations financières particulières en cours" />
         <div className="grid grid-cols-2 gap-6">
           <div>
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Échelonnements</h3>

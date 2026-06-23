@@ -128,7 +128,7 @@ export default function Sidebar() {
     { to: '/paiements',        label: 'Paiements',      icon: 'paiements', show: isFinancier },
     { to: '/activites',        label: 'Activités',      icon: 'activites', show: isMdp },
     { to: '/articles',         label: 'Articles',       icon: 'articles',  show: isFinancier },
-    { to: '/assistant-social', label: 'Assist. social', icon: 'social',    show: isFinancier },
+    { to: '/assistant-social', label: 'Suivi social', icon: 'social',    show: isFinancier },
   ]
 
   const logout = async () => { await supabase.auth.signOut(); navigate('/login') }

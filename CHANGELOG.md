@@ -1159,3 +1159,9 @@ git push origin main
   - Card 3 (ambre) : Organismes tiers — montant total des demandes actives (en cours / validé)
   - Card 4 (vert) : En réserve — soldes positifs cumulés
   - Suppression des graphiques sparkline et de tout le code de calcul mensuel associé
+
+## [v0.68] — 2026-06-23
+
+### Changed
+- Renommage "Assistant social" → "Suivi social" dans la sidebar, le header, la page AssistantSocial, et la section de l'accueil
+- Fix : liens des cards Vue financière corrigés (`/assist-social` → `/assistant-social`)

@@ -16,7 +16,7 @@ export default function Header() {
     { to: '/paiements',        label: 'Paiements',      show: isFinancier },
     { to: '/activites',        label: 'Activités',      show: isMdp },
     { to: '/articles',         label: 'Articles',       show: isFinancier },
-    { to: '/assistant-social', label: 'Assist. social', show: isFinancier },
+    { to: '/assistant-social', label: 'Suivi social', show: isFinancier },
   ]
 
   const logout = async () => { await supabase.auth.signOut(); navigate('/login') }

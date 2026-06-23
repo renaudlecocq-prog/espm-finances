@@ -1750,7 +1750,7 @@ export default function AssistantSocial() {
   return (
     <>
     <PageHeader
-      title="Assistant social"
+      title="Suivi social"
       subtitle="Échelonnements de paiement et organismes tiers de prise en charge"
       tabs={[
         { key: 'echelonnements', label: 'Échelonnements' },
