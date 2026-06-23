@@ -1064,7 +1064,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
             </div>
             <div className="col-span-2">
               <label className="label">Description</label>
-              <textarea className="input" rows={2} value={form.description} onChange={e => f('description', e.target.value)} />
+              <textarea className="input" rows={5} value={form.description} onChange={e => f('description', e.target.value)} />
             </div>
             {(!allowedTypes || allowedTypes.length > 1) && (
               <div>

@@ -1,17 +1,16 @@
-// activite-voyage-rapport-pdf.mjs — v1.0
+// activite-voyage-rapport-pdf.mjs — v2.0
 // GET /.netlify/functions/activite-voyage-rapport-pdf?id=UUID
-// Génère un rapport complet d'un voyage scolaire
 import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL         = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const SCHOOL_EMAIL         = process.env.SCHOOL_EMAIL_SCHOOL || 'info@espmaritime.be'
 const SCHOOL_TEL           = process.env.SCHOOL_TEL_SCHOOL   || '02/210.20.91'
+const SCHOOL_ADDR          = 'Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean'
 
 const esc     = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 const fmt     = n => Number(n||0).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €'
 const fmtDate = s => s ? new Date(s+'T00:00:00').toLocaleDateString('fr-BE') : '—'
-const fmtTime = s => s ? String(s).slice(0,5) : '—'
 
 const CAT_LABELS = {
   activite:'Activité', hebergement:'Hébergement', nourriture:'Nourriture',
@@ -36,7 +35,7 @@ export const handler = async (event) => {
 
   const [{ data:act }, { data:depenses }, { data:absents }, { data:profiles }] = await Promise.all([
     supabase.from('activites').select('*').eq('id', id).single(),
-    supabase.from('activite_depenses').select('*').eq('activite_id', id).order('ordre').order('created_at'),
+    supabase.from('activite_depenses').select('*').eq('activite_id', id).order('categorie').order('ordre').order('created_at'),
     supabase.from('activite_absents').select('eleve_id').eq('activite_id', id),
     supabase.from('profiles').select('id, nom, prenom'),
   ])
@@ -55,32 +54,58 @@ export const handler = async (event) => {
   const responsable  = byId[act.responsable_id] || '—'
   const accomps      = (act.accompagnateur_ids || []).map(i => byId[i]||i).filter(Boolean)
 
-  // Calculs totaux
-  const montantTotal = deps.reduce((s,d) => s + parseFloat(d.montant_total||0), 0)
-  const montantIncomp = deps.filter(d=>d.incompressible).reduce((s,d)=>s+parseFloat(d.montant_total||0),0)
-  const parEleveReel = nbEleves > 0 ? montantTotal / nbEleves : 0
+  const montantTotal   = deps.reduce((s,d) => s + parseFloat(d.montant_total||0), 0)
+  const montantIncomp  = deps.filter(d=>d.incompressible).reduce((s,d)=>s+parseFloat(d.montant_total||0),0)
+  const parEleveReel   = nbEleves > 0 ? montantTotal / nbEleves : 0
   const parEleveAbsent = nbEleves > 0 ? montantIncomp / nbEleves : 0
-  const mpeAnnonce = parseFloat(act.montant_par_eleve_annonce || 0)
+  const mpeAnnonce     = parseFloat(act.montant_par_eleve_annonce || 0)
 
-  // Dépenses rows
-  const depRows = deps.length > 0 ? deps.map(d => {
-    const effNb = d.nb_eleves_override != null ? d.nb_eleves_override
-      : (d.incompressible ? nbEleves : nbPresents)
-    const mpe = effNb > 0 ? parseFloat(d.montant_total||0)/effNb : 0
-    const badges = []
-    if (d.incompressible) badges.push('<span class="badge-incomp">Incompressible</span>')
-    if (d.avance) badges.push('<span class="badge-avance">Avance</span>')
-    return `
-    <tr>
-      <td>${esc(CAT_LABELS[d.categorie]||d.categorie)}</td>
-      <td>${esc(d.intitule||'—')}</td>
+  // Grouper dépenses par catégorie
+  const catOrder = ['activite','hebergement','nourriture','transport','urgences','autres']
+  const grouped = {}
+  deps.forEach(d => {
+    const cat = d.categorie || 'autres'
+    if (!grouped[cat]) grouped[cat] = []
+    grouped[cat].push(d)
+  })
+  const sortedCats = catOrder.filter(c => grouped[c])
+    .concat(Object.keys(grouped).filter(c => !catOrder.includes(c)))
+
+  let depRows = ''
+  if (deps.length === 0) {
+    depRows = `<tr><td colspan="5" class="empty">Aucune dépense enregistrée</td></tr>`
+  } else {
+    sortedCats.forEach(cat => {
+      const catDeps  = grouped[cat]
+      const catTotal = catDeps.reduce((s,d) => s + parseFloat(d.montant_total||0), 0)
+      const catMpe   = nbEleves > 0 ? catTotal / nbEleves : 0
+      const catLabel = CAT_LABELS[cat] || cat
+
+      depRows += `<tr class="cat-header"><td colspan="5">${esc(catLabel)}</td></tr>`
+      catDeps.forEach(d => {
+        const effNb = d.nb_eleves_override != null ? d.nb_eleves_override
+          : (d.incompressible ? nbEleves : nbPresents)
+        const mpe = effNb > 0 ? parseFloat(d.montant_total||0)/effNb : 0
+        const badges = []
+        if (d.incompressible) badges.push('<span class="badge-incomp">Incompressible</span>')
+        if (d.avance) badges.push('<span class="badge-avance">Avance</span>')
+        depRows += `<tr>
+      <td class="dep-intitule">${esc(d.intitule||'—')}${badges.length?' &nbsp;'+badges.join(' '):''}</td>
       <td class="text-right">${fmt(d.montant_total)}</td>
-      <td class="text-right">${effNb}</td>
+      <td class="text-right">${effNb} élèves</td>
       <td class="text-right">${mpe>0?mpe.toFixed(2)+' €':'—'}</td>
       <td>${esc(d.paye_par||'—')}</td>
-      <td>${badges.join(' ')}</td>
     </tr>`
-  }).join('') : `<tr><td colspan="7" class="empty">Aucune dépense enregistrée</td></tr>`
+      })
+      depRows += `<tr class="cat-subtotal">
+      <td>Sous-total ${esc(catLabel)}</td>
+      <td class="text-right">${fmt(catTotal)}</td>
+      <td></td>
+      <td class="text-right">${nbEleves>0?catMpe.toFixed(2)+' €':'—'}</td>
+      <td></td>
+    </tr>`
+    })
+  }
 
   const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -101,40 +126,38 @@ export const handler = async (event) => {
   .header-right { text-align:right }
   .school-name-bold { font-size:11pt; font-weight:700; color:#1a1a2e; margin-bottom:1.5mm }
   .school-addr { font-size:8pt; color:#888; line-height:1.5 }
-  .title-row { display:flex; align-items:baseline; gap:3mm; margin-bottom:2mm }
+  .title-row { display:flex; align-items:center; gap:4mm; margin-bottom:2mm; flex-wrap:wrap }
+  h1 { font-size:15pt; font-weight:800; color:#1a1a2e; line-height:1.2; flex:1 }
   .type-badge { display:inline-block; background:${typeBg}; color:${typeColor}; border:1px solid ${typeColor}40; border-radius:5px; font-size:7.5pt; font-weight:700; padding:1mm 3mm; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; flex-shrink:0 }
-  h1 { font-size:15pt; font-weight:800; color:#1a1a2e; line-height:1.2 }
   .date-line { font-size:9pt; color:#888; margin-bottom:6mm }
   .section-title { font-size:8pt; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#6b7280; margin-bottom:2mm; margin-top:5mm; padding-bottom:1mm; border-bottom:1px solid #f3f4f6 }
-  /* Info table */
-  .info-table { width:100%; border-collapse:collapse; margin-bottom:4mm }
-  .info-table th, .info-table td { padding:2mm 3mm; text-align:left; font-size:9pt; border-bottom:1px solid #f0f0f0 }
-  .info-table th { width:45mm; color:#6b7280; font-weight:600; white-space:nowrap }
-  .info-table td { color:#111827 }
-  /* KPI row */
   .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:3mm; margin-bottom:5mm }
   .kpi-box { background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px; padding:3mm; text-align:center }
   .kpi-label { font-size:7.5pt; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:.4px; margin-bottom:1mm }
   .kpi-value { font-size:13pt; font-weight:800; color:#111827 }
   .kpi-value.purple { color:#7c3aed }
   .kpi-value.amber  { color:#b45309 }
-  /* Dépenses table */
+  .info-table { width:100%; border-collapse:collapse; margin-bottom:4mm }
+  .info-table th, .info-table td { padding:2mm 3mm; text-align:left; font-size:9pt; border-bottom:1px solid #f0f0f0 }
+  .info-table th { width:45mm; color:#6b7280; font-weight:600; white-space:nowrap }
+  .info-table td { color:#111827 }
   .dep-table { width:100%; border-collapse:collapse; font-size:8.5pt; margin-bottom:4mm }
-  .dep-table th { background:#f5f3ff; padding:2mm 2.5mm; text-align:left; font-weight:700; color:#374151; border-bottom:2px solid #c4b5fd; white-space:nowrap }
-  .dep-table td { padding:2mm 2.5mm; border-bottom:1px solid #f0f0f0; color:#111827; vertical-align:middle }
-  .dep-table .text-right { text-align:right }
+  .dep-table th { background:#f5f3ff; padding:2.5mm 3mm; text-align:left; font-weight:700; color:#374151; border-bottom:2px solid #c4b5fd; white-space:nowrap }
+  .dep-table td { padding:2.5mm 3mm; border-bottom:1px solid #f0f0f0; color:#111827; vertical-align:middle }
+  .dep-table .text-right { text-align:right; white-space:nowrap }
   .dep-table .empty { text-align:center; color:#9ca3af; font-style:italic }
+  .dep-table tr.cat-header td { background:#f5f3ff; color:${typeColor}; font-weight:700; font-size:8pt; text-transform:uppercase; letter-spacing:.5px; padding:2mm 3mm; border-top:2px solid #c4b5fd; border-bottom:1px solid #c4b5fd }
+  .dep-table tr.cat-subtotal td { background:#fafafa; font-weight:700; font-size:8pt; color:#374151; border-top:1px dashed #d1d5db; border-bottom:2px solid #e5e7eb; font-style:italic }
   .badge-incomp { display:inline-block; background:#dcfce7; color:#15803d; border-radius:3px; font-size:7pt; padding:0.5mm 2mm; font-weight:700 }
   .badge-avance { display:inline-block; background:#dbeafe; color:#1d4ed8; border-radius:3px; font-size:7pt; padding:0.5mm 2mm; font-weight:700 }
-  /* Totals */
   .totals-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3mm; margin-bottom:5mm }
   .total-box { border-radius:6px; border:1px solid; padding:3mm 4mm; text-align:center }
-  .total-box.main { background:#f5f3ff; border-color:#c4b5fd }
+  .total-box.main  { background:#f5f3ff; border-color:#c4b5fd }
   .total-box.green { background:#f0fdf4; border-color:#86efac }
   .total-box.amber { background:#fffbeb; border-color:#fcd34d }
   .total-label { font-size:7.5pt; color:#6b7280; font-weight:600; text-transform:uppercase; letter-spacing:.4px; margin-bottom:1mm }
   .total-value { font-size:12pt; font-weight:800 }
-  .total-box.main .total-value { color:#5b21b6 }
+  .total-box.main  .total-value { color:#5b21b6 }
   .total-box.green .total-value { color:#15803d }
   .total-box.amber .total-value { color:#b45309 }
   .spacer { flex:1 }
@@ -149,24 +172,23 @@ export const handler = async (event) => {
 </head>
 <body>
 <div class="page">
+
   <div class="header">
     <img src="${logoUrl}" alt="Logo" class="logo-ecole">
     <div class="header-right">
       <div class="school-name-bold">École Secondaire Plurielle Maritime</div>
-      <div class="school-addr">${SCHOOL_TEL}<br>${SCHOOL_EMAIL}</div>
+      <div class="school-addr">${SCHOOL_ADDR}</div>
     </div>
   </div>
 
   <div class="title-row">
-    <span class="type-badge">Rapport — Voyage scolaire</span>
     <h1>${esc(act.intitule)}</h1>
+    <span class="type-badge">Rapport — Voyage scolaire</span>
   </div>
   <div class="date-line">
     ${fmtDate(act.date_debut)}${act.date_fin && act.date_fin !== act.date_debut ? ` au ${fmtDate(act.date_fin)}` : ''}
-    &nbsp;·&nbsp; Rapport généré le ${today}
   </div>
 
-  <!-- KPIs -->
   <div class="kpi-row">
     <div class="kpi-box">
       <div class="kpi-label">Élèves</div>
@@ -186,32 +208,28 @@ export const handler = async (event) => {
     </div>
   </div>
 
-  <!-- Infos activité -->
   <div class="section-title">Informations</div>
   <table class="info-table">
     <tr><th>Responsable</th><td>${esc(responsable)}</td></tr>
     ${accomps.length > 0 ? `<tr><th>Accompagnants</th><td>${accomps.map(a=>esc(a)).join(', ')}</td></tr>` : ''}
-    <tr><th>Départ</th><td>${fmtDate(act.date_debut)} à ${fmtTime(act.heure_depart)}</td></tr>
-    <tr><th>Retour</th><td>${fmtDate(act.date_fin)} à ${fmtTime(act.heure_retour)}</td></tr>
-    ${act.lieu_rdv ? `<tr><th>Lieu de RDV</th><td>${esc(act.lieu_rdv)}</td></tr>` : ''}
-    ${act.lieu_retour ? `<tr><th>Lieu de retour</th><td>${esc(act.lieu_retour)}</td></tr>` : ''}
-    ${act.description ? `<tr><th>Description</th><td style="white-space:pre-wrap">${esc(act.description)}</td></tr>` : ''}
+    <tr><th>Départ — Retour</th><td>${fmtDate(act.date_debut)} — ${fmtDate(act.date_fin)}</td></tr>
+    <tr><th>Lieu</th><td>${esc(act.lieu||'—')}</td></tr>
   </table>
 
-  <!-- Dépenses -->
   <div class="section-title">Détail des dépenses</div>
   <table class="dep-table">
     <thead>
       <tr>
-        <th>Catégorie</th><th>Intitulé</th><th class="text-right">Montant</th>
-        <th class="text-right">Nb élèves</th><th class="text-right">Par élève</th>
-        <th>Payé par</th><th>Options</th>
+        <th>Intitulé</th>
+        <th class="text-right">Montant</th>
+        <th class="text-right">Nb élèves</th>
+        <th class="text-right">Par élève</th>
+        <th>Payé par</th>
       </tr>
     </thead>
     <tbody>${depRows}</tbody>
   </table>
 
-  <!-- Totaux -->
   <div class="totals-grid">
     <div class="total-box main">
       <div class="total-label">Montant total réel</div>
@@ -229,10 +247,11 @@ export const handler = async (event) => {
 
   <div class="spacer"></div>
   <div class="footer">
-    <div class="footer-brand">Généré via <span>ESPM+</span> le ${today}</div>
-    <div>${SCHOOL_EMAIL} — ${SCHOOL_TEL}</div>
+    <span>École Secondaire Plurielle Maritime — ${esc(SCHOOL_TEL)} — ${esc(SCHOOL_EMAIL)}</span>
+    <span class="footer-brand">Document généré par ESPM<span>+</span> le ${today}</span>
   </div>
 </div>
+<script>window.onload = () => window.print()</script>
 </body>
 </html>`
 

@@ -1118,3 +1118,14 @@ git push origin main
 
 ### Changed
 - **Activites.jsx** : en mode édition (activité existante), "Publier" → "Sauvegarder les modifications" et "Brouillon" → "Repasser en brouillon" (intra-extramuros et voyages)
+
+## [v0.64] — 2026-06-23
+
+### Changed
+- **Activites.jsx** : champ Description agrandi (rows 2 → 5) dans le modal et la page d'édition
+- **activite-voyage-rapport-pdf.mjs** :
+  - Badge "Rapport — Voyage scolaire" déplacé à droite du titre
+  - "Rapport généré le" supprimé de la ligne de date
+  - Header/footer identiques à l'avis (adresse école, footer "Document généré par ESPM+")
+  - Section Informations : Description retirée, Départ/Retour sur une ligne (sans heure), Lieu de RDV/retour remplacés par Lieu
+  - Dépenses groupées par catégorie avec sous-totaux par catégorie
