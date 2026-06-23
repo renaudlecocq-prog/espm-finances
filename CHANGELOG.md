@@ -1013,3 +1013,12 @@ git push origin main
 
 ### Migration DB
 - `activites` : nouvelle colonne `montant_par_eleve_annonce NUMERIC`
+
+## [v0.51] — 2026-06-23
+
+### Fixed
+- **Activites.jsx — Voyages** : calcul du montant total annoncé ne se mettait pas à jour
+  - Cause : `f()` utilisait `form.nb_eleves` (champ manuel) au lieu de `nbEleves` (calculé depuis la sélection de classes)
+  - Fix : `hasSelection` et `nbEleves` déplacés avant `f()` et utilisés dans la closure
+  - Ajout d'un `useEffect` pour recalculer quand `nbEleves` change (ajout/retrait de classe)
+  - Statut facturation passe correctement à "En attente" dès qu'un tier est sélectionné

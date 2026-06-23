@@ -400,13 +400,18 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
     loadSaved()
   }
 
+  const hasSelection = form.classes_incluses.length > 0 || form.groupes_inclus.length > 0
+  const nbEleves = useMemo(() => calcNbEleves(allEleves, form),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allEleves, form.classes_incluses, form.groupes_inclus, form.classes_exclues, form.groupes_exclus, form.eleves_exclus])
+
   const f = (k, v) => setForm(p => {
     const next = { ...p, [k]: v }
     // Pour les voyages : auto-calculer montant_total depuis le tier sélectionné
     if (next.type === 'voyage' && (k === 'montant_par_eleve_annonce' || k === 'nb_eleves')) {
-      const nb     = parseInt(next.nb_eleves || 0)
-      const tier   = parseFloat(next.montant_par_eleve_annonce || 0)
-      next.montant_total = nb > 0 && tier > 0 ? (nb * tier).toFixed(2) : ''
+      const effectiveNb = hasSelection ? nbEleves : parseInt(next.nb_eleves || 0)
+      const tier        = parseFloat(next.montant_par_eleve_annonce || 0)
+      next.montant_total = effectiveNb > 0 && tier > 0 ? (effectiveNb * tier).toFixed(2) : ''
       if (next.montant_total) {
         if (p.statut_facturation === 'non_payant') next.statut_facturation = 'en_attente'
       } else {
@@ -424,10 +429,21 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
     return next
   })
 
-  const hasSelection = form.classes_incluses.length > 0 || form.groupes_inclus.length > 0
-  const nbEleves = useMemo(() => calcNbEleves(allEleves, form),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allEleves, form.classes_incluses, form.groupes_inclus, form.classes_exclues, form.groupes_exclus, form.eleves_exclus])
+  // Voyage : recalculer montant_total quand nbEleves change (ex: ajout/retrait de classe)
+  useEffect(() => {
+    if (form.type === 'voyage' && form.montant_par_eleve_annonce) {
+      const effectiveNb = hasSelection ? nbEleves : parseInt(form.nb_eleves || 0)
+      const tier        = parseFloat(form.montant_par_eleve_annonce || 0)
+      const newTotal    = effectiveNb > 0 && tier > 0 ? (effectiveNb * tier).toFixed(2) : ''
+      if (newTotal !== (form.montant_total || '')) {
+        setForm(p => ({
+          ...p,
+          montant_total: newTotal,
+          statut_facturation: newTotal ? (p.statut_facturation === 'non_payant' ? 'en_attente' : p.statut_facturation) : 'non_payant',
+        }))
+      }
+    }
+  }, [nbEleves, form.type, form.montant_par_eleve_annonce]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const eleveOptions = useMemo(() =>
     allEleves
@@ -908,8 +924,8 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                 </div>
                 <div><label className="label">Montant total annoncé</label>
                   <div className="input bg-gray-50 text-gray-600">
-                    {form.montant_par_eleve_annonce && form.nb_eleves
-                      ? fmt(parseFloat(form.montant_par_eleve_annonce) * parseInt(form.nb_eleves || 0))
+                    {form.montant_par_eleve_annonce && (hasSelection ? nbEleves : parseInt(form.nb_eleves || 0)) > 0
+                      ? fmt(parseFloat(form.montant_par_eleve_annonce) * (hasSelection ? nbEleves : parseInt(form.nb_eleves || 0)))
                       : '—'}
                   </div>
                 </div>
