@@ -967,3 +967,13 @@ git push origin main
   - "Chers parents…" et description : même police/taille (10.5pt)
   - Section "Informations supplémentaires" affichée si renseignée (encadré gris)
   - Footer : "Avis généré par ESPM**+** le [date]" avec le + en orange
+
+---
+
+## [sidebar-smartschool-button] — Bouton Smartschool redesigné dans la sidebar
+
+### Changed
+- **Sidebar.jsx** — lien Smartschool converti en bouton stylisé :
+  - Fond sombre (`#120f1a`) avec coins arrondis (`rounded-xl`)
+  - Mode étendu : carré orange avec icône lien externe + texte "Smartschool" en blanc
+  - Mode réduit : logo Smartschool (image officielle) centré

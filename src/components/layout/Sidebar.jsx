@@ -187,17 +187,28 @@ export default function Sidebar() {
           href="https://espmaritime.smartschool.be/"
           target="_blank"
           rel="noopener noreferrer"
-          title={collapsed ? 'Smartschool' : undefined}
-          className="flex items-center gap-3 px-2 py-2.5 rounded-lg text-white/65 hover:text-white hover:bg-white/10 transition-colors"
+          title="Smartschool"
+          className="flex items-center rounded-xl overflow-hidden transition-opacity hover:opacity-80"
+          style={{ backgroundColor: '#120f1a' }}
         >
-          <SvgIcon name="smartschool" />
-          {!collapsed && (
-            <span
-              className="text-sm font-medium whitespace-nowrap"
-              style={{ color: '#E86C00' }}
-            >
-              Smartschool
-            </span>
+          {collapsed ? (
+            <img
+              src="https://www.smartschool.be/wp/wp-content/uploads/2016/06/smartschool_app_300x300.png"
+              alt="Smartschool"
+              style={{ width: 40, height: 40, objectFit: 'contain', display: 'block', margin: '0 auto' }}
+            />
+          ) : (
+            <>
+              <span
+                className="flex items-center justify-center shrink-0"
+                style={{ backgroundColor: '#E86C00', width: 40, height: 40 }}
+              >
+                <SvgIcon name="smartschool" size={16} style={{ color: 'white' }} />
+              </span>
+              <span className="text-white text-sm font-semibold px-3 whitespace-nowrap">
+                Smartschool
+              </span>
+            </>
           )}
         </a>
       </nav>
