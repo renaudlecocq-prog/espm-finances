@@ -1058,3 +1058,9 @@ git push origin main
   - Marges négatives pour échapper au padding du Layout (`px-6 py-8`)
   - Hauteur corrigée à `calc(100vh - 50px)` (viewport moins le PageHeader)
 - **Layout.jsx** : ajout id `page-content-scroll` sur le conteneur scrollable
+
+## [v0.56] — 2026-06-23
+
+### Fixed
+- **Activites.jsx — dropdowns élèves** : noms des élèves affichés correctement dans "Élèves absents", "Élèves à exclure" (ajout de `nom, prenom` dans la requête Supabase `eleves`)
+- **DepensesPanel** : section "Factures PDF" masquée pour les voyages (les factures sont attachées aux dépenses) ; conservée pour intramuros/extramuros

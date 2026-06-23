@@ -512,30 +512,34 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
           </div>
         </div>
 
-        {/* Factures section */}
-        {savedFactures.length > 0 && (
-          <div className="px-3 py-2 border-b border-gray-100">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Factures PDF</p>
-            <ul className="space-y-1">
-              {savedFactures.map(d => (
-                <li key={d.id} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 rounded px-2 py-1">
-                  <span className="flex-1 truncate text-[11px]">{d.nom_fichier}</span>
-                  <button onClick={() => viewDoc(d)} className="text-primary hover:underline text-[11px] shrink-0">Voir</button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {pendingFactures.length > 0 && (
-          <div className="px-3 py-2 border-b border-gray-100">
-            <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} compact />
-          </div>
-        )}
-        {pendingFactures.length === 0 && savedFactures.length === 0 && (
-          <div className="px-3 py-2 border-b border-gray-100">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Factures PDF</p>
-            <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} compact />
-          </div>
+        {/* Factures section — masqué pour les voyages (factures dans dépenses) */}
+        {formType !== 'voyage' && (
+          <>
+            {savedFactures.length > 0 && (
+              <div className="px-3 py-2 border-b border-gray-100">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Factures PDF</p>
+                <ul className="space-y-1">
+                  {savedFactures.map(d => (
+                    <li key={d.id} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 rounded px-2 py-1">
+                      <span className="flex-1 truncate text-[11px]">{d.nom_fichier}</span>
+                      <button onClick={() => viewDoc(d)} className="text-primary hover:underline text-[11px] shrink-0">Voir</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {pendingFactures.length > 0 && (
+              <div className="px-3 py-2 border-b border-gray-100">
+                <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} compact />
+              </div>
+            )}
+            {pendingFactures.length === 0 && savedFactures.length === 0 && (
+              <div className="px-3 py-2 border-b border-gray-100">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Factures PDF</p>
+                <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} compact />
+              </div>
+            )}
+          </>
         )}
 
         {/* Dépenses (voyages only) */}
@@ -1630,7 +1634,7 @@ export default function Activites() {
     Promise.all([
       // Eleves avec toutes les colonnes de groupes
       supabase.from('eleves').select(
-        'id, classe, obs_d2, ac_d2, math_d3, sciences_d3, bio_physique_d3, obs1_d3, obs2_d3, ac_d3, philosophie, groupe_choix_philo'
+        'id, nom, prenom, classe, obs_d2, ac_d2, math_d3, sciences_d3, bio_physique_d3, obs1_d3, obs2_d3, ac_d3, philosophie, groupe_choix_philo'
       ).eq('actif', true),
       // Staff
       supabase.from('profiles').select('id, nom, prenom, role').in('role', ['mdp', 'admin', 'financier']).order('nom'),
