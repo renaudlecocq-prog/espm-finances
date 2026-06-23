@@ -1463,12 +1463,12 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
       <button onClick={() => save('publie')} disabled={saving}
         className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
         {saving && savingAs === 'publie' && <Loader2 size={14} className="animate-spin" />}
-        {saving && savingAs === 'publie' ? 'Publication…' : '✓ Publier'}
+        {saving && savingAs === 'publie' ? 'Publication…' : editRow?.id ? '✓ Sauvegarder les modifications' : '✓ Publier'}
       </button>
       <button onClick={() => save('brouillon')} disabled={saving}
         className="py-1.5 px-4 text-sm rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5 font-medium">
         {saving && savingAs === 'brouillon' && <Loader2 size={14} className="animate-spin" />}
-        {saving && savingAs === 'brouillon' ? 'Enregistrement…' : '✎ Brouillon'}
+        {saving && savingAs === 'brouillon' ? 'Enregistrement…' : editRow?.id ? '✎ Repasser en brouillon' : '✎ Brouillon'}
       </button>
       {!isPage && <button onClick={onClose} className="btn-secondary py-1.5 px-4 text-sm">Annuler</button>}
       <div className="flex-1" />

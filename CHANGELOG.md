@@ -1113,3 +1113,8 @@ git push origin main
 
 ### Changed
 - **activite-avance-pdf.mjs** : formulaire coordonnées restructuré en 2 colonnes — gauche : Nom, Prénom, IBAN, Téléphone — droite : Adresse (grande zone)
+
+## [v0.63] — 2026-06-23
+
+### Changed
+- **Activites.jsx** : en mode édition (activité existante), "Publier" → "Sauvegarder les modifications" et "Brouillon" → "Repasser en brouillon" (intra-extramuros et voyages)
