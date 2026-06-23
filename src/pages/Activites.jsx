@@ -305,7 +305,7 @@ function getParticipantEleves(allEleves, form) {
 }
 
 // ── Staged file upload avec drag & drop ────────────────────────────────────
-function AvisGenerator({ activiteId, intitule }) {
+function AvisGenerator({ activiteId, intitule, isVoyage = false, montantParEleve }) {
   const [loading, setLoading] = useState(false)
 
   const generate = async () => {
@@ -314,8 +314,10 @@ function AvisGenerator({ activiteId, intitule }) {
       const { data } = await supabase.auth.getSession()
       const session = data?.session
       if (!session?.access_token) { alert('Session expirée, veuillez vous reconnecter.'); setLoading(false); return }
-      const resp = await fetch(
-        `/.netlify/functions/activite-avis-pdf?id=${encodeURIComponent(activiteId)}`,
+      let url = `/.netlify/functions/activite-avis-pdf?id=${encodeURIComponent(activiteId)}`
+      if (isVoyage) url += '&mode=voyage'
+      if (montantParEleve) url += `&mpe=${encodeURIComponent(montantParEleve)}`
+      const resp = await fetch(url,
         { headers: { 'Authorization': `Bearer ${session.access_token}` } }
       )
       const body = await resp.text()
@@ -343,6 +345,77 @@ function AvisGenerator({ activiteId, intitule }) {
       <p className="text-xs text-gray-400 mt-1.5 leading-tight">
         Ouvre un PDF imprimable à destination des parents.
       </p>
+    </div>
+  )
+}
+
+function AvanceGenerator({ activiteId, depenses, intitule }) {
+  const [loading, setLoading] = useState(false)
+  const avanceDeps = depenses.filter(d => d.avance)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const { data } = await supabase.auth.getSession()
+      const session = data?.session
+      if (!session?.access_token) { alert('Session expirée.'); setLoading(false); return }
+      const resp = await fetch(
+        `/.netlify/functions/activite-avance-pdf?id=${encodeURIComponent(activiteId)}`,
+        { headers: { 'Authorization': `Bearer ${session.access_token}` } }
+      )
+      const body = await resp.text()
+      if (!resp.ok) { alert(`Erreur ${resp.status}: ${body}`); setLoading(false); return }
+      const blob = new Blob([body], { type: 'text/html; charset=utf-8' })
+      const win = window.open(URL.createObjectURL(blob), '_blank')
+      if (!win) alert("Le navigateur a bloqué l'ouverture. Autorisez les popups.")
+    } catch(e) { alert('Erreur : ' + (e?.message || String(e))) }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <div>
+      <button type="button" onClick={generate} disabled={loading || avanceDeps.length === 0}
+        className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-2 transition-colors disabled:opacity-40">
+        {loading ? <Loader2 size={12} className="animate-spin" /> : '💳'}
+        {loading ? 'Génération…' : "Demande d'avance"}
+      </button>
+      <p className="text-xs text-gray-400 mt-1.5 leading-tight">
+        {avanceDeps.length === 0 ? 'Aucune dépense marquée "Avance".' : `${avanceDeps.length} dépense(s) cochée(s).`}
+      </p>
+    </div>
+  )
+}
+
+function RapportVoyageGenerator({ activiteId }) {
+  const [loading, setLoading] = useState(false)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const { data } = await supabase.auth.getSession()
+      const session = data?.session
+      if (!session?.access_token) { alert('Session expirée.'); setLoading(false); return }
+      const resp = await fetch(
+        `/.netlify/functions/activite-voyage-rapport-pdf?id=${encodeURIComponent(activiteId)}`,
+        { headers: { 'Authorization': `Bearer ${session.access_token}` } }
+      )
+      const body = await resp.text()
+      if (!resp.ok) { alert(`Erreur ${resp.status}: ${body}`); setLoading(false); return }
+      const blob = new Blob([body], { type: 'text/html; charset=utf-8' })
+      const win = window.open(URL.createObjectURL(blob), '_blank')
+      if (!win) alert("Le navigateur a bloqué l'ouverture. Autorisez les popups.")
+    } catch(e) { alert('Erreur : ' + (e?.message || String(e))) }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <div>
+      <button type="button" onClick={generate} disabled={loading}
+        className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:text-emerald-800 border border-emerald-200 hover:border-emerald-400 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-2 transition-colors disabled:opacity-50">
+        {loading ? <Loader2 size={12} className="animate-spin" /> : '📊'}
+        {loading ? 'Génération…' : 'Générer rapport'}
+      </button>
+      <p className="text-xs text-gray-400 mt-1.5 leading-tight">Rapport complet du voyage.</p>
     </div>
   )
 }
@@ -397,7 +470,7 @@ function FileStage({ label, files, setFiles }) {
 function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participantEleves,
                          pendingDocs, setPendingDocs, savedDocs, viewDoc, delSavedDoc,
                          pendingFactures, setPendingFactures, savedFactures,
-                         intitule, formType }) {
+                         intitule, formType, montantParEleveAnnonce }) {
   const [depenses, setDepenses]     = useState([])
   const [absents, setAbsents]       = useState([])
   const [loadingDep, setLoadingDep] = useState(true)
@@ -487,9 +560,9 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {/* Top row: Documents + Avis */}
-        <div className="grid grid-cols-2 gap-3 p-3 border-b border-gray-100">
-          <div>
+        {/* Top row: 4 sections */}
+        <div className="grid grid-cols-4 gap-0 border-b border-gray-100">
+          <div className="p-3 border-r border-gray-100">
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Documents PDF</p>
             <FileStage label="Documents (PDF)" files={pendingDocs} setFiles={setPendingDocs} compact />
             {savedDocs.length > 0 && (
@@ -504,13 +577,21 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
               </ul>
             )}
           </div>
-          <div>
+          <div className="p-3 border-r border-gray-100">
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Générer avis</p>
             {formType === 'extramuros' || formType === 'intramuros' ? (
               <AvisGenerator activiteId={activiteId} intitule={intitule} />
             ) : (
-              <p className="text-xs text-gray-400 italic text-[11px]">Non disponible pour les voyages.</p>
+              <AvisGenerator activiteId={activiteId} intitule={intitule} isVoyage montantParEleve={montantParEleveAnnonce} />
             )}
+          </div>
+          <div className="p-3 border-r border-gray-100">
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Demande d'avance</p>
+            <AvanceGenerator activiteId={activiteId} depenses={depenses} intitule={intitule} />
+          </div>
+          <div className="p-3">
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Générer rapport</p>
+            <RapportVoyageGenerator activiteId={activiteId} />
           </div>
         </div>
 
@@ -604,15 +685,21 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
                           </div>
                         </div>
                       </div>
-                      {/* Row 3: Incompressible + Payé par */}
-                      <div className="grid grid-cols-2 gap-1 mb-1.5">
-                        <label className="flex items-center gap-1.5 cursor-pointer">
+                      {/* Row 3: Incompressible + Avance + Payé par */}
+                      <div className="flex items-center gap-3 mb-1.5">
+                        <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
                           <input type="checkbox" checked={!!dep.incompressible}
                             onChange={e => updateDepense(dep.id, { incompressible: e.target.checked })}
                             className="rounded" />
                           <span className="text-[11px] text-gray-600">Incompressible</span>
                         </label>
-                        <select className="input text-xs py-1 px-2" value={dep.paye_par || ''}
+                        <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
+                          <input type="checkbox" checked={!!dep.avance}
+                            onChange={e => updateDepense(dep.id, { avance: e.target.checked })}
+                            className="rounded accent-blue-600" />
+                          <span className="text-[11px] text-blue-700 font-medium">Avance</span>
+                        </label>
+                        <select className="input text-xs py-1 px-2 flex-1" value={dep.paye_par || ''}
                           onChange={e => updateDepense(dep.id, { paye_par: e.target.value })}>
                           <option value="">— Payé par —</option>
                           {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
@@ -1429,6 +1516,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
             savedFactures={savedFactures}
             intitule={form.intitule}
             formType={form.type}
+            montantParEleveAnnonce={form.montant_par_eleve_annonce}
           />
         </div>
 

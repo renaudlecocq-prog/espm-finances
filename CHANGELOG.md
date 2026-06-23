@@ -1081,3 +1081,16 @@ git push origin main
   - 3 colonnes : Montant total réel | Par élève réel | Absents réel
   - "Absents réel" = somme des dépenses incompressibles / nb total élèves
   - Affiché en amber si des absents sont signalés, grisé avec "—" sinon
+
+## [v0.59] — 2026-06-23
+
+### Added
+- **DB** : colonne `avance` (boolean) sur `activite_depenses`
+- **DepensesPanel (voyages)** : grille top row passe de 2 à 4 sections
+  - Documents PDF | Générer avis | Demande d'avance | Générer rapport
+- **Générer avis** : activé pour les voyages (montant par élève annoncé uniquement)
+- **Demande d'avance** : nouveau bouton + Netlify function `activite-avance-pdf.mjs`
+  - Formulaire imprimable : coordonnées personnel, IBAN, date, dépenses marquées "Avance", mention documents originaux, 2 signatures
+- **Générer rapport** : nouveau bouton + Netlify function `activite-voyage-rapport-pdf.mjs`
+  - Rapport complet : KPIs, infos, tableau dépenses détaillé, totaux
+- **Dépenses** : checkbox "Avance" (bleu) à côté de "Incompressible" dans chaque ligne de dépense

@@ -1,0 +1,244 @@
+// activite-voyage-rapport-pdf.mjs — v1.0
+// GET /.netlify/functions/activite-voyage-rapport-pdf?id=UUID
+// Génère un rapport complet d'un voyage scolaire
+import { createClient } from '@supabase/supabase-js'
+
+const SUPABASE_URL         = process.env.SUPABASE_URL
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const SCHOOL_EMAIL         = process.env.SCHOOL_EMAIL_SCHOOL || 'info@espmaritime.be'
+const SCHOOL_TEL           = process.env.SCHOOL_TEL_SCHOOL   || '02/210.20.91'
+
+const esc     = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+const fmt     = n => Number(n||0).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €'
+const fmtDate = s => s ? new Date(s+'T00:00:00').toLocaleDateString('fr-BE') : '—'
+const fmtTime = s => s ? String(s).slice(0,5) : '—'
+
+const CAT_LABELS = {
+  activite:'Activité', hebergement:'Hébergement', nourriture:'Nourriture',
+  transport:'Transport', urgences:'Urgences', autres:'Autres',
+}
+
+export const handler = async (event) => {
+  const authHeader = event.headers?.authorization || event.headers?.Authorization || ''
+  const params     = event.queryStringParameters || {}
+  const token      = authHeader.startsWith('Bearer ') ? authHeader.slice(7)
+    : (params.token ? decodeURIComponent(params.token) : null)
+  const id = params.id
+
+  if (!token) return { statusCode:401, body:'Token manquant' }
+  if (!id)    return { statusCode:400, body:'id manquant' }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  const { data:{ user }, error:authErr } = await supabase.auth.getUser(token)
+  if (authErr || !user) return { statusCode:403, body:'Non autorisé' }
+
+  const logoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
+
+  const [{ data:act }, { data:depenses }, { data:absents }, { data:profiles }] = await Promise.all([
+    supabase.from('activites').select('*').eq('id', id).single(),
+    supabase.from('activite_depenses').select('*').eq('activite_id', id).order('ordre').order('created_at'),
+    supabase.from('activite_absents').select('eleve_id').eq('activite_id', id),
+    supabase.from('profiles').select('id, nom, prenom'),
+  ])
+  if (!act) return { statusCode:404, body:'Activité introuvable' }
+
+  const byId = Object.fromEntries((profiles||[]).map(p => [p.id, `${p.prenom||''} ${p.nom||''}`.trim()]))
+  const today = new Date().toLocaleDateString('fr-BE')
+  const deps = depenses || []
+  const absCount = (absents || []).length
+  const nbEleves = Number(act.nb_eleves || 0)
+  const nbPresents = Math.max(0, nbEleves - absCount)
+
+  const typeColor = '#8b5cf6'
+  const typeBg    = '#f5f3ff'
+
+  const responsable  = byId[act.responsable_id] || '—'
+  const accomps      = (act.accompagnateur_ids || []).map(i => byId[i]||i).filter(Boolean)
+
+  // Calculs totaux
+  const montantTotal = deps.reduce((s,d) => s + parseFloat(d.montant_total||0), 0)
+  const montantIncomp = deps.filter(d=>d.incompressible).reduce((s,d)=>s+parseFloat(d.montant_total||0),0)
+  const parEleveReel = nbEleves > 0 ? montantTotal / nbEleves : 0
+  const parEleveAbsent = nbEleves > 0 ? montantIncomp / nbEleves : 0
+  const mpeAnnonce = parseFloat(act.montant_par_eleve_annonce || 0)
+
+  // Dépenses rows
+  const depRows = deps.length > 0 ? deps.map(d => {
+    const effNb = d.nb_eleves_override != null ? d.nb_eleves_override
+      : (d.incompressible ? nbEleves : nbPresents)
+    const mpe = effNb > 0 ? parseFloat(d.montant_total||0)/effNb : 0
+    const badges = []
+    if (d.incompressible) badges.push('<span class="badge-incomp">Incompressible</span>')
+    if (d.avance) badges.push('<span class="badge-avance">Avance</span>')
+    return `
+    <tr>
+      <td>${esc(CAT_LABELS[d.categorie]||d.categorie)}</td>
+      <td>${esc(d.intitule||'—')}</td>
+      <td class="text-right">${fmt(d.montant_total)}</td>
+      <td class="text-right">${effNb}</td>
+      <td class="text-right">${mpe>0?mpe.toFixed(2)+' €':'—'}</td>
+      <td>${esc(d.paye_par||'—')}</td>
+      <td>${badges.join(' ')}</td>
+    </tr>`
+  }).join('') : `<tr><td colspan="7" class="empty">Aucune dépense enregistrée</td></tr>`
+
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Rapport voyage — ${esc(act.intitule)}</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; font-family:'Helvetica Neue',Arial,sans-serif }
+  body { background:#f5f5f5; padding:0 }
+  .page {
+    background:#fff; width:210mm; min-height:297mm;
+    margin:10mm auto; padding:20mm 22mm 18mm 22mm;
+    display:flex; flex-direction:column;
+    box-shadow:0 2px 16px rgba(0,0,0,.12);
+  }
+  .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10mm; padding-bottom:6mm; border-bottom:1.5px solid #e5e7eb }
+  .logo-ecole { height:16mm; width:auto }
+  .header-right { text-align:right }
+  .school-name-bold { font-size:11pt; font-weight:700; color:#1a1a2e; margin-bottom:1.5mm }
+  .school-addr { font-size:8pt; color:#888; line-height:1.5 }
+  .title-row { display:flex; align-items:baseline; gap:3mm; margin-bottom:2mm }
+  .type-badge { display:inline-block; background:${typeBg}; color:${typeColor}; border:1px solid ${typeColor}40; border-radius:5px; font-size:7.5pt; font-weight:700; padding:1mm 3mm; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; flex-shrink:0 }
+  h1 { font-size:15pt; font-weight:800; color:#1a1a2e; line-height:1.2 }
+  .date-line { font-size:9pt; color:#888; margin-bottom:6mm }
+  .section-title { font-size:8pt; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#6b7280; margin-bottom:2mm; margin-top:5mm; padding-bottom:1mm; border-bottom:1px solid #f3f4f6 }
+  /* Info table */
+  .info-table { width:100%; border-collapse:collapse; margin-bottom:4mm }
+  .info-table th, .info-table td { padding:2mm 3mm; text-align:left; font-size:9pt; border-bottom:1px solid #f0f0f0 }
+  .info-table th { width:45mm; color:#6b7280; font-weight:600; white-space:nowrap }
+  .info-table td { color:#111827 }
+  /* KPI row */
+  .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:3mm; margin-bottom:5mm }
+  .kpi-box { background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px; padding:3mm; text-align:center }
+  .kpi-label { font-size:7.5pt; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:.4px; margin-bottom:1mm }
+  .kpi-value { font-size:13pt; font-weight:800; color:#111827 }
+  .kpi-value.purple { color:#7c3aed }
+  .kpi-value.amber  { color:#b45309 }
+  /* Dépenses table */
+  .dep-table { width:100%; border-collapse:collapse; font-size:8.5pt; margin-bottom:4mm }
+  .dep-table th { background:#f5f3ff; padding:2mm 2.5mm; text-align:left; font-weight:700; color:#374151; border-bottom:2px solid #c4b5fd; white-space:nowrap }
+  .dep-table td { padding:2mm 2.5mm; border-bottom:1px solid #f0f0f0; color:#111827; vertical-align:middle }
+  .dep-table .text-right { text-align:right }
+  .dep-table .empty { text-align:center; color:#9ca3af; font-style:italic }
+  .badge-incomp { display:inline-block; background:#dcfce7; color:#15803d; border-radius:3px; font-size:7pt; padding:0.5mm 2mm; font-weight:700 }
+  .badge-avance { display:inline-block; background:#dbeafe; color:#1d4ed8; border-radius:3px; font-size:7pt; padding:0.5mm 2mm; font-weight:700 }
+  /* Totals */
+  .totals-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3mm; margin-bottom:5mm }
+  .total-box { border-radius:6px; border:1px solid; padding:3mm 4mm; text-align:center }
+  .total-box.main { background:#f5f3ff; border-color:#c4b5fd }
+  .total-box.green { background:#f0fdf4; border-color:#86efac }
+  .total-box.amber { background:#fffbeb; border-color:#fcd34d }
+  .total-label { font-size:7.5pt; color:#6b7280; font-weight:600; text-transform:uppercase; letter-spacing:.4px; margin-bottom:1mm }
+  .total-value { font-size:12pt; font-weight:800 }
+  .total-box.main .total-value { color:#5b21b6 }
+  .total-box.green .total-value { color:#15803d }
+  .total-box.amber .total-value { color:#b45309 }
+  .spacer { flex:1 }
+  .footer { border-top:1px solid #e5e7eb; padding-top:3mm; display:flex; justify-content:space-between; align-items:center; font-size:7pt; color:#9ca3af; margin-top:4mm }
+  .footer-brand span { color:#f97316; font-weight:700 }
+  @media print {
+    body { background:#fff; padding:0 }
+    .page { box-shadow:none; margin:0; width:100%; min-height:100vh }
+    @page { size:A4; margin:0 }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <img src="${logoUrl}" alt="Logo" class="logo-ecole">
+    <div class="header-right">
+      <div class="school-name-bold">École Secondaire Plurielle Maritime</div>
+      <div class="school-addr">${SCHOOL_TEL}<br>${SCHOOL_EMAIL}</div>
+    </div>
+  </div>
+
+  <div class="title-row">
+    <span class="type-badge">Rapport — Voyage scolaire</span>
+    <h1>${esc(act.intitule)}</h1>
+  </div>
+  <div class="date-line">
+    ${fmtDate(act.date_debut)}${act.date_fin && act.date_fin !== act.date_debut ? ` au ${fmtDate(act.date_fin)}` : ''}
+    &nbsp;·&nbsp; Rapport généré le ${today}
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-box">
+      <div class="kpi-label">Élèves</div>
+      <div class="kpi-value">${nbEleves}</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Absents</div>
+      <div class="kpi-value amber">${absCount}</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Montant annoncé / élève</div>
+      <div class="kpi-value purple">${mpeAnnonce > 0 ? fmt(mpeAnnonce) : '—'}</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Lieu</div>
+      <div class="kpi-value" style="font-size:9pt">${esc(act.lieu||'—')}</div>
+    </div>
+  </div>
+
+  <!-- Infos activité -->
+  <div class="section-title">Informations</div>
+  <table class="info-table">
+    <tr><th>Responsable</th><td>${esc(responsable)}</td></tr>
+    ${accomps.length > 0 ? `<tr><th>Accompagnants</th><td>${accomps.map(a=>esc(a)).join(', ')}</td></tr>` : ''}
+    <tr><th>Départ</th><td>${fmtDate(act.date_debut)} à ${fmtTime(act.heure_depart)}</td></tr>
+    <tr><th>Retour</th><td>${fmtDate(act.date_fin)} à ${fmtTime(act.heure_retour)}</td></tr>
+    ${act.lieu_rdv ? `<tr><th>Lieu de RDV</th><td>${esc(act.lieu_rdv)}</td></tr>` : ''}
+    ${act.lieu_retour ? `<tr><th>Lieu de retour</th><td>${esc(act.lieu_retour)}</td></tr>` : ''}
+    ${act.description ? `<tr><th>Description</th><td style="white-space:pre-wrap">${esc(act.description)}</td></tr>` : ''}
+  </table>
+
+  <!-- Dépenses -->
+  <div class="section-title">Détail des dépenses</div>
+  <table class="dep-table">
+    <thead>
+      <tr>
+        <th>Catégorie</th><th>Intitulé</th><th class="text-right">Montant</th>
+        <th class="text-right">Nb élèves</th><th class="text-right">Par élève</th>
+        <th>Payé par</th><th>Options</th>
+      </tr>
+    </thead>
+    <tbody>${depRows}</tbody>
+  </table>
+
+  <!-- Totaux -->
+  <div class="totals-grid">
+    <div class="total-box main">
+      <div class="total-label">Montant total réel</div>
+      <div class="total-value">${fmt(montantTotal)}</div>
+    </div>
+    <div class="total-box green">
+      <div class="total-label">Par élève réel</div>
+      <div class="total-value">${fmt(parEleveReel)}</div>
+    </div>
+    <div class="total-box amber">
+      <div class="total-label">Absents réel</div>
+      <div class="total-value">${absCount > 0 ? fmt(parEleveAbsent) : '—'}</div>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+  <div class="footer">
+    <div class="footer-brand">Généré via <span>ESPM+</span> le ${today}</div>
+    <div>${SCHOOL_EMAIL} — ${SCHOOL_TEL}</div>
+  </div>
+</div>
+</body>
+</html>`
+
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    body: html,
+  }
+}
