@@ -168,7 +168,7 @@ function FacturationModal({ onClose, onDone }) {
           .select('*, article:article_id(nom,categorie,prix_unitaire)')
           .eq('statut_facturation', 'a_facturer'),
         supabase.from('activites')
-          .select('*')
+          .select('*, acomptes_config')
           .eq('statut_facturation', 'a_facturer')
           .eq('statut', 'publie'),
       ])
@@ -196,6 +196,8 @@ function FacturationModal({ onClose, onDone }) {
         pendingActiv = pendingActiv.filter(a => !activBilled.has(a.id))
       }
 
+      // Exclure les voyages gérés par acomptes (facturés depuis la page voyage)
+      pendingActiv = pendingActiv.filter(a => !(a.type === 'voyage' && Array.isArray(a.acomptes_config) && a.acomptes_config.length > 0))
       setAttrs(pendingAttrs)
       setActivites(pendingActiv)
       const sel = {}

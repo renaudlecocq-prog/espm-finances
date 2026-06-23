@@ -102,6 +102,7 @@ const EMPTY = {
   groupes_inclus: [],   // text[] format "col:valeur"
   classes_exclues: [],
   groupes_exclus: [],   // text[] format "col:valeur"
+  acomptes_config: [],
 }
 
 function validate(form) {
@@ -466,11 +467,260 @@ function FileStage({ label, files, setFiles }) {
 
 // ── Activity form modal ────────────────────────────────────────────────────
 
+// ── VoyageAcomptesSection ────────────────────────────────────────────────────
+function chunkArr(arr, n) {
+  const out = []
+  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n))
+  return out
+}
+
+function VoyageAcomptesSection({ activiteId, acomptesConfig, participantEleves, depenses, absents, nbTotalEleves, intitule, userId }) {
+  const [acompteBatches, setAcompteBatches] = useState([])
+  const [soldeBatch, setSoldeBatch]         = useState(null)
+  const [loading, setLoading]               = useState(true)
+  const [generating, setGenerating]         = useState(null) // index or 'solde'
+
+  const loadBatches = async () => {
+    const { data } = await supabase.from('facture_batches')
+      .select('id, nom, date, statut, voyage_batch_type, voyage_acompte_index')
+      .eq('voyage_activite_id', activiteId)
+      .order('created_at')
+    const ab = (data || []).filter(b => b.voyage_batch_type === 'acompte')
+    const sb = (data || []).find(b => b.voyage_batch_type === 'solde') || null
+    setAcompteBatches(ab)
+    setSoldeBatch(sb)
+    setLoading(false)
+  }
+
+  useEffect(() => { if (activiteId) loadBatches() }, [activiteId]) // eslint-disable-line
+
+  const generatedIndexes = new Set(acompteBatches.map(b => b.voyage_acompte_index))
+
+  // Calcul montant réel présents / absents à partir des dépenses
+  const absentsSet = new Set(absents)
+  const nbTotal    = participantEleves.length || nbTotalEleves
+  const nbPresents = Math.max(0, nbTotal - absentsSet.size)
+
+  let realPresent = 0
+  let realAbsent  = 0
+  depenses.forEach(d => {
+    const effNb = d.nb_eleves_override != null ? d.nb_eleves_override
+      : (d.incompressible ? nbTotal : nbPresents)
+    const mpe = effNb > 0 ? parseFloat(d.montant_total || 0) / effNb : 0
+    realPresent += mpe
+    if (d.incompressible) realAbsent += mpe
+  })
+
+  const totalAcomptes = acomptesConfig.reduce((s, a) => s + parseFloat(a.montant || 0), 0)
+  const soldePresent  = realPresent  - totalAcomptes
+  const soldeAbsent   = realAbsent   - totalAcomptes
+
+  async function getBatchNumero() {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = String(now.getMonth() + 1).padStart(2, '0')
+    const d = String(now.getDate()).padStart(2, '0')
+    const base = `F-${y}${m}${d}`
+    const { data: existing } = await supabase.from('facture_batches').select('numero').like('numero', `${base}%`)
+    const run = String((existing?.length || 0) + 1).padStart(2, '0')
+    return `${base}-${run}`
+  }
+
+  async function computeSoldeMap() {
+    const [{ data: paies }, { data: facts }] = await Promise.all([
+      supabase.from('paiements').select('eleve_id,montant'),
+      supabase.from('factures').select('eleve_id,montant'),
+    ])
+    const map = {}
+    ;(paies || []).forEach(p => { map[p.eleve_id] = (map[p.eleve_id] || 0) + Number(p.montant) })
+    ;(facts || []).forEach(f => { map[f.eleve_id] = (map[f.eleve_id] || 0) - Number(f.montant) })
+    return map
+  }
+
+  async function genererAcompte(index) {
+    const acompte = acomptesConfig[index]
+    const montant = parseFloat(acompte.montant)
+    if (!montant || !participantEleves.length) return
+    setGenerating(index)
+    try {
+      const batchNumero = await getBatchNumero()
+      const today       = new Date().toISOString().slice(0, 10)
+      const soldeMap    = await computeSoldeMap()
+
+      const { data: batch } = await supabase.from('facture_batches').insert({
+        numero: batchNumero, date: today, statut: 'brouillon',
+        created_by: userId,
+        nom: `${intitule} — ${acompte.label}`,
+        voyage_activite_id: activiteId,
+        voyage_batch_type: 'acompte',
+        voyage_acompte_index: index,
+      }).select().single()
+      if (!batch) throw new Error('Batch non créé')
+
+      const factData = participantEleves.map((e, i) => {
+        const sv = soldeMap[e.id] || 0
+        return {
+          eleve_id: e.id, montant, date: today, statut: 'brouillon',
+          numero: `${batchNumero}-${e.matricule || String(i + 1).padStart(6, '0')}`,
+          solde_avant: sv, solde_apres: sv - montant,
+          created_by: userId, batch_id: batch.id,
+        }
+      })
+      const { data: insertedFacs } = await supabase.from('factures').insert(factData).select('id, numero')
+      const facByNum = Object.fromEntries((insertedFacs || []).map(f => [f.numero, f.id]))
+
+      const lignes = factData.map(fd => ({
+        facture_id: facByNum[fd.numero],
+        type: 'activite', libelle: acompte.label,
+        categorie: 'Activités', montant,
+        activite_id: activiteId,
+      })).filter(l => l.facture_id)
+      for (const chunk of chunkArr(lignes, 100)) {
+        await supabase.from('facture_lignes').insert(chunk)
+      }
+      await loadBatches()
+    } finally { setGenerating(null) }
+  }
+
+  async function genererSolde() {
+    if (!participantEleves.length) return
+    setGenerating('solde')
+    try {
+      // Récupérer les acomptes déjà facturés par élève
+      const acompteBatchIds = acompteBatches.map(b => b.id)
+      const acompteParEleve = {}
+      if (acompteBatchIds.length > 0) {
+        for (const slice of chunkArr(acompteBatchIds, 50)) {
+          const { data: facs } = await supabase.from('factures')
+            .select('eleve_id, montant').in('batch_id', slice)
+          ;(facs || []).forEach(f => {
+            acompteParEleve[f.eleve_id] = (acompteParEleve[f.eleve_id] || 0) + Number(f.montant)
+          })
+        }
+      }
+
+      const batchNumero = await getBatchNumero()
+      const today       = new Date().toISOString().slice(0, 10)
+      const soldeMap    = await computeSoldeMap()
+
+      const { data: batch } = await supabase.from('facture_batches').insert({
+        numero: batchNumero, date: today, statut: 'brouillon',
+        created_by: userId,
+        nom: `${intitule} — Solde`,
+        voyage_activite_id: activiteId,
+        voyage_batch_type: 'solde',
+      }).select().single()
+      if (!batch) throw new Error('Batch non créé')
+
+      const factData = participantEleves.map((e, i) => {
+        const isAbsent   = absentsSet.has(e.id)
+        const real       = isAbsent ? realAbsent : realPresent
+        const deja       = acompteParEleve[e.id] || 0
+        const montant    = parseFloat((real - deja).toFixed(2))
+        const sv         = soldeMap[e.id] || 0
+        const libelle    = montant < 0
+          ? `${intitule} — Solde (avoir)`
+          : `${intitule} — Solde`
+        return {
+          eleve_id: e.id, montant, date: today, statut: 'brouillon',
+          numero: `${batchNumero}-${e.matricule || String(i + 1).padStart(6, '0')}`,
+          solde_avant: sv, solde_apres: sv - montant,
+          created_by: userId, batch_id: batch.id,
+          _libelle: libelle, _isAbsent: isAbsent, _real: real, _deja: deja,
+        }
+      })
+      const toInsert = factData.map(({ _libelle, _isAbsent, _real, _deja, ...fd }) => fd)
+      const { data: insertedFacs } = await supabase.from('factures').insert(toInsert).select('id, numero')
+      const facByNum = Object.fromEntries((insertedFacs || []).map(f => [f.numero, f.id]))
+
+      const lignes = factData.map(fd => {
+        const isAbsent = absentsSet.has(fd.eleve_id)
+        return {
+          facture_id: facByNum[fd.numero],
+          type: 'activite',
+          libelle: isAbsent ? `${intitule} — Solde (absent)` : `${intitule} — Solde`,
+          categorie: 'Activités', montant: fd.montant,
+          activite_id: activiteId,
+        }
+      }).filter(l => l.facture_id)
+      for (const chunk of chunkArr(lignes, 100)) {
+        await supabase.from('facture_lignes').insert(chunk)
+      }
+      await loadBatches()
+    } finally { setGenerating(null) }
+  }
+
+  if (!acomptesConfig.length) return null
+
+  const canSolde = depenses.length > 0 && !soldeBatch
+
+  return (
+    <div className="border-b border-gray-100">
+      <div className="px-3 py-2.5">
+        <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+          Acomptes &amp; Solde
+        </h4>
+
+        {loading ? (
+          <p className="text-xs text-gray-400">Chargement…</p>
+        ) : (
+          <div className="space-y-1">
+            {acomptesConfig.map((a, i) => {
+              const batch = acompteBatches.find(b => b.voyage_acompte_index === i)
+              const isGen = !!batch
+              return (
+                <div key={i} className="flex items-center gap-2 text-xs">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isGen ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  <span className="flex-1 text-gray-700 truncate">{a.label || `Acompte ${i+1}`}</span>
+                  <span className="text-gray-500 font-medium shrink-0">{fmt(parseFloat(a.montant||0))}</span>
+                  {isGen ? (
+                    <span className="text-green-600 font-medium shrink-0 text-[10px]">✓ {fmtDate(batch.date)}</span>
+                  ) : (
+                    <button
+                      onClick={() => genererAcompte(i)}
+                      disabled={!!generating}
+                      className="btn-primary text-[10px] py-0.5 px-2 shrink-0 disabled:opacity-50">
+                      {generating === i ? <Loader2 size={10} className="animate-spin" /> : 'Générer'}
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* Ligne solde */}
+            <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t border-gray-100">
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${soldeBatch ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <span className="flex-1 text-gray-700 font-medium">Solde final</span>
+              {depenses.length > 0 && (
+                <span className="text-gray-500 shrink-0">
+                  présents {fmt(soldePresent)} / absents {fmt(soldeAbsent)}
+                </span>
+              )}
+              {soldeBatch ? (
+                <span className="text-green-600 font-medium shrink-0 text-[10px]">✓ {fmtDate(soldeBatch.date)}</span>
+              ) : (
+                <button
+                  onClick={genererSolde}
+                  disabled={!!generating || !canSolde}
+                  title={!depenses.length ? 'Saisir les dépenses réelles avant de générer le solde' : ''}
+                  className="btn-primary text-[10px] py-0.5 px-2 shrink-0 disabled:opacity-50">
+                  {generating === 'solde' ? <Loader2 size={10} className="animate-spin" /> : 'Générer solde'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── DepensesPanel ────────────────────────────────────────────────────────
 function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participantEleves,
                          pendingDocs, setPendingDocs, savedDocs, viewDoc, delSavedDoc,
                          pendingFactures, setPendingFactures, savedFactures,
-                         intitule, formType, montantParEleveAnnonce }) {
+                         intitule, formType, montantParEleveAnnonce,
+                         acomptesConfig = [], userId }) {
   const [depenses, setDepenses]     = useState([])
   const [absents, setAbsents]       = useState([])
   const [loadingDep, setLoadingDep] = useState(true)
@@ -594,6 +844,20 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
             <RapportVoyageGenerator activiteId={activiteId} />
           </div>
         </div>
+
+        {/* Acomptes voyage */}
+        {formType === 'voyage' && (
+          <VoyageAcomptesSection
+            activiteId={activiteId}
+            acomptesConfig={acomptesConfig}
+            participantEleves={participantEleves}
+            depenses={depenses}
+            absents={absents}
+            nbTotalEleves={nbTotalEleves}
+            intitule={intitule}
+            userId={userId}
+          />
+        )}
 
         {/* Factures section — masqué pour les voyages (factures dans dépenses) */}
         {formType !== 'voyage' && (
@@ -912,7 +1176,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
     lieu_rdv: 'Lieu de RDV', lieu_retour: 'Lieu de retour', type_transport: 'Type de transport', tel_organisateur: 'Tél. organisateur.trice',
     date_fin: 'Date de retour', local: 'Local',
     heure_debut: 'Heure de début', heure_fin: 'Heure de fin',
-    statut: 'Statut', description: 'Description', nb_eleves: 'Nb élèves',
+    statut: 'Statut', description: 'Description', nb_eleves: 'Nb élèves', acomptes_config: 'Acomptes',
     montant_total: 'Montant total', pop: 'POP',
     responsable_id: 'Responsable', accompagnateur_ids: 'Accompagnateurs',
   }
@@ -1344,6 +1608,54 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                       : '—'}
                   </div>
                 </div>
+                {/* Acomptes config */}
+                <div className="col-span-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="label mb-0">Acomptes</label>
+                    <button type="button"
+                      onClick={() => f('acomptes_config', [...(form.acomptes_config||[]), {label:'', montant:''}])}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                      + Ajouter un acompte
+                    </button>
+                  </div>
+                  {(form.acomptes_config||[]).length === 0 && (
+                    <p className="text-xs text-gray-400 italic">Aucun acompte configuré — les élèves seront facturés en une seule fois.</p>
+                  )}
+                  {(form.acomptes_config||[]).map((a, i) => (
+                    <div key={i} className="flex gap-2 mb-1.5 items-center">
+                      <input
+                        className="input flex-1 py-1.5 text-sm"
+                        placeholder="Label (ex: Acompte septembre)"
+                        value={a.label}
+                        onChange={e => {
+                          const next = [...(form.acomptes_config||[])]
+                          next[i] = {...next[i], label: e.target.value}
+                          f('acomptes_config', next)
+                        }}
+                      />
+                      <input
+                        className="input w-28 py-1.5 text-sm"
+                        type="number" step="0.01" min="0"
+                        placeholder="Montant €"
+                        value={a.montant}
+                        onChange={e => {
+                          const next = [...(form.acomptes_config||[])]
+                          next[i] = {...next[i], montant: e.target.value}
+                          f('acomptes_config', next)
+                        }}
+                      />
+                      <button type="button"
+                        onClick={() => f('acomptes_config', (form.acomptes_config||[]).filter((_,j)=>j!==i))}
+                        className="text-gray-400 hover:text-red-500 text-lg leading-none flex-shrink-0">&times;</button>
+                    </div>
+                  ))}
+                  {(form.acomptes_config||[]).length > 0 && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Total acomptes : {fmt((form.acomptes_config||[]).reduce((s,a)=>s+parseFloat(a.montant||0),0))}
+                      {form.montant_par_eleve_annonce && <span className="ml-2 text-blue-500">/ {fmt(parseFloat(form.montant_par_eleve_annonce))} annoncé</span>}
+                    </p>
+                  )}
+                </div>
               </>) : (<>
                 {/* Intramuros / Extramuros : montant total + POP → calcul par élève */}
                 <div><label className="label">Montant total (€)</label>
@@ -1517,6 +1829,8 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
             intitule={form.intitule}
             formType={form.type}
             montantParEleveAnnonce={form.montant_par_eleve_annonce}
+            acomptesConfig={form.acomptes_config || []}
+            userId={userId}
           />
         </div>
 

@@ -1135,3 +1135,17 @@ git push origin main
 ### Changed
 - **activite-voyage-rapport-pdf.mjs** : "Lieu" retiré de la section Informations (déjà dans les KPIs)
 - **activite-voyage-rapport-pdf.mjs + Activites.jsx** : "Par élève réel" → "Facturé aux élèves présents" ; "Absents réel" → "Facturé aux élèves absents"
+
+## [v0.66] — 2026-06-23
+
+### Added
+- **Acomptes voyage** : nouveau système de facturation en plusieurs fois pour les voyages scolaires
+  - Migration DB : `activites.acomptes_config` (JSONB), `facture_batches.voyage_activite_id / voyage_batch_type / voyage_acompte_index`
+  - Formulaire voyage : section "Acomptes" pour configurer N acomptes (label + montant) avec total et comparaison au montant annoncé
+  - DepensesPanel : section "Acomptes & Solde" (voyages uniquement) — status par acompte, bouton Générer, bouton Générer solde
+  - Calcul automatique du solde réel : élèves présents (toutes dépenses) / absents (dépenses incompressibles seulement), moins les acomptes déjà facturés
+  - Les factures de solde peuvent être négatives (avoir à rembourser)
+  - Les batches acomptes/solde sont liés à l'activité via `voyage_activite_id`
+
+### Changed
+- **Factures.jsx** : voyages avec acomptes configurés exclus du flux de facturation classique (gérés depuis la page voyage)
