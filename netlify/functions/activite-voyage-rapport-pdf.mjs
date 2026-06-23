@@ -213,7 +213,7 @@ export const handler = async (event) => {
     <tr><th>Responsable</th><td>${esc(responsable)}</td></tr>
     ${accomps.length > 0 ? `<tr><th>Accompagnants</th><td>${accomps.map(a=>esc(a)).join(', ')}</td></tr>` : ''}
     <tr><th>Départ — Retour</th><td>${fmtDate(act.date_debut)} — ${fmtDate(act.date_fin)}</td></tr>
-    <tr><th>Lieu</th><td>${esc(act.lieu||'—')}</td></tr>
+
   </table>
 
   <div class="section-title">Détail des dépenses</div>
@@ -236,11 +236,11 @@ export const handler = async (event) => {
       <div class="total-value">${fmt(montantTotal)}</div>
     </div>
     <div class="total-box green">
-      <div class="total-label">Par élève réel</div>
+      <div class="total-label">Facturé aux élèves présents</div>
       <div class="total-value">${fmt(parEleveReel)}</div>
     </div>
     <div class="total-box amber">
-      <div class="total-label">Absents réel</div>
+      <div class="total-label">Facturé aux élèves absents</div>
       <div class="total-value">${absCount > 0 ? fmt(parEleveAbsent) : '—'}</div>
     </div>
   </div>

@@ -743,11 +743,11 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
                   <p className="font-bold text-sm text-gray-800">{fmt(montantTotalReel)}</p>
                 </div>
                 <div className="bg-white rounded-lg border border-gray-200 px-3 py-2 text-center">
-                  <p className="text-[10px] text-gray-400 mb-0.5">Par élève réel</p>
+                  <p className="text-[10px] text-gray-400 mb-0.5">Facturé aux élèves présents</p>
                   <p className="font-bold text-sm text-gray-800">{fmt(montantParEleveReel)}</p>
                 </div>
                 <div className={`rounded-lg border px-3 py-2 text-center ${absents.length > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200 opacity-40'}`}>
-                  <p className="text-[10px] text-gray-400 mb-0.5">Absents réel</p>
+                  <p className="text-[10px] text-gray-400 mb-0.5">Facturé aux élèves absents</p>
                   <p className={`font-bold text-sm ${absents.length > 0 ? 'text-amber-700' : 'text-gray-400'}`}>
                     {absents.length > 0 ? fmt(montantAbsentsReel) : '—'}
                   </p>

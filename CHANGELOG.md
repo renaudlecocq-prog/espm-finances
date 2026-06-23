@@ -1129,3 +1129,9 @@ git push origin main
   - Header/footer identiques à l'avis (adresse école, footer "Document généré par ESPM+")
   - Section Informations : Description retirée, Départ/Retour sur une ligne (sans heure), Lieu de RDV/retour remplacés par Lieu
   - Dépenses groupées par catégorie avec sous-totaux par catégorie
+
+## [v0.65] — 2026-06-23
+
+### Changed
+- **activite-voyage-rapport-pdf.mjs** : "Lieu" retiré de la section Informations (déjà dans les KPIs)
+- **activite-voyage-rapport-pdf.mjs + Activites.jsx** : "Par élève réel" → "Facturé aux élèves présents" ; "Absents réel" → "Facturé aux élèves absents"
