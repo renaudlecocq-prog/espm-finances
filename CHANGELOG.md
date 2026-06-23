@@ -1149,3 +1149,13 @@ git push origin main
 
 ### Changed
 - **Factures.jsx** : voyages avec acomptes configurés exclus du flux de facturation classique (gérés depuis la page voyage)
+
+## [v0.67] — 2026-06-23
+
+### Changed
+- **Home.jsx** (HomeFinancier) : Vue financière redessinée — 4 cards dégradées rouge→orange→ambre→vert
+  - Card 1 (rouge) : Impayés — soldes négatifs cumulés
+  - Card 2 (orange) : Échelonnements — montant total en cours / non respecté
+  - Card 3 (ambre) : Organismes tiers — montant total des demandes actives (en cours / validé)
+  - Card 4 (vert) : En réserve — soldes positifs cumulés
+  - Suppression des graphiques sparkline et de tout le code de calcul mensuel associé

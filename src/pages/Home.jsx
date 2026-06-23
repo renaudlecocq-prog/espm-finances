@@ -48,6 +48,7 @@ function StatCard({ label, value, sub, to, color = 'primary', icon, chart, chart
     red: 'from-red-500 to-red-600',
     green: 'from-green-500 to-green-600',
     orange: 'from-orange-500 to-orange-600',
+    amber:  'from-amber-400 to-amber-500',
     blue: 'from-blue-500 to-blue-600',
   }
   const cls = `card p-5 bg-gradient-to-br ${colors[color] || colors.primary} text-white${to ? ' cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all' : ''}`
@@ -132,40 +133,21 @@ function HomeFinancier() {
   const [facture, setFacture] = useState({ frais: 0, materiel: 0, activites: 0, autres: 0 })
   const [echStats, setEchStats] = useState({ en_cours: 0, non_respecte: 0, termine: 0 })
   const [orgStats, setOrgStats] = useState({ CPAS: 0, ULB: 0, SPJ: 0, Autre: 0 })
-  const [sparkPaie, setSparkPaie] = useState([])
-  const [sparkFact, setSparkFact] = useState([])
-  const [sparkMonths, setSparkMonths] = useState([])
+  const [echMontant, setEchMontant] = useState(0)
+  const [orgMontant, setOrgMontant]   = useState(0)
   const as = anneeScolaire()
 
   useEffect(() => {
-    const now = new Date()
-    const startYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1
-    const syStart = `${startYear}-08-01`
-
-    // Générer les mois de l'année scolaire (août → mois courant)
-    const monthLabels = []
-    const monthKeys = []
-    const FR_MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
-    let m = 7 // août = index 7
-    let y = startYear
-    while (true) {
-      monthLabels.push(FR_MONTHS[m])
-      monthKeys.push(`${y}-${String(m + 1).padStart(2, '0')}`)
-      if (y === now.getFullYear() && m === now.getMonth()) break
-      m++
-      if (m > 11) { m = 0; y++ }
-    }
-    setSparkMonths(monthLabels)
-
     Promise.all([
       supabase.from('eleves').select('id').eq('actif', true),
       supabase.from('factures').select('eleve_id, montant, date'),
       supabase.from('paiements').select('eleve_id, montant, date'),
       supabase.from('article_attributions').select('prix_unitaire_applique, quantite, nb_eleves, statut_facturation, article:article_id(categorie, prix_unitaire)'),
       supabase.from('activites').select('montant_total, pop, statut, statut_facturation'),
-      supabase.from('echelonnements').select('statut'),
-      supabase.from('organismes_tiers').select('organisme, statut'),
-    ]).then(([eleves, factures, paiements, attrs, activites, echs, orgs]) => {
+      supabase.from('echelonnements').select('statut, montant'),
+      supabase.from('organismes_tiers').select('id, organisme, statut'),
+      supabase.from('organismes_tiers_articles').select('montant, ot_id'),
+    ]).then(([eleves, factures, paiements, attrs, activites, echs, orgs, otArts]) => {
       // Calcul soldes par élève
       const mPaie = {}, mFact = {}
       for (const p of (paiements.data || [])) {
@@ -177,20 +159,6 @@ function HomeFinancier() {
       const soldes = (eleves.data || []).map(e => (mPaie[e.id] || 0) - (mFact[e.id] || 0))
       setImpayes(Math.abs(soldes.filter(s => s < 0).reduce((a, b) => a + b, 0)))
       setEnReserve(soldes.filter(s => s > 0).reduce((a, b) => a + b, 0))
-
-      // Sparklines par mois depuis début année scolaire
-      const byMPaie = {}, byMFact = {}
-      for (const k of monthKeys) { byMPaie[k] = 0; byMFact[k] = 0 }
-      ;(paiements.data || []).filter(p => p.date >= syStart).forEach(p => {
-        const k = p.date?.substring(0, 7)
-        if (k && byMPaie[k] !== undefined) byMPaie[k] += Number(p.montant || 0)
-      })
-      ;(factures.data || []).filter(f => f.date >= syStart).forEach(f => {
-        const k = f.date?.substring(0, 7)
-        if (k && byMFact[k] !== undefined) byMFact[k] += Number(f.montant || 0)
-      })
-      setSparkPaie(monthKeys.map(k => byMPaie[k] || 0))
-      setSparkFact(monthKeys.map(k => byMFact[k] || 0))
 
       function compute(stat) {
         const rows = (attrs.data || []).filter(a => a.statut_facturation === stat)
@@ -207,11 +175,16 @@ function HomeFinancier() {
       const ec = {}
       ;(echs.data || []).forEach(e => { ec[e.statut] = (ec[e.statut] || 0) + 1 })
       setEchStats({ en_cours: ec.en_cours || 0, non_respecte: ec.non_respecte || 0, termine: ec.termine || 0 })
+      setEchMontant((echs.data || [])
+        .filter(e => ['en_cours', 'non_respecte'].includes(e.statut))
+        .reduce((s, e) => s + Number(e.montant || 0), 0))
 
       const og = {}
       ;(orgs.data || []).filter(o => ['en_cours', 'valide'].includes(o.statut))
         .forEach(o => { const org = (o.organisme || '').toUpperCase(); const k = ['CPAS', 'ULB', 'SPJ'].includes(org) ? org : 'Autre'; og[k] = (og[k] || 0) + 1 })
       setOrgStats({ CPAS: og.CPAS || 0, ULB: og.ULB || 0, SPJ: og.SPJ || 0, Autre: og.Autre || 0 })
+      const activeOtIds = new Set((orgs.data || []).filter(o => ['en_cours', 'valide'].includes(o.statut)).map(o => o.id))
+      setOrgMontant((otArts.data || []).filter(a => activeOtIds.has(a.ot_id)).reduce((s, a) => s + Number(a.montant || 0), 0))
 
       setLoading(false)
     })
@@ -226,11 +199,15 @@ function HomeFinancier() {
     <div className="p-6 max-w-screen-xl mx-auto space-y-10">
       <section>
         <SectionTitle icon="💰" title="Vue financière" subtitle={`Année scolaire ${as}`} />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <StatCard icon="⚠️" label="Impayés" value={fmtShort(impayes)}
-            sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" chart={sparkFact} chartLabels={sparkMonths} />
+            sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" />
+          <StatCard icon="📋" label="Échelonnements" value={fmtShort(echMontant)}
+            sub="Montant en cours / non respecté" to="/assist-social" color="orange" />
+          <StatCard icon="🤝" label="Organismes tiers" value={fmtShort(orgMontant)}
+            sub="Demandes actives (en cours / validé)" to="/assist-social" color="amber" />
           <StatCard icon="🏦" label="En réserve" value={fmtShort(enReserve)}
-            sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" chart={sparkPaie} chartLabels={sparkMonths} />
+            sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" />
         </div>
       </section>
       <section>
