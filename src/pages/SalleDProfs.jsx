@@ -847,23 +847,23 @@ export default function SalleDProfs() {
       ...data, type: tab, created_by: user.id,
     })
     if (error) throw error
+    await loadBoards()
     setBoardModal(false)
-    loadBoards()
   }
   const updateBoard = async (data) => {
     const { error } = await supabase.from('trello_boards').update({ ...data, updated_at: new Date().toISOString() }).eq('id', editBoard.id)
     if (error) throw error
+    await loadBoards()
     setEditBoard(null)
-    loadBoards()
   }
   const togglePinBoard = async (board) => {
     await supabase.from('trello_boards').update({ pinned: !board.pinned }).eq('id', board.id)
-    loadBoards()
+    await loadBoards()
   }
   const deleteBoard = async (board) => {
     if (!window.confirm(`Supprimer le tableau "${board.name}" et tout son contenu ?`)) return
     await supabase.from('trello_boards').delete().eq('id', board.id)
-    loadBoards()
+    await loadBoards()
   }
 
   const deleteItem = async (item) => {
