@@ -970,6 +970,13 @@ export default function SalleDProfs() {
                 </button>
               </>
             )}
+            {openBoard && (
+              <button onClick={()=>setTriggerAddList(true)}
+                style={{padding:'7px 16px',borderRadius:8,border:'none',
+                  backgroundColor:'#fff',color:'#2D1B2E',cursor:'pointer',fontSize:13,fontWeight:700}}>
+                + Liste
+              </button>
+            )}
           </div>
         }
       />
