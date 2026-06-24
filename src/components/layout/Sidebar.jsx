@@ -234,9 +234,10 @@ export default function Sidebar() {
       >
         {/* Notifications */}
         <div
-          className="flex items-center gap-3 px-2 py-2.5"
+          className="flex items-center gap-3 px-2 py-2.5 cursor-pointer rounded-lg hover:bg-white/10 transition-colors"
+          onClick={e => { if (!e.target.closest('button')) e.currentTarget.querySelector('button')?.click() }}
         >
-          <NotificationBell dropdownAlign="left" />
+          <NotificationBell dropdownAlign="left" dropdownPosition="up" />
           {!collapsed && (
             <span className="text-sm font-medium text-white/65 whitespace-nowrap">
               Notifications

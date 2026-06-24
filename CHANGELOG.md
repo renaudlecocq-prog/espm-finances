@@ -1176,3 +1176,9 @@ git push origin main
 
 ### Fixed
 - **Sidebar** (mode réduit) : alignement de la cloche avec les autres icônes du bas — suppression du `justify-center` parasite et harmonisation du padding vertical (`py-2.5`)
+
+## [v0.71] — 2026-06-24
+
+### Fixed
+- **Sidebar / NotificationBell** : dropdown s'ouvre maintenant vers le haut (`bottom-10`) pour éviter de sortir du viewport quand la cloche est en bas de la sidebar
+- **Sidebar** : rangée "Notifications" entièrement cliquable (hover + curseur) comme "Administration" — un clic sur le texte ouvre le panneau

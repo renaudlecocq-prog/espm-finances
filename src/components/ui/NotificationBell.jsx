@@ -24,7 +24,7 @@ const fmtAgo = iso => {
   return new Date(iso).toLocaleDateString('fr-BE', { day: 'numeric', month: 'short' })
 }
 
-export default function NotificationBell({ dropdownAlign = 'right' }) {
+export default function NotificationBell({ dropdownAlign = 'right', dropdownPosition = 'down' }) {
   const { user } = useAuth()
   const navigate  = useNavigate()
   const [notifs, setNotifs]   = useState([])
@@ -117,7 +117,7 @@ export default function NotificationBell({ dropdownAlign = 'right' }) {
 
       {/* Dropdown */}
       {open && (
-        <div className={`absolute ${dropdownAlign === 'left' ? 'left-0' : 'right-0'} top-8 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100
+        <div className={`absolute ${dropdownAlign === 'left' ? 'left-0' : 'right-0'} ${dropdownPosition === 'up' ? 'bottom-10' : 'top-8'} w-80 bg-white rounded-2xl shadow-2xl border border-gray-100
           overflow-hidden z-[100]`}>
 
           {/* Header */}
