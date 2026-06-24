@@ -1299,3 +1299,23 @@ git push origin main
 ## [v0.79i] — 2026-06-24
 ### Changed
 - **SalleDProfs.jsx** — cards racine plus compactes : bandeau 160→145px, grille `minmax(270px→220px,1fr)` (4 colonnes sur écrans larges)
+
+## [Develop] 2026-06-24 — Système Trello intégré
+
+### Nouveautés
+- **TrelloBoardView** : composant kanban complet (782 lignes)
+  - Colonnes (listes) avec drag & drop des cartes via @dnd-kit/sortable
+  - Cards : titre, description, checkbox complétion
+  - Détail carte : description éditable, checklist avec barre de progression, journal d'activité
+  - Activité tracée : création, déplacement (from/to liste), modification, complétion, check/uncheck items
+  - CRUD complet : ajouter/renommer/supprimer listes et cartes, ajouter/cocher/supprimer items checklist
+- **Salle des profs** : tableaux Trello mélangés aux dossiers dans la grille
+  - Carte visuelle avec badge TABLEAU et motif kanban décoratif
+  - Bouton `+ Tableau` dans le header (à la racine seulement)
+  - Modal création/édition : nom, couleur, émoji
+  - Épinglage, modification, suppression de boards
+  - Navigation : clic → ouvre TrelloBoardView, fil d'Ariane pour revenir
+
+### Technique
+- DB : migration `create_trello_tables` appliquée (trello_boards/lists/cards/checklist_items/activity + RLS)
+- Packages : @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities installés
