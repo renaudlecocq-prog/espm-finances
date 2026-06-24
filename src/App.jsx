@@ -13,6 +13,8 @@ import Activites from './pages/Activites'
 import Articles from './pages/Articles'
 import AssistantSocial from './pages/AssistantSocial'
 import Admin from './pages/Admin'
+import Helpdesk from './pages/Helpdesk'
+import HelpdeskDetail from './pages/HelpdeskDetail'
 import MentionsLegales from './pages/MentionsLegales'
 
 function RequireAuth({ children, require = 'user' }) {
@@ -126,6 +128,8 @@ function AppRoutes() {
       <Route path="/echelonnements" element={<Navigate to="/assistant-social" replace />} />
       <Route path="/organismes" element={<Navigate to="/assistant-social" replace />} />
       <Route path="/admin" element={<RequireAuth require="admin"><Layout><Admin /></Layout></RequireAuth>} />
+      <Route path="/helpdesk" element={<RequireAuth require="mdp"><Layout><Helpdesk /></Layout></RequireAuth>} />
+      <Route path="/helpdesk/:id" element={<RequireAuth require="mdp"><Layout><HelpdeskDetail /></Layout></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

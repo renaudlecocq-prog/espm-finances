@@ -122,6 +122,7 @@ export default function Admin() {
         { key: 'utilisateurs',  label: 'Utilisateurs' },
         { key: 'droits',        label: 'Droits' },
         { key: 'synchronisation', label: 'Synchronisation' },
+        { key: 'helpdesk', label: 'Helpdesk' },
       ]}
       activeTab={tab}
       onTabChange={setTab}
@@ -446,7 +447,363 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+      {/* ── HELPDESK ─────────────────────────────────── */}
+      {tab === 'helpdesk' && <HelpdeskAdmin />}
     </div>
     </>
+  )
+}
+
+// ══════════════════════════════════════════════════════════
+//  Helpdesk Admin — composant inline
+// ══════════════════════════════════════════════════════════
+export function HelpdeskAdmin() {
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [editCat, setEditCat]       = useState(null) // null | 'new' | {category object}
+  const [saving, setSaving]         = useState(false)
+  const [error, setError]           = useState('')
+  const [purgeInfo, setPurgeInfo]   = useState(null)
+
+  const loadCats = async () => {
+    setLoading(true)
+    const { data } = await supabase.from('helpdesk_categories').select('*').order('ordre')
+    setCategories(data || [])
+    setLoading(false)
+  }
+  useEffect(() => { loadCats() }, [])
+
+  const saveCat = async (cat) => {
+    setSaving(true); setError('')
+    try {
+      if (cat.id) {
+        const { error: e } = await supabase.from('helpdesk_categories').update(cat).eq('id', cat.id)
+        if (e) throw e
+      } else {
+        const { error: e } = await supabase.from('helpdesk_categories')
+          .insert({ ...cat, ordre: categories.length + 1 })
+        if (e) throw e
+      }
+      setEditCat(null); await loadCats()
+    } catch (e) { setError(e.message) }
+    finally { setSaving(false) }
+  }
+
+  const toggleActif = async (cat) => {
+    await supabase.from('helpdesk_categories').update({ actif: !cat.actif }).eq('id', cat.id)
+    await loadCats()
+  }
+
+  const getPurgeStats = async () => {
+    const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 6)
+    const { data } = await supabase.from('helpdesk_tickets')
+      .select('id').eq('statut', 'ferme').lt('closed_at', cutoff.toISOString())
+    setPurgeInfo({ count: data?.length || 0, cutoff: cutoff.toLocaleDateString('fr-BE') })
+  }
+
+  const executePurge = async () => {
+    const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 6)
+    const { data: tickets } = await supabase.from('helpdesk_tickets')
+      .select('id').eq('statut', 'ferme').lt('closed_at', cutoff.toISOString())
+    if (!tickets?.length) { setPurgeInfo({ done: true, count: 0 }); return }
+    const ticketIds = tickets.map(t => t.id)
+    // Récupérer tous les attachments
+    const { data: msgs } = await supabase.from('helpdesk_messages')
+      .select('attachments').in('ticket_id', ticketIds)
+    const allPaths = (msgs || []).flatMap(m =>
+      (m.attachments || []).map(a => {
+        const url = a.url || ''; const idx = url.indexOf('helpdesk-attachments/')
+        return idx >= 0 ? url.slice(idx + 'helpdesk-attachments/'.length) : null
+      }).filter(Boolean)
+    )
+    if (allPaths.length) {
+      await supabase.storage.from('helpdesk-attachments').remove(allPaths)
+    }
+    setPurgeInfo({ done: true, count: tickets.length })
+  }
+
+  const label_style = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }
+  const input_style = { width: '100%', padding: '8px 10px', borderRadius: 6, fontSize: 13,
+    border: '1.5px solid #e5e7eb', outline: 'none', boxSizing: 'border-box' }
+
+  return (
+    <div style={{ padding: '24px 0' }}>
+      {/* En-tête */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Catégories</div>
+          <div style={{ fontSize: 12, color: '#6B7280' }}>Gérez les catégories de tickets et leurs formulaires</div>
+        </div>
+        <button onClick={() => setEditCat({ nom:'', description:'', icone:'ticket', couleur:'#6B4A73',
+          form_fields:[], rapporteur_roles:['admin','financier','mdp'], agent_roles:['admin'] })}
+          style={{ padding: '9px 18px', borderRadius: 8, border: 'none', backgroundColor: '#2D1B2E',
+            color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+          + Nouvelle catégorie
+        </button>
+      </div>
+
+      {loading ? (
+        <div style={{ color: '#9CA3AF', textAlign: 'center', padding: 40 }}>Chargement…</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {categories.map(cat => (
+            <div key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 14,
+              backgroundColor: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '14px 16px',
+              opacity: cat.actif ? 1 : 0.5 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: cat.couleur + '20',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 18 }}>
+                  {{'package':'📦','calendar':'📅','building':'🏗️','monitor':'💻','ticket':'🎫'}[cat.icone] || '🎫'}
+                </span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#111' }}>{cat.nom}</div>
+                <div style={{ fontSize: 12, color: '#6B7280' }}>
+                  {(cat.form_fields || []).length} champ{(cat.form_fields || []).length !== 1 ? 's' : ''} dans le formulaire
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setEditCat(cat)}
+                  style={{ padding: '6px 14px', borderRadius: 6, border: '1.5px solid #E5E7EB',
+                    background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                  Modifier
+                </button>
+                <button onClick={() => toggleActif(cat)}
+                  style={{ padding: '6px 14px', borderRadius: 6, border: '1.5px solid #E5E7EB',
+                    background: '#fff', cursor: 'pointer', fontSize: 12, color: '#6B7280' }}>
+                  {cat.actif ? 'Désactiver' : 'Activer'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Section purge */}
+      <div style={{ marginTop: 32, padding: '20px', backgroundColor: '#FFF7ED',
+        border: '1px solid #FED7AA', borderRadius: 10 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: '#92400E', marginBottom: 6 }}>
+          🗑️ Purge des pièces jointes
+        </div>
+        <div style={{ fontSize: 13, color: '#78350F', marginBottom: 14, lineHeight: 1.5 }}>
+          Supprime les fichiers attachés aux tickets fermés depuis plus de 6 mois.
+          Les messages et l'historique sont conservés.
+        </div>
+        {!purgeInfo ? (
+          <button onClick={getPurgeStats}
+            style={{ padding: '8px 16px', borderRadius: 8, border: '1.5px solid #D97706',
+              background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#D97706' }}>
+            Analyser
+          </button>
+        ) : purgeInfo.done ? (
+          <div style={{ color: '#059669', fontWeight: 600, fontSize: 13 }}>
+            ✅ Purge terminée — {purgeInfo.count} ticket(s) traité(s)
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 13, color: '#92400E' }}>
+              {purgeInfo.count} ticket(s) fermé(s) avant le {purgeInfo.cutoff}
+            </span>
+            <button onClick={executePurge} disabled={purgeInfo.count === 0}
+              style={{ padding: '8px 16px', borderRadius: 8, border: 'none',
+                backgroundColor: purgeInfo.count === 0 ? '#E5E7EB' : '#D97706',
+                cursor: purgeInfo.count === 0 ? 'default' : 'pointer',
+                fontSize: 13, fontWeight: 600, color: '#fff' }}>
+              Purger {purgeInfo.count} ticket(s)
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Modal édition catégorie */}
+      {editCat && (
+        <CategoryModal cat={editCat} onClose={() => setEditCat(null)}
+          onSave={saveCat} saving={saving} error={error} />
+      )}
+    </div>
+  )
+}
+
+// ── Modal édition/création catégorie ─────────────────────────────────────────
+function CategoryModal({ cat, onClose, onSave, saving, error }) {
+  const [form, setForm] = useState({ ...cat })
+  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
+
+  const addField = () => set('form_fields', [...(form.form_fields || []), {
+    id: `field_${Date.now()}`, type: 'text_short', label: '', required: false, options: []
+  }])
+
+  const updateField = (idx, k, v) => {
+    const flds = [...(form.form_fields || [])]
+    flds[idx] = { ...flds[idx], [k]: v }
+    set('form_fields', flds)
+  }
+
+  const removeField = (idx) => set('form_fields', form.form_fields.filter((_, i) => i !== idx))
+
+  const moveField = (idx, dir) => {
+    const flds = [...(form.form_fields || [])]
+    const swp = idx + dir
+    if (swp < 0 || swp >= flds.length) return;
+    [flds[idx], flds[swp]] = [flds[swp], flds[idx]]
+    set('form_fields', flds)
+  }
+
+  const inp = { width: '100%', padding: '7px 10px', borderRadius: 6, fontSize: 12,
+    border: '1.5px solid #e5e7eb', outline: 'none', boxSizing: 'border-box' }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 16 }}>
+      <div style={{ backgroundColor: '#fff', borderRadius: 12, width: '100%', maxWidth: 640,
+        maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #e5e7eb',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontWeight: 700, fontSize: 16, color: '#111' }}>
+            {cat.id ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 20, color: '#6B7280' }}>×</button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+          {error && <div style={{ backgroundColor: '#FEE2E2', color: '#DC2626', padding: '10px 14px',
+            borderRadius: 8, fontSize: 13, marginBottom: 16 }}>{error}</div>}
+
+          {/* Infos de base */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+                Nom *
+              </label>
+              <input value={form.nom} onChange={e => set('nom', e.target.value)} style={inp}
+                placeholder="ex: Problème bâtiment" />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+                Couleur
+              </label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input type="color" value={form.couleur} onChange={e => set('couleur', e.target.value)}
+                  style={{ width: 40, height: 36, borderRadius: 6, border: '1.5px solid #e5e7eb',
+                    padding: 2, cursor: 'pointer' }} />
+                <input value={form.couleur} onChange={e => set('couleur', e.target.value)}
+                  style={{ ...inp, width: 'auto', flex: 1 }} />
+              </div>
+            </div>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+              Description
+            </label>
+            <input value={form.description || ''} onChange={e => set('description', e.target.value)}
+              style={inp} placeholder="Courte description de la catégorie" />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>
+              Icône
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[['ticket','🎫'],['building','🏗️'],['monitor','💻'],['package','📦'],['calendar','📅']].map(([k,e]) => (
+                <button key={k} type="button" onClick={() => set('icone', k)}
+                  style={{ padding: '8px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 18,
+                    border: form.icone === k ? `2px solid ${form.couleur}` : '2px solid #E5E7EB',
+                    backgroundColor: form.icone === k ? form.couleur + '15' : '#fff' }}>
+                  {e}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Form builder */}
+          <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>
+                Champs du formulaire
+              </div>
+              <button onClick={addField}
+                style={{ padding: '6px 14px', borderRadius: 6, border: 'none',
+                  backgroundColor: '#2D1B2E', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                + Ajouter un champ
+              </button>
+            </div>
+            {(form.form_fields || []).length === 0 && (
+              <div style={{ textAlign: 'center', color: '#9CA3AF', fontSize: 13, padding: '20px 0' }}>
+                Aucun champ. Le formulaire contiendra seulement un titre et une priorité.
+              </div>
+            )}
+            {(form.form_fields || []).map((fld, idx) => (
+              <div key={fld.id} style={{ border: '1px solid #E5E7EB', borderRadius: 8,
+                padding: 14, marginBottom: 10, backgroundColor: '#FAFAFA' }}>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'center' }}>
+                  <input value={fld.label} onChange={e => updateField(idx, 'label', e.target.value)}
+                    placeholder="Libellé du champ" style={{ ...inp, flex: 1 }} />
+                  <select value={fld.type} onChange={e => updateField(idx, 'type', e.target.value)}
+                    style={{ ...inp, width: 'auto' }}>
+                    <option value="text_short">Texte court</option>
+                    <option value="text_long">Texte long</option>
+                    <option value="select_single">Choix unique</option>
+                    <option value="select_multiple">Choix multiple</option>
+                    <option value="number">Nombre</option>
+                    <option value="date">Date</option>
+                  </select>
+                  <label style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 5,
+                    whiteSpace: 'nowrap', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={fld.required}
+                      onChange={e => updateField(idx, 'required', e.target.checked)} />
+                    Requis
+                  </label>
+                </div>
+                {(fld.type === 'select_single' || fld.type === 'select_multiple') && (
+                  <div>
+                    <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 6 }}>
+                      Options (une par ligne)
+                    </div>
+                    <textarea value={(fld.options || []).join('\n')}
+                      onChange={e => updateField(idx, 'options', e.target.value.split('\n').filter(Boolean))}
+                      rows={4} placeholder="Option 1&#10;Option 2&#10;Option 3"
+                      style={{ ...inp, resize: 'vertical' }} />
+                  </div>
+                )}
+                {(fld.type === 'text_short' || fld.type === 'text_long' || fld.type === 'number') && (
+                  <input value={fld.placeholder || ''} onChange={e => updateField(idx, 'placeholder', e.target.value)}
+                    placeholder="Texte d'aide (optionnel)" style={inp} />
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => moveField(idx, -1)} disabled={idx === 0}
+                      style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #E5E7EB',
+                        background: '#fff', cursor: idx === 0 ? 'default' : 'pointer', fontSize: 12,
+                        color: idx === 0 ? '#D1D5DB' : '#374151' }}>↑</button>
+                    <button onClick={() => moveField(idx, 1)} disabled={idx === (form.form_fields || []).length - 1}
+                      style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #E5E7EB',
+                        background: '#fff', cursor: 'pointer', fontSize: 12, color: '#374151' }}>↓</button>
+                  </div>
+                  <button onClick={() => removeField(idx)}
+                    style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #FCA5A5',
+                      background: '#FFF', cursor: 'pointer', fontSize: 12, color: '#DC2626' }}>
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e7eb',
+          display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+          <button onClick={onClose} style={{ padding: '9px 20px', borderRadius: 8,
+            border: '1.5px solid #e5e7eb', background: '#fff', cursor: 'pointer',
+            fontSize: 13, fontWeight: 600, color: '#374151' }}>Annuler</button>
+          <button onClick={() => onSave(form)} disabled={saving || !form.nom}
+            style={{ padding: '9px 20px', borderRadius: 8, border: 'none',
+              backgroundColor: saving || !form.nom ? '#9CA3AF' : '#2D1B2E',
+              color: '#fff', cursor: saving || !form.nom ? 'default' : 'pointer',
+              fontSize: 13, fontWeight: 600 }}>
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }

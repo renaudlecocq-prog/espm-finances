@@ -49,6 +49,9 @@ const ICONS = {
     <line x1="3" y1="18" x2="3.01" y2="18" />
   </>),
   social: <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />,
+  helpdesk: (<>
+    <path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 012 2v3a2 2 0 000 4v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a2 2 0 000-4V7a2 2 0 012-2z"/>
+  </>),
   admin: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
   logout: (<>
     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
@@ -134,6 +137,7 @@ export default function Sidebar() {
     { to: '/paiements',        label: 'Paiements',    icon: 'paiements', show: isFinancier },
     { to: '/articles',         label: 'Articles',     icon: 'articles',  show: isFinancier },
     { to: '/assistant-social', label: 'Suivi social', icon: 'social',    show: isFinancier },
+    { to: '/helpdesk',          label: 'Helpdesk',     icon: 'helpdesk',  show: isMdp },
   ]
 
   const logout = async () => { await supabase.auth.signOut(); navigate('/login') }

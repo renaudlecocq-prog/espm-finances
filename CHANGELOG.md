@@ -1220,3 +1220,16 @@ git push origin main
 ## [v0.74a] — 2026-06-24
 ### Changed
 - **Rapport articles** : suppression de la ligne de métadonnées sous le titre (date + nb attributions + nb articles) — déjà présente dans le footer
+
+## [0.74] — 2026-06-24
+### Added
+- **Helpdesk** : nouvelle page `/helpdesk` accessible à tout le staff (admin/financier/mdp)
+  - Liste des tickets avec filtres Actifs / Fermés / Tous, recherche, badges statut/priorité
+  - Modal "Nouveau ticket" : choix de catégorie → formulaire dynamique (titre + priorité + champs configurés)
+  - `/helpdesk/:id` : fil de discussion, notes internes (agents), upload pièces jointes avec compression auto
+  - Panneau agent (admin) : statut, priorité, assignation, fermeture du ticket
+- **4 catégories pré-configurées** : Demande de matériel, Demande de réservation, Problème bâtiment, Problème informatique
+- **Admin > onglet Helpdesk** : gestion des catégories, form builder (ajout/suppression/réordonnancement de champs), option purge des pièces jointes
+- Compression automatique des images avant upload (browser-image-compression, max 500KB)
+- 3 tables Supabase : `helpdesk_categories`, `helpdesk_tickets`, `helpdesk_messages`
+- Bucket Supabase `helpdesk-attachments` (5MB max, images + PDF + Word)
