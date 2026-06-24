@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import TrelloBoardView from './TrelloBoardView'
 import imageCompression from 'browser-image-compression'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -14,6 +15,171 @@ const EMOJIS = ['📁','📚','📋','📌','🎨','🔗','📸','📝','🎯','
                 '📢','🔒','🌟','🏆','💼','🗒️','🔔','📅','🌈','🎉']
 
 const softBg = (hex) => hex + '18'
+
+// ── Carte Trello board (dans la grille) ───────────────────────────────────────
+function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, canEdit }) {
+  const [menu, setMenu] = useState(false)
+  const menuRef = useRef(null)
+  useEffect(() => {
+    const close = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenu(false) }
+    if (menu) document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [menu])
+  return (
+    <div onClick={onOpen}
+      style={{
+        borderRadius: 14, overflow: 'hidden', cursor: 'pointer', backgroundColor: '#fff',
+        boxShadow: board.pinned
+          ? `0 0 0 2px ${board.color}, 0 4px 20px ${board.color}40`
+          : '0 2px 8px rgba(0,0,0,0.08)',
+        transition: 'all 0.2s', position: 'relative',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = board.pinned ? `0 0 0 2px ${board.color},0 8px 24px ${board.color}50` : '0 8px 24px rgba(0,0,0,0.13)' }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = board.pinned ? `0 0 0 2px ${board.color},0 4px 20px ${board.color}40` : '0 2px 8px rgba(0,0,0,0.08)' }}>
+      {/* Bandeau */}
+      <div style={{ height: 145, backgroundColor: board.color, position: 'relative',
+        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Motif kanban décoratif */}
+        <div style={{ display: 'flex', gap: 8, opacity: 0.3 }}>
+          {[4, 6, 3].map((n, i) => (
+            <div key={i} style={{ width: 28, display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {Array.from({ length: n }).map((_, j) => (
+                <div key={j} style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 3 }} />
+              ))}
+            </div>
+          ))}
+        </div>
+        <div style={{ position: 'absolute', bottom: 8, left: 10, fontSize: 24 }}>{board.emoji}</div>
+        {board.pinned && (
+          <div style={{ position: 'absolute', top: 8, left: 8,
+            backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 999,
+            padding: '2px 6px', fontSize: 11, fontWeight: 700, color: board.color }}>📌</div>
+        )}
+        {/* Badge tableau */}
+        <div style={{ position: 'absolute', top: 8, left: board.pinned ? 40 : 8,
+          backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 6,
+          padding: '2px 7px', fontSize: 10, fontWeight: 700, color: '#fff', backdropFilter: 'blur(4px)' }}>
+          TABLEAU
+        </div>
+        {canEdit && (
+          <div ref={menuRef} style={{ position: 'absolute', top: 8, right: 8, zIndex: 20 }}
+            onClick={e => e.stopPropagation()}>
+            <button onClick={() => setMenu(m => !m)}
+              style={{ backgroundColor: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: 999,
+                width: 28, height: 28, cursor: 'pointer', fontSize: 14,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151' }}>⋯</button>
+            {menu && (
+              <div style={{ position: 'absolute', right: 0, top: 32, backgroundColor: '#fff',
+                borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                minWidth: 140, zIndex: 100, overflow: 'hidden', border: '1px solid #F3F4F6' }}>
+                {[
+                  { label: board.pinned ? '📌 Désépingler' : '📌 Épingler', action: onPin },
+                  { label: '✏️ Modifier', action: onEdit },
+                  { label: '🗑️ Supprimer', action: onDelete, danger: true },
+                ].map(item => (
+                  <button key={item.label} onClick={() => { item.action(); setMenu(false) }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px',
+                      border: 'none', background: 'none', cursor: 'pointer', fontSize: 13,
+                      color: item.danger ? '#DC2626' : '#374151' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = item.danger ? '#FEF2F2' : '#F9FAFB'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {/* Footer */}
+      <div style={{ padding: '10px 13px 13px' }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: '#111',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 3 }}>
+          {board.name}
+        </div>
+        <span style={{ fontSize: 11, color: '#9CA3AF' }}>Tableau Kanban</span>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal création/édition board Trello ───────────────────────────────────────
+function BoardModal({ initial, onClose, onSave }) {
+  const [name,  setName]  = useState(initial?.name  || '')
+  const [color, setColor] = useState(initial?.color || COLORS[2])
+  const [emoji, setEmoji] = useState(initial?.emoji || '📋')
+  const [saving, setSaving]   = useState(false)
+  const [saveError, setSaveError] = useState('')
+  const handleSave = async () => {
+    if (!name.trim()) return
+    setSaving(true); setSaveError('')
+    try { await onSave({ name: name.trim(), color, emoji }) }
+    catch(err) { setSaveError(err.message || 'Erreur'); setSaving(false) }
+  }
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+      <div style={{ backgroundColor: '#fff', borderRadius: 16, width: '100%', maxWidth: 440,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+        <div style={{ height: 80, backgroundColor: color, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', gap: 12 }}>
+          <span style={{ fontSize: 32 }}>{emoji}</span>
+          <div style={{ display: 'flex', gap: 6, opacity: 0.4 }}>
+            {[4,6,3].map((n,i) => (
+              <div key={i} style={{ width: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {Array.from({length:n}).map((_,j) => (
+                  <div key={j} style={{ height: 7, backgroundColor: '#fff', borderRadius: 2 }} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding: '20px 24px 24px' }}>
+          <h3 style={{ fontWeight: 700, fontSize: 16, color: '#111', marginBottom: 20 }}>
+            {initial ? 'Modifier le tableau' : 'Nouveau tableau Kanban'}
+          </h3>
+          {saveError && <div style={{ backgroundColor: '#FEE2E2', color: '#DC2626', padding: '8px 12px', borderRadius: 8, fontSize: 13, marginBottom: 14 }}>{saveError}</div>}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Nom</label>
+            <input value={name} onChange={e => setName(e.target.value)} autoFocus placeholder="Ex : Projets en cours"
+              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 14, border: '1.5px solid #E5E7EB', outline: 'none', boxSizing: 'border-box' }}
+              onFocus={e => e.target.style.borderColor = color} onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+              onKeyDown={e => e.key === 'Enter' && handleSave()} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>Icône</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {EMOJIS.map(e => (
+                <button key={e} onClick={() => setEmoji(e)}
+                  style={{ width: 36, height: 36, borderRadius: 8, border: 'none',
+                    backgroundColor: emoji===e ? color+'25' : '#F9FAFB', cursor: 'pointer', fontSize: 18,
+                    outline: emoji===e ? `2px solid ${color}` : 'none' }}>{e}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>Couleur</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {COLORS.map(c => (
+                <button key={c} onClick={() => setColor(c)}
+                  style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: c, border: 'none', cursor: 'pointer',
+                    outline: color===c ? `3px solid ${c}` : 'none', outlineOffset: 2,
+                    transform: color===c ? 'scale(1.15)' : 'scale(1)', transition: 'all 0.1s' }} />
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#374151' }}>Annuler</button>
+            <button onClick={handleSave} disabled={!name.trim() || saving}
+              style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', backgroundColor: color, color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, opacity: (!name.trim() || saving) ? 0.6 : 1 }}>
+              {saving ? 'Enregistrement…' : initial ? 'Modifier' : 'Créer'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 const fmtSize = (bytes) => {
   if (!bytes) return ''
   if (bytes < 1024) return `${bytes} o`
@@ -519,6 +685,10 @@ export default function SalleDProfs() {
   const { user, isAdmin } = useAuth()
 
   // Navigation
+  const [openBoard,  setOpenBoard]  = useState(null)  // tableau Trello ouvert
+  const [boards,     setBoards]     = useState([])
+  const [boardModal, setBoardModal] = useState(false)
+  const [editBoard,  setEditBoard]  = useState(null)
   const [tab,        setTab]       = useState('shared')
   const [folderPath, setFolderPath] = useState([])   // [] = racine, [f1] = dans f1, [f1,f2] = dans f1/f2
 
@@ -561,6 +731,19 @@ export default function SalleDProfs() {
     return {stats,previews}
   }
 
+  // ── Charger tableaux Trello ───────────────────────────────────────────────
+  const loadBoards = useCallback(async () => {
+    try {
+      let q = supabase.from('trello_boards').select('*').eq('type', tab)
+      if (tab === 'personal') q = q.eq('created_by', user.id)
+      const { data, error } = await q.order('pinned', { ascending: false }).order('created_at')
+      if (error) throw error
+      setBoards(data || [])
+    } catch(err) {
+      console.error('loadBoards:', err)
+    }
+  }, [tab, user.id])
+
   // ── Charger dossiers racine ────────────────────────────────────────────────
   const loadFolders = useCallback(async () => {
     setLoading(true)
@@ -588,7 +771,7 @@ export default function SalleDProfs() {
     }
   }, [tab, user.id])
 
-  useEffect(()=>{loadFolders();setFolderPath([])}, [loadFolders])
+  useEffect(()=>{loadFolders();loadBoards();setFolderPath([]);setOpenBoard(null)}, [loadFolders, loadBoards])
 
   // ── Charger contenu d'un dossier ───────────────────────────────────────────
   const loadFolderContent = useCallback(async (folder) => {
@@ -658,6 +841,31 @@ export default function SalleDProfs() {
     await supabase.from('padlet_folders').delete().eq('id',folder.id)
     currentFolder ? loadFolderContent(currentFolder) : loadFolders()
   }
+  // ── CRUD boards Trello ────────────────────────────────────────────────────
+  const createBoard = async (data) => {
+    const { error } = await supabase.from('trello_boards').insert({
+      ...data, type: tab, created_by: user.id,
+    })
+    if (error) throw error
+    setBoardModal(false)
+    loadBoards()
+  }
+  const updateBoard = async (data) => {
+    const { error } = await supabase.from('trello_boards').update({ ...data, updated_at: new Date().toISOString() }).eq('id', editBoard.id)
+    if (error) throw error
+    setEditBoard(null)
+    loadBoards()
+  }
+  const togglePinBoard = async (board) => {
+    await supabase.from('trello_boards').update({ pinned: !board.pinned }).eq('id', board.id)
+    loadBoards()
+  }
+  const deleteBoard = async (board) => {
+    if (!window.confirm(`Supprimer le tableau "${board.name}" et tout son contenu ?`)) return
+    await supabase.from('trello_boards').delete().eq('id', board.id)
+    loadBoards()
+  }
+
   const deleteItem = async (item) => {
     await supabase.from('padlet_items').delete().eq('id',item.id)
     if(item.file_url){
@@ -682,11 +890,15 @@ export default function SalleDProfs() {
   ]
 
   // Titre PageHeader
-  const headerTitle = currentFolder
+  const headerTitle = openBoard
+    ? openBoard.name
+    : currentFolder
     ? currentFolder.name
     : tab==='shared' ? 'Salle des profs' : 'Mon casier'
 
-  const headerSubtitle = currentFolder
+  const headerSubtitle = openBoard
+    ? 'Tableau Kanban'
+    : currentFolder
     ? (() => {
         const total = subFolders.length + items.length
         return `${total} élément${total!==1?'s':''}`
@@ -698,10 +910,10 @@ export default function SalleDProfs() {
       <PageHeader
         title={headerTitle}
         subtitle={headerSubtitle}
-        leftActions={currentFolder ? (
+        leftActions={(currentFolder || openBoard) ? (
           <div style={{display:'flex',alignItems:'center',gap:0}}>
             {/* Breadcrumb */}
-            <button onClick={navigateToRoot}
+            <button onClick={() => { navigateToRoot(); setOpenBoard(null) }}
               style={{background:'none',border:'none',cursor:'pointer',
                 color:'rgba(255,255,255,0.70)',fontSize:12,fontWeight:500,
                 padding:'4px 8px',borderRadius:6,lineHeight:1,display:'flex',alignItems:'center'}}
@@ -729,28 +941,44 @@ export default function SalleDProfs() {
             <div style={{width:1,height:16,backgroundColor:'rgba(255,255,255,0.20)',margin:'0 6px'}}/>
           </div>
         ) : undefined}
-        tabs={!currentFolder ? tabs : undefined}
+        tabs={(!currentFolder && !openBoard) ? tabs : undefined}
         activeTab={tab}
-        onTabChange={!currentFolder ? setTab : undefined}
+        onTabChange={(!currentFolder && !openBoard) ? setTab : undefined}
         actions={
           <div style={{display:'flex',gap:8}}>
-            {currentFolder && (
+            {currentFolder && !openBoard && (
               <button onClick={()=>setAddItemModal(true)}
                 style={{padding:'7px 14px',borderRadius:8,border:'1.5px solid rgba(255,255,255,0.4)',
                   backgroundColor:'transparent',color:'#fff',cursor:'pointer',fontSize:13,fontWeight:600}}>
                 + Élément
               </button>
             )}
-            <button onClick={()=>setFolderModal(true)}
-              style={{padding:'7px 16px',borderRadius:8,border:'none',
-                backgroundColor:'#fff',color:'#2D1B2E',cursor:'pointer',fontSize:13,fontWeight:700}}>
-              + Dossier
-            </button>
+            {!openBoard && (
+              <>
+                {!currentFolder && !openBoard && (
+                  <button onClick={()=>setBoardModal(true)}
+                    style={{padding:'7px 14px',borderRadius:8,border:'1.5px solid rgba(255,255,255,0.4)',
+                      backgroundColor:'transparent',color:'#fff',cursor:'pointer',fontSize:13,fontWeight:600}}>
+                    + Tableau
+                  </button>
+                )}
+                <button onClick={()=>setFolderModal(true)}
+                  style={{padding:'7px 16px',borderRadius:8,border:'none',
+                    backgroundColor:'#fff',color:'#2D1B2E',cursor:'pointer',fontSize:13,fontWeight:700}}>
+                  + Dossier
+                </button>
+              </>
+            )}
           </div>
         }
       />
 
       <div className="p-6">
+        {/* ── Vue tableau Trello ouvert ── */}
+        {openBoard && (
+          <TrelloBoardView board={openBoard} onBack={() => setOpenBoard(null)} />
+        )}
+
         {/* ── Vue racine ── */}
         {!currentFolder && (
           loading ? (
@@ -761,11 +989,17 @@ export default function SalleDProfs() {
               <div style={{fontSize:16,fontWeight:600,color:'#374151',marginBottom:8}}>
                 {tab==='shared'?'La salle des profs est vide':'Votre casier est vide'}
               </div>
-              <div style={{fontSize:14,color:'#9CA3AF',marginBottom:24}}>Créez votre premier dossier.</div>
-              <button onClick={()=>setFolderModal(true)}
-                style={{padding:'10px 24px',borderRadius:10,border:'none',backgroundColor:'#2D1B2E',color:'#fff',cursor:'pointer',fontSize:14,fontWeight:600}}>
-                + Créer un dossier
-              </button>
+              <div style={{fontSize:14,color:'#9CA3AF',marginBottom:24}}>Créez votre premier dossier ou tableau.</div>
+              <div style={{display:'flex',gap:10,justifyContent:'center'}}>
+                <button onClick={()=>setFolderModal(true)}
+                  style={{padding:'10px 20px',borderRadius:10,border:'1.5px solid #2D1B2E',backgroundColor:'#fff',color:'#2D1B2E',cursor:'pointer',fontSize:14,fontWeight:600}}>
+                  + Dossier
+                </button>
+                <button onClick={()=>setBoardModal(true)}
+                  style={{padding:'10px 20px',borderRadius:10,border:'none',backgroundColor:'#2D1B2E',color:'#fff',cursor:'pointer',fontSize:14,fontWeight:600}}>
+                  + Tableau
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -782,6 +1016,12 @@ export default function SalleDProfs() {
                         onPin={()=>togglePin(folder)} onDelete={()=>deleteFolder(folder)}
                         canEdit={canEdit(folder)} />
                     ))}
+                    {boards.filter(b=>b.pinned).map(board=>(
+                      <TrelloBoardCard key={board.id} board={board}
+                        onOpen={()=>setOpenBoard(board)} onEdit={()=>setEditBoard(board)}
+                        onPin={()=>togglePinBoard(board)} onDelete={()=>deleteBoard(board)}
+                        canEdit={canEdit(board)} />
+                    ))}
                   </div>
                 </div>
               )}
@@ -797,6 +1037,26 @@ export default function SalleDProfs() {
                         onOpen={()=>navigateTo(folder)} onEdit={()=>setEditFolder(folder)}
                         onPin={()=>togglePin(folder)} onDelete={()=>deleteFolder(folder)}
                         canEdit={canEdit(folder)} />
+                    ))}
+                    {boards.filter(b=>!b.pinned).map(board=>(
+                      <TrelloBoardCard key={board.id} board={board}
+                        onOpen={()=>setOpenBoard(board)} onEdit={()=>setEditBoard(board)}
+                        onPin={()=>togglePinBoard(board)} onDelete={()=>deleteBoard(board)}
+                        canEdit={canEdit(board)} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Boards épinglés (si pas de dossier épinglé pour les afficher) */}
+              {!folders.some(f=>f.pinned) && boards.some(b=>b.pinned) && (
+                <div style={{marginBottom:32}}>
+                  <div style={{fontSize:11,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>📌 Épinglés</div>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:18}}>
+                    {boards.filter(b=>b.pinned).map(board=>(
+                      <TrelloBoardCard key={board.id} board={board}
+                        onOpen={()=>setOpenBoard(board)} onEdit={()=>setEditBoard(board)}
+                        onPin={()=>togglePinBoard(board)} onDelete={()=>deleteBoard(board)}
+                        canEdit={canEdit(board)} />
                     ))}
                   </div>
                 </div>
@@ -851,6 +1111,8 @@ export default function SalleDProfs() {
       {/* Modals */}
       {folderModal && <FolderModal onClose={()=>setFolderModal(false)} onSave={createFolder} />}
       {editFolder  && <FolderModal initial={editFolder} onClose={()=>setEditFolder(null)} onSave={updateFolder} />}
+      {boardModal  && <BoardModal onClose={()=>setBoardModal(false)} onSave={createBoard} />}
+      {editBoard   && <BoardModal initial={editBoard} onClose={()=>setEditBoard(null)} onSave={updateBoard} />}
       {addItemModal && currentFolder && (
         <AddItemModal folder={currentFolder} onClose={()=>setAddItemModal(false)}
           onAdded={()=>{ setAddItemModal(false); loadFolderContent(currentFolder); loadFolders() }} />
