@@ -229,55 +229,55 @@ function ItemCard({ item, onDelete, canDelete }) {
 
       {/* Aperçu image */}
       {item.type === 'image' && item.file_url && !imgError ? (
-        <div style={{ height: 140, overflow: 'hidden', backgroundColor: '#F9FAFB' }}>
+        <div style={{ height: 200, overflow: 'hidden', backgroundColor: '#F9FAFB' }}>
           <img src={item.file_url} alt={item.title || ''} onError={() => setImgError(true)}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
       ) : item.type === 'note' ? (
-        <div style={{ height: 80, backgroundColor: '#FFFBEB', padding: '12px 14px',
-          fontSize: 13, color: '#78350F', overflow: 'hidden',
+        <div style={{ height: 120, backgroundColor: '#FFFBEB', padding: '16px 18px',
+          fontSize: 15, color: '#78350F', overflow: 'hidden',
           lineHeight: 1.5, borderBottom: '1px solid #FEF3C7' }}>
           {item.content || item.title || ''}
         </div>
       ) : (
-        <div style={{ height: 80, backgroundColor: softBg(
+        <div style={{ height: 120, backgroundColor: softBg(
             item.type === 'document' ? '#EF4444' :
             item.type === 'link' ? '#10B981' : '#6366F1'),
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52 }}>
           {item.type === 'document' ? '📄' : item.type === 'link' ? '🔗' : '🖼️'}
         </div>
       )}
 
       {/* Infos */}
-      <div style={{ padding: '10px 12px 12px' }}>
-        <div style={{ fontWeight: 600, fontSize: 13, color: '#111', marginBottom: 3,
+      <div style={{ padding: '14px 16px 16px' }}>
+        <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 4,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {item.title || item.file_name || item.content || 'Sans titre'}
         </div>
         {item.type === 'link' && item.content && (
-          <div style={{ fontSize: 11, color: '#6B7280',
+          <div style={{ fontSize: 13, color: '#6B7280',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {(() => { try { return new URL(item.content).hostname } catch { return item.content } })()}
           </div>
         )}
         {item.description && item.type !== 'note' && (
-          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2,
+          <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 3,
             overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical' }}>
             {item.description}
           </div>
         )}
         {item.file_size && (
-          <div style={{ fontSize: 10, color: '#D1D5DB', marginTop: 4 }}>{fmtSize(item.file_size)}</div>
+          <div style={{ fontSize: 12, color: '#D1D5DB', marginTop: 5 }}>{fmtSize(item.file_size)}</div>
         )}
       </div>
 
       {/* Supprimer */}
       {canDelete && (
-        <div style={{ borderTop: '1px solid #F9FAFB', padding: '6px 12px', textAlign: 'right' }}
+        <div style={{ borderTop: '1px solid #F9FAFB', padding: '8px 16px', textAlign: 'right' }}
           onClick={e => e.stopPropagation()}>
           <button onClick={onDelete}
-            style={{ fontSize: 11, color: '#D1D5DB', background: 'none', border: 'none',
+            style={{ fontSize: 13, color: '#D1D5DB', background: 'none', border: 'none',
               cursor: 'pointer', fontWeight: 500 }}
             onMouseEnter={e => e.currentTarget.style.color = '#EF4444'}
             onMouseLeave={e => e.currentTarget.style.color = '#D1D5DB'}>
@@ -863,7 +863,7 @@ export default function SalleDProfs() {
             </div>
           ) : (
             <div style={{ display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
               {items.map(item => (
                 <ItemCard key={item.id} item={item}
                   onDelete={() => deleteItem(item)}
