@@ -267,7 +267,7 @@ export const handler = async (event) => {
   </div>
   <hr class="hr-main"/>
   <div class="doc-title">Rapport des Articles</div>
-  <div class="doc-meta">Généré le ${today} · ${attrs.length} attribution${attrs.length !== 1 ? 's' : ''} · ${Object.keys(byArticle).length} article${Object.keys(byArticle).length !== 1 ? 's' : ''}</div>
+
   <div class="note">
     ℹ️ <strong>Montant attribué</strong> = total calculé (nb élèves × prix × qté), toutes attributions confondues. 
     <strong>Montant facturé</strong> = sommes effectivement émises en facture. 
