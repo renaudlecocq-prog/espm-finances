@@ -224,13 +224,13 @@ function KanbanColumn({ list, cards, profiles, onAddCard, onOpen, onToggle, onRe
 }
 
 // ── CardDetailModal ───────────────────────────────────────────────────────────
-function CardDetailModal({ card, lists, profiles, boardColor, onClose, onSave, onDelete, onAddItem, onToggleItem, onDeleteItem }) {
+function CardDetailModal({ card, lists, profiles, boardColor, boardType, onClose, onSave, onDelete, onAddItem, onToggleItem, onDeleteItem }) {
   const { user } = useAuth()
   const [title, setTitle]       = useState(card.title)
   const [desc,  setDesc]        = useState(card.description || '')
   const [newItem, setNewItem]   = useState('')
   const [activity, setActivity] = useState([])
-  const [items, setItems]       = useState(card._checklistItems || [])
+  // items gérés par le parent via openCard → pas de state local
   const [dirty, setDirty]       = useState(false)
 
   const currentList = lists.find(l => l.id === card.list_id)
@@ -249,22 +249,20 @@ function CardDetailModal({ card, lists, profiles, boardColor, onClose, onSave, o
 
   const handleAddItem = async () => {
     if (!newItem.trim()) return
-    const added = await onAddItem(card.id, newItem.trim())
-    if (added) setItems(prev => [...prev, added])
+    await onAddItem(card.id, newItem.trim())  // parent met à jour openCard
     setNewItem('')
   }
 
   const handleToggleItem = async (item) => {
-    const updated = await onToggleItem(item)
-    if (updated) setItems(prev => prev.map(i => i.id === updated.id ? updated : i))
+    await onToggleItem(item)  // parent met à jour openCard
   }
 
   const handleDeleteItem = async (item) => {
-    await onDeleteItem(item.id)
-    setItems(prev => prev.filter(i => i.id !== item.id))
+    await onDeleteItem(item.id, item.card_id)  // parent met à jour openCard
   }
 
-  const donePct = items.length > 0 ? Math.round(items.filter(i => i.checked).length / items.length * 100) : 0
+  const checkItems = card._checklistItems || []
+  const donePct = checkItems.length > 0 ? Math.round(checkItems.filter(i => i.checked).length / checkItems.length * 100) : 0
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)',
@@ -325,17 +323,17 @@ function CardDetailModal({ card, lists, profiles, boardColor, onClose, onSave, o
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: items.length > 0 ? 8 : 0 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>☑️ Checklist</div>
-              {items.length > 0 && (
+              {checkItems.length > 0 && (
                 <span style={{ fontSize: 11, color: donePct === 100 ? '#059669' : '#6B7280',
                   fontWeight: 600 }}>{donePct}%</span>
               )}
             </div>
-            {items.length > 0 && (
+            {checkItems.length > 0 && (
               <div style={{ height: 4, backgroundColor: '#F3F4F6', borderRadius: 2, marginBottom: 10, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${donePct}%`, backgroundColor: donePct === 100 ? '#10B981' : boardColor, borderRadius: 2, transition: 'width 0.3s' }} />
               </div>
             )}
-            {items.map(item => (
+            {checkItems.map(item => (
               <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0',
                 borderBottom: '1px solid #F9FAFB' }}>
                 <button onClick={() => handleToggleItem(item)}
@@ -373,8 +371,8 @@ function CardDetailModal({ card, lists, profiles, boardColor, onClose, onSave, o
             </div>
           </div>
 
-          {/* Activité */}
-          {activity.length > 0 && (
+          {/* Activité — seulement dans les tableaux partagés */}
+          {boardType !== 'personal' && activity.length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 10 }}>🕒 Activité</div>
               <div style={{ maxHeight: 200, overflowY: 'auto' }}>
@@ -479,8 +477,9 @@ export default function TrelloBoardView({ board, onBack, triggerAddList, onAddLi
       })
       setCards(cardMap)
 
-      // Load profiles for all involved users
+      // Load profiles for all involved users (always include current user)
       const userIds = new Set([
+        user.id,
         ...cardArr.map(c => c.created_by),
         ...cardArr.filter(c => c.completed_by).map(c => c.completed_by),
         ...allItems.filter(i => i.checked_by).map(i => i.checked_by),
@@ -594,12 +593,35 @@ export default function TrelloBoardView({ board, onBack, triggerAddList, onAddLi
 
   // ── CRUD checklist ──────────────────────────────────────────────────────────
   const addChecklistItem = async (cardId, title) => {
-    const card = Object.values(cards).flat().find(c => c.id === cardId)
-    const pos = (card?._checklistItems?.length || 0)
+    const existingCard = Object.values(cards).flat().find(c => c.id === cardId)
+    const pos = (existingCard?._checklistItems?.length || 0)
     const { data } = await supabase.from('trello_checklist_items').insert({
       card_id: cardId, title, position: pos, created_by: user.id,
     }).select().single()
-    return data || null
+    // Construire l'item localement si Supabase ne le retourne pas (RLS SELECT)
+    const newItem = data || {
+      id: `local-${Date.now()}`, card_id: cardId, title, position: pos,
+      created_by: user.id, checked: false, checked_by: null, checked_at: null,
+      created_at: new Date().toISOString(),
+    }
+    // Mettre à jour cards (stats) et openCard (affichage modal)
+    setCards(prev => {
+      const n = { ...prev }
+      Object.keys(n).forEach(lid => {
+        n[lid] = n[lid].map(c => {
+          if (c.id !== cardId) return c
+          const its = [...(c._checklistItems || []), newItem]
+          return { ...c, _checklistItems: its, _checklistTotal: its.length }
+        })
+      })
+      return n
+    })
+    setOpenCard(prev => {
+      if (!prev || prev.id !== cardId) return prev
+      const its = [...(prev._checklistItems || []), newItem]
+      return { ...prev, _checklistItems: its, _checklistTotal: its.length }
+    })
+    return newItem
   }
 
   const toggleChecklistItem = async (item) => {
@@ -621,9 +643,15 @@ export default function TrelloBoardView({ board, onBack, triggerAddList, onAddLi
       })
       return n
     })
+    // Mettre à jour openCard aussi
+    setOpenCard(prev => {
+      if (!prev || prev.id !== item.card_id) return prev
+      const newItems = (prev._checklistItems || []).map(i => i.id === item.id ? updated : i)
+      return { ...prev, _checklistItems: newItems, _checklistDone: newItems.filter(i => i.checked).length }
+    })
     // Log
-    const card = Object.values(cards).flat().find(c => c.id === item.card_id)
-    if (card) await supabase.from('trello_activity').insert({
+    const foundCard = Object.values(cards).flat().find(c => c.id === item.card_id)
+    if (foundCard) await supabase.from('trello_activity').insert({
       card_id: item.card_id, board_id: board.id, user_id: user.id,
       action: checked ? 'item_checked' : 'item_unchecked',
       detail: { item_title: item.title },
@@ -631,8 +659,24 @@ export default function TrelloBoardView({ board, onBack, triggerAddList, onAddLi
     return updated
   }
 
-  const deleteChecklistItem = async (itemId) => {
+  const deleteChecklistItem = async (itemId, cardId) => {
     await supabase.from('trello_checklist_items').delete().eq('id', itemId)
+    setCards(prev => {
+      const n = { ...prev }
+      Object.keys(n).forEach(lid => {
+        n[lid] = n[lid].map(c => {
+          if (c.id !== cardId) return c
+          const its = (c._checklistItems || []).filter(i => i.id !== itemId)
+          return { ...c, _checklistItems: its, _checklistTotal: its.length, _checklistDone: its.filter(i=>i.checked).length }
+        })
+      })
+      return n
+    })
+    setOpenCard(prev => {
+      if (!prev || prev.id !== cardId) return prev
+      const its = (prev._checklistItems || []).filter(i => i.id !== itemId)
+      return { ...prev, _checklistItems: its, _checklistTotal: its.length, _checklistDone: its.filter(i=>i.checked).length }
+    })
   }
 
   // ── Drag & Drop ─────────────────────────────────────────────────────────────
@@ -768,6 +812,7 @@ export default function TrelloBoardView({ board, onBack, triggerAddList, onAddLi
           lists={lists}
           profiles={profiles}
           boardColor={board.color}
+          boardType={board.type}
           onClose={() => setOpenCard(null)}
           onSave={saveCard}
           onDelete={deleteCard}
