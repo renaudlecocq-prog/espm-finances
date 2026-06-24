@@ -176,6 +176,7 @@ export default function Admin() {
         { key: 'droits',        label: 'Droits' },
         { key: 'synchronisation', label: 'Synchronisation' },
         { key: 'helpdesk', label: 'Helpdesk' },
+        { key: 'natures', label: 'Natures comptables' },
       ]}
       activeTab={tab}
       onTabChange={setTab}
@@ -645,6 +646,9 @@ export default function Admin() {
 
       {/* ── HELPDESK ─────────────────────────────────── */}
       {tab === 'helpdesk' && <HelpdeskAdmin />}
+
+      {/* ── NATURES COMPTABLES ───────────────────────── */}
+      {tab === 'natures' && <NaturesAdmin />}
     </div>
     </>
   )
@@ -996,6 +1000,288 @@ function CategoryModal({ cat, onClose, onSave, saving, error }) {
               color: '#fff', cursor: saving || !form.nom ? 'default' : 'pointer',
               fontSize: 13, fontWeight: 600 }}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════
+//  Natures Comptables Admin
+// ══════════════════════════════════════════════════════════
+export function NaturesAdmin() {
+  const [natures, setNatures] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [editItem, setEditItem] = useState(null) // null | 'new' | nature object
+  const [saving, setSaving] = useState(false)
+  const [filterCat, setFilterCat] = useState('Toutes')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const { data } = await supabase.from('comptable_natures').select('*').order('position')
+    if (data) setNatures(data)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const categories = ['Toutes', ...new Set(natures.map(n => n.categorie))]
+
+  const filtered = filterCat === 'Toutes'
+    ? natures
+    : natures.filter(n => n.categorie === filterCat)
+
+  const toggleActif = async (n) => {
+    await supabase.from('comptable_natures').update({ actif: !n.actif }).eq('id', n.id)
+    setNatures(prev => prev.map(x => x.id === n.id ? { ...x, actif: !n.actif } : x))
+  }
+
+  const saveNature = async (form) => {
+    setSaving(true)
+    const payload = {
+      libelle: form.libelle,
+      categorie: form.categorie,
+      sous_categorie: form.sous_categorie,
+      type_flux: form.type_flux,
+      in_bilan: form.in_bilan,
+      actif: form.actif,
+    }
+    if (form.id) {
+      await supabase.from('comptable_natures').update(payload).eq('id', form.id)
+    } else {
+      const maxPos = natures.length ? Math.max(...natures.map(n => n.position)) + 1 : 0
+      await supabase.from('comptable_natures').insert({ ...payload, position: maxPos })
+    }
+    setSaving(false)
+    setEditItem(null)
+    load()
+  }
+
+  const deleteNature = async (id) => {
+    if (!confirm('Supprimer cette nature comptable ?')) return
+    await supabase.from('comptable_natures').delete().eq('id', id)
+    setNatures(prev => prev.filter(n => n.id !== id))
+  }
+
+  const TYPE_COLORS = {
+    produit: 'bg-green-100 text-green-700',
+    charge:  'bg-red-100 text-red-600',
+    neutre:  'bg-gray-100 text-gray-500',
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-semibold text-gray-700">Natures comptables</h2>
+          <p className="text-xs text-gray-400 mt-0.5">{natures.length} natures · {natures.filter(n => !n.actif).length} désactivées</p>
+        </div>
+        <button
+          onClick={() => setEditItem({ libelle: '', categorie: '', sous_categorie: '', type_flux: 'charge', in_bilan: true, actif: true })}
+          className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+        >
+          + Nouvelle nature
+        </button>
+      </div>
+
+      {/* Category filter chips */}
+      <div className="flex flex-wrap gap-2">
+        {categories.map(cat => (
+          <button key={cat}
+            onClick={() => setFilterCat(cat)}
+            className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+              filterCat === cat
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            {cat}
+            {cat !== 'Toutes' && (
+              <span className="ml-1.5 opacity-60">{natures.filter(n => n.categorie === cat).length}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <div className="text-center py-12 text-gray-400">Chargement…</div>
+      ) : (
+        <div className="card p-0 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500">Libellé</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500">Type</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500">Bilan</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500">Actif</th>
+                <th className="w-20 px-4 py-2.5"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(n => (
+                <tr key={n.id} className={`border-b border-gray-50 hover:bg-gray-50/60 ${!n.actif ? 'opacity-50' : ''}`}>
+                  <td className="px-4 py-2.5">
+                    <p className="font-medium text-gray-700">{n.libelle}</p>
+                    <p className="text-xs text-gray-400">{n.categorie} › {n.sous_categorie}</p>
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${TYPE_COLORS[n.type_flux]}`}>
+                      {n.type_flux === 'produit' ? 'Produit' : n.type_flux === 'charge' ? 'Charge' : 'Neutre'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-center">
+                    {n.in_bilan
+                      ? <span className="text-green-500 text-xs">✓</span>
+                      : <span className="text-gray-300 text-xs">—</span>}
+                  </td>
+                  <td className="px-4 py-2.5 text-center">
+                    <button onClick={() => toggleActif(n)}
+                      className={`relative inline-flex h-5 w-9 rounded-full transition-colors
+                        ${n.actif ? 'bg-green-400' : 'bg-gray-200'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform mt-0.5
+                        ${n.actif ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </button>
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2 justify-end">
+                      <button onClick={() => setEditItem({ ...n })}
+                        className="p-1.5 hover:bg-indigo-50 rounded text-gray-400 hover:text-indigo-600 transition-colors"
+                        title="Modifier">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                      <button onClick={() => deleteNature(n.id)}
+                        className="p-1.5 hover:bg-red-50 rounded text-gray-300 hover:text-red-400 transition-colors"
+                        title="Supprimer">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-sm">
+                    Aucune nature dans cette catégorie
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {editItem && (
+        <NatureModal
+          item={editItem}
+          categories={categories.filter(c => c !== 'Toutes')}
+          saving={saving}
+          onSave={saveNature}
+          onClose={() => setEditItem(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+function NatureModal({ item, categories, saving, onSave, onClose }) {
+  const [form, setForm] = useState({ ...item })
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-800">{item.id ? 'Modifier' : 'Nouvelle'} nature comptable</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Catégorie</label>
+            <input
+              value={form.categorie}
+              onChange={e => set('categorie', e.target.value)}
+              list="cat-list"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
+              placeholder="ex: Frais pédagogiques"
+            />
+            <datalist id="cat-list">
+              {categories.map(c => <option key={c} value={c} />)}
+            </datalist>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Sous-catégorie</label>
+            <input
+              value={form.sous_categorie}
+              onChange={e => {
+                const sc = e.target.value
+                set('sous_categorie', sc)
+                if (form.categorie) set('libelle', `${form.categorie} - ${sc}`)
+              }}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
+              placeholder="ex: Anglais"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Libellé complet</label>
+            <input
+              value={form.libelle}
+              onChange={e => set('libelle', e.target.value)}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Type de flux</label>
+              <select
+                value={form.type_flux}
+                onChange={e => set('type_flux', e.target.value)}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
+              >
+                <option value="charge">Charge (sortie)</option>
+                <option value="produit">Produit (entrée)</option>
+                <option value="neutre">Neutre (transfert)</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-2 pt-4">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" checked={form.in_bilan} onChange={e => set('in_bilan', e.target.checked)}
+                  className="rounded" />
+                Inclus au bilan
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" checked={form.actif} onChange={e => set('actif', e.target.checked)}
+                  className="rounded" />
+                Actif
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+            Annuler
+          </button>
+          <button
+            onClick={() => onSave(form)}
+            disabled={!form.libelle || !form.categorie || saving}
+            className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {saving ? 'Enregistrement…' : (item.id ? 'Enregistrer' : 'Créer')}
           </button>
         </div>
       </div>

@@ -1332,3 +1332,25 @@ git push origin main
 - `allItems` : tableau fusionné folders+boards trié par position, IDs préfixés (`folder-`, `board-`, `item-`)
 - `SortableItemCard` : wrapper @dnd-kit/sortable autour de `ItemCard`
 - `handleRootDragEnd` + `handleItemDragEnd` : réordonnement optimiste + mise à jour DB en parallèle
+
+## [Develop] 2026-06-24 — Page Économe v1 (Phase 1)
+
+### Nouveautés
+- **Page Économe** : nouvelle page comptable avec 5 onglets (Fonctionnement, Élèves, POP, Bilan, Projets)
+- **Tab Fonctionnement** : import CSV Belfius, liste transactions avec entrées/sorties, attribution Nature comptable inline
+- **Tab Élèves** : import CSV Belfius, liste transactions (paiements entrants), statut paiement (pending/imported/ignored)
+- **NatureSelect** : dropdown groupé par catégorie avec recherche plein-texte
+- **Barre de synthèse** : total entrées, total sorties, solde, nb non-classés
+- Filtres : année, mois, recherche texte, "en attente seulement" (onglet Élèves)
+- Import modal avec drag-and-drop, aperçu, détection doublons (via référence Belfius)
+- Onglets POP/Bilan/Projets en placeholder "En développement"
+- **Admin › Natures comptables** : onglet CRUD complet dans Admin.jsx (liste par catégorie, activation/désactivation, création/édition/suppression)
+
+### Technique
+- DB : migration `create_comptable_tables` appliquée (comptable_natures, comptable_imports, comptable_transactions, comptable_projets, comptable_projet_lignes + RLS admin-only)
+- DB : seed 60 natures comptables (catégories : Achats, Catering, Divers, Élèves, Entretien, ExtraMuros, Frais pédagogiques, Voyages Scolaires)
+- `src/pages/Econome.jsx` créé (~790 lignes)
+- `src/lib/permissions.js` : feature `econome` ajoutée
+- `src/components/layout/Sidebar.jsx` : icône + lien Économe
+- `src/App.jsx` : route `/econome` ajoutée (RequireAuth admin)
+- `src/pages/Admin.jsx` : onglet "Natures comptables" + composants NaturesAdmin + NatureModal
