@@ -3,12 +3,6 @@ import { SlidersHorizontal, ChevronDown, X } from 'lucide-react'
 
 /**
  * MasterFilter — dropdown panel with checkbox multi-select per column
- *
- * Props:
- *   filters    : { [key]: string[] }   — active values per column
- *   filterDefs : { key, label, options: string[] | {value,label}[] }[]
- *   onChange   : (key: string, val: string) => void  — toggles val in/out
- *   onClearAll : () => void
  */
 
 const isObj = opts => opts?.length > 0 && typeof opts[0] === 'object'
@@ -19,24 +13,6 @@ const getDisplayLabel = (opts, val) => {
 const getSelected = (filters, key) => {
   const v = filters[key]
   return Array.isArray(v) ? v : (v ? [v] : [])
-}
-
-/** Custom checkbox — nettement plus lisible que le HTML natif */
-function Checkbox({ checked }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
-        checked ? 'bg-primary border-primary' : 'bg-white border-gray-400'
-      }`}
-    >
-      {checked && (
-        <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-          <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      )}
-    </span>
-  )
 }
 
 export default function MasterFilter({ filters, filterDefs, onChange, onClearAll, dark = false }) {
@@ -100,7 +76,7 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
             )}
           </div>
 
-          {/* Grid of filter columns */}
+          {/* Grid */}
           <div className="grid gap-x-4 gap-y-4 p-4"
             style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
             {filterDefs.map(def => {
@@ -112,10 +88,8 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
                 <div key={def.key}>
                   {/* Column header */}
                   <div className="flex items-center gap-1.5 mb-2">
-                    <span
-                      className="text-[10px] font-bold uppercase tracking-wide"
-                      style={{ color: count > 0 ? '#2D1B2E' : '#6b7280' }}
-                    >
+                    <span className="text-[10px] font-bold uppercase tracking-wide"
+                      style={{ color: count > 0 ? '#2D1B2E' : '#6b7280' }}>
                       {def.label}
                     </span>
                     {count > 0 && (
@@ -125,34 +99,48 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
                     )}
                   </div>
 
-                  {/* Options list */}
+                  {/* Options list — div+onClick, pas d'input natif */}
                   <div
-                    className="rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden"
+                    className="rounded-xl border border-gray-200 overflow-hidden"
                     style={{ maxHeight: opts.length > 7 ? 196 : 'none', overflowY: opts.length > 7 ? 'auto' : 'visible' }}
                   >
                     {opts.length === 0
                       ? <p className="text-xs text-gray-400 px-3 py-2">—</p>
-                      : opts.map(o => {
+                      : opts.map((o, i) => {
                           const val     = isObj(opts) ? o.value : o
                           const lbl     = isObj(opts) ? o.label  : o
                           const checked = selected.includes(val)
                           return (
-                            <label
+                            <div
                               key={val}
-                              className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors select-none ${
-                                checked ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'
-                              }`}
+                              onClick={() => onChange(def.key, val)}
+                              className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer select-none transition-colors ${
+                                i > 0 ? 'border-t border-gray-100' : ''
+                              } ${checked ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'}`}
                             >
-                              {/* Accessibility: input caché, visual custom */}
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => onChange(def.key, val)}
-                                className="sr-only"
-                              />
-                              <Checkbox checked={checked} />
+                              {/* Custom checkbox — aucun input HTML */}
+                              <span
+                                style={{
+                                  flexShrink: 0,
+                                  width: 16,
+                                  height: 16,
+                                  borderRadius: 3,
+                                  border: checked ? '2px solid #2D1B2E' : '2px solid #6b7280',
+                                  backgroundColor: checked ? '#2D1B2E' : '#ffffff',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  transition: 'all 0.1s',
+                                }}
+                              >
+                                {checked && (
+                                  <svg width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden="true">
+                                    <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                )}
+                              </span>
                               <span className={`text-xs leading-snug ${checked ? 'font-medium' : ''}`}>{lbl}</span>
-                            </label>
+                            </div>
                           )
                         })
                     }
@@ -180,7 +168,7 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
 }
 
 /**
- * ActiveFilterChips — one chip per selected value, click × to deselect
+ * ActiveFilterChips
  */
 export function ActiveFilterChips({ filters, filterDefs, onChange }) {
   const items = []

@@ -1183,9 +1183,16 @@ git push origin main
 - **Sidebar / NotificationBell** : dropdown s'ouvre maintenant vers le haut (`bottom-10`) pour éviter de sortir du viewport quand la cloche est en bas de la sidebar
 - **Sidebar** : rangée "Notifications" entièrement cliquable (hover + curseur) comme "Administration" — un clic sur le texte ouvre le panneau
 
-## [v0.72] — 2026-06-24
+## [v0.72] — 2026-06-24 (rev2)
 
 ### Fixed
 - **MasterFilter** : remplacement des checkboxes HTML natifs (quasi-invisibles non-cochés) par des checkboxes custom avec fort contraste — fond blanc + bordure `gray-400` non coché, fond primary + coche blanche coché
 - **MasterFilter** : amélioration des séparateurs (`divide-gray-50` → `divide-gray-100`) et des bordures de liste (`border-gray-100` → `border-gray-200`) pour une meilleure lisibilité
 - **MasterFilter** : largeur du panneau étendue à 560px pour les pages avec 6+ colonnes de filtre (ex. Groupes), évitant l'entassement
+
+## [v0.72b] — 2026-06-24
+
+### Fixed
+- **MasterFilter** : suppression totale de l'`<input>` HTML natif (remplacé par `div + onClick`) — élimine toute interférence du rendu natif du navigateur
+- **MasterFilter** : checkbox custom via inline-style (border 2px `#6b7280` non coché, fond `#2D1B2E` + coche blanche coché) — contraste maximum garanti
+- **MasterFilter** : séparateurs entre options via `border-t border-gray-100` au lieu de `divide`
