@@ -321,7 +321,7 @@ function CardDetailModal({ card, lists, profiles, boardColor, boardType, onClose
 
           {/* Checklist */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: items.length > 0 ? 8 : 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: checkItems.length > 0 ? 8 : 0 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>☑️ Checklist</div>
               {checkItems.length > 0 && (
                 <span style={{ fontSize: 11, color: donePct === 100 ? '#059669' : '#6B7280',
@@ -471,8 +471,8 @@ export default function TrelloBoardView({ board, onBack, triggerAddList, onAddLi
       cardArr.forEach(card => {
         const items = allItems.filter(i => i.card_id === card.id)
         card._checklistItems = items
-        card._checklistTotal = items.length
-        card._checklistDone  = items.filter(i => i.checked).length
+        card._checklistTotal = allItems.filter(i => i.card_id === card.id).length
+        card._checklistDone  = allItems.filter(i => i.card_id === card.id && i.checked).length
         if (cardMap[card.list_id]) cardMap[card.list_id].push(card)
       })
       setCards(cardMap)
