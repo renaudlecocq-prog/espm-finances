@@ -699,26 +699,26 @@ export default function SalleDProfs() {
         title={headerTitle}
         subtitle={headerSubtitle}
         leftActions={currentFolder ? (
-          <>
+          <div style={{display:'flex',alignItems:'center',gap:0}}>
             {/* Breadcrumb */}
             <button onClick={navigateToRoot}
               style={{background:'none',border:'none',cursor:'pointer',
                 color:'rgba(255,255,255,0.70)',fontSize:12,fontWeight:500,
-                padding:'4px 8px',borderRadius:6}}
+                padding:'4px 8px',borderRadius:6,lineHeight:1,display:'flex',alignItems:'center'}}
               onMouseEnter={e=>{e.currentTarget.style.color='white';e.currentTarget.style.backgroundColor='rgba(255,255,255,0.10)'}}
               onMouseLeave={e=>{e.currentTarget.style.color='rgba(255,255,255,0.70)';e.currentTarget.style.backgroundColor='transparent'}}>
               {tab==='shared'?'Salle des profs':'Mon casier'}
             </button>
             {folderPath.map((f,i)=>(
               <span key={f.id} style={{display:'flex',alignItems:'center',gap:0}}>
-                <svg viewBox="0 0 24 24" width={12} height={12} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2} style={{flexShrink:0}}>
+                <svg viewBox="0 0 24 24" width={10} height={10} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2.5} style={{flexShrink:0,display:'block'}}>
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
                 {i < folderPath.length-1 ? (
                   <button onClick={()=>navigateToIndex(i)}
                     style={{background:'none',border:'none',cursor:'pointer',
                       color:'rgba(255,255,255,0.70)',fontSize:12,fontWeight:500,
-                      padding:'4px 6px',borderRadius:6}}
+                      padding:'4px 6px',borderRadius:6,lineHeight:1,display:'flex',alignItems:'center'}}
                     onMouseEnter={e=>{e.currentTarget.style.color='white';e.currentTarget.style.backgroundColor='rgba(255,255,255,0.10)'}}
                     onMouseLeave={e=>{e.currentTarget.style.color='rgba(255,255,255,0.70)';e.currentTarget.style.backgroundColor='transparent'}}>
                     {f.emoji} {f.name}
@@ -726,8 +726,8 @@ export default function SalleDProfs() {
                 ) : null}
               </span>
             ))}
-            <div style={{width:1,alignSelf:'stretch',backgroundColor:'rgba(255,255,255,0.20)',margin:'0 2px'}}/>
-          </>
+            <div style={{width:1,height:16,backgroundColor:'rgba(255,255,255,0.20)',margin:'0 6px'}}/>
+          </div>
         ) : undefined}
         tabs={!currentFolder ? tabs : undefined}
         activeTab={tab}

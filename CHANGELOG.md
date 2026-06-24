@@ -1290,3 +1290,8 @@ git push origin main
   - `createFolder` / `updateFolder` : throw sur erreur Supabase pour que `FolderModal` puisse l'intercepter
   - `FolderModal` : ajout `try/catch` dans `handleSave` + message d'erreur visible si l'insertion échoue
 - Schema PostgREST rechargé (`NOTIFY pgrst, 'reload schema'`) pour exposer la colonne `parent_id` fraîchement ajoutée
+
+## [v0.79h] — 2026-06-24
+### Fixed
+- **SalleDProfs.jsx** — breadcrumb : `<>` fragment remplacé par `<div display:flex alignItems:center>` pour aligner le chevron `›` avec le texte "Salle des profs"
+- **Supabase RLS** — policy `padlet_folders_select` récrite sans sous-SELECT auto-référentiel (erreur `42P17 infinite recursion`)
