@@ -1,4 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import {
+  DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext, useSortable, arrayMove, rectSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import TrelloBoardView from './TrelloBoardView'
 import imageCompression from 'browser-image-compression'
 import { supabase } from '../lib/supabase'
@@ -18,6 +25,9 @@ const softBg = (hex) => hex + '18'
 
 // ── Carte Trello board (dans la grille) ───────────────────────────────────────
 function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, canEdit }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortDragging } =
+    useSortable({ id: `board-${board.id}` })
+  const sortStyle = { transform: CSS.Transform.toString(transform), transition, opacity: isSortDragging ? 0.35 : 1 }
   const [menu, setMenu] = useState(false)
   const menuRef = useRef(null)
   useEffect(() => {
@@ -26,9 +36,10 @@ function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, canEdit }) {
     return () => document.removeEventListener('mousedown', close)
   }, [menu])
   return (
-    <div onClick={onOpen}
+    <div ref={setNodeRef} style={sortStyle} {...attributes} {...listeners}>
+    <div onClick={!isSortDragging ? onOpen : undefined}
       style={{
-        borderRadius: 14, overflow: 'hidden', cursor: 'pointer', backgroundColor: '#fff',
+        borderRadius: 14, overflow: 'hidden', cursor: 'grab', backgroundColor: '#fff',
         boxShadow: board.pinned
           ? `0 0 0 2px ${board.color}, 0 4px 20px ${board.color}40`
           : '0 2px 8px rgba(0,0,0,0.08)',
@@ -99,6 +110,7 @@ function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, canEdit }) {
         </div>
         <span style={{ fontSize: 11, color: '#9CA3AF' }}>Tableau Kanban</span>
       </div>
+    </div>
     </div>
   )
 }
@@ -267,8 +279,9 @@ function FolderCard({ folder, previews, stats, subCount=0, onOpen, onEdit, onPin
   const emojiBadgeSize = compact ? 26 : 38
 
   return (
-    <div onClick={onOpen}
-      style={{borderRadius:14,overflow:'hidden',cursor:'pointer',
+    <div ref={setNodeRef} style={sortStyle} {...attributes} {...listeners}>
+    <div onClick={!isSortDragging ? onOpen : undefined}
+      style={{borderRadius:14,overflow:'hidden',cursor:'grab',
         boxShadow: folder.pinned
           ? `0 0 0 2px ${folder.color},0 4px 20px ${folder.color}40`
           : '0 2px 8px rgba(0,0,0,0.08)',
@@ -342,6 +355,7 @@ function FolderCard({ folder, previews, stats, subCount=0, onOpen, onEdit, onPin
         </div>
         <StatLine stats={stats} subCount={subCount} />
       </div>
+    </div>
     </div>
   )
 }
@@ -687,6 +701,12 @@ export default function SalleDProfs() {
   // Navigation
   const [openBoard,  setOpenBoard]  = useState(null)  // tableau Trello ouvert
   const [triggerAddList, setTriggerAddList] = useState(false)
+  const [allItems,   setAllItems]   = useState([])  // grille racine fusionnée
+  const [dragActive, setDragActive] = useState(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  )
   const [boards,     setBoards]     = useState([])
   const [boardModal, setBoardModal] = useState(false)
   const [editBoard,  setEditBoard]  = useState(null)
@@ -737,7 +757,7 @@ export default function SalleDProfs() {
     try {
       let q = supabase.from('trello_boards').select('*').eq('type', tab)
       if (tab === 'personal') q = q.eq('created_by', user.id)
-      const { data, error } = await q.order('pinned', { ascending: false }).order('created_at')
+      const { data, error } = await q.order('position', { ascending: true })
       if (error) throw error
       setBoards(data || [])
     } catch(err) {
@@ -752,14 +772,14 @@ export default function SalleDProfs() {
       let q = supabase.from('padlet_folders').select('*')
         .eq('type', tab).is('parent_id', null)
       if (tab==='personal') q = q.eq('created_by', user.id)
-      const {data, error} = await q.order('pinned',{ascending:false}).order('created_at')
+      const {data, error} = await q.order('position',{ascending:true})
       if (error) throw error
       const list = data || []
       setFolders(list)
       if (list.length > 0) {
-        const {data:allItems} = await supabase.from('padlet_items')
+        const {data:padletItemsData} = await supabase.from('padlet_items')
           .select('id,folder_id,type,file_url,content').in('folder_id',list.map(f=>f.id)).order('created_at')
-        const {stats,previews} = computeStatsAndPreviews(allItems, [])
+        const {stats,previews} = computeStatsAndPreviews(padletItemsData, [])
         setFolderStats(stats); setFolderPreviews(previews)
       } else {
         setFolderStats({}); setFolderPreviews({})
@@ -773,6 +793,15 @@ export default function SalleDProfs() {
   }, [tab, user.id])
 
   useEffect(()=>{loadFolders();loadBoards();setFolderPath([]);setOpenBoard(null)}, [loadFolders, loadBoards])
+
+  // Fusionner folders + boards dans un tableau ordonné pour la grille racine
+  useEffect(() => {
+    const combined = [
+      ...folders.map(f => ({ ...f, _itemType: 'folder', _sortId: `folder-${f.id}` })),
+      ...boards.map(b => ({ ...b, _itemType: 'board',  _sortId: `board-${b.id}` })),
+    ].sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+    setAllItems(combined)
+  }, [folders, boards])
 
   // ── Charger contenu d'un dossier ───────────────────────────────────────────
   const loadFolderContent = useCallback(async (folder) => {
@@ -865,6 +894,41 @@ export default function SalleDProfs() {
     if (!window.confirm(`Supprimer le tableau "${board.name}" et tout son contenu ?`)) return
     await supabase.from('trello_boards').delete().eq('id', board.id)
     await loadBoards()
+  }
+
+  // ── Drag & drop grille racine ────────────────────────────────────────────
+  const handleRootDragStart = ({ active }) => setDragActive(active.id)
+  const handleRootDragEnd = async ({ active, over }) => {
+    setDragActive(null)
+    if (!over || active.id === over.id) return
+    const oldIdx = allItems.findIndex(i => i._sortId === active.id)
+    const newIdx = allItems.findIndex(i => i._sortId === over.id)
+    if (oldIdx === -1 || newIdx === -1) return
+    const reordered = arrayMove(allItems, oldIdx, newIdx)
+    setAllItems(reordered)
+    // Persister les positions
+    const folderUpdates = reordered.filter(i => i._itemType === 'folder')
+      .map((i, idx) => supabase.from('padlet_folders').update({ position: idx }).eq('id', i.id))
+    const boardUpdates = reordered.filter(i => i._itemType === 'board')
+      .map((i, idx) => supabase.from('trello_boards').update({ position: idx }).eq('id', i.id))
+    await Promise.all([...folderUpdates, ...boardUpdates])
+  }
+
+  // ── DnD items dans dossier ──────────────────────────────────────────────────
+  const [itemsDragActive, setItemsDragActive] = useState(null)
+
+  const handleItemDragStart = ({ active }) => setItemsDragActive(active.id)
+  const handleItemDragEnd = async ({ active, over }) => {
+    setItemsDragActive(null)
+    if (!over || active.id === over.id) return
+    const oldIdx = items.findIndex(i => `item-${i.id}` === active.id)
+    const newIdx = items.findIndex(i => `item-${i.id}` === over.id)
+    if (oldIdx === -1 || newIdx === -1) return
+    const reordered = arrayMove([...items], oldIdx, newIdx)
+    setItems(reordered)
+    await Promise.all(
+      reordered.map((it, idx) => supabase.from('padlet_items').update({ position: idx }).eq('id', it.id))
+    )
   }
 
   const deleteItem = async (item) => {
@@ -993,7 +1057,7 @@ export default function SalleDProfs() {
         {!currentFolder && !openBoard && (
           loading ? (
             <div style={{textAlign:'center',color:'#9CA3AF',padding:60}}>Chargement…</div>
-          ) : folders.length===0 ? (
+          ) : allItems.length === 0 ? (
             <div style={{textAlign:'center',padding:80}}>
               <div style={{fontSize:48,marginBottom:16}}>{tab==='shared'?'🏫':'🗂️'}</div>
               <div style={{fontSize:16,fontWeight:600,color:'#374151',marginBottom:8}}>
@@ -1012,66 +1076,44 @@ export default function SalleDProfs() {
               </div>
             </div>
           ) : (
-            <>
-              {folders.some(f=>f.pinned) && (
-                <div style={{marginBottom:32}}>
-                  <div style={{fontSize:11,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>
-                    📌 Épinglés
-                  </div>
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:18}}>
-                    {folders.filter(f=>f.pinned).map(folder=>(
-                      <FolderCard key={folder.id} folder={folder}
-                        previews={folderPreviews[folder.id]} stats={folderStats[folder.id]}
-                        onOpen={()=>navigateTo(folder)} onEdit={()=>setEditFolder(folder)}
-                        onPin={()=>togglePin(folder)} onDelete={()=>deleteFolder(folder)}
-                        canEdit={canEdit(folder)} />
-                    ))}
-                    {boards.filter(b=>b.pinned).map(board=>(
-                      <TrelloBoardCard key={board.id} board={board}
-                        onOpen={()=>setOpenBoard(board)} onEdit={()=>setEditBoard(board)}
-                        onPin={()=>togglePinBoard(board)} onDelete={()=>deleteBoard(board)}
-                        canEdit={canEdit(board)} />
-                    ))}
-                  </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter}
+              onDragStart={handleRootDragStart} onDragEnd={handleRootDragEnd}>
+              <SortableContext items={allItems.map(i => i._sortId)} strategy={rectSortingStrategy}>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:18}}>
+                  {allItems.map(item => item._itemType === 'folder' ? (
+                    <FolderCard key={`folder-${item.id}`} folder={item}
+                      previews={folderPreviews[item.id]} stats={folderStats[item.id]}
+                      onOpen={()=>navigateTo(item)} onEdit={()=>setEditFolder(item)}
+                      onPin={()=>togglePin(item)} onDelete={()=>deleteFolder(item)}
+                      canEdit={canEdit(item)} />
+                  ) : (
+                    <TrelloBoardCard key={`board-${item.id}`} board={item}
+                      onOpen={()=>setOpenBoard(item)} onEdit={()=>setEditBoard(item)}
+                      onPin={()=>togglePinBoard(item)} onDelete={()=>deleteBoard(item)}
+                      canEdit={canEdit(item)} />
+                  ))}
                 </div>
-              )}
-              {folders.some(f=>!f.pinned) && (
-                <div>
-                  {folders.some(f=>f.pinned) && (
-                    <div style={{fontSize:11,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>Tous les dossiers</div>
-                  )}
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:18}}>
-                    {folders.filter(f=>!f.pinned).map(folder=>(
-                      <FolderCard key={folder.id} folder={folder}
-                        previews={folderPreviews[folder.id]} stats={folderStats[folder.id]}
-                        onOpen={()=>navigateTo(folder)} onEdit={()=>setEditFolder(folder)}
-                        onPin={()=>togglePin(folder)} onDelete={()=>deleteFolder(folder)}
-                        canEdit={canEdit(folder)} />
-                    ))}
-                    {boards.filter(b=>!b.pinned).map(board=>(
-                      <TrelloBoardCard key={board.id} board={board}
-                        onOpen={()=>setOpenBoard(board)} onEdit={()=>setEditBoard(board)}
-                        onPin={()=>togglePinBoard(board)} onDelete={()=>deleteBoard(board)}
-                        canEdit={canEdit(board)} />
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* Boards épinglés (si pas de dossier épinglé pour les afficher) */}
-              {!folders.some(f=>f.pinned) && boards.some(b=>b.pinned) && (
-                <div style={{marginBottom:32}}>
-                  <div style={{fontSize:11,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>📌 Épinglés</div>
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:18}}>
-                    {boards.filter(b=>b.pinned).map(board=>(
-                      <TrelloBoardCard key={board.id} board={board}
-                        onOpen={()=>setOpenBoard(board)} onEdit={()=>setEditBoard(board)}
-                        onPin={()=>togglePinBoard(board)} onDelete={()=>deleteBoard(board)}
-                        canEdit={canEdit(board)} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
+              </SortableContext>
+              <DragOverlay>
+                {dragActive && (() => {
+                  const item = allItems.find(i => i._sortId === dragActive)
+                  if (!item) return null
+                  return item._itemType === 'folder' ? (
+                    <div style={{borderRadius:14,backgroundColor:'#fff',
+                      boxShadow:'0 12px 40px rgba(0,0,0,0.2)',opacity:0.9,overflow:'hidden',transform:'rotate(2deg)'}}>
+                      <div style={{height:145,backgroundColor:item.color}}/>
+                      <div style={{padding:'10px 13px 13px',fontWeight:700,fontSize:13}}>{item.name}</div>
+                    </div>
+                  ) : (
+                    <div style={{borderRadius:14,backgroundColor:'#fff',
+                      boxShadow:'0 12px 40px rgba(0,0,0,0.2)',opacity:0.9,overflow:'hidden',transform:'rotate(2deg)'}}>
+                      <div style={{height:145,backgroundColor:item.color}}/>
+                      <div style={{padding:'10px 13px 13px',fontWeight:700,fontSize:13}}>{item.name}</div>
+                    </div>
+                  )
+                })()}
+              </DragOverlay>
+            </DndContext>
           )
         )}
 
@@ -1098,21 +1140,31 @@ export default function SalleDProfs() {
           ) : (
             <>
               <TypeFilter subFolders={subFolders} items={items} value={typeFilter} onChange={setTypeFilter} />
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14}}>
-                {/* Sous-dossiers en premier */}
-                {filteredSubFolders.map(sf=>(
-                  <FolderCard key={sf.id} folder={sf} compact
-                    previews={subPreviews[sf.id]} stats={subStats[sf.id]}
-                    onOpen={()=>navigateTo(sf)} onEdit={()=>setEditFolder(sf)}
-                    onPin={()=>togglePin(sf)} onDelete={()=>deleteFolder(sf)}
-                    canEdit={canEdit(sf)} />
-                ))}
-                {/* Items */}
-                {filteredItems.map(item=>(
-                  <ItemCard key={item.id} item={item}
-                    onDelete={()=>deleteItem(item)} canDelete={canEdit(item)} />
-                ))}
-              </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter}
+                onDragStart={handleItemDragStart} onDragEnd={handleItemDragEnd}>
+                <SortableContext items={filteredItems.map(i => `item-${i.id}`)} strategy={rectSortingStrategy}>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14}}>
+                    {filteredSubFolders.map(sf=>(
+                      <FolderCard key={sf.id} folder={sf} compact
+                        previews={subPreviews[sf.id]} stats={subStats[sf.id]}
+                        onOpen={()=>navigateTo(sf)} onEdit={()=>setEditFolder(sf)}
+                        onPin={()=>togglePin(sf)} onDelete={()=>deleteFolder(sf)}
+                        canEdit={canEdit(sf)} />
+                    ))}
+                    {filteredItems.map(item=>(
+                      <SortableItemCard key={item.id} item={item}
+                        onDelete={()=>deleteItem(item)} canDelete={canEdit(item)} />
+                    ))}
+                  </div>
+                </SortableContext>
+                <DragOverlay>
+                  {itemsDragActive && (() => {
+                    const it = items.find(i => `item-${i.id}` === itemsDragActive)
+                    if (!it) return null
+                    return <ItemCard item={it} onDelete={()=>{}} canDelete={false} />
+                  })()}
+                </DragOverlay>
+              </DndContext>
             </>
           )
         )}

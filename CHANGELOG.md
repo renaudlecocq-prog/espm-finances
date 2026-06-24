@@ -1319,3 +1319,16 @@ git push origin main
 ### Technique
 - DB : migration `create_trello_tables` appliquée (trello_boards/lists/cards/checklist_items/activity + RLS)
 - Packages : @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities installés
+
+## [Develop] 2026-06-24 — Drag & drop réorganisation grille + dossiers
+
+### Nouveautés
+- **Grille racine réorganisable** : dossiers et tableaux glissables pour changer leur ordre (position persistée en DB)
+- **Items dans dossiers réorganisables** : les éléments d'un dossier (images, liens, notes, fichiers) peuvent être glissés pour changer leur ordre (position persistée en DB)
+- Overlay visuel pendant le drag (card fantôme avec rotation)
+
+### Technique
+- DB : migration `add_position_columns_padlet_trello` appliquée (`position INTEGER` sur padlet_folders, trello_boards, padlet_items)
+- `allItems` : tableau fusionné folders+boards trié par position, IDs préfixés (`folder-`, `board-`, `item-`)
+- `SortableItemCard` : wrapper @dnd-kit/sortable autour de `ItemCard`
+- `handleRootDragEnd` + `handleItemDragEnd` : réordonnement optimiste + mise à jour DB en parallèle
