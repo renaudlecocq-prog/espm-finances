@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors,
+  DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, useDroppable,
 } from '@dnd-kit/core'
 import {
   SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
@@ -130,6 +130,8 @@ function KanbanColumn({ list, cards, profiles, onAddCard, onOpen, onToggle, onRe
 
   const completed = cards.filter(c => c.completed).length
 
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: list.id })
+
   return (
     <div style={{
       flexShrink: 0, width: 280, backgroundColor: '#F8FAFC', borderRadius: 14,
@@ -183,7 +185,10 @@ function KanbanColumn({ list, cards, profiles, onAddCard, onOpen, onToggle, onRe
       </div>
 
       {/* Cards */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingRight: 2 }}>
+      <div ref={setDropRef} style={{ flex: 1, overflowY: 'auto', paddingRight: 2,
+        minHeight: 40, borderRadius: 8,
+        transition: 'background 0.15s',
+        backgroundColor: isOver && cards.length === 0 ? 'rgba(99,102,241,0.08)' : 'transparent' }}>
         <SortableContext items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
           {cards.map(card => (
             <SortableCard key={card.id} card={card} profiles={profiles}
