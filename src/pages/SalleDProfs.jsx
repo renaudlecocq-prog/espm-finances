@@ -23,6 +23,31 @@ const EMOJIS = ['📁','📚','📋','📌','🎨','🔗','📸','📝','🎯','
 
 const softBg = (hex) => hex + '18'
 
+// ── SortableFolderCard (wrapper DnD) ────────────────────────────────────────
+function SortableFolderCard({ folder, previews, stats, subCount, onOpen, onEdit, onPin, onDelete, canEdit }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: `folder-${folder.id}` })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.35 : 1 }
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <FolderCard folder={folder} previews={previews} stats={stats} subCount={subCount}
+        onOpen={onOpen} onEdit={onEdit} onPin={onPin} onDelete={onDelete} canEdit={canEdit} />
+    </div>
+  )
+}
+
+// ── SortableItemCard (wrapper DnD) ────────────────────────────────────────────
+function SortableItemCard({ item, onDelete, canDelete }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: `item-${item.id}` })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.35 : 1 }
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <ItemCard item={item} onDelete={onDelete} canDelete={canDelete} />
+    </div>
+  )
+}
+
 // ── Carte Trello board (dans la grille) ───────────────────────────────────────
 function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, canEdit }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortDragging } =
@@ -279,9 +304,8 @@ function FolderCard({ folder, previews, stats, subCount=0, onOpen, onEdit, onPin
   const emojiBadgeSize = compact ? 26 : 38
 
   return (
-    <div ref={setNodeRef} style={sortStyle} {...attributes} {...listeners}>
-    <div onClick={!isSortDragging ? onOpen : undefined}
-      style={{borderRadius:14,overflow:'hidden',cursor:'grab',
+    <div onClick={onOpen}
+      style={{borderRadius:14,overflow:'hidden',cursor:'pointer',
         boxShadow: folder.pinned
           ? `0 0 0 2px ${folder.color},0 4px 20px ${folder.color}40`
           : '0 2px 8px rgba(0,0,0,0.08)',
@@ -355,7 +379,6 @@ function FolderCard({ folder, previews, stats, subCount=0, onOpen, onEdit, onPin
         </div>
         <StatLine stats={stats} subCount={subCount} />
       </div>
-    </div>
     </div>
   )
 }
@@ -1081,7 +1104,7 @@ export default function SalleDProfs() {
               <SortableContext items={allItems.map(i => i._sortId)} strategy={rectSortingStrategy}>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:18}}>
                   {allItems.map(item => item._itemType === 'folder' ? (
-                    <FolderCard key={`folder-${item.id}`} folder={item}
+                    <SortableFolderCard key={`folder-${item.id}`} folder={item}
                       previews={folderPreviews[item.id]} stats={folderStats[item.id]}
                       onOpen={()=>navigateTo(item)} onEdit={()=>setEditFolder(item)}
                       onPin={()=>togglePin(item)} onDelete={()=>deleteFolder(item)}
