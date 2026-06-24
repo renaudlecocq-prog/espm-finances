@@ -53,7 +53,7 @@ function MiniCard({ item, rotate, tx, ty, zIdx }) {
   const TYPE_EMOJI = { image: '🖼️', document: '📄', link: '🔗', note: '📝' }
   return (
     <div style={{
-      position: 'absolute', width: 75, height: 96, borderRadius: 7,
+      position: 'absolute', width: 100, height: 125, borderRadius: 8,
       boxShadow: '0 3px 10px rgba(0,0,0,0.22)',
       transform: `rotate(${rotate}deg) translate(${tx}px, ${ty}px)`,
       zIndex: zIdx, overflow: 'hidden',
@@ -65,7 +65,7 @@ function MiniCard({ item, rotate, tx, ty, zIdx }) {
           style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
         <div style={{ width: '100%', height: '100%', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', fontSize: 33 }}>
+          alignItems: 'center', justifyContent: 'center', fontSize: 44 }}>
           {TYPE_EMOJI[item.type] || '📁'}
         </div>
       )}
@@ -107,9 +107,9 @@ function FolderCard({ folder, previews, stats, onOpen, onEdit, onPin, onDelete, 
 
   // Disposition éventail : jusqu'à 3 cartes
   const FAN = [
-    { rotate: -11, tx: -42, ty: 6 },
-    { rotate: -3,  tx: -9,  ty: 0 },
-    { rotate:  6,  tx: 27,  ty: 5 },
+    { rotate: -11, tx: -54, ty: 8 },
+    { rotate: -3,  tx: -10, ty: 0 },
+    { rotate:  6,  tx: 34,  ty: 6 },
   ]
 
   return (
@@ -123,7 +123,7 @@ function FolderCard({ folder, previews, stats, onOpen, onEdit, onPin, onDelete, 
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = folder.pinned ? `0 0 0 2px ${folder.color}, 0 4px 20px ${folder.color}40` : '0 2px 8px rgba(0,0,0,0.08)' }}>
 
       {/* Bandeau couleur avec éventail */}
-      <div style={{ height: 144, backgroundColor: folder.color,
+      <div style={{ height: 160, backgroundColor: folder.color,
         display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
         overflow: 'hidden' }}>
         {/* Fond légèrement assombri si items */}
@@ -132,7 +132,7 @@ function FolderCard({ folder, previews, stats, onOpen, onEdit, onPin, onDelete, 
             backgroundColor: 'rgba(0,0,0,0.08)' }} />
         )}
         {previews && previews.length > 0 ? (
-          <div style={{ position: 'relative', width: 180, height: 102 }}>
+          <div style={{ position: 'relative', width: 230, height: 130 }}>
             {previews.slice(0, 3).map((item, i) => (
               <MiniCard key={item.id} item={item}
                 rotate={FAN[i].rotate} tx={FAN[i].tx} ty={FAN[i].ty} zIdx={i + 1} />
@@ -229,55 +229,55 @@ function ItemCard({ item, onDelete, canDelete }) {
 
       {/* Aperçu image */}
       {item.type === 'image' && item.file_url && !imgError ? (
-        <div style={{ height: 200, overflow: 'hidden', backgroundColor: '#F9FAFB' }}>
+        <div style={{ height: 140, overflow: 'hidden', backgroundColor: '#F9FAFB' }}>
           <img src={item.file_url} alt={item.title || ''} onError={() => setImgError(true)}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
       ) : item.type === 'note' ? (
-        <div style={{ height: 120, backgroundColor: '#FFFBEB', padding: '16px 18px',
-          fontSize: 15, color: '#78350F', overflow: 'hidden',
+        <div style={{ height: 80, backgroundColor: '#FFFBEB', padding: '12px 14px',
+          fontSize: 13, color: '#78350F', overflow: 'hidden',
           lineHeight: 1.5, borderBottom: '1px solid #FEF3C7' }}>
           {item.content || item.title || ''}
         </div>
       ) : (
-        <div style={{ height: 120, backgroundColor: softBg(
+        <div style={{ height: 80, backgroundColor: softBg(
             item.type === 'document' ? '#EF4444' :
             item.type === 'link' ? '#10B981' : '#6366F1'),
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52 }}>
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>
           {item.type === 'document' ? '📄' : item.type === 'link' ? '🔗' : '🖼️'}
         </div>
       )}
 
       {/* Infos */}
-      <div style={{ padding: '14px 16px 16px' }}>
-        <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 4,
+      <div style={{ padding: '10px 12px 12px' }}>
+        <div style={{ fontWeight: 600, fontSize: 13, color: '#111', marginBottom: 3,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {item.title || item.file_name || item.content || 'Sans titre'}
         </div>
         {item.type === 'link' && item.content && (
-          <div style={{ fontSize: 13, color: '#6B7280',
+          <div style={{ fontSize: 11, color: '#6B7280',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {(() => { try { return new URL(item.content).hostname } catch { return item.content } })()}
           </div>
         )}
         {item.description && item.type !== 'note' && (
-          <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 3,
+          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2,
             overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical' }}>
             {item.description}
           </div>
         )}
         {item.file_size && (
-          <div style={{ fontSize: 12, color: '#D1D5DB', marginTop: 5 }}>{fmtSize(item.file_size)}</div>
+          <div style={{ fontSize: 10, color: '#D1D5DB', marginTop: 4 }}>{fmtSize(item.file_size)}</div>
         )}
       </div>
 
       {/* Supprimer */}
       {canDelete && (
-        <div style={{ borderTop: '1px solid #F9FAFB', padding: '8px 16px', textAlign: 'right' }}
+        <div style={{ borderTop: '1px solid #F9FAFB', padding: '6px 12px', textAlign: 'right' }}
           onClick={e => e.stopPropagation()}>
           <button onClick={onDelete}
-            style={{ fontSize: 13, color: '#D1D5DB', background: 'none', border: 'none',
+            style={{ fontSize: 11, color: '#D1D5DB', background: 'none', border: 'none',
               cursor: 'pointer', fontWeight: 500 }}
             onMouseEnter={e => e.currentTarget.style.color = '#EF4444'}
             onMouseLeave={e => e.currentTarget.style.color = '#D1D5DB'}>
@@ -863,7 +863,7 @@ export default function SalleDProfs() {
             </div>
           ) : (
             <div style={{ display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
               {items.map(item => (
                 <ItemCard key={item.id} item={item}
                   onDelete={() => deleteItem(item)}
