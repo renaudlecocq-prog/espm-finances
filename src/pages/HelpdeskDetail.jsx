@@ -148,6 +148,16 @@ export default function HelpdeskDetail() {
   }, [id])
 
   useEffect(() => { load() }, [load])
+
+  // Marquer comme lu (tracking messages non-lus dans Helpdesk)
+  useEffect(() => {
+    if (loading || !id) return
+    try {
+      const seen = JSON.parse(localStorage.getItem('hd_lastSeen') || '{}')
+      seen[id] = new Date().toISOString()
+      localStorage.setItem('hd_lastSeen', JSON.stringify(seen))
+    } catch {}
+  }, [id, loading])
   useEffect(() => {
     if (!loading) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])

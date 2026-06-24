@@ -1233,3 +1233,11 @@ git push origin main
 - Compression automatique des images avant upload (browser-image-compression, max 500KB)
 - 3 tables Supabase : `helpdesk_categories`, `helpdesk_tickets`, `helpdesk_messages`
 - Bucket Supabase `helpdesk-attachments` (5MB max, images + PDF + Word)
+
+## [v0.75] — 2026-06-24
+### Changed
+- **Helpdesk — cartes rich** : remplacement de la table par des cartes à bordure gauche colorée (couleur de catégorie), style inspiré de la page Activités
+  - Titre + badge statut + badge messages non-lus (rouge) + priorité + créateur + date
+- **Helpdesk — filtres catégorie** : boutons rapides dans le header pour filtrer par catégorie (couleur de chaque catégorie)
+- **Helpdesk — détection doublons** : lors de la création d'un ticket, la catégorie affiche le nombre de tickets ouverts ; à l'étape formulaire, un encadré orange liste les tickets existants de la catégorie avec lien direct
+- **Helpdesk — messages non-lus** : badge rouge sur les cartes de la liste quand un ticket a été mis à jour depuis la dernière visite (tracking localStorage `hd_lastSeen`)
