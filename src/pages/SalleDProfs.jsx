@@ -46,7 +46,56 @@ function TypeIcon({ type, color, size = 32 }) {
 }
 
 // ── Carte dossier ─────────────────────────────────────────────────────────────
-function FolderCard({ folder, itemCount, onOpen, onEdit, onPin, onDelete, canEdit }) {
+// ── Mini-carte polaroid pour l'éventail ──────────────────────────────────────
+function MiniCard({ item, rotate, tx, ty, zIdx }) {
+  const [err, setErr] = useState(false)
+  const TYPE_BG = { image: '#DBEAFE', document: '#FEE2E2', link: '#D1FAE5', note: '#FFFBEB' }
+  const TYPE_EMOJI = { image: '🖼️', document: '📄', link: '🔗', note: '📝' }
+  return (
+    <div style={{
+      position: 'absolute', width: 50, height: 64, borderRadius: 5,
+      boxShadow: '0 3px 10px rgba(0,0,0,0.22)',
+      transform: `rotate(${rotate}deg) translate(${tx}px, ${ty}px)`,
+      zIndex: zIdx, overflow: 'hidden',
+      backgroundColor: item.type === 'image' && item.file_url && !err ? '#fff' : TYPE_BG[item.type] || '#F3F4F6',
+      border: '2.5px solid #fff',
+    }}>
+      {item.type === 'image' && item.file_url && !err ? (
+        <img src={item.file_url} alt="" onError={() => setErr(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        <div style={{ width: '100%', height: '100%', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+          {TYPE_EMOJI[item.type] || '📁'}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Résumé des stats d'un dossier ─────────────────────────────────────────────
+function FolderStatLine({ stats }) {
+  if (!stats) return <span style={{ fontSize: 12, color: '#D1D5DB' }}>Vide</span>
+  const labels = {
+    image: (n) => `${n} image${n > 1 ? 's' : ''}`,
+    document: (n) => `${n} doc${n > 1 ? 's' : ''}`,
+    link: (n) => `${n} lien${n > 1 ? 's' : ''}`,
+    note: (n) => `${n} note${n > 1 ? 's' : ''}`,
+  }
+  const parts = Object.entries(stats)
+    .filter(([, n]) => n > 0)
+    .map(([type, n]) => labels[type]?.(n))
+    .filter(Boolean)
+  if (parts.length === 0) return <span style={{ fontSize: 12, color: '#D1D5DB' }}>Vide</span>
+  return (
+    <span style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.4 }}>
+      {parts.join(' · ')}
+    </span>
+  )
+}
+
+// ── Carte dossier ─────────────────────────────────────────────────────────────
+function FolderCard({ folder, previews, stats, onOpen, onEdit, onPin, onDelete, canEdit }) {
   const [menu, setMenu] = useState(false)
   const menuRef = useRef(null)
 
@@ -55,6 +104,13 @@ function FolderCard({ folder, itemCount, onOpen, onEdit, onPin, onDelete, canEdi
     if (menu) document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
   }, [menu])
+
+  // Disposition éventail : jusqu'à 3 cartes
+  const FAN = [
+    { rotate: -11, tx: -28, ty: 4 },
+    { rotate: -3,  tx: -6,  ty: 0 },
+    { rotate:  6,  tx: 18,  ty: 3 },
+  ]
 
   return (
     <div onClick={onOpen}
@@ -66,20 +122,44 @@ function FolderCard({ folder, itemCount, onOpen, onEdit, onPin, onDelete, canEdi
       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = folder.pinned ? `0 0 0 2px ${folder.color}, 0 8px 24px ${folder.color}50` : '0 8px 24px rgba(0,0,0,0.13)' }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = folder.pinned ? `0 0 0 2px ${folder.color}, 0 4px 20px ${folder.color}40` : '0 2px 8px rgba(0,0,0,0.08)' }}>
 
-      {/* Bandeau couleur */}
-      <div style={{ height: 80, backgroundColor: folder.color,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-        <span style={{ fontSize: 36 }}>{folder.emoji}</span>
+      {/* Bandeau couleur avec éventail */}
+      <div style={{ height: 96, backgroundColor: folder.color,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
+        overflow: 'hidden' }}>
+        {/* Fond légèrement assombri si items */}
+        {previews && previews.length > 0 && (
+          <div style={{ position: 'absolute', inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.08)' }} />
+        )}
+        {previews && previews.length > 0 ? (
+          <div style={{ position: 'relative', width: 120, height: 68 }}>
+            {previews.slice(0, 3).map((item, i) => (
+              <MiniCard key={item.id} item={item}
+                rotate={FAN[i].rotate} tx={FAN[i].tx} ty={FAN[i].ty} zIdx={i + 1} />
+            ))}
+          </div>
+        ) : (
+          <span style={{ fontSize: 38, position: 'relative', zIndex: 1 }}>{folder.emoji}</span>
+        )}
+        {/* Badge emoji dossier quand il y a un éventail */}
+        {previews && previews.length > 0 && (
+          <div style={{ position: 'absolute', bottom: 6, right: 8,
+            backgroundColor: 'rgba(255,255,255,0.88)', borderRadius: 999,
+            width: 26, height: 26, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 14, zIndex: 10 }}>
+            {folder.emoji}
+          </div>
+        )}
         {folder.pinned && (
           <div style={{ position: 'absolute', top: 8, left: 8,
             backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 999,
-            padding: '2px 6px', fontSize: 11, fontWeight: 700, color: folder.color }}>
-            📌 épinglé
+            padding: '2px 6px', fontSize: 11, fontWeight: 700, color: folder.color, zIndex: 10 }}>
+            📌
           </div>
         )}
         {/* Menu options */}
         {canEdit && (
-          <div ref={menuRef} style={{ position: 'absolute', top: 8, right: 8 }}
+          <div ref={menuRef} style={{ position: 'absolute', top: 8, right: 8, zIndex: 20 }}
             onClick={e => e.stopPropagation()}>
             <button onClick={() => setMenu(m => !m)}
               style={{ backgroundColor: 'rgba(255,255,255,0.9)', border: 'none',
@@ -114,14 +194,12 @@ function FolderCard({ folder, itemCount, onOpen, onEdit, onPin, onDelete, canEdi
       </div>
 
       {/* Contenu */}
-      <div style={{ padding: '12px 14px 14px' }}>
-        <div style={{ fontWeight: 700, fontSize: 14, color: '#111',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>
+      <div style={{ padding: '10px 13px 13px' }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: '#111',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 3 }}>
           {folder.name}
         </div>
-        <div style={{ fontSize: 12, color: '#9CA3AF' }}>
-          {itemCount} élément{itemCount !== 1 ? 's' : ''}
-        </div>
+        <FolderStatLine stats={stats} />
       </div>
     </div>
   )
@@ -539,7 +617,8 @@ export default function SalleDProfs() {
   const { user, isAdmin } = useAuth()
   const [tab,           setTab]           = useState('shared')
   const [folders,       setFolders]       = useState([])
-  const [itemCounts,    setItemCounts]    = useState({})   // { folderId: count }
+  const [folderStats,    setFolderStats]    = useState({})   // { folderId: { image, document, link, note } }
+  const [folderPreviews, setFolderPreviews] = useState({})   // { folderId: [item, ...] (max 3) }
   const [openFolder,    setOpenFolder]    = useState(null)
   const [items,         setItems]         = useState([])
   const [loading,       setLoading]       = useState(true)
@@ -559,15 +638,26 @@ export default function SalleDProfs() {
     setFolders(list)
 
     if (list.length > 0) {
-      const { data: counts } = await supabase
+      const { data: allItems } = await supabase
         .from('padlet_items')
-        .select('folder_id')
+        .select('id, folder_id, type, file_url, content')
         .in('folder_id', list.map(f => f.id))
-      const map = {}
-      ;(counts || []).forEach(c => { map[c.folder_id] = (map[c.folder_id] || 0) + 1 })
-      setItemCounts(map)
+        .order('created_at', { ascending: true })
+      const stats = {}
+      const previews = {}
+      ;(allItems || []).forEach(item => {
+        // Stats par type
+        if (!stats[item.folder_id]) stats[item.folder_id] = { image: 0, document: 0, link: 0, note: 0 }
+        if (stats[item.folder_id][item.type] !== undefined) stats[item.folder_id][item.type]++
+        // Éventail : max 3 items par dossier
+        if (!previews[item.folder_id]) previews[item.folder_id] = []
+        if (previews[item.folder_id].length < 3) previews[item.folder_id].push(item)
+      })
+      setFolderStats(stats)
+      setFolderPreviews(previews)
     } else {
-      setItemCounts({})
+      setFolderStats({})
+      setFolderPreviews({})
     }
     setLoading(false)
   }, [tab, user.id])
@@ -621,7 +711,15 @@ export default function SalleDProfs() {
       if (path) await supabase.storage.from('padlet-files').remove([path])
     }
     setItems(prev => prev.filter(i => i.id !== item.id))
-    setItemCounts(prev => ({ ...prev, [openFolder.id]: Math.max(0, (prev[openFolder.id] || 1) - 1) }))
+    setFolderStats(prev => {
+      const s = { ...(prev[openFolder.id] || { image:0, document:0, link:0, note:0 }) }
+      if (s[item.type] !== undefined) s[item.type] = Math.max(0, s[item.type] - 1)
+      return { ...prev, [openFolder.id]: s }
+    })
+    setFolderPreviews(prev => {
+      const p = (prev[openFolder.id] || []).filter(i => i.id !== item.id)
+      return { ...prev, [openFolder.id]: p }
+    })
   }
 
   const canEdit = (obj) => isAdmin || obj.created_by === user.id
@@ -638,7 +736,7 @@ export default function SalleDProfs() {
           ? `${openFolder.emoji} ${openFolder.name}`
           : tab === 'shared' ? 'Salle des profs' : 'Mon casier'}
         subtitle={openFolder
-          ? `${itemCounts[openFolder.id] ?? items.length} élément${items.length !== 1 ? 's' : ''}`
+          ? (() => { const s = folderStats[openFolder.id]; const t = s ? Object.values(s).reduce((a,b)=>a+b,0) : items.length; return `${t} élément${t!==1?'s':''}` })()
           : `${folders.length} dossier${folders.length !== 1 ? 's' : ''}`}
         leftActions={openFolder ? (
           <>
@@ -704,7 +802,8 @@ export default function SalleDProfs() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
                     {folders.filter(f => f.pinned).map(folder => (
                       <FolderCard key={folder.id} folder={folder}
-                        itemCount={itemCounts[folder.id] || 0}
+                        previews={folderPreviews[folder.id]}
+                        stats={folderStats[folder.id]}
                         onOpen={() => openFolderView(folder)}
                         onEdit={() => setEditFolder(folder)}
                         onPin={() => togglePin(folder)}
@@ -727,7 +826,8 @@ export default function SalleDProfs() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
                     {folders.filter(f => !f.pinned).map(folder => (
                       <FolderCard key={folder.id} folder={folder}
-                        itemCount={itemCounts[folder.id] || 0}
+                        previews={folderPreviews[folder.id]}
+                        stats={folderStats[folder.id]}
                         onOpen={() => openFolderView(folder)}
                         onEdit={() => setEditFolder(folder)}
                         onPin={() => togglePin(folder)}
