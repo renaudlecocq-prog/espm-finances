@@ -1270,3 +1270,14 @@ git push origin main
 - **`src/lib/permissions.js`** : source de vérité partagée (FEATURES, ROLES, ROLE_META, FEATURE_GROUPS)
 ### Fixed
 - **AssistantSocial** : MdP n'a plus accès au Suivi social (données sensibles) — `isFinancier || isMdp` → `isFinancier`
+
+## [v0.79] — 2026-06-24
+### Added
+- **Salle des profs** (`/salle-des-profs`) : nouveau module collaboratif accessible aux rôles admin, financier et mdp
+  - Deux espaces : "Salle des profs" (partagée) et "Mon casier" (personnel/privé)
+  - Dossiers colorisables, avec emoji, épinglables (pinnable), gestion par le créateur ou l'admin
+  - 4 types d'items : images (compression auto via browser-image-compression), documents PDF/Word, liens web, notes texte
+  - Supabase Storage bucket `padlet-files` (25 Mo max, JPEG/PNG/WebP/GIF/PDF/Word)
+  - Tables `padlet_folders` + `padlet_items` avec RLS (créateur = propriétaire, admin = gestionnaire global)
+  - Permissions DB : `salle_profs` ajouté dans `role_permissions` (ON pour admin/financier/mdp)
+  - Icône maison dans la sidebar

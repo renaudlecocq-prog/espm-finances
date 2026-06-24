@@ -16,6 +16,7 @@ export const FEATURES = [
   { key: 'helpdesk',        label: 'Helpdesk — voir / répondre', group: 'Helpdesk',   desc: 'Consulter les tickets et envoyer des messages' },
   { key: 'helpdesk_admin',  label: 'Helpdesk — gestion admin',   group: 'Helpdesk',   desc: 'Fermer les tickets, changer le statut, gérer les catégories' },
   // Système
+  { key: 'salle_profs',     label: 'Salle des profs',           group: 'Collaboration', desc: 'Accès à la salle des profs et au casier personnel' },
   { key: 'administration',  label: 'Administration',             group: 'Système',    desc: 'Panneau admin — utilisateurs, droits, synchronisation Smartschool' },
 ]
 
