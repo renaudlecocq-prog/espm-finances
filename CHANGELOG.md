@@ -1261,3 +1261,12 @@ git push origin main
 - **Helpdesk — statut sur carte** : select stylisé (couleur de la catégorie, fond coloré, flèche discrète) directement sur chaque carte — clic intercepté (ne navigue pas vers le ticket)
 - **HelpdeskDetail — bouton Fermer** : ajouté à côté de "Envoyer" dans la zone de saisie ; si un message est en cours de rédaction, l'envoie avant de fermer
 - **HelpdeskDetail — auto-statut** : passage automatique à "En attente" après envoi de tout message (tant que le ticket n'est pas fermé)
+
+## [v0.78] — 2026-06-24
+### Added
+- **Système de droits dynamique** : 2 nouvelles tables Supabase (`role_permissions` + `user_permissions`), seedées avec la matrice validée
+- **AuthContext — `can(feature)`** : charge les permissions depuis la DB au login, applique les overrides individuels. Subscription realtime Supabase — les changements de droits se propagent en temps réel sans redéploiement
+- **Admin — onglet Droits** : matrice interactive avec toggles par rôle (colonne Admin verrouillée), groupement par section ; section "Exceptions individuelles" pour accorder/révoquer un droit par personne indépendamment de son rôle
+- **`src/lib/permissions.js`** : source de vérité partagée (FEATURES, ROLES, ROLE_META, FEATURE_GROUPS)
+### Fixed
+- **AssistantSocial** : MdP n'a plus accès au Suivi social (données sensibles) — `isFinancier || isMdp` → `isFinancier`

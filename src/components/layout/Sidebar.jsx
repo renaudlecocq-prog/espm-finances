@@ -114,7 +114,7 @@ function SmartschoolIcon({ size = 20 }) {
 
 // ── Composant principal ───────────────────────────────────────────────────────
 export default function Sidebar() {
-  const { profile, role, effectiveRole, isAdmin, isFinancier, isMdp } = useAuth()
+  const { profile, role, effectiveRole, isAdmin, isFinancier, isMdp, can } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 

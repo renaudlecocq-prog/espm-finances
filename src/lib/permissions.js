@@ -1,0 +1,33 @@
+// ── Définition des features ───────────────────────────────────────────────────
+// Source de vérité partagée entre AuthContext, Admin et les pages.
+
+export const FEATURES = [
+  // Pages principales
+  { key: 'eleves',          label: 'Élèves / Groupes',          group: 'Pages',      desc: 'Accès à la liste des élèves et groupes' },
+  { key: 'soldes',          label: 'Soldes élèves',              group: 'Pages',      desc: 'Consultation des soldes et fiches financières' },
+  { key: 'paiements',       label: 'Paiements',                  group: 'Pages',      desc: 'Importation et gestion des paiements' },
+  { key: 'factures',        label: 'Factures',                   group: 'Pages',      desc: 'Génération et gestion des factures' },
+  { key: 'articles',        label: 'Articles',                   group: 'Pages',      desc: 'Gestion des articles et attributions' },
+  { key: 'suivi_social',    label: 'Suivi social',               group: 'Pages',      desc: 'Échelonnements et organismes tiers (données sensibles)' },
+  // Activités
+  { key: 'activites_full',  label: 'Activités — accès complet',  group: 'Activités',  desc: 'Voir et gérer toutes les activités, accès aux champs financiers (POP, facturation)' },
+  { key: 'activites_own',   label: 'Activités — ses propres',    group: 'Activités',  desc: 'Voir et gérer uniquement ses activités (responsable ou accompagnant), sans champs financiers' },
+  // Helpdesk
+  { key: 'helpdesk',        label: 'Helpdesk — voir / répondre', group: 'Helpdesk',   desc: 'Consulter les tickets et envoyer des messages' },
+  { key: 'helpdesk_admin',  label: 'Helpdesk — gestion admin',   group: 'Helpdesk',   desc: 'Fermer les tickets, changer le statut, gérer les catégories' },
+  // Système
+  { key: 'administration',  label: 'Administration',             group: 'Système',    desc: 'Panneau admin — utilisateurs, droits, synchronisation Smartschool' },
+]
+
+export const FEATURE_KEYS = FEATURES.map(f => f.key)
+
+export const FEATURE_GROUPS = [...new Set(FEATURES.map(f => f.group))]
+
+export const ROLES = ['admin', 'financier', 'mdp', 'responsable']
+
+export const ROLE_META = {
+  admin:       { label: 'Admin',       color: 'bg-red-100 text-red-700 border border-red-200',       desc: 'Accès total — gestion des utilisateurs, toutes les données.' },
+  financier:   { label: 'Financier',   color: 'bg-blue-100 text-blue-700 border border-blue-200',    desc: 'Accès financier complet — factures, paiements, élèves, organismes.' },
+  mdp:         { label: 'MdP',         color: 'bg-green-100 text-green-700 border border-green-200', desc: 'Membres du personnel — activités et helpdesk.' },
+  responsable: { label: 'Responsable', color: 'bg-gray-100 text-gray-600 border border-gray-200',    desc: 'Parents / élèves majeurs — tableau de bord enfants uniquement.' },
+}

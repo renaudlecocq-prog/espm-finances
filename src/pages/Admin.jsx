@@ -2,33 +2,33 @@ import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { RefreshCw, UserPlus, Shield } from "lucide-react"
+import { RefreshCw, UserPlus, Shield, Lock } from "lucide-react"
 import PageHeader from "../components/ui/PageHeader"
 import { useDemo } from "../context/DemoContext"
+import { FEATURES, ROLES, ROLE_META, FEATURE_GROUPS } from '../lib/permissions'
 
-const ROLES = ['admin','financier','mdp','responsable']
-
-const ROLE_META = {
-  admin:       { label:'Admin',       color:'bg-red-100 text-red-700 border border-red-200',       desc:'Accès total — gestion des utilisateurs, toutes les données.' },
-  financier:   { label:'Financier',   color:'bg-blue-100 text-blue-700 border border-blue-200',    desc:'Accès financier complet — factures, paiements, élèves, organismes.' },
-  mdp:         { label:'MdP',         color:'bg-green-100 text-green-700 border border-green-200', desc:'Membres du personnel — saisie et suivi des activités.' },
-  responsable: { label:'Responsable', color:'bg-gray-100 text-gray-600 border border-gray-200',    desc:"Parents / élèves majeurs — consultation de leurs propres soldes." },
+// ── Toggle de permission ──────────────────────────────────────────────────────
+function PermToggle({ value, onChange, disabled, saving }) {
+  return (
+    <button type="button"
+      onClick={() => !disabled && !saving && onChange(!value)}
+      disabled={disabled || saving}
+      title={disabled ? 'Admin dispose toujours de tous les droits' : undefined}
+      style={{
+        width: 40, height: 22, borderRadius: 11,
+        backgroundColor: saving ? '#93C5FD' : disabled ? '#6B7280' : value ? '#059669' : '#D1D5DB',
+        border: 'none', cursor: disabled || saving ? 'not-allowed' : 'pointer',
+        position: 'relative', transition: 'background-color 0.15s', flexShrink: 0,
+      }}>
+      <div style={{
+        position: 'absolute', top: 3, left: value ? 21 : 3,
+        width: 16, height: 16, borderRadius: 8,
+        backgroundColor: '#fff', transition: 'left 0.2s',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      }} />
+    </button>
+  )
 }
-
-const DROITS = [
-  { label:'Tableau de bord',             admin:true,  financier:true,  mdp:true,  responsable:true  },
-  { label:'Liste des élèves',            admin:true,  financier:true,  mdp:true,  responsable:false },
-  { label:'Gestion des paiements',       admin:true,  financier:true,  mdp:false, responsable:false },
-  { label:'Gestion des factures',        admin:true,  financier:true,  mdp:false, responsable:false },
-  { label:'Gestion des activités',       admin:true,  financier:true,  mdp:true,  responsable:false },
-  { label:'Gestion des articles',        admin:true,  financier:true,  mdp:false, responsable:false },
-  { label:'Échelonnements',              admin:true,  financier:true,  mdp:true,  responsable:false },
-  { label:'Organismes tiers',            admin:true,  financier:true,  mdp:true,  responsable:false },
-  { label:"Groupes & options",           admin:true,  financier:true,  mdp:true,  responsable:false },
-  { label:'Fiche financière enfant',     admin:false, financier:false, mdp:false, responsable:true  },
-  { label:'Administration',              admin:true,  financier:false, mdp:false, responsable:false },
-  { label:'Synchronisation Smartschool', admin:true,  financier:false, mdp:false, responsable:false },
-]
 
 const fmtDate = d => d ? new Date(d).toLocaleString('fr-BE', {
   day:'2-digit', month:'2-digit', year:'2-digit',
@@ -49,7 +49,60 @@ export default function Admin() {
   const [inviteRole, setInviteRole]   = useState('mdp')
   const [inviteMsg, setInviteMsg]     = useState('')
   const [roleFilter, setRoleFilter]   = useState(null)
+  // ── État permissions ─────────────────────────────────────────────────────
+  const [rolePermsData,   setRolePermsData]   = useState([])
+  const [userOverrides,   setUserOverrides]   = useState([])
+  const [droitsLoading,   setDroitsLoading]   = useState(false)
+  const [permSaving,      setPermSaving]      = useState(null)
+  const [overrideModal,   setOverrideModal]   = useState(false)
+  const [overrideUser,    setOverrideUser]    = useState('')
+  const [overrideFeature, setOverrideFeature] = useState('')
+  const [overrideEnabled, setOverrideEnabled] = useState(true)
   const [protectModal, setProtectModal] = useState(null) // {type:'blocked'|'confirm', newRole, targetId, otherEmail}
+
+  // ── Gestion des droits ───────────────────────────────────────────────────
+  const loadDroits = useCallback(async () => {
+    setDroitsLoading(true)
+    const [{ data: rp }, { data: up }] = await Promise.all([
+      supabase.from('role_permissions').select('role, feature, enabled').order('role').order('feature'),
+      supabase.from('user_permissions').select('user_id, feature, enabled, profiles!user_permissions_user_id_fkey(prenom, nom, role)')
+        .order('updated_at', { ascending: false }),
+    ])
+    setRolePermsData(rp || [])
+    setUserOverrides(up || [])
+    setDroitsLoading(false)
+  }, [])
+
+  useEffect(() => { if (tab === 'droits') loadDroits() }, [tab, loadDroits])
+
+  const toggleRolePerm = async (role, feature, newVal) => {
+    const key = `${role}:${feature}`
+    setPermSaving(key)
+    await supabase.from('role_permissions')
+      .upsert({ role, feature, enabled: newVal, updated_at: new Date().toISOString() }, { onConflict: 'role,feature' })
+    setRolePermsData(prev => prev.map(p => p.role === role && p.feature === feature ? { ...p, enabled: newVal } : p))
+    setPermSaving(null)
+  }
+
+  const addUserOverride = async () => {
+    if (!overrideUser || !overrideFeature) return
+    await supabase.from('user_permissions')
+      .upsert({ user_id: overrideUser, feature: overrideFeature, enabled: overrideEnabled, updated_at: new Date().toISOString() },
+               { onConflict: 'user_id,feature' })
+    await loadDroits()
+    setOverrideModal(false)
+    setOverrideUser(''); setOverrideFeature('')
+  }
+
+  const removeUserOverride = async (userId, feature) => {
+    await supabase.from('user_permissions').delete().eq('user_id', userId).eq('feature', feature)
+    setUserOverrides(prev => prev.filter(o => !(o.user_id === userId && o.feature === feature)))
+  }
+
+  const getRolePerm = (role, feature) => {
+    const row = rolePermsData.find(p => p.role === role && p.feature === feature)
+    return row?.enabled ?? false
+  }
 
   const loadUsers = useCallback(() =>
     supabase.from('profiles').select('*').order('created_at').then(({ data }) => setUsers(data || []))
@@ -213,40 +266,34 @@ export default function Admin() {
       {/* ── DROITS ───────────────────────────────────── */}
       {tab === 'droits' && (
         <div className="space-y-6">
-          {/* ── Mode démo ── */}
+
+          {/* Mode démo */}
           <div className={`card p-4 border ${demoMode ? 'bg-orange-50 border-orange-300' : 'bg-gray-50 border-gray-200'}`}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg">🎭</span>
                   <span className="text-sm font-semibold text-gray-800">Mode démo</span>
-                  {demoMode && (
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{background:'#E86C00'}}>ACTIF</span>
-                  )}
+                  {demoMode && <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{background:'#E86C00'}}>ACTIF</span>}
                 </div>
                 <p className="text-xs text-gray-500">
                   {demoMode
-                    ? 'Les données fictives (Billie Eilish, Taylor Swift…) remplacent la base réelle. Aucune donnée réelle n&apos;est affectée.'
-                    : 'Active des données fictives pour présenter la plateforme à des tiers sans exposer les données réelles.'}
+                    ? "Les données fictives (Billie Eilish, Taylor Swift…) remplacent la base réelle. Aucune donnée réelle n'est affectée."
+                    : "Active des données fictives pour présenter la plateforme à des tiers sans exposer les données réelles."}
                 </p>
               </div>
-              <button
-                onClick={toggleDemo}
-                className="ml-4 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-                style={demoMode
-                  ? { background: '#E86C00', color: 'white' }
-                  : { background: '#2D1B2E', color: 'white' }}>
+              <button onClick={toggleDemo} className="ml-4 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                style={demoMode ? {background:'#E86C00',color:'white'} : {background:'#2D1B2E',color:'white'}}>
                 {demoMode ? 'Quitter le mode démo' : 'Activer le mode démo'}
               </button>
             </div>
           </div>
-          {/* Aperçu — déplacé ici car lié aux droits */}
+
+          {/* Aperçu de rôle */}
           <div className="card p-4 bg-orange-50 border border-orange-100">
             <div className="flex items-center gap-2 mb-3">
               <span className="w-2 h-2 rounded-full bg-orange-500" />
-              <span className="text-xs font-semibold text-orange-700 uppercase tracking-wide">
-                Aperçu — Voir le site en tant que
-              </span>
+              <span className="text-xs font-semibold text-orange-700 uppercase tracking-wide">Aperçu — Voir le site en tant que</span>
             </div>
             <div className="flex gap-2 flex-wrap items-center">
               {['financier','mdp','responsable'].map(r => {
@@ -261,52 +308,200 @@ export default function Admin() {
               })}
               {previewRole && (
                 <span className="text-xs text-orange-600 ml-2">
-                  Mode aperçu actif —{' '}
-                  <button onClick={() => setPreviewRole(null)} className="underline">Quitter</button>
+                  Mode aperçu actif — <button onClick={() => setPreviewRole(null)} className="underline">Quitter</button>
                 </span>
               )}
             </div>
           </div>
-          <div className="card p-0">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-700 flex items-center gap-2">
-              <Shield size={16} /> Matrice des droits d'accès
-            </h2>
-            <p className="text-xs text-gray-400 mt-1">Droits attribués par rôle dans l'application.</p>
-          </div>
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase w-64">Fonctionnalité</th>
-                {ROLES.map(r => (
-                  <th key={r} className="px-4 py-3 text-center">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${ROLE_META[r].color}`}>
-                      {ROLE_META[r].label.toUpperCase()}
-                    </span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {DROITS.map((row, i) => (
-                <tr key={i} className={`border-b border-gray-50 ${i % 2 !== 0 ? 'bg-gray-50/40' : ''}`}>
-                  <td className="px-4 py-3 text-gray-700">{row.label}</td>
-                  {ROLES.map(r => (
-                    <td key={r} className="px-4 py-3 text-center">
-                      {row[r]
-                        ? <span className="text-green-500 font-bold text-base">✓</span>
-                        : <span className="text-gray-300 text-base">✗</span>}
-                    </td>
+
+          {/* Matrice interactive */}
+          <div className="card p-0 overflow-hidden">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-gray-700 flex items-center gap-2">
+                  <Shield size={16} /> Droits par rôle
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">Modifiez les droits — les utilisateurs concernés voient le changement en temps réel.</p>
+              </div>
+              {droitsLoading && <RefreshCw size={14} className="animate-spin text-gray-400" />}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase" style={{minWidth:260}}>Fonctionnalité</th>
+                    {ROLES.map(r => (
+                      <th key={r} className="px-4 py-3 text-center" style={{minWidth:100}}>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${ROLE_META[r].color}`}>{ROLE_META[r].label}</span>
+                          {r === 'admin' && <Lock size={10} className="text-gray-400" />}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {FEATURE_GROUPS.map(group => (
+                    <>
+                      <tr key={`grp-${group}`} className="bg-gray-50/70 border-y border-gray-100">
+                        <td colSpan={ROLES.length + 1} className="px-5 py-2">
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{group}</span>
+                        </td>
+                      </tr>
+                      {FEATURES.filter(f => f.group === group).map(feat => (
+                        <tr key={feat.key} className="border-b border-gray-50 hover:bg-blue-50/20 transition-colors">
+                          <td className="px-5 py-3">
+                            <div className="font-medium text-gray-700 text-sm">{feat.label}</div>
+                            <div className="text-xs text-gray-400 mt-0.5">{feat.desc}</div>
+                          </td>
+                          {ROLES.map(r => {
+                            const isLocked = r === 'admin'
+                            const val = isLocked ? true : getRolePerm(r, feat.key)
+                            const saving = permSaving === `${r}:${feat.key}`
+                            return (
+                              <td key={r} className="px-4 py-3 text-center">
+                                <div className="flex justify-center">
+                                  <PermToggle value={val} disabled={isLocked} saving={saving}
+                                    onChange={nv => toggleRolePerm(r, feat.key, nv)} />
+                                </div>
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      ))}
+                    </>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                </tbody>
+              </table>
+            </div>
+            <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-400 flex items-center gap-2">
+              <Lock size={11} /> La colonne Admin est verrouillée — un administrateur dispose toujours de tous les droits.
+            </div>
+          </div>
+
+          {/* Exceptions individuelles */}
+          <div className="card p-0 overflow-hidden">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-gray-700 flex items-center gap-2">
+                  <UserPlus size={16} /> Exceptions individuelles
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">Accordez ou révoquez un droit pour une personne, indépendamment de son rôle.</p>
+              </div>
+              <button onClick={() => { setOverrideModal(true); setOverrideUser(''); setOverrideFeature(''); setOverrideEnabled(true) }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold"
+                style={{backgroundColor:'#2D1B2E', color:'#fff'}}>
+                <UserPlus size={14} /> Ajouter
+              </button>
+            </div>
+            {userOverrides.length === 0 ? (
+              <div className="px-5 py-8 text-center text-gray-400 text-sm">
+                Aucune exception — tous les utilisateurs suivent les droits de leur rôle.
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    {['Utilisateur','Rôle','Fonctionnalité','Override',''].map(h => (
+                      <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {userOverrides.map(ov => {
+                    const feat = FEATURES.find(f => f.key === ov.feature)
+                    const rm = ROLE_META[ov.profiles?.role] || ROLE_META.responsable
+                    return (
+                      <tr key={`${ov.user_id}-${ov.feature}`} className="border-b border-gray-50 hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-gray-700">{ov.profiles?.prenom} {ov.profiles?.nom}</td>
+                        <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${rm.color}`}>{rm.label}</span></td>
+                        <td className="px-4 py-3 text-gray-600">{feat?.label ?? ov.feature}</td>
+                        <td className="px-4 py-3">
+                          {ov.enabled
+                            ? <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">✓ Accordé</span>
+                            : <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">✗ Révoqué</span>}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button onClick={() => removeUserOverride(ov.user_id, ov.feature)}
+                            className="text-gray-400 hover:text-red-500 text-xs font-medium transition-colors">
+                            Supprimer
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
 
-      {/* ── SYNCHRONISATION ──────────────────────────── */}
+      {/* Modal exception individuelle */}
+      {overrideModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 className="font-bold text-gray-800 mb-4">Ajouter une exception</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-2">Utilisateur</label>
+                <select value={overrideUser} onChange={e => setOverrideUser(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                  <option value="">— Sélectionner —</option>
+                  {users.filter(u => u.role !== 'admin').map(u => (
+                    <option key={u.id} value={u.id}>{u.prenom} {u.nom} ({ROLE_META[u.role]?.label ?? u.role})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-2">Fonctionnalité</label>
+                <select value={overrideFeature} onChange={e => setOverrideFeature(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                  <option value="">— Sélectionner —</option>
+                  {FEATURE_GROUPS.map(g => (
+                    <optgroup key={g} label={g}>
+                      {FEATURES.filter(f => f.group === g).map(f => (
+                        <option key={f.key} value={f.key}>{f.label}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-2">Type</label>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setOverrideEnabled(true)}
+                    className="flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-colors"
+                    style={{borderColor: overrideEnabled ? '#059669' : '#E5E7EB', backgroundColor: overrideEnabled ? '#D1FAE5' : '#fff', color: overrideEnabled ? '#065F46' : '#6B7280'}}>
+                    ✓ Accorder
+                  </button>
+                  <button type="button" onClick={() => setOverrideEnabled(false)}
+                    className="flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-colors"
+                    style={{borderColor: !overrideEnabled ? '#DC2626' : '#E5E7EB', backgroundColor: !overrideEnabled ? '#FEE2E2' : '#fff', color: !overrideEnabled ? '#991B1B' : '#6B7280'}}>
+                    ✗ Révoquer
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  {overrideEnabled
+                    ? "Accès accordé même si son rôle ne l'y autorise pas."
+                    : "Accès révoqué même si son rôle l'y autorise."}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setOverrideModal(false)}
+                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600">Annuler</button>
+              <button onClick={addUserOverride} disabled={!overrideUser || !overrideFeature}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white"
+                style={{backgroundColor:'#2D1B2E', opacity:(!overrideUser||!overrideFeature)?0.5:1}}>
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+            {/* ── SYNCHRONISATION ──────────────────────────── */}
       {tab === 'synchronisation' && (
         <div className="space-y-6">
 

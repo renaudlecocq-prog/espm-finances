@@ -1683,8 +1683,8 @@ function TabOrganismesTiers({ isAllowed, openEleveId, search, onSearch, filters,
 
 // ── Main ──────────────────────────────────────────────────────────────────
 export default function AssistantSocial() {
-  const { isFinancier, isMdp } = useAuth()
-  const isAllowed = isFinancier || isMdp
+  const { isFinancier } = useAuth()
+  const isAllowed = isFinancier
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') || 'echelonnements'
   const handleTabChange = t => { setSearchParams({ tab: t }, { replace: true }); setEchSearch(''); setOtSearch('') }
