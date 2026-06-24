@@ -310,9 +310,9 @@ export default function Helpdesk() {
   })
 
   const tabs = [
-    { id: 'actifs', label: `Actifs (${tickets.filter(t => t.statut !== 'ferme').length})` },
-    { id: 'ferme',  label: `Fermés (${tickets.filter(t => t.statut === 'ferme').length})` },
-    { id: 'tous',   label: 'Tous' },
+    { key: 'actifs', label: `Actifs (${tickets.filter(t => t.statut !== 'ferme').length})` },
+    { key: 'ferme',  label: `Fermés (${tickets.filter(t => t.statut === 'ferme').length})` },
+    { key: 'tous',   label: 'Tous' },
   ]
 
   return (
@@ -326,9 +326,14 @@ export default function Helpdesk() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Rechercher un ticket..."
-        actions={[
-          { label: '+ Nouveau ticket', onClick: () => setShowModal(true), primary: true },
-        ]}
+        actions={
+          <button onClick={() => setShowModal(true)}
+            style={{ padding: '7px 16px', borderRadius: 8, border: 'none',
+              backgroundColor: '#fff', color: '#2D1B2E', cursor: 'pointer',
+              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
+            + Nouveau ticket
+          </button>
+        }
       />
 
       <div style={{ padding: '24px 0' }}>
