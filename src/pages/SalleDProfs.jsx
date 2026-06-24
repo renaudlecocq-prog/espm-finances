@@ -980,7 +980,7 @@ export default function SalleDProfs() {
         )}
 
         {/* ── Vue racine ── */}
-        {!currentFolder && (
+        {!currentFolder && !openBoard && (
           loading ? (
             <div style={{textAlign:'center',color:'#9CA3AF',padding:60}}>Chargement…</div>
           ) : folders.length===0 ? (
