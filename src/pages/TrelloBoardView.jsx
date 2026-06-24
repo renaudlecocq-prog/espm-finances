@@ -424,7 +424,7 @@ function CardDetailModal({ card, lists, profiles, boardColor, onClose, onSave, o
 }
 
 // ── TrelloBoardView ───────────────────────────────────────────────────────────
-export default function TrelloBoardView({ board, onBack }) {
+export default function TrelloBoardView({ board, onBack, triggerAddList, onAddListTriggered }) {
   const { user, isAdmin } = useAuth()
   const [lists,    setLists]    = useState([])
   const [cards,    setCards]    = useState({})  // { listId: [card, ...] }
@@ -438,6 +438,14 @@ export default function TrelloBoardView({ board, onBack }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
+
+  // Déclenché depuis le header parent
+  useEffect(() => {
+    if (triggerAddList) {
+      setAddingList(true)
+      onAddListTriggered?.()
+    }
+  }, [triggerAddList])
 
   // ── Load ────────────────────────────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -729,9 +737,9 @@ export default function TrelloBoardView({ board, onBack }) {
           </DragOverlay>
         </DndContext>
 
-        {/* Ajouter liste */}
-        <div style={{ flexShrink: 0, width: 280 }}>
-          {addingList ? (
+        {/* Ajouter liste — formulaire inline (déclenché depuis le header) */}
+        {addingList && (
+          <div style={{ flexShrink: 0, width: 280 }}>
             <div style={{ backgroundColor: '#F8FAFC', borderRadius: 14, padding: 12 }}>
               <input value={newListName} onChange={e => setNewListName(e.target.value)} autoFocus
                 placeholder="Nom de la liste…"
@@ -749,17 +757,8 @@ export default function TrelloBoardView({ board, onBack }) {
                     backgroundColor: '#E5E7EB', color: '#6B7280', fontSize: 12, cursor: 'pointer' }}>✕</button>
               </div>
             </div>
-          ) : (
-            <button onClick={() => setAddingList(true)}
-              style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '2px dashed #D1D5DB',
-                backgroundColor: 'rgba(255,255,255,0.7)', color: '#9CA3AF', fontSize: 13,
-                fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = board.color; e.currentTarget.style.color = board.color }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#D1D5DB'; e.currentTarget.style.color = '#9CA3AF' }}>
-              + Ajouter une liste
-            </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Card detail modal */}

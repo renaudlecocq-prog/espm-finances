@@ -686,6 +686,7 @@ export default function SalleDProfs() {
 
   // Navigation
   const [openBoard,  setOpenBoard]  = useState(null)  // tableau Trello ouvert
+  const [triggerAddList, setTriggerAddList] = useState(false)
   const [boards,     setBoards]     = useState([])
   const [boardModal, setBoardModal] = useState(false)
   const [editBoard,  setEditBoard]  = useState(null)
@@ -976,7 +977,9 @@ export default function SalleDProfs() {
       <div className="p-6">
         {/* ── Vue tableau Trello ouvert ── */}
         {openBoard && (
-          <TrelloBoardView board={openBoard} onBack={() => setOpenBoard(null)} />
+          <TrelloBoardView board={openBoard} onBack={() => setOpenBoard(null)}
+            triggerAddList={triggerAddList}
+            onAddListTriggered={() => setTriggerAddList(false)} />
         )}
 
         {/* ── Vue racine ── */}
