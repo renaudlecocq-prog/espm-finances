@@ -40,7 +40,7 @@ export default function PageHeader({
   }
 
   return (
-    <div className="sticky top-0 z-10 flex items-center px-6 py-2 gap-2.5 flex-wrap"
+    <div className="sticky top-0 z-40 flex items-center px-6 py-2 gap-2.5 flex-wrap"
       style={{ backgroundColor: '#2D1B2E', borderBottom: '1px solid rgba(255,255,255,0.06)', minHeight: '50px' }}>
 
       {/* Titre + sous-titre empilés à gauche */}

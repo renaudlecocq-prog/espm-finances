@@ -1196,3 +1196,8 @@ git push origin main
 - **MasterFilter** : suppression totale de l'`<input>` HTML natif (remplacé par `div + onClick`) — élimine toute interférence du rendu natif du navigateur
 - **MasterFilter** : checkbox custom via inline-style (border 2px `#6b7280` non coché, fond `#2D1B2E` + coche blanche coché) — contraste maximum garanti
 - **MasterFilter** : séparateurs entre options via `border-t border-gray-100` au lieu de `divide`
+
+## [v0.72c] — 2026-06-24
+
+### Fixed
+- **PageHeader** : stacking context corrigé — `z-10` → `z-40` pour garantir que le dropdown MasterFilter s'affiche au-dessus du `<thead>` sticky (z-20) et des `<th>` sticky (z-30) des tables. C'est la vraie cause de l'invisibilité des filtres sur Groupes, Élèves, Paiements.
