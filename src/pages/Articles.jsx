@@ -726,15 +726,41 @@ export default function Articles() {
   const [tabSearch, setTabSearch]       = useState('')
   const [attrFormOpen, setAttrFormOpen] = useState(false)
   const [catFormOpen, setCatFormOpen]   = useState(false)
+  const [rapportLoading, setRapportLoading] = useState(false)
+
+  // Génération rapport articles
+  const generateRapport = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) { alert('Session expirée, veuillez vous reconnecter.'); return }
+    setRapportLoading(true)
+    try {
+      const resp = await fetch('/.netlify/functions/articles-rapport-pdf', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      })
+      if (!resp.ok) { alert(`Erreur ${resp.status}: ${await resp.text()}`); return }
+      const html = await resp.text()
+      const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+      window.open(URL.createObjectURL(blob), '_blank')
+    } catch(e) { alert('Erreur lors de la génération du rapport.') }
+    finally { setRapportLoading(false) }
+  }
 
   // Reset search quand on change d'onglet
   const handleTabChange = t => { setTab(t); setTabSearch('') }
 
   const tabSearchPlaceholder = tab === 'attributions' ? 'Rechercher attribution, élève…' : 'Rechercher par nom, catégorie…'
   const tabActions = fin ? (
-    tab === 'attributions'
-      ? <button onClick={() => setAttrFormOpen(true)} className="btn-primary text-xs py-1.5 px-3">+ Attribution</button>
-      : <button onClick={() => setCatFormOpen(true)} className="btn-primary text-xs py-1.5 px-3">+ Article</button>
+    <div className="flex items-center gap-2">
+      <button onClick={generateRapport} disabled={rapportLoading}
+        className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
+        style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+        {rapportLoading ? '…' : '📄'} Rapport articles
+      </button>
+      {tab === 'attributions'
+        ? <button onClick={() => setAttrFormOpen(true)} className="btn-primary text-xs py-1.5 px-3">+ Attribution</button>
+        : <button onClick={() => setCatFormOpen(true)} className="btn-primary text-xs py-1.5 px-3">+ Article</button>
+      }
+    </div>
   ) : null
 
   return (

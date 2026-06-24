@@ -1209,3 +1209,10 @@ git push origin main
 - Sidebar : nouvel ordre — Accueil, Élèves, Activités, Soldes, Factures, Paiements, Articles, Suivi social
 - Eleves.jsx : titre page "Élèves" → "Soldes"
 - Groupes.jsx : titre page "Groupes" → "Élèves"
+
+## [v0.74] — 2026-06-24
+### Changed
+- **AssistantSocial** : statut OT `en_cours` — libellé "En cours" renommé en "Demande en cours" (badge + formulaire + filtre)
+### Added
+- **Articles** : bouton "📄 Rapport articles" dans la barre de navigation (visible financier+) — génère un rapport HTML imprimable via la Netlify Function `articles-rapport-pdf`
+- **Netlify Function** `articles-rapport-pdf.mjs` v1.0 — rapport par article, par catégorie et total : montant attribué, montant facturé, montant payé, montant impayé (dont échelonnement en cours, dont OT en attente)

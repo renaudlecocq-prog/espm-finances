@@ -20,7 +20,7 @@ const STATUT_ECH = {
   termine:      { label: 'Terminé',      cls: 'bg-green-100 text-green-700'  },
 }
 const STATUT_OT = {
-  en_cours: { label: 'En cours', cls: 'bg-blue-100 text-blue-700'  },
+  en_cours: { label: 'Demande en cours', cls: 'bg-blue-100 text-blue-700'  },
   valide:   { label: 'Validé',   cls: 'bg-green-100 text-green-700' },
   refuse:   { label: 'Refusé',   cls: 'bg-red-100 text-red-700'    },
   cloture:  { label: 'Clôturé',  cls: 'bg-gray-100 text-gray-600'  },
