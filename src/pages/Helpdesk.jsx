@@ -379,7 +379,7 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
 }
 
 // ── Carte ticket ──────────────────────────────────────────────────────────────
-function TicketCard({ ticket: t, isUnread, onClick }) {
+function TicketCard({ ticket: t, isUnread, onClick, onStatusChange }) {
   const cat = t.helpdesk_categories
   const catColor = cat?.couleur || '#E5E7EB'
   const creator = t.created_by_profile
@@ -406,7 +406,28 @@ function TicketCard({ ticket: t, isUnread, onClick }) {
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
             title="Mis à jour depuis votre dernière visite">●</span>
         )}
-        <StatutBadge statut={t.statut} />
+        {onStatusChange ? (
+          <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+            onClick={e => e.stopPropagation()}>
+            <select value={t.statut} onChange={e => onStatusChange(e.target.value)}
+              style={{
+                appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
+                backgroundColor: (STATUTS[t.statut] || STATUTS.nouveau).bg,
+                color: (STATUTS[t.statut] || STATUTS.nouveau).color,
+                fontSize: 11, fontWeight: 700,
+                padding: '2px 20px 2px 8px',
+                borderRadius: 4, border: 'none', cursor: 'pointer', outline: 'none',
+              }}>
+              {Object.entries(STATUTS).map(([k, v]) => (
+                <option key={k} value={k}>{v.label}</option>
+              ))}
+            </select>
+            <span style={{ position: 'absolute', right: 5, pointerEvents: 'none',
+              fontSize: 8, color: (STATUTS[t.statut] || STATUTS.nouveau).color }}>▾</span>
+          </div>
+        ) : (
+          <StatutBadge statut={t.statut} />
+        )}
       </div>
 
       {/* Ligne 2 — méta */}
@@ -463,6 +484,14 @@ export default function Helpdesk() {
     const seen = lastSeen[t.id]
     if (!seen) return false
     return t.updated_at > seen
+  }
+
+  const handleStatusChange = async (ticketId, newStatut) => {
+    const update = { statut: newStatut }
+    if (newStatut === 'ferme') update.closed_at = new Date().toISOString()
+    else update.closed_at = null
+    await supabase.from('helpdesk_tickets').update(update).eq('id', ticketId)
+    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...update } : t))
   }
 
   const loadData = useCallback(async () => {
@@ -525,12 +554,12 @@ export default function Helpdesk() {
         display: 'flex', alignItems: 'center', gap: 6,
         padding: '4px 11px', borderRadius: 8, fontSize: 12, fontWeight: 600,
         cursor: 'pointer', transition: 'all 0.12s',
-        border: filterMine ? 'none' : '1px solid rgba(255,255,255,0.15)',
-        backgroundColor: filterMine ? 'rgba(255,255,255,0.18)' : 'transparent',
-        color: filterMine ? 'white' : 'rgba(255,255,255,0.50)',
+        border: 'none',
+        backgroundColor: filterMine ? '#fff' : 'rgba(255,255,255,0.08)',
+        color: filterMine ? '#2D1B2E' : 'rgba(255,255,255,0.55)',
       }}>
       <svg viewBox="0 0 24 24" width={13} height={13} fill="none"
-        stroke={filterMine ? 'white' : 'rgba(255,255,255,0.50)'} strokeWidth={2}>
+        stroke={filterMine ? '#2D1B2E' : 'rgba(255,255,255,0.55)'} strokeWidth={2}>
         <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
       </svg>
       Mes tickets
@@ -598,7 +627,8 @@ export default function Helpdesk() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {filtered.map(t => (
               <TicketCard key={t.id} ticket={t} isUnread={isUnread(t)}
-                onClick={() => navigate(`/helpdesk/${t.id}`)} />
+                onClick={() => navigate(`/helpdesk/${t.id}`)}
+                onStatusChange={isAdmin ? (s) => handleStatusChange(t.id, s) : null} />
             ))}
           </div>
         )}

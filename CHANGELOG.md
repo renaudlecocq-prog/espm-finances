@@ -1254,3 +1254,10 @@ git push origin main
 - **HelpdeskDetail — "Assigné à"** : remplacé par "Participants" — liste des collègues impliqués avec avatars initiales, ajout/suppression depuis le panneau droit
 ### Added
 - Migration Supabase : colonne `participant_ids uuid[]` sur `helpdesk_tickets`
+
+## [v0.77] — 2026-06-24
+### Changed
+- **Helpdesk — "Mes tickets"** : fond blanc + texte foncé quand actif (même style que les tabs actifs), plus visible
+- **Helpdesk — statut sur carte** : select stylisé (couleur de la catégorie, fond coloré, flèche discrète) directement sur chaque carte — clic intercepté (ne navigue pas vers le ticket)
+- **HelpdeskDetail — bouton Fermer** : ajouté à côté de "Envoyer" dans la zone de saisie ; si un message est en cours de rédaction, l'envoie avant de fermer
+- **HelpdeskDetail — auto-statut** : passage automatique à "En attente" après envoi de tout message (tant que le ticket n'est pas fermé)

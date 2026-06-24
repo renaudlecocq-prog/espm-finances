@@ -205,29 +205,48 @@ export default function HelpdeskDetail() {
     await updateField('participant_ids', updated)
   }
 
+  const doSendMessage = async () => {
+    const attachments = []
+    for (const file of files) {
+      const compressed = await compressFile(file)
+      const path = `${id}/${Date.now()}_${file.name}`
+      const { error: upErr } = await supabase.storage.from('helpdesk-attachments').upload(path, compressed)
+      if (upErr) throw upErr
+      const { data: urlData } = supabase.storage.from('helpdesk-attachments').getPublicUrl(path)
+      attachments.push({ name: file.name, url: urlData.publicUrl, type: file.type, size: compressed.size })
+    }
+    const { error: msgErr } = await supabase.from('helpdesk_messages').insert({
+      ticket_id: id, author_id: user.id,
+      content: content.trim(), is_internal_note: isNote && isAdmin, attachments,
+    })
+    if (msgErr) throw msgErr
+    setContent(''); setFiles([]); setIsNote(false)
+    await load()
+  }
+
   const handleSend = async (e) => {
     e.preventDefault()
     if (!content.trim() && files.length === 0) return
     setSending(true)
     setError('')
     try {
-      const attachments = []
-      for (const file of files) {
-        const compressed = await compressFile(file)
-        const path = `${id}/${Date.now()}_${file.name}`
-        const { error: upErr } = await supabase.storage.from('helpdesk-attachments').upload(path, compressed)
-        if (upErr) throw upErr
-        const { data: urlData } = supabase.storage.from('helpdesk-attachments').getPublicUrl(path)
-        attachments.push({ name: file.name, url: urlData.publicUrl, type: file.type, size: compressed.size })
+      await doSendMessage()
+      if (ticket.statut !== 'ferme') await updateField('statut', 'en_attente')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleFermer = async () => {
+    setSending(true)
+    setError('')
+    try {
+      if (content.trim() || files.length > 0) {
+        await doSendMessage()
       }
-      const { error: msgErr } = await supabase.from('helpdesk_messages').insert({
-        ticket_id: id, author_id: user.id,
-        content: content.trim(), is_internal_note: isNote && isAdmin, attachments,
-      })
-      if (msgErr) throw msgErr
-      if (ticket.statut === 'nouveau') await updateField('statut', 'en_cours')
-      setContent(''); setFiles([]); setIsNote(false)
-      await load()
+      await updateField('statut', 'ferme')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -379,13 +398,23 @@ export default function HelpdeskDetail() {
                   <input ref={fileRef} type="file" multiple style={{ display: 'none' }}
                     accept="image/*,.pdf,.doc,.docx"
                     onChange={e => { setFiles(prev => [...prev, ...Array.from(e.target.files)]); e.target.value = '' }} />
-                  <button type="submit" disabled={sending || (!content.trim() && files.length === 0)}
-                    style={{ padding: '9px 20px', borderRadius: 8, border: 'none',
-                      backgroundColor: isNote ? '#D97706' : '#2D1B2E', color: '#fff',
-                      cursor: 'pointer', fontSize: 13, fontWeight: 600,
-                      opacity: (sending || (!content.trim() && files.length === 0)) ? 0.5 : 1 }}>
-                    {sending ? 'Envoi…' : isNote ? 'Ajouter la note' : 'Envoyer'}
-                  </button>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {isAdmin && !isNote && (
+                      <button type="button" onClick={handleFermer} disabled={sending || updating}
+                        style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                          border: '1.5px solid #E5E7EB', backgroundColor: '#fff', color: '#6B7280',
+                          cursor: 'pointer', opacity: (sending || updating) ? 0.5 : 1 }}>
+                        Fermer le ticket
+                      </button>
+                    )}
+                    <button type="submit" disabled={sending || (!content.trim() && files.length === 0)}
+                      style={{ padding: '9px 20px', borderRadius: 8, border: 'none',
+                        backgroundColor: isNote ? '#D97706' : '#2D1B2E', color: '#fff',
+                        cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                        opacity: (sending || (!content.trim() && files.length === 0)) ? 0.5 : 1 }}>
+                      {sending ? 'Envoi…' : isNote ? 'Ajouter la note' : 'Envoyer'}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
