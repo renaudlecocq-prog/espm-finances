@@ -1171,3 +1171,8 @@ git push origin main
 ### Added
 - **Élèves** : nouveau filtre "Suivi social" avec deux options — "Échelonnement actif" et "Organisme tiers actif"
 - **Home.jsx** : cards Échelonnements et Organismes tiers pointent vers `/eleves?suivi=échelonnement` / `/eleves?suivi=organisme` (pré-filtre automatique)
+
+## [v0.70] — 2026-06-24
+
+### Fixed
+- **Sidebar** (mode réduit) : alignement de la cloche avec les autres icônes du bas — suppression du `justify-center` parasite et harmonisation du padding vertical (`py-2.5`)
