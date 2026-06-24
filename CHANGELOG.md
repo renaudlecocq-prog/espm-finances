@@ -1281,3 +1281,12 @@ git push origin main
   - Tables `padlet_folders` + `padlet_items` avec RLS (créateur = propriétaire, admin = gestionnaire global)
   - Permissions DB : `salle_profs` ajouté dans `role_permissions` (ON pour admin/financier/mdp)
   - Icône maison dans la sidebar
+
+## [v0.79g] — 2026-06-24
+### Fixed
+- **SalleDProfs.jsx** — 4 bugs corrigés qui bloquaient l'affichage des dossiers après création :
+  - `loadFolders` : query Supabase JS v2 immuable — `q.eq('created_by', …)` ne modifiait pas `q` → corrigé en `q = q.eq(…)`
+  - `loadFolders` et `loadFolderContent` : ajout de `try/finally` → `setLoading(false)` / `setContentLoading(false)` garantis même en cas d'erreur (ex : cache PostgREST non rechargé après migration `parent_id`)
+  - `createFolder` / `updateFolder` : throw sur erreur Supabase pour que `FolderModal` puisse l'intercepter
+  - `FolderModal` : ajout `try/catch` dans `handleSave` + message d'erreur visible si l'insertion échoue
+- Schema PostgREST rechargé (`NOTIFY pgrst, 'reload schema'`) pour exposer la colonne `parent_id` fraîchement ajoutée

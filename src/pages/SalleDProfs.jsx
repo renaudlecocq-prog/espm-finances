@@ -254,7 +254,13 @@ function FolderModal({ initial, onClose, onSave }) {
   const [color,setColor] = useState(initial?.color || COLORS[0])
   const [emoji,setEmoji] = useState(initial?.emoji || '📁')
   const [saving,setSaving] = useState(false)
-  const handleSave = async ()=>{ if(!name.trim()) return; setSaving(true); await onSave({name:name.trim(),color,emoji}); setSaving(false) }
+  const [saveError,setSaveError] = useState('')
+  const handleSave = async ()=>{
+    if(!name.trim()) return
+    setSaving(true); setSaveError('')
+    try { await onSave({name:name.trim(),color,emoji}) }
+    catch(err){ setSaveError(err.message||'Erreur lors de la sauvegarde'); setSaving(false) }
+  }
   return (
     <div style={{position:'fixed',inset:0,backgroundColor:'rgba(0,0,0,0.5)',
       display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:16}}>
@@ -265,6 +271,7 @@ function FolderModal({ initial, onClose, onSave }) {
           <h3 style={{fontWeight:700,fontSize:16,color:'#111',marginBottom:20}}>
             {initial?'Modifier le dossier':'Nouveau dossier'}
           </h3>
+          {saveError&&<div style={{backgroundColor:'#FEE2E2',color:'#DC2626',padding:'8px 12px',borderRadius:8,fontSize:13,marginBottom:14}}>{saveError}</div>}
           <div style={{marginBottom:16}}>
             <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>Nom</label>
             <input value={name} onChange={e=>setName(e.target.value)} autoFocus placeholder="Ex : Ressources pédagogiques"
@@ -557,21 +564,28 @@ export default function SalleDProfs() {
   // ── Charger dossiers racine ────────────────────────────────────────────────
   const loadFolders = useCallback(async () => {
     setLoading(true)
-    const q = supabase.from('padlet_folders').select('*')
-      .eq('type', tab).is('parent_id', null)
-    if (tab==='personal') q.eq('created_by', user.id)
-    const {data} = await q.order('pinned',{ascending:false}).order('created_at')
-    const list = data || []
-    setFolders(list)
-    if (list.length > 0) {
-      const {data:allItems} = await supabase.from('padlet_items')
-        .select('id,folder_id,type,file_url,content').in('folder_id',list.map(f=>f.id)).order('created_at')
-      const {stats,previews} = computeStatsAndPreviews(allItems, [])
-      setFolderStats(stats); setFolderPreviews(previews)
-    } else {
-      setFolderStats({}); setFolderPreviews({})
+    try {
+      let q = supabase.from('padlet_folders').select('*')
+        .eq('type', tab).is('parent_id', null)
+      if (tab==='personal') q = q.eq('created_by', user.id)
+      const {data, error} = await q.order('pinned',{ascending:false}).order('created_at')
+      if (error) throw error
+      const list = data || []
+      setFolders(list)
+      if (list.length > 0) {
+        const {data:allItems} = await supabase.from('padlet_items')
+          .select('id,folder_id,type,file_url,content').in('folder_id',list.map(f=>f.id)).order('created_at')
+        const {stats,previews} = computeStatsAndPreviews(allItems, [])
+        setFolderStats(stats); setFolderPreviews(previews)
+      } else {
+        setFolderStats({}); setFolderPreviews({})
+      }
+    } catch(err) {
+      console.error('loadFolders:', err)
+      setFolders([])
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [tab, user.id])
 
   useEffect(()=>{loadFolders();setFolderPath([])}, [loadFolders])
@@ -579,25 +593,31 @@ export default function SalleDProfs() {
   // ── Charger contenu d'un dossier ───────────────────────────────────────────
   const loadFolderContent = useCallback(async (folder) => {
     setContentLoading(true); setTypeFilter('all')
-    const [{data:subs},{data:its}] = await Promise.all([
-      supabase.from('padlet_folders').select('*')
-        .eq('parent_id',folder.id).order('pinned',{ascending:false}).order('created_at'),
-      supabase.from('padlet_items').select('*')
-        .eq('folder_id',folder.id).order('created_at'),
-    ])
-    const subList = subs || []
-    setSubFolders(subList)
-    setItems(its || [])
-    // Stats + previews des sous-dossiers
-    if (subList.length > 0) {
-      const {data:subItems} = await supabase.from('padlet_items')
-        .select('id,folder_id,type,file_url,content').in('folder_id',subList.map(f=>f.id)).order('created_at')
-      const {stats,previews} = computeStatsAndPreviews(subItems, [])
-      setSubStats(stats); setSubPreviews(previews)
-    } else {
-      setSubStats({}); setSubPreviews({})
+    try {
+      const [{data:subs,error:e1},{data:its,error:e2}] = await Promise.all([
+        supabase.from('padlet_folders').select('*')
+          .eq('parent_id',folder.id).order('pinned',{ascending:false}).order('created_at'),
+        supabase.from('padlet_items').select('*')
+          .eq('folder_id',folder.id).order('created_at'),
+      ])
+      if (e1) throw e1; if (e2) throw e2
+      const subList = subs || []
+      setSubFolders(subList)
+      setItems(its || [])
+      // Stats + previews des sous-dossiers
+      if (subList.length > 0) {
+        const {data:subItems} = await supabase.from('padlet_items')
+          .select('id,folder_id,type,file_url,content').in('folder_id',subList.map(f=>f.id)).order('created_at')
+        const {stats,previews} = computeStatsAndPreviews(subItems, [])
+        setSubStats(stats); setSubPreviews(previews)
+      } else {
+        setSubStats({}); setSubPreviews({})
+      }
+    } catch(err) {
+      console.error('loadFolderContent:', err)
+    } finally {
+      setContentLoading(false)
     }
-    setContentLoading(false)
   }, [])
 
   // ── Navigation ─────────────────────────────────────────────────────────────
@@ -614,16 +634,18 @@ export default function SalleDProfs() {
 
   // ── CRUD dossiers ──────────────────────────────────────────────────────────
   const createFolder = async (data) => {
-    await supabase.from('padlet_folders').insert({
+    const {error} = await supabase.from('padlet_folders').insert({
       ...data, type: tab,
       parent_id: currentFolder?.id || null,
       created_by: user.id,
     })
+    if (error) throw error
     setFolderModal(false)
     currentFolder ? loadFolderContent(currentFolder) : loadFolders()
   }
   const updateFolder = async (data) => {
-    await supabase.from('padlet_folders').update({...data,updated_at:new Date().toISOString()}).eq('id',editFolder.id)
+    const {error} = await supabase.from('padlet_folders').update({...data,updated_at:new Date().toISOString()}).eq('id',editFolder.id)
+    if (error) throw error
     setEditFolder(null)
     currentFolder ? loadFolderContent(currentFolder) : loadFolders()
   }
