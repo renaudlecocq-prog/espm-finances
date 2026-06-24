@@ -1354,3 +1354,12 @@ git push origin main
 - `src/components/layout/Sidebar.jsx` : icône + lien Économe
 - `src/App.jsx` : route `/econome` ajoutée (RequireAuth admin)
 - `src/pages/Admin.jsx` : onglet "Natures comptables" + composants NaturesAdmin + NatureModal
+
+## [Develop] 2026-06-24 — Économe : sélection multiple + bulk assign nature
+
+### Amélioration
+- **Cases à cocher** : chaque ligne de transaction est sélectionnable (clic sur la ligne ou sur la case)
+- **Select all** : case dans l'en-tête pour tout cocher/décocher (indeterminate si sélection partielle)
+- **Barre d'action bulk** : apparaît dès qu'une ligne est cochée — NatureSelect + "Appliquer (N)" + "Désélectionner"
+- Mise à jour en base par lots de 100 (`.in()`)
+- Clic sur ligne = toggle sélection ; clic NatureSelect ou bouton Supprimer = stop propagation

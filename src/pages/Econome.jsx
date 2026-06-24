@@ -367,8 +367,34 @@ function ImportModal({ compte, onClose, onImported }) {
 }
 
 // ── Transaction table ─────────────────────────────────────────────────────────
-function TransactionTable({ transactions, natures, compte, onNatureChange, onDelete }) {
+function TransactionTable({ transactions, natures, compte, onNatureChange, onDelete, onBulkNatureChange }) {
   const [sort, setSort] = useState({ col: 'date_operation', dir: 'desc' })
+  const [selected, setSelected] = useState(new Set())
+  const [bulkNature, setBulkNature] = useState(null)
+
+  // Reset selection when transactions change (e.g. after filter)
+  useEffect(() => { setSelected(new Set()) }, [transactions])
+
+  const allIds = transactions.map(t => t.id)
+  const allSelected = allIds.length > 0 && allIds.every(id => selected.has(id))
+  const someSelected = selected.size > 0 && !allSelected
+
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set())
+    else setSelected(new Set(allIds))
+  }
+  const toggleOne = id => setSelected(s => {
+    const n = new Set(s)
+    n.has(id) ? n.delete(id) : n.add(id)
+    return n
+  })
+
+  const applyBulk = async () => {
+    if (!bulkNature) return
+    await onBulkNatureChange([...selected], bulkNature)
+    setSelected(new Set())
+    setBulkNature(null)
+  }
 
   const toggleSort = col => setSort(s =>
     s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'asc' }
@@ -401,8 +427,47 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
+        {/* ── Bulk action bar ── */}
+        {selected.size > 0 && (
+          <div className="flex items-center gap-3 px-3 py-2.5 bg-indigo-50 border-b border-indigo-100 sticky top-0 z-10">
+            <span className="text-xs font-medium text-indigo-700">
+              {selected.size} ligne{selected.size > 1 ? 's' : ''} sélectionnée{selected.size > 1 ? 's' : ''}
+            </span>
+            <div className="flex-1 max-w-xs">
+              <NatureSelect
+                value={bulkNature}
+                natures={natures}
+                onChange={setBulkNature}
+              />
+            </div>
+            <button
+              onClick={applyBulk}
+              disabled={!bulkNature}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-lg
+                hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Check size={12} /> Appliquer ({selected.size})
+            </button>
+            <button
+              onClick={() => { setSelected(new Set()); setBulkNature(null) }}
+              className="text-xs text-indigo-500 hover:text-indigo-700 px-2 py-1 hover:bg-indigo-100 rounded-lg"
+            >
+              Désélectionner
+            </button>
+          </div>
+        )}
         <thead>
           <tr className="border-b-2 border-gray-100">
+            {/* Checkbox select all */}
+            <th className="w-8 px-2 py-2.5">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                ref={el => { if (el) el.indeterminate = someSelected }}
+                onChange={toggleAll}
+                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              />
+            </th>
             <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 cursor-pointer whitespace-nowrap"
               onClick={() => toggleSort('date_operation')}>
               Date <SortIcon col="date_operation" />
@@ -428,9 +493,18 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
         <tbody>
           {sorted.map((tx, i) => (
             <tr key={tx.id || i}
-              className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors
-                ${tx.confirme ? '' : 'bg-amber-50/30'}`}
+              onClick={() => tx.id && toggleOne(tx.id)}
+              className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors cursor-pointer
+                ${selected.has(tx.id) ? 'bg-indigo-50/60' : tx.confirme ? '' : 'bg-amber-50/30'}`}
             >
+              <td className="w-8 px-2 py-2.5" onClick={e => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={selected.has(tx.id)}
+                  onChange={() => toggleOne(tx.id)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                />
+              </td>
               <td className="px-3 py-2.5 text-gray-500 whitespace-nowrap text-xs">
                 {fmtDate(tx.date_operation)}
               </td>
@@ -440,7 +514,7 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
                   <p className="text-gray-400 truncate text-[11px]">{tx.communication}</p>
                 )}
               </td>
-              <td className="px-3 py-2.5">
+              <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
                 <NatureSelect
                   value={tx.nature_id}
                   natures={natures}
@@ -478,7 +552,7 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
                   ) : <span className="text-gray-300 text-xs">—</span>}
                 </td>
               )}
-              <td className="px-2 py-2.5">
+              <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
                 <button
                   onClick={() => onDelete(tx.id)}
                   className="p-1 hover:bg-red-50 rounded text-gray-300 hover:text-red-400 transition-colors"
@@ -592,6 +666,20 @@ function CompteTab({ compte, natures }) {
     setTransactions(prev => prev.filter(t => t.id !== txId))
   }
 
+  const handleBulkNatureChange = async (ids, natureId) => {
+    const nature = natures.find(n => n.id === natureId)
+    // Update in batches of 100 (Supabase .in() limit)
+    for (let i = 0; i < ids.length; i += 100) {
+      const chunk = ids.slice(i, i + 100)
+      await supabase.from('comptable_transactions')
+        .update({ nature_id: natureId, nature_libelle: nature?.libelle || null })
+        .in('id', chunk)
+    }
+    setTransactions(prev => prev.map(t =>
+      ids.includes(t.id) ? { ...t, nature_id: natureId, nature_libelle: nature?.libelle } : t
+    ))
+  }
+
   const filtered = transactions.filter(t => {
     if (pendingOnly && t.statut_paiement !== 'pending') return false
     if (!search) return true
@@ -682,6 +770,7 @@ function CompteTab({ compte, natures }) {
             compte={compte}
             onNatureChange={handleNatureChange}
             onDelete={handleDelete}
+            onBulkNatureChange={handleBulkNatureChange}
           />
         )}
       </div>
