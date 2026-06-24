@@ -158,8 +158,8 @@ export default function Eleves() {
   return (
     <div className="h-full flex flex-col">
     <PageHeader
-      title="Élèves"
-      subtitle="Liste des élèves et leurs soldes"
+      title="Soldes"
+      subtitle="Soldes et historique financier par élève"
       search={search}
       onSearch={setSearch}
       searchPlaceholder="Rechercher par nom, prénom…"

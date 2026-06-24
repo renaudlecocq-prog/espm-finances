@@ -97,7 +97,7 @@ export default function Groupes() {
   return (
     <div className="h-full flex flex-col">
     <PageHeader
-      title="Groupes"
+      title="Élèves"
       subtitle={`Groupes Smartschool — ${rows.length} élèves actifs`}
       search={search}
       onSearch={setSearch}

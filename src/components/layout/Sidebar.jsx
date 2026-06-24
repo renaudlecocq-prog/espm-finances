@@ -14,10 +14,15 @@ const ICONS = {
     <path d="M16 3.13a4 4 0 010 7.75" />
   </>),
   groupes: (<>
-    <rect x="3" y="3" width="7" height="7" rx="1" />
-    <rect x="14" y="3" width="7" height="7" rx="1" />
-    <rect x="3" y="14" width="7" height="7" rx="1" />
-    <rect x="14" y="14" width="7" height="7" rx="1" />
+    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 00-3-3.87" />
+    <path d="M16 3.13a4 4 0 010 7.75" />
+  </>),
+  soldes: (<>
+    <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
+    <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
+    <circle cx="16" cy="14" r="1.5" />
   </>),
   factures: (<>
     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
@@ -121,13 +126,13 @@ export default function Sidebar() {
   }, [collapsed])
 
   const links = [
-    { to: '/',                 label: 'Accueil',        icon: 'home',      show: true },
-    { to: '/eleves',           label: 'Élèves',         icon: 'eleves',    show: isFinancier },
-    { to: '/groupes',          label: 'Groupes',        icon: 'groupes',   show: isMdp },
-    { to: '/factures',         label: 'Factures',       icon: 'factures',  show: isFinancier },
-    { to: '/paiements',        label: 'Paiements',      icon: 'paiements', show: isFinancier },
-    { to: '/activites',        label: 'Activités',      icon: 'activites', show: isMdp },
-    { to: '/articles',         label: 'Articles',       icon: 'articles',  show: isFinancier },
+    { to: '/',                 label: 'Accueil',      icon: 'home',      show: true },
+    { to: '/groupes',          label: 'Élèves',       icon: 'groupes',   show: isMdp },
+    { to: '/activites',        label: 'Activités',    icon: 'activites', show: isMdp },
+    { to: '/eleves',           label: 'Soldes',       icon: 'soldes',    show: isFinancier },
+    { to: '/factures',         label: 'Factures',     icon: 'factures',  show: isFinancier },
+    { to: '/paiements',        label: 'Paiements',    icon: 'paiements', show: isFinancier },
+    { to: '/articles',         label: 'Articles',     icon: 'articles',  show: isFinancier },
     { to: '/assistant-social', label: 'Suivi social', icon: 'social',    show: isFinancier },
   ]
 

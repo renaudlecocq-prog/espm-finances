@@ -1201,3 +1201,11 @@ git push origin main
 
 ### Fixed
 - **PageHeader** : stacking context corrigé — `z-10` → `z-40` pour garantir que le dropdown MasterFilter s'affiche au-dessus du `<thead>` sticky (z-20) et des `<th>` sticky (z-30) des tables. C'est la vraie cause de l'invisibilité des filtres sur Groupes, Élèves, Paiements.
+
+## [0.73] — 2026-06-24
+### Changed
+- Sidebar : renommage "Élèves" → "Soldes" (route `/eleves`) avec nouvelle icône portefeuille
+- Sidebar : renommage "Groupes" → "Élèves" (route `/groupes`) avec récupération de l'icône personnes
+- Sidebar : nouvel ordre — Accueil, Élèves, Activités, Soldes, Factures, Paiements, Articles, Suivi social
+- Eleves.jsx : titre page "Élèves" → "Soldes"
+- Groupes.jsx : titre page "Groupes" → "Élèves"
