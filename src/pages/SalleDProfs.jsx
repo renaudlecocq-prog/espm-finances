@@ -53,7 +53,7 @@ function MiniCard({ item, rotate, tx, ty, zIdx }) {
   const TYPE_EMOJI = { image: '🖼️', document: '📄', link: '🔗', note: '📝' }
   return (
     <div style={{
-      position: 'absolute', width: 50, height: 64, borderRadius: 5,
+      position: 'absolute', width: 75, height: 96, borderRadius: 7,
       boxShadow: '0 3px 10px rgba(0,0,0,0.22)',
       transform: `rotate(${rotate}deg) translate(${tx}px, ${ty}px)`,
       zIndex: zIdx, overflow: 'hidden',
@@ -65,7 +65,7 @@ function MiniCard({ item, rotate, tx, ty, zIdx }) {
           style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
         <div style={{ width: '100%', height: '100%', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+          alignItems: 'center', justifyContent: 'center', fontSize: 33 }}>
           {TYPE_EMOJI[item.type] || '📁'}
         </div>
       )}
@@ -107,9 +107,9 @@ function FolderCard({ folder, previews, stats, onOpen, onEdit, onPin, onDelete, 
 
   // Disposition éventail : jusqu'à 3 cartes
   const FAN = [
-    { rotate: -11, tx: -28, ty: 4 },
-    { rotate: -3,  tx: -6,  ty: 0 },
-    { rotate:  6,  tx: 18,  ty: 3 },
+    { rotate: -11, tx: -42, ty: 6 },
+    { rotate: -3,  tx: -9,  ty: 0 },
+    { rotate:  6,  tx: 27,  ty: 5 },
   ]
 
   return (
@@ -123,7 +123,7 @@ function FolderCard({ folder, previews, stats, onOpen, onEdit, onPin, onDelete, 
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = folder.pinned ? `0 0 0 2px ${folder.color}, 0 4px 20px ${folder.color}40` : '0 2px 8px rgba(0,0,0,0.08)' }}>
 
       {/* Bandeau couleur avec éventail */}
-      <div style={{ height: 96, backgroundColor: folder.color,
+      <div style={{ height: 144, backgroundColor: folder.color,
         display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
         overflow: 'hidden' }}>
         {/* Fond légèrement assombri si items */}
@@ -132,7 +132,7 @@ function FolderCard({ folder, previews, stats, onOpen, onEdit, onPin, onDelete, 
             backgroundColor: 'rgba(0,0,0,0.08)' }} />
         )}
         {previews && previews.length > 0 ? (
-          <div style={{ position: 'relative', width: 120, height: 68 }}>
+          <div style={{ position: 'relative', width: 180, height: 102 }}>
             {previews.slice(0, 3).map((item, i) => (
               <MiniCard key={item.id} item={item}
                 rotate={FAN[i].rotate} tx={FAN[i].tx} ty={FAN[i].ty} zIdx={i + 1} />
@@ -145,8 +145,8 @@ function FolderCard({ folder, previews, stats, onOpen, onEdit, onPin, onDelete, 
         {previews && previews.length > 0 && (
           <div style={{ position: 'absolute', bottom: 6, right: 8,
             backgroundColor: 'rgba(255,255,255,0.88)', borderRadius: 999,
-            width: 26, height: 26, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', fontSize: 14, zIndex: 10 }}>
+            width: 38, height: 38, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 20, zIndex: 10 }}>
             {folder.emoji}
           </div>
         )}
@@ -194,9 +194,9 @@ function FolderCard({ folder, previews, stats, onOpen, onEdit, onPin, onDelete, 
       </div>
 
       {/* Contenu */}
-      <div style={{ padding: '10px 13px 13px' }}>
-        <div style={{ fontWeight: 700, fontSize: 13, color: '#111',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 3 }}>
+      <div style={{ padding: '14px 18px 18px' }}>
+        <div style={{ fontWeight: 700, fontSize: 15, color: '#111',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 5 }}>
           {folder.name}
         </div>
         <FolderStatLine stats={stats} />
@@ -799,7 +799,7 @@ export default function SalleDProfs() {
                     display: 'flex', alignItems: 'center', gap: 6 }}>
                     📌 Épinglés
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 16 }}>
                     {folders.filter(f => f.pinned).map(folder => (
                       <FolderCard key={folder.id} folder={folder}
                         previews={folderPreviews[folder.id]}
@@ -823,7 +823,7 @@ export default function SalleDProfs() {
                       Tous les dossiers
                     </div>
                   )}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 16 }}>
                     {folders.filter(f => !f.pinned).map(folder => (
                       <FolderCard key={folder.id} folder={folder}
                         previews={folderPreviews[folder.id]}
