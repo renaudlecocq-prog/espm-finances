@@ -1295,3 +1295,7 @@ git push origin main
 ### Fixed
 - **SalleDProfs.jsx** — breadcrumb : `<>` fragment remplacé par `<div display:flex alignItems:center>` pour aligner le chevron `›` avec le texte "Salle des profs"
 - **Supabase RLS** — policy `padlet_folders_select` récrite sans sous-SELECT auto-référentiel (erreur `42P17 infinite recursion`)
+
+## [v0.79i] — 2026-06-24
+### Changed
+- **SalleDProfs.jsx** — cards racine plus compactes : bandeau 160→145px, grille `minmax(270px→220px,1fr)` (4 colonnes sur écrans larges)

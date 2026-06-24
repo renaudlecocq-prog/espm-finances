@@ -96,7 +96,7 @@ function FolderCard({ folder, previews, stats, subCount=0, onOpen, onEdit, onPin
     return ()=>document.removeEventListener('mousedown',close)
   },[menu])
 
-  const headerH  = compact ? 110 : 160
+  const headerH  = compact ? 110 : 145
   const cardSize = compact ? 62  : 100
   const emojiBadgeSize = compact ? 26 : 38
 
@@ -774,7 +774,7 @@ export default function SalleDProfs() {
                   <div style={{fontSize:11,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>
                     📌 Épinglés
                   </div>
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(270px,1fr))',gap:18}}>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:18}}>
                     {folders.filter(f=>f.pinned).map(folder=>(
                       <FolderCard key={folder.id} folder={folder}
                         previews={folderPreviews[folder.id]} stats={folderStats[folder.id]}
@@ -790,7 +790,7 @@ export default function SalleDProfs() {
                   {folders.some(f=>f.pinned) && (
                     <div style={{fontSize:11,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>Tous les dossiers</div>
                   )}
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(270px,1fr))',gap:18}}>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:18}}>
                     {folders.filter(f=>!f.pinned).map(folder=>(
                       <FolderCard key={folder.id} folder={folder}
                         previews={folderPreviews[folder.id]} stats={folderStats[folder.id]}
