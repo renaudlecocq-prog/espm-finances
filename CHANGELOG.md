@@ -1241,3 +1241,16 @@ git push origin main
 - **Helpdesk — filtres catégorie** : boutons rapides dans le header pour filtrer par catégorie (couleur de chaque catégorie)
 - **Helpdesk — détection doublons** : lors de la création d'un ticket, la catégorie affiche le nombre de tickets ouverts ; à l'étape formulaire, un encadré orange liste les tickets existants de la catégorie avec lien direct
 - **Helpdesk — messages non-lus** : badge rouge sur les cartes de la liste quand un ticket a été mis à jour depuis la dernière visite (tracking localStorage `hd_lastSeen`)
+
+## [v0.76] — 2026-06-24
+### Changed
+- **Helpdesk — layout** : cartes full-width (suppression maxWidth:900), style conforme aux autres pages
+- **Helpdesk — "Mes tickets"** : bouton toggle dans le header, actif par défaut (affiche uniquement les tickets du compte connecté)
+- **Helpdesk — filtres catégorie** : même style pill-container que les tabs Actifs/Fermés/Tous, séparé visuellement
+- **Helpdesk — détection doublons** : simplification — liste discrète titre + créateur + lien, sans warning box
+- **Helpdesk — création** : upload de pièces jointes possible dès la création du ticket (zone dépôt en bas du formulaire)
+- **HelpdeskDetail — header** : intégration dans PageHeader avec "← Helpdesk" (style Activités), titre dans la barre, statut et priorité comme tags dans la zone filters, bouton "Fermer/Réouvrir" dans actions
+- **HelpdeskDetail — badges** : remplacement des pills ovales (border-radius:999) par des tags angulaires (border-radius:4)
+- **HelpdeskDetail — "Assigné à"** : remplacé par "Participants" — liste des collègues impliqués avec avatars initiales, ajout/suppression depuis le panneau droit
+### Added
+- Migration Supabase : colonne `participant_ids uuid[]` sur `helpdesk_tickets`

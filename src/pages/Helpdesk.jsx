@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import imageCompression from 'browser-image-compression'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
@@ -19,28 +20,26 @@ const PRIORITES = {
   urgente:  { label: 'Urgente',  color: '#DC2626', icon: '⚡' },
 }
 
+// ── Utilitaire compression ────────────────────────────────────────────────────
+async function compressFile(file) {
+  if (!file.type.startsWith('image/')) return file
+  try {
+    return await imageCompression(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true })
+  } catch { return file }
+}
+
 // ── Badge Statut ──────────────────────────────────────────────────────────────
 function StatutBadge({ statut }) {
   const s = STATUTS[statut] || STATUTS.nouveau
   return (
     <span style={{ backgroundColor: s.bg, color: s.color, fontSize: 11, fontWeight: 700,
-      padding: '2px 9px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+      padding: '2px 8px', borderRadius: 4, whiteSpace: 'nowrap' }}>
       {s.label}
     </span>
   )
 }
 
-// ── Icône priorité inline ─────────────────────────────────────────────────────
-function PrioriteChip({ priorite }) {
-  const p = PRIORITES[priorite] || PRIORITES.normale
-  return (
-    <span style={{ color: p.color, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
-      {p.icon} {p.label}
-    </span>
-  )
-}
-
-// ── Champ dynamique (formulaire catégorie) ────────────────────────────────────
+// ── Champ dynamique ───────────────────────────────────────────────────────────
 function DynamicField({ field, value, onChange }) {
   const base = {
     width: '100%', padding: '8px 10px', borderRadius: 6, fontSize: 13,
@@ -109,22 +108,23 @@ function CatIcon({ name, color, size = 20 }) {
 function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [step, setStep] = useState(1)
+  const fileRef  = useRef(null)
+  const [step, setStep]           = useState(1)
   const [selectedCat, setSelectedCat] = useState(null)
-  const [titre, setTitre] = useState('')
-  const [priorite, setPriorite] = useState('normale')
-  const [formData, setFormData] = useState({})
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [showRelated, setShowRelated] = useState(true)
+  const [titre, setTitre]         = useState('')
+  const [priorite, setPriorite]   = useState('normale')
+  const [formData, setFormData]   = useState({})
+  const [files, setFiles]         = useState([])
+  const [saving, setSaving]       = useState(false)
+  const [error, setError]         = useState('')
 
-  // Tickets ouverts dans la catégorie sélectionnée (depuis la liste déjà chargée)
+  // Tickets ouverts dans la catégorie sélectionnée
   const relatedTickets = useMemo(() => {
     if (!selectedCat) return []
     return openTickets.filter(t => t.category_id === selectedCat.id && t.statut !== 'ferme')
   }, [selectedCat, openTickets])
 
-  // Comptage open tickets par catégorie
+  // Comptage open par catégorie
   const openCountByCategory = useMemo(() => {
     const counts = {}
     openTickets.forEach(t => {
@@ -133,27 +133,38 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
     return counts
   }, [openTickets])
 
-  const handleSelectCat = (cat) => {
-    setSelectedCat(cat)
-    setShowRelated(true)
-    setStep(2)
-  }
+  const handleSelectCat = (cat) => { setSelectedCat(cat); setStep(2) }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSaving(true)
     try {
-      const { data, error: err } = await supabase.from('helpdesk_tickets').insert({
-        titre,
-        category_id: selectedCat.id,
-        priorite,
-        form_data: formData,
-        created_by: user.id,
-        assigned_to: null,
+      // Créer le ticket
+      const { data: ticket, error: err } = await supabase.from('helpdesk_tickets').insert({
+        titre, category_id: selectedCat.id, priorite, form_data: formData,
+        created_by: user.id, assigned_to: null,
       }).select().single()
       if (err) throw err
-      onCreated(data)
+
+      // Upload pièces jointes → message initial si fichiers présents
+      if (files.length > 0) {
+        const attachments = []
+        for (const file of files) {
+          const compressed = await compressFile(file)
+          const path = `${ticket.id}/init_${Date.now()}_${file.name}`
+          const { error: upErr } = await supabase.storage.from('helpdesk-attachments').upload(path, compressed)
+          if (upErr) throw upErr
+          const { data: urlData } = supabase.storage.from('helpdesk-attachments').getPublicUrl(path)
+          attachments.push({ name: file.name, url: urlData.publicUrl, type: file.type, size: compressed.size })
+        }
+        await supabase.from('helpdesk_messages').insert({
+          ticket_id: ticket.id, author_id: user.id,
+          content: '', is_internal_note: false, attachments,
+        })
+      }
+
+      onCreated(ticket)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -168,14 +179,14 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
         maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
 
-        {/* Header */}
+        {/* Header modal */}
         <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #e5e7eb',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 16, color: '#111' }}>
               {step === 1 ? 'Nouveau ticket' : selectedCat?.nom}
             </div>
-            {step === 2 && selectedCat && (
+            {step === 2 && (
               <button onClick={() => { setStep(1); setSelectedCat(null) }}
                 style={{ fontSize: 12, color: '#6B7280', background: 'none', border: 'none',
                   cursor: 'pointer', padding: 0, marginTop: 2 }}>
@@ -189,7 +200,7 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
 
-          {/* Étape 1 : choix catégorie */}
+          {/* Étape 1 — choix catégorie */}
           {step === 1 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 8px' }}>
@@ -213,7 +224,7 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
                         {cat.nom}
                         {openCount > 0 && (
                           <span style={{ fontSize: 11, fontWeight: 700, backgroundColor: '#FEF3C7',
-                            color: '#92400E', padding: '1px 7px', borderRadius: 999 }}>
+                            color: '#92400E', padding: '1px 7px', borderRadius: 4 }}>
                             {openCount} ouvert{openCount > 1 ? 's' : ''}
                           </span>
                         )}
@@ -231,47 +242,40 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
             </div>
           )}
 
-          {/* Étape 2 : formulaire */}
+          {/* Étape 2 — formulaire */}
           {step === 2 && (
             <form id="new-ticket-form" onSubmit={handleSubmit}>
 
-              {/* ── Tickets existants ── */}
-              {relatedTickets.length > 0 && showRelated && (
-                <div style={{ backgroundColor: '#FFFBEB', border: '1.5px solid #FCD34D',
-                  borderRadius: 10, padding: '12px 14px', marginBottom: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#92400E' }}>
-                      ⚠️ {relatedTickets.length} ticket{relatedTickets.length > 1 ? 's' : ''} ouvert{relatedTickets.length > 1 ? 's' : ''} dans cette catégorie
-                    </div>
-                    <button type="button" onClick={() => setShowRelated(false)}
-                      style={{ fontSize: 11, color: '#92400E', background: 'none', border: 'none',
-                        cursor: 'pointer', opacity: 0.7 }}>
-                      Masquer
-                    </button>
+              {/* Liste tickets ouverts — simple et discrète */}
+              {relatedTickets.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', marginBottom: 8 }}>
+                    Tickets déjà ouverts dans cette catégorie :
                   </div>
-                  {relatedTickets.map((rt, i) => (
-                    <div key={rt.id} style={{ display: 'flex', alignItems: 'center', gap: 8,
-                      paddingTop: i > 0 ? 6 : 0, marginTop: i > 0 ? 6 : 0,
-                      borderTop: i > 0 ? '1px solid #FDE68A' : 'none' }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#92400E', flexShrink: 0 }}>
+                  {relatedTickets.map(rt => (
+                    <div key={rt.id} style={{ display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '6px 0', borderBottom: '1px solid #F3F4F6' }}>
+                      <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600, flexShrink: 0 }}>
                         #{String(rt.numero).padStart(4, '0')}
                       </span>
-                      <span style={{ fontSize: 12, color: '#78350F', flex: 1,
+                      <span style={{ fontSize: 13, color: '#374151', flex: 1,
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {rt.titre}
                       </span>
-                      <StatutBadge statut={rt.statut} />
+                      <span style={{ fontSize: 11, color: '#9CA3AF', flexShrink: 0 }}>
+                        {rt.created_by_profile?.prenom} {rt.created_by_profile?.nom}
+                      </span>
                       <button type="button"
                         onClick={() => { onClose(); navigate(`/helpdesk/${rt.id}`) }}
-                        style={{ fontSize: 11, color: '#D97706', fontWeight: 700,
-                          background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                        Voir →
+                        style={{ fontSize: 11, color: '#2563EB', fontWeight: 600,
+                          background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+                        Voir
                       </button>
                     </div>
                   ))}
-                  <p style={{ fontSize: 11, color: '#92400E', marginTop: 8, marginBottom: 0 }}>
-                    Vérifiez qu'il ne s'agit pas du même problème avant de créer un nouveau ticket.
-                  </p>
+                  <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 8 }}>
+                    Vous pouvez quand même créer un nouveau ticket ci-dessous.
+                  </div>
                 </div>
               )}
 
@@ -320,6 +324,34 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
                     onChange={v => setFormData(prev => ({ ...prev, [field.id]: v }))} />
                 </div>
               ))}
+
+              {/* Pièces jointes */}
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F3F4F6' }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>
+                  Pièces jointes
+                </label>
+                {files.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                    {files.map((f, i) => (
+                      <span key={i} style={{ backgroundColor: '#F3F4F6', borderRadius: 6,
+                        padding: '4px 10px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        📎 {f.name}
+                        <button type="button" onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 0, lineHeight: 1 }}>×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <button type="button" onClick={() => fileRef.current?.click()}
+                  style={{ fontSize: 12, color: '#6B7280', background: 'none',
+                    border: '1.5px dashed #D1D5DB', cursor: 'pointer', padding: '8px 14px',
+                    borderRadius: 8, width: '100%', textAlign: 'center' }}>
+                  + Ajouter un fichier (image, PDF, Word)
+                </button>
+                <input ref={fileRef} type="file" multiple style={{ display: 'none' }}
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={e => { setFiles(prev => [...prev, ...Array.from(e.target.files)]); e.target.value = '' }} />
+              </div>
             </form>
           )}
         </div>
@@ -337,7 +369,7 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
               style={{ padding: '9px 20px', borderRadius: 8, border: 'none',
                 backgroundColor: '#2D1B2E', color: '#fff', cursor: saving ? 'wait' : 'pointer',
                 fontSize: 13, fontWeight: 600, opacity: saving ? 0.7 : 1 }}>
-              {saving ? 'Envoi…' : 'Créer le ticket'}
+              {saving ? 'Création…' : 'Créer le ticket'}
             </button>
           </div>
         )}
@@ -354,83 +386,51 @@ function TicketCard({ ticket: t, isUnread, onClick }) {
     ? `${t.created_by_profile.prenom} ${t.created_by_profile.nom}`
     : null
   const dateStr = new Date(t.updated_at).toLocaleDateString('fr-BE', { day: '2-digit', month: 'short' })
+  const p = PRIORITES[t.priorite] || PRIORITES.normale
 
   return (
-    <div
-      onClick={onClick}
-      style={{
-        backgroundColor: '#fff',
-        borderRadius: 10,
-        borderLeft: `4px solid ${catColor}`,
-        padding: '14px 18px',
-        cursor: 'pointer',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+    <div onClick={onClick} style={{
+        backgroundColor: '#fff', borderRadius: 10, borderLeft: `4px solid ${catColor}`,
+        padding: '14px 18px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
         transition: 'box-shadow 0.15s, transform 0.1s',
       }}
-      onMouseEnter={e => {
-        e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.10)'
-        e.currentTarget.style.transform = 'translateY(-1px)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'
-        e.currentTarget.style.transform = 'translateY(0)'
-      }}
-    >
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.10)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'; e.currentTarget.style.transform = 'translateY(0)' }}>
+
       {/* Ligne 1 — titre + badges */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
         <span style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>{t.titre}</span>
-
-        {/* Badge non-lu */}
         {isUnread && (
-          <span style={{
-            backgroundColor: '#EF4444', color: '#fff', borderRadius: 999,
+          <span style={{ backgroundColor: '#EF4444', color: '#fff', borderRadius: 999,
             minWidth: 18, height: 18, padding: '0 5px', fontSize: 10, fontWeight: 800,
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            letterSpacing: '-0.5px',
-          }} title="Messages non lus">
-            ●
-          </span>
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            title="Mis à jour depuis votre dernière visite">●</span>
         )}
-
         <StatutBadge statut={t.statut} />
       </div>
 
       {/* Ligne 2 — méta */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 20px',
         fontSize: 12, color: '#6B7280', alignItems: 'center' }}>
-
-        {/* Catégorie */}
         {cat && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <CatIcon name={cat.icone} color={catColor} size={12} />
             <span style={{ color: catColor, fontWeight: 700 }}>{cat.nom}</span>
           </span>
         )}
-
-        {/* Priorité */}
-        <PrioriteChip priorite={t.priorite} />
-
-        {/* Créateur */}
+        <span style={{ color: p.color, fontWeight: 700 }}>{p.icon} {p.label}</span>
         {creator && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <svg viewBox="0 0 24 24" width={11} height={11} fill="none" stroke="#9CA3AF" strokeWidth={2}>
-              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
             {creator}
           </span>
         )}
-
-        {/* Numéro */}
-        <span style={{ color: '#9CA3AF', fontWeight: 600 }}>
-          #{String(t.numero).padStart(4, '0')}
-        </span>
-
-        {/* Date */}
+        <span style={{ color: '#9CA3AF', fontWeight: 600 }}>#{String(t.numero).padStart(4, '0')}</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <svg viewBox="0 0 24 24" width={11} height={11} fill="none" stroke="#9CA3AF" strokeWidth={2}>
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
           </svg>
           {dateStr}
         </span>
@@ -441,27 +441,27 @@ function TicketCard({ ticket: t, isUnread, onClick }) {
 
 // ── Composant principal ───────────────────────────────────────────────────────
 export default function Helpdesk() {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
 
-  const [categories,    setCategories]    = useState([])
-  const [tickets,       setTickets]       = useState([])
-  const [loading,       setLoading]       = useState(true)
-  const [showModal,     setShowModal]     = useState(false)
-  const [filterStatut,  setFilterStatut]  = useState('actifs')
-  const [filterCatId,   setFilterCatId]   = useState(null)
-  const [search,        setSearch]        = useState('')
+  const [categories,   setCategories]   = useState([])
+  const [tickets,      setTickets]      = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [showModal,    setShowModal]    = useState(false)
+  const [filterStatut, setFilterStatut] = useState('actifs')
+  const [filterCatId,  setFilterCatId]  = useState(null)
+  const [filterMine,   setFilterMine]   = useState(true)  // "Mes tickets" ON par défaut
+  const [search,       setSearch]       = useState('')
 
   // Tracking messages non-lus (localStorage)
   const [lastSeen, setLastSeen] = useState(() => {
     try { return JSON.parse(localStorage.getItem('hd_lastSeen') || '{}') }
     catch { return {} }
   })
-
   const isUnread = (t) => {
     if (t.statut === 'ferme') return false
     const seen = lastSeen[t.id]
-    if (!seen) return false // jamais ouvert = pas encore de messages attendus
+    if (!seen) return false
     return t.updated_at > seen
   }
 
@@ -470,7 +470,7 @@ export default function Helpdesk() {
     const [{ data: cats }, { data: tix }] = await Promise.all([
       supabase.from('helpdesk_categories').select('*').eq('actif', true).order('ordre'),
       supabase.from('helpdesk_tickets').select(`
-        id, numero, titre, statut, priorite, created_at, updated_at, category_id,
+        id, numero, titre, statut, priorite, created_at, updated_at, category_id, created_by,
         helpdesk_categories(nom, icone, couleur),
         created_by_profile:profiles!helpdesk_tickets_created_by_fkey(prenom, nom),
         assigned_to_profile:profiles!helpdesk_tickets_assigned_to_fkey(prenom, nom)
@@ -483,7 +483,6 @@ export default function Helpdesk() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  // Sync lastSeen depuis localStorage (cas rafraîchissement entre onglets)
   useEffect(() => {
     const sync = () => {
       try { setLastSeen(JSON.parse(localStorage.getItem('hd_lastSeen') || '{}')) }
@@ -501,6 +500,7 @@ export default function Helpdesk() {
       if (filterStatut === 'actifs' && t.statut === 'ferme') return false
       if (filterStatut === 'ferme'  && t.statut !== 'ferme') return false
       if (filterCatId && t.category_id !== filterCatId) return false
+      if (filterMine && t.created_by !== user?.id) return false
       if (search) {
         const q = search.toLowerCase()
         if (!t.titre.toLowerCase().includes(q) &&
@@ -508,28 +508,48 @@ export default function Helpdesk() {
       }
       return true
     })
-  }, [tickets, filterStatut, filterCatId, search])
+  }, [tickets, filterStatut, filterCatId, filterMine, search, user])
 
   const tabs = [
-    { key: 'actifs', label: 'Actifs', count: actifs.length },
-    { key: 'ferme',  label: 'Fermés', count: fermes.length },
+    { key: 'actifs', label: 'Actifs', count: actifs.filter(t => !filterMine || t.created_by === user?.id).length },
+    { key: 'ferme',  label: 'Fermés', count: fermes.filter(t => !filterMine || t.created_by === user?.id).length },
     { key: 'tous',   label: 'Tous' },
   ]
 
-  // Filtres catégorie (dans le header)
+  const unreadCount = tickets.filter(t => isUnread(t) && (!filterMine || t.created_by === user?.id)).length
+
+  // Bouton "Mes tickets" dans leftActions
+  const leftActions = (
+    <button onClick={() => setFilterMine(f => !f)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '4px 11px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+        cursor: 'pointer', transition: 'all 0.12s',
+        border: filterMine ? 'none' : '1px solid rgba(255,255,255,0.15)',
+        backgroundColor: filterMine ? 'rgba(255,255,255,0.18)' : 'transparent',
+        color: filterMine ? 'white' : 'rgba(255,255,255,0.50)',
+      }}>
+      <svg viewBox="0 0 24 24" width={13} height={13} fill="none"
+        stroke={filterMine ? 'white' : 'rgba(255,255,255,0.50)'} strokeWidth={2}>
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      Mes tickets
+    </button>
+  )
+
+  // Filtres catégories (style identique aux tabs)
   const catFilters = categories.length > 0 ? (
-    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', alignItems: 'center', padding: '2px', borderRadius: 8,
+      backgroundColor: 'rgba(255,255,255,0.10)', gap: 0 }}>
       {categories.map(cat => {
         const active = filterCatId === cat.id
         return (
-          <button key={cat.id}
-            onClick={() => setFilterCatId(active ? null : cat.id)}
+          <button key={cat.id} onClick={() => setFilterCatId(active ? null : cat.id)}
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
-              padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600,
-              cursor: 'pointer', transition: 'all 0.12s',
-              border: active ? 'none' : '1px solid rgba(255,255,255,0.15)',
-              backgroundColor: active ? cat.couleur : 'rgba(255,255,255,0.08)',
+              padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+              cursor: 'pointer', transition: 'all 0.12s', border: 'none',
+              backgroundColor: active ? cat.couleur : 'transparent',
               color: active ? '#fff' : 'rgba(255,255,255,0.55)',
             }}>
             <CatIcon name={cat.icone} color={active ? '#fff' : 'rgba(255,255,255,0.55)'} size={11} />
@@ -540,13 +560,12 @@ export default function Helpdesk() {
     </div>
   ) : null
 
-  const unreadCount = tickets.filter(t => isUnread(t)).length
-
   return (
     <>
       <PageHeader
         title="Helpdesk"
-        subtitle={`${actifs.length} ticket${actifs.length !== 1 ? 's' : ''} actif${actifs.length !== 1 ? 's' : ''}${unreadCount > 0 ? ` · ${unreadCount} non lu${unreadCount > 1 ? 's' : ''}` : ''}`}
+        subtitle={`${actifs.length} actif${actifs.length !== 1 ? 's' : ''}${unreadCount > 0 ? ` · ${unreadCount} non lu${unreadCount > 1 ? 's' : ''}` : ''}`}
+        leftActions={leftActions}
         tabs={tabs}
         activeTab={filterStatut}
         onTabChange={setFilterStatut}
@@ -564,24 +583,22 @@ export default function Helpdesk() {
         }
       />
 
-      <div style={{ padding: '20px 24px' }}>
+      <div className="p-6 max-w-screen-xl mx-auto">
         {loading ? (
           <div style={{ textAlign: 'center', color: '#9CA3AF', padding: 60 }}>Chargement…</div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#9CA3AF', padding: 60 }}>
             {search || filterCatId
               ? 'Aucun ticket ne correspond aux filtres.'
-              : 'Aucun ticket pour l\'instant.'}
+              : filterMine
+                ? 'Aucun ticket pour l\'instant. Cliquez sur "+ Nouveau ticket" pour en créer un.'
+                : 'Aucun ticket.'}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 900 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {filtered.map(t => (
-              <TicketCard
-                key={t.id}
-                ticket={t}
-                isUnread={isUnread(t)}
-                onClick={() => navigate(`/helpdesk/${t.id}`)}
-              />
+              <TicketCard key={t.id} ticket={t} isUnread={isUnread(t)}
+                onClick={() => navigate(`/helpdesk/${t.id}`)} />
             ))}
           </div>
         )}
