@@ -8,9 +8,6 @@ const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') :
 const fmtEur  = n => Number(n || 0).toLocaleString('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
 const addDays = (dateStr, days) => { const d = new Date(dateStr + 'T00:00:00'); d.setDate(d.getDate() + days); return d.toLocaleDateString('fr-BE') }
 const CATEGORIES_ART = ['Frais obligatoires', 'Fournitures scolaires', 'Vêtements', 'Divers']
-const SCHOOL_IBAN    = 'BE17 0910 2167 8721'
-const SCHOOL_TEL_ECO = '02/210.20.96'
-const SCHOOL_TEL_AS  = '02/210.20.91'
 
 const STATUTS = {
   brouillon:       { label: 'En attente',      cls: 'bg-orange-100 text-orange-700' },
@@ -1242,7 +1239,7 @@ function DetailFacture({ factureId, onBack }) {
           <h2 className="text-xs font-semibold text-orange-600 uppercase tracking-wide mb-3">Informations de paiement</h2>
           <div className="space-y-2 text-sm">
             <p><span className="text-gray-400">Bénéficiaire :</span> <span className="font-semibold text-gray-800">Pouvoir Organisateur Pluriel</span></p>
-            <p><span className="text-gray-400">IBAN :</span> <span className="font-mono font-bold tracking-wider text-gray-900">{SCHOOL_IBAN}</span></p>
+            <p><span className="text-gray-400">IBAN :</span> <span className="font-mono font-bold tracking-wider text-gray-900">{s('school_iban')}</span></p>
             <p><span className="text-gray-400">Communication :</span> <span className="font-bold text-gray-900">{facture.eleve?.nom} {facture.eleve?.prenom} {facture.eleve?.classe}</span></p>
             <p><span className="text-gray-400">Date limite :</span> <span className="font-bold text-orange-600">{addDays(facture.date, 30)}</span> <span className="text-gray-400 text-xs">(30 jours à dater de la facturation)</span></p>
           </div>
@@ -1250,8 +1247,8 @@ function DetailFacture({ factureId, onBack }) {
         <div className="card p-5 mt-2 border-l-4 border-slate-300">
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Contacts</h2>
           <div className="space-y-2 text-sm text-gray-600">
-            <p>Les responsables légaux peuvent contacter l'<strong>assistant social, M. Mignolet</strong>, par Smartschool ou au <strong>{SCHOOL_TEL_AS}</strong>.</p>
-            <p>Pour toute précision sur cette facture, contactez l'<strong>économe, M. Lecocq</strong>, par Smartschool ou au <strong>{SCHOOL_TEL_ECO}</strong>.</p>
+            <p>Les responsables légaux peuvent contacter l'<strong>assistant social, M. Mignolet</strong>, par Smartschool ou au <strong>{s('school_tel_as')}</strong>.</p>
+            <p>Pour toute précision sur cette facture, contactez l'<strong>économe, M. Lecocq</strong>, par Smartschool ou au <strong>{s('school_tel_eco')}</strong>.</p>
           </div>
         </div>
       </>)}
@@ -1263,6 +1260,7 @@ function DetailFacture({ factureId, onBack }) {
 // Composant principal
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Factures() {
+  const { s } = useSettings()
   const [view, setView]         = useState('batches')  // 'batches' | 'batch' | 'facture'
   const [batchId, setBatchId]     = useState(null)
   const [factureId, setFactureId] = useState(null)

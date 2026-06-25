@@ -2,11 +2,36 @@
 // GET /.netlify/functions/activite-voyage-rapport-pdf?id=UUID
 import { createClient } from '@supabase/supabase-js'
 
+// ── Récupération des paramètres école depuis Supabase ──────────────────────
+async function getSchoolSettings(supabase) {
+  const D = {
+    school_nom:           'Ecole',
+    school_adresse_rue:   'Rue',
+    school_adresse_cp:    '0000',
+    school_adresse_ville: 'Ville',
+    school_bce:           '',
+    school_logo_url:      '',
+    school_email_general: 'info@school.be',
+    school_tel_general:   '00/000.00.00',
+    school_email_eco:     'eco@school.be',
+    school_tel_eco:       '00/000.00.00',
+    school_nom_eco:       'M. Economat',
+    school_email_as:      'as@school.be',
+    school_tel_as:        '00/000.00.00',
+    school_nom_as:        'M. Assistantsocial',
+    school_iban:          'BE00 0000 0000 0000',
+    school_beneficiaire:  'Ecole',
+  }
+  try {
+    const { data } = await supabase.from('app_settings').select('key, value')
+    if (data) data.forEach(r => { if (r.value !== null && r.value !== '') D[r.key] = r.value })
+  } catch (e) { /* fallback */ }
+  return D
+}
+
+
 const SUPABASE_URL         = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-const SCHOOL_EMAIL         = process.env.SCHOOL_EMAIL_SCHOOL || 'info@espmaritime.be'
-const SCHOOL_TEL           = process.env.SCHOOL_TEL_SCHOOL   || '02/210.20.91'
-const SCHOOL_ADDR          = 'Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean'
 
 const esc     = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 const fmt     = n => Number(n||0).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €'
@@ -28,10 +53,12 @@ export const handler = async (event) => {
   if (!id)    return { statusCode:400, body:'id manquant' }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  const ss = await getSchoolSettings(supabase)
   const { data:{ user }, error:authErr } = await supabase.auth.getUser(token)
   if (authErr || !user) return { statusCode:403, body:'Non autorisé' }
 
-  const logoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
+  const _defaultLogoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
+  const logoUrl = ss.school_logo_url || _defaultLogoUrl
 
   const [{ data:act }, { data:depenses }, { data:absents }, { data:profiles }] = await Promise.all([
     supabase.from('activites').select('*').eq('id', id).single(),
@@ -176,8 +203,8 @@ export const handler = async (event) => {
   <div class="header">
     <img src="${logoUrl}" alt="Logo" class="logo-ecole">
     <div class="header-right">
-      <div class="school-name-bold">École Secondaire Plurielle Maritime</div>
-      <div class="school-addr">${SCHOOL_ADDR}</div>
+      <div class="school-name-bold">${ss.school_nom}</div>
+      <div class="school-addr">${ss.school_adresse_rue}</div>
     </div>
   </div>
 
@@ -247,7 +274,7 @@ export const handler = async (event) => {
 
   <div class="spacer"></div>
   <div class="footer">
-    <span>École Secondaire Plurielle Maritime — ${esc(SCHOOL_TEL)} — ${esc(SCHOOL_EMAIL)}</span>
+    <span>${ss.school_nom} — ${esc(ss.school_tel_general)} — ${esc(ss.school_email_general)}</span>
     <span class="footer-brand">Document généré par ESPM<span>+</span> le ${today}</span>
   </div>
 </div>

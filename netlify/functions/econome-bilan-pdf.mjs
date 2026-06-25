@@ -3,10 +3,36 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+// ── Récupération des paramètres école depuis Supabase ──────────────────────
+async function getSchoolSettings(supabase) {
+  const D = {
+    school_nom:           'Ecole',
+    school_adresse_rue:   'Rue',
+    school_adresse_cp:    '0000',
+    school_adresse_ville: 'Ville',
+    school_bce:           '',
+    school_logo_url:      '',
+    school_email_general: 'info@school.be',
+    school_tel_general:   '00/000.00.00',
+    school_email_eco:     'eco@school.be',
+    school_tel_eco:       '00/000.00.00',
+    school_nom_eco:       'M. Economat',
+    school_email_as:      'as@school.be',
+    school_tel_as:        '00/000.00.00',
+    school_nom_as:        'M. Assistantsocial',
+    school_iban:          'BE00 0000 0000 0000',
+    school_beneficiaire:  'Ecole',
+  }
+  try {
+    const { data } = await supabase.from('app_settings').select('key, value')
+    if (data) data.forEach(r => { if (r.value !== null && r.value !== '') D[r.key] = r.value })
+  } catch (e) { /* fallback */ }
+  return D
+}
+
+
 const SUPABASE_URL  = process.env.SUPABASE_URL
 const SUPABASE_SRK  = process.env.SUPABASE_SERVICE_ROLE_KEY
-const SCHOOL_EMAIL  = process.env.SCHOOL_EMAIL_ECO   || 'economat@espmaritime.be'
-const SCHOOL_TEL    = process.env.SCHOOL_TEL_ECO     || '02/210.20.96'
 
 const esc    = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 const fmtEur = v => Number(v || 0).toLocaleString('fr-BE', { minimumFractionDigits:2, maximumFractionDigits:2 }) + ' €'
@@ -26,7 +52,8 @@ export default async function handler(req) {
   const { data: { user }, error: authErr } = await supa.auth.getUser(token)
   if (authErr || !user) return new Response('Non autorisé', { status: 401 })
 
-  const logoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
+  const _defaultLogoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
+  const logoUrl = ss.school_logo_url || _defaultLogoUrl
 
   // ── Charger natures, transactions et POP ────────────────────────────────
   const [{ data: natures }, { data: txs }, { data: pop }] = await Promise.all([
@@ -290,9 +317,9 @@ export default async function handler(req) {
   <div class="header">
     <img src="${logoUrl}" alt="Logo" class="logo-ecole"/>
     <div class="header-right">
-      <div class="school-name">École Secondaire Plurielle Maritime</div>
-      <div class="school-addr">Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean</div>
-      <div class="school-addr">${esc(SCHOOL_TEL)} — ${esc(SCHOOL_EMAIL)}</div>
+      <div class="school-name">${ss.school_nom}</div>
+      <div class="school-addr">${ss.school_adresse_rue} · ${ss.school_adresse_cp} ${ss.school_adresse_ville}</div>
+      <div class="school-addr">${esc(ss.school_tel_general)} — ${esc(ss.school_email_general)}</div>
     </div>
   </div>
   <hr class="hr-main"/>
@@ -320,9 +347,9 @@ export default async function handler(req) {
   <div class="header">
     <img src="${logoUrl}" alt="Logo" class="logo-ecole"/>
     <div class="header-right">
-      <div class="school-name">École Secondaire Plurielle Maritime</div>
-      <div class="school-addr">Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean</div>
-      <div class="school-addr">${esc(SCHOOL_TEL)} — ${esc(SCHOOL_EMAIL)}</div>
+      <div class="school-name">${ss.school_nom}</div>
+      <div class="school-addr">${ss.school_adresse_rue} · ${ss.school_adresse_cp} ${ss.school_adresse_ville}</div>
+      <div class="school-addr">${esc(ss.school_tel_general)} — ${esc(ss.school_email_general)}</div>
     </div>
   </div>
   <hr class="hr-main"/>

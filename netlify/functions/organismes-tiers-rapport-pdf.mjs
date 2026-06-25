@@ -2,11 +2,36 @@
 // GET /.netlify/functions/organismes-tiers-rapport-pdf?otId=UUID&token=JWT
 import { createClient } from '@supabase/supabase-js'
 
+// ── Récupération des paramètres école depuis Supabase ──────────────────────
+async function getSchoolSettings(supabase) {
+  const D = {
+    school_nom:           'Ecole',
+    school_adresse_rue:   'Rue',
+    school_adresse_cp:    '0000',
+    school_adresse_ville: 'Ville',
+    school_bce:           '',
+    school_logo_url:      '',
+    school_email_general: 'info@school.be',
+    school_tel_general:   '00/000.00.00',
+    school_email_eco:     'eco@school.be',
+    school_tel_eco:       '00/000.00.00',
+    school_nom_eco:       'M. Economat',
+    school_email_as:      'as@school.be',
+    school_tel_as:        '00/000.00.00',
+    school_nom_as:        'M. Assistantsocial',
+    school_iban:          'BE00 0000 0000 0000',
+    school_beneficiaire:  'Ecole',
+  }
+  try {
+    const { data } = await supabase.from('app_settings').select('key, value')
+    if (data) data.forEach(r => { if (r.value !== null && r.value !== '') D[r.key] = r.value })
+  } catch (e) { /* fallback */ }
+  return D
+}
+
+
 const SUPABASE_URL         = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-const SCHOOL_EMAIL_AS      = process.env.SCHOOL_EMAIL_AS || 'as@espmaritime.be'
-const SCHOOL_TEL_AS        = process.env.SCHOOL_TEL_AS   || '02/210.20.91'
-const SCHOOL_IBAN          = process.env.SCHOOL_IBAN      || 'BE17 0910 2167 8721'
 
 const esc     = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 const fmt     = n => Number(n||0).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €'
@@ -25,10 +50,12 @@ export const handler = async (event) => {
   if (!otId)  return { statusCode:400, body:'otId manquant' }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  const ss = await getSchoolSettings(supabase)
   const { data:{ user }, error:authErr } = await supabase.auth.getUser(token)
   if (authErr || !user) return { statusCode:403, body:'Non autorisé' }
 
-  const logoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
+  const _defaultLogoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
+  const logoUrl = ss.school_logo_url || _defaultLogoUrl
 
   const [{ data:ot }, { data:articles }] = await Promise.all([
     supabase.from('organismes_tiers')
@@ -146,11 +173,11 @@ export const handler = async (event) => {
 <div class="page">
 
   <div class="header">
-    <img class="logo-ecole" src="${logoUrl}" alt="École Secondaire Plurielle Maritime">
+    <img class="logo-ecole" src="${logoUrl}" alt="${ss.school_nom}">
     <div class="header-right">
-      <div class="school-name">École Secondaire Plurielle Maritime</div>
+      <div class="school-name">${ss.school_nom}</div>
       <div class="school-addr">Avenue Jean Dubrucq 175 &nbsp;·&nbsp; 1080 Molenbeek-Saint-Jean</div>
-      <div class="school-addr">IBAN&nbsp;: ${esc(SCHOOL_IBAN)}</div>
+      <div class="school-addr">IBAN&nbsp;: ${esc(ss.school_iban)}</div>
     </div>
   </div>
   <hr class="hr-main">
@@ -235,7 +262,7 @@ export const handler = async (event) => {
     <div class="sect orange">
       <h3>Informations de paiement</h3>
       <p><strong>Bénéficiaire&nbsp;:</strong> Pouvoir Organisateur Pluriel</p>
-      <p><strong>IBAN&nbsp;:</strong> <span class="mono">${esc(SCHOOL_IBAN)}</span></p>
+      <p><strong>IBAN&nbsp;:</strong> <span class="mono">${esc(ss.school_iban)}</span></p>
       <p><strong>Communication&nbsp;:</strong> <span class="comm">${esc(comm)}</span></p>
       <p><strong>Montant demandé&nbsp;:</strong> ${fmt(total)}</p>
     </div>
@@ -257,7 +284,7 @@ export const handler = async (event) => {
   </div>
 
   <div class="footer">
-    <strong>Jérôme Mignolet</strong>, Assistant social &nbsp;—&nbsp; ${esc(SCHOOL_EMAIL_AS)} · ${esc(SCHOOL_TEL_AS)} &nbsp;|&nbsp; Rapport généré depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
+    <strong>${ss.school_nom_as}</strong>, Assistant social &nbsp;—&nbsp; ${esc(ss.school_email_as)} · ${esc(ss.school_tel_as)} &nbsp;|&nbsp; Rapport généré depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
   </div>
 
 </div>

@@ -3,6 +3,34 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+// ── Récupération des paramètres école depuis Supabase ──────────────────────
+async function getSchoolSettings(supabase) {
+  const D = {
+    school_nom:           'Ecole',
+    school_adresse_rue:   'Rue',
+    school_adresse_cp:    '0000',
+    school_adresse_ville: 'Ville',
+    school_bce:           '',
+    school_logo_url:      '',
+    school_email_general: 'info@school.be',
+    school_tel_general:   '00/000.00.00',
+    school_email_eco:     'eco@school.be',
+    school_tel_eco:       '00/000.00.00',
+    school_nom_eco:       'M. Economat',
+    school_email_as:      'as@school.be',
+    school_tel_as:        '00/000.00.00',
+    school_nom_as:        'M. Assistantsocial',
+    school_iban:          'BE00 0000 0000 0000',
+    school_beneficiaire:  'Ecole',
+  }
+  try {
+    const { data } = await supabase.from('app_settings').select('key, value')
+    if (data) data.forEach(r => { if (r.value !== null && r.value !== '') D[r.key] = r.value })
+  } catch (e) { /* fallback */ }
+  return D
+}
+
+
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SRK = process.env.SUPABASE_SERVICE_ROLE_KEY
 

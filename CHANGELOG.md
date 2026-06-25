@@ -1861,3 +1861,13 @@ git push origin main
 - "← Mes projets", compteur élèves/groupes, statut sauvegarde, "En direct" → leftActions dans le header sombre
 - Compact/Étendu, "+ Nouveau groupe", Configuration → actions dans le header sombre
 - Suppression de la barre blanche séparée sous le header
+
+## [v0.96] — Paramètres école centralisés dans l'Admin
+
+- Nouvelle table Supabase `app_settings` : 16 clés organisées en 5 catégories (Identité, Contacts, Économat, Suivi social, Facturation)
+- Nouvel onglet "Paramètres école" dans Admin : formulaire par catégorie + upload logo
+- SettingsContext React : toutes les valeurs chargées au démarrage, accessibles via `useSettings()`
+- Footer du site, logo Sidebar/Header, IBAN/contacts dans Factures.jsx → dynamiques via le context
+- 11 fonctions Netlify PDF refactorisées : lecture des settings depuis Supabase au lieu des env vars
+- Logo des PDFs : utilise `school_logo_url` si défini, sinon fallback sur `/logo-ecole.png`
+- Plus aucune valeur école n'est hardcodée dans le code

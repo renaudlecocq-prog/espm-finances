@@ -19,6 +19,7 @@ export default function Header() {
     { to: '/assistant-social', label: 'Suivi social', show: isFinancier },
   ]
 
+  const { s } = useSettings()
   const logout = async () => { await supabase.auth.signOut(); navigate('/login') }
 
   const roleLabel = { admin: 'Admin', financier: 'Financier', mdp: 'MdP', responsable: 'Responsable' }
@@ -35,8 +36,8 @@ export default function Header() {
 
         <Link to="/" className="shrink-0 flex items-center gap-2">
           <img
-            src="/logo-ecole.svg"
-            alt="École Plurielle Maritime"
+            src={s('school_logo_url') || "/logo-ecole.svg"}
+            alt={s('school_nom')}
             style={{ height: '30px', width: 'auto', flexShrink: 0 }}
           />
           <span className="text-white font-bold text-lg tracking-wide leading-none">

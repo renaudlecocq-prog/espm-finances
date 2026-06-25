@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useSettings } from '../../contexts/SettingsContext'
 import { supabase } from '../../lib/supabase'
 import NotificationBell from '../ui/NotificationBell'
 
@@ -155,6 +156,7 @@ export default function Sidebar() {
     { to: '/assistant-social', label: 'Suivi social',    icon: 'social',       show: can('suivi_social') },
   ]
 
+  const { s } = useSettings()
   const logout = async () => { await supabase.auth.signOut(); navigate('/login') }
 
   const roleLabel = {

@@ -3,13 +3,36 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+// ── Récupération des paramètres école depuis Supabase ──────────────────────
+async function getSchoolSettings(supabase) {
+  const D = {
+    school_nom:           'Ecole',
+    school_adresse_rue:   'Rue',
+    school_adresse_cp:    '0000',
+    school_adresse_ville: 'Ville',
+    school_bce:           '',
+    school_logo_url:      '',
+    school_email_general: 'info@school.be',
+    school_tel_general:   '00/000.00.00',
+    school_email_eco:     'eco@school.be',
+    school_tel_eco:       '00/000.00.00',
+    school_nom_eco:       'M. Economat',
+    school_email_as:      'as@school.be',
+    school_tel_as:        '00/000.00.00',
+    school_nom_as:        'M. Assistantsocial',
+    school_iban:          'BE00 0000 0000 0000',
+    school_beneficiaire:  'Ecole',
+  }
+  try {
+    const { data } = await supabase.from('app_settings').select('key, value')
+    if (data) data.forEach(r => { if (r.value !== null && r.value !== '') D[r.key] = r.value })
+  } catch (e) { /* fallback */ }
+  return D
+}
+
+
 const SUPABASE_URL      = process.env.SUPABASE_URL
 const SUPABASE_SRK      = process.env.SUPABASE_SERVICE_ROLE_KEY
-const SCHOOL_IBAN       = process.env.SCHOOL_IBAN      || '[IBAN — à configurer dans Netlify]'
-const SCHOOL_EMAIL_ECO  = process.env.SCHOOL_EMAIL_ECO || 'economat@espmaritime.be'
-const SCHOOL_TEL_ECO    = process.env.SCHOOL_TEL_ECO   || '02/210.20.96'
-const SCHOOL_TEL_AS     = process.env.SCHOOL_TEL_AS    || '02/210.20.91'
-const SCHOOL_BCE        = process.env.SCHOOL_BCE        || ''
 
 const ORG_LABELS = { cpas: 'CPAS', ulb: 'ULB', spj: 'SPJ', autre: 'Organisme tiers' }
 
@@ -75,7 +98,8 @@ export default async function handler(req) {
   // Communication structurée : Nom Prénom Classe
   const comm = [eleve.nom, eleve.prenom, eleve.classe].filter(Boolean).join(' ')
 
-  const logoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
+  const _defaultLogoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
+  const logoUrl = ss.school_logo_url || _defaultLogoUrl
   const hasAide = !!ech || !!org
 
   const html = `<!DOCTYPE html>
@@ -174,14 +198,14 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
   <!-- EN-TÊTE : logo + ESPM+ à gauche | nom école + adresse à droite -->
   <div class="header">
     <div class="header-left">
-      <img class="logo-ecole" src="${logoUrl}" alt="École Secondaire Plurielle Maritime">
+      <img class="logo-ecole" src="${logoUrl}" alt="${ss.school_nom}">
 
     </div>
     <div class="header-right">
-      <div class="school-name">École Secondaire Plurielle Maritime</div>
+      <div class="school-name">${ss.school_nom}</div>
       <div class="school-addr">
-        Avenue Jean Dubrucq 175 · 1080 Molenbeek-Saint-Jean<br>
-        ${SCHOOL_IBAN !== '[IBAN — à configurer dans Netlify]' ? `IBAN : <strong>${esc(SCHOOL_IBAN)}</strong>` : ''}
+        ${ss.school_adresse_rue} · ${ss.school_adresse_cp} ${ss.school_adresse_ville}<br>
+        ${ss.school_iban ? `IBAN : <strong>${esc(ss.school_iban)}</strong>` : ''}
       </div>
     </div>
   </div>
@@ -235,7 +259,7 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
   <div class="sect">
     <h3>Informations de paiement</h3>
     <p><strong>Bénéficiaire&nbsp;:</strong> Pouvoir Organisateur Pluriel</p>
-    <p><strong>IBAN&nbsp;:</strong> <span class="mono">${esc(SCHOOL_IBAN)}</span></p>
+    <p><strong>IBAN&nbsp;:</strong> <span class="mono">${esc(ss.school_iban)}</span></p>
     <p><strong>Communication&nbsp;:</strong> <span class="comm">${esc(comm)}</span></p>
     <p><strong>Date limite&nbsp;:</strong> ${fmtDate(dateLimite)} (30 jours à dater de la facturation)</p>
   </div>
@@ -255,14 +279,14 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
   <!-- CONTACTS -->
   <div class="sect neutre">
     <h3>Nous contacter</h3>
-    <p>Les responsables légaux peuvent à tout moment contacter l'<strong>assistant social de l'école, Monsieur Mignolet</strong>, par Smartschool ou au <strong>${esc(SCHOOL_TEL_AS)}</strong> pour prendre un rendez-vous.</p>
-    <p>Pour toute précision concernant cette facture, prenez contact avec l'<strong>économe de l'école, Monsieur Lecocq</strong>, par Smartschool ou au <strong>${esc(SCHOOL_TEL_ECO)}</strong>.</p>
+    <p>Les responsables légaux peuvent à tout moment contacter l'<strong>assistant social de l'école, ${ss.school_nom_as}</strong>, par Smartschool ou au <strong>${esc(ss.school_tel_as)}</strong> pour prendre un rendez-vous.</p>
+    <p>Pour toute précision concernant cette facture, prenez contact avec l'<strong>économe de l'école, ${ss.school_nom_eco}</strong>, par Smartschool ou au <strong>${esc(ss.school_tel_eco)}</strong>.</p>
   </div>
 
   <!-- PIED DE PAGE -->
   </div><!-- /page-body -->
   <div class="footer">
-    ${esc(SCHOOL_EMAIL_ECO)} · ${esc(SCHOOL_TEL_ECO)}${SCHOOL_BCE ? ` — BCE N°&nbsp;${esc(SCHOOL_BCE)}` : ''} &nbsp;|&nbsp; Cette facture a été générée depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
+    ${esc(ss.school_email_eco)} · ${esc(ss.school_tel_eco)}${ss.school_bce ? ` — BCE N°&nbsp;${esc(ss.school_bce)}` : ''} &nbsp;|&nbsp; Cette facture a été générée depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
   </div>
 
 </div>

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { DemoProvider, useDemo } from './context/DemoContext'
+import { SettingsProvider, useSettings } from './contexts/SettingsContext'
 import Sidebar from './components/layout/Sidebar'
 import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
@@ -45,6 +46,7 @@ const DEMO_ROLES = [
 function Layout({ children }) {
   const { previewRole, setPreviewRole, role } = useAuth()
   const { demoMode, toggleDemo } = useDemo()
+  const { s } = useSettings()
 
   return (
     <div className="flex h-screen bg-surface overflow-hidden">
@@ -57,7 +59,7 @@ function Layout({ children }) {
           {children}
         </main>
         <footer className="px-6 py-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400 shrink-0">
-          <span>© 2026 École Secondaire Plurielle Maritime · v{__APP_VERSION__}</span>
+          <span>© 2026 {s('school_nom')} · v{__APP_VERSION__}</span>
           <Link to="/mentions-legales" className="hover:text-primary transition-colors">
             Mentions légales
           </Link>
@@ -149,11 +151,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <DemoProvider>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </DemoProvider>
+      <SettingsProvider>
+        <DemoProvider>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </DemoProvider>
+      </SettingsProvider>
     </BrowserRouter>
   )
 }

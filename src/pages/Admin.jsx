@@ -6,6 +6,7 @@ import { RefreshCw, UserPlus, Shield, Lock } from "lucide-react"
 import PageHeader from "../components/ui/PageHeader"
 import { useDemo } from "../context/DemoContext"
 import { FEATURES, ROLES, ROLE_META, FEATURE_GROUPS } from '../lib/permissions'
+import { useSettings } from '../contexts/SettingsContext'
 import MasterFilter from '../components/ui/MasterFilter'
 
 // ── Toggle de permission ──────────────────────────────────────────────────────
@@ -183,6 +184,7 @@ export default function Admin() {
         { key: 'helpdesk', label: 'Helpdesk' },
         { key: 'natures', label: 'Natures comptables' },
         { key: 'photos',  label: 'Photos élèves' },
+        { key: 'parametres', label: 'Paramètres école' },
       ]}
       activeTab={tab}
       onTabChange={t => { setTab(t); setUserSearch('') }}
@@ -702,6 +704,9 @@ export default function Admin() {
 
       {/* ── PHOTOS ÉLÈVES ────────────────────────────── */}
       {tab === 'photos' && <PhotosAdmin search={photosSearch} filters={photosFilters} onClassesReady={setPhotosClasses} />}
+
+      {/* ── PARAMÈTRES ÉCOLE ─────────────────────────── */}
+      {tab === 'parametres' && <ParametresEcole />}
     </div>
     </>
   )
@@ -1777,6 +1782,211 @@ function PhotosAdmin({ search, filters, onClassesReady }) {
           onSaved={(id, url) => setEleves(prev => prev.map(el => el.id === id ? { ...el, photo_url: url } : el))}
         />
       )}
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════
+// PARAMÈTRES ÉCOLE
+// ══════════════════════════════════════════════════════════
+
+const SETTINGS_DEFS = [
+  {
+    category: 'identite',
+    label: 'Identité de l\'école',
+    icon: '🏫',
+    fields: [
+      { key: 'school_nom',           label: 'Nom de l\'école',    type: 'text', placeholder: 'École Secondaire Plurielle Maritime' },
+      { key: 'school_adresse_rue',   label: 'Adresse (rue)',       type: 'text', placeholder: 'Avenue Jean Dubrucq 175' },
+      { key: 'school_adresse_cp',    label: 'Code postal',         type: 'text', placeholder: '1080', half: true },
+      { key: 'school_adresse_ville', label: 'Ville',               type: 'text', placeholder: 'Molenbeek-Saint-Jean', half: true },
+      { key: 'school_bce',           label: 'Numéro BCE / TVA',    type: 'text', placeholder: 'Optionnel' },
+    ],
+  },
+  {
+    category: 'contacts',
+    label: 'Contacts généraux',
+    icon: '📞',
+    fields: [
+      { key: 'school_email_general', label: 'E-mail général',      type: 'email', placeholder: 'info@espmaritime.be', half: true },
+      { key: 'school_tel_general',   label: 'Téléphone général',   type: 'text',  placeholder: '02/210.20.91', half: true },
+    ],
+  },
+  {
+    category: 'economat',
+    label: 'Économat',
+    icon: '💼',
+    fields: [
+      { key: 'school_nom_eco',       label: 'Nom de l\'économe',   type: 'text',  placeholder: 'Monsieur Lecocq' },
+      { key: 'school_email_eco',     label: 'E-mail économat',     type: 'email', placeholder: 'economat@espmaritime.be', half: true },
+      { key: 'school_tel_eco',       label: 'Téléphone économat',  type: 'text',  placeholder: '02/210.20.96', half: true },
+    ],
+  },
+  {
+    category: 'suivi_social',
+    label: 'Suivi social',
+    icon: '🤝',
+    fields: [
+      { key: 'school_nom_as',        label: 'Nom de l\'assistant social', type: 'text',  placeholder: 'Jérôme Mignolet' },
+      { key: 'school_email_as',      label: 'E-mail assistant social',    type: 'email', placeholder: 'as@espmaritime.be', half: true },
+      { key: 'school_tel_as',        label: 'Téléphone assistant social', type: 'text',  placeholder: '02/210.20.91', half: true },
+    ],
+  },
+  {
+    category: 'facturation',
+    label: 'Facturation',
+    icon: '🏦',
+    fields: [
+      { key: 'school_iban',          label: 'IBAN',                type: 'text',  placeholder: 'BE17 0910 2167 8721' },
+      { key: 'school_beneficiaire',  label: 'Bénéficiaire',        type: 'text',  placeholder: 'École Secondaire Plurielle Maritime' },
+    ],
+  },
+]
+
+function ParametresEcole() {
+  const { settings, reload } = useSettings()
+  const { supabase: sb } = { supabase } // utiliser l'import global
+  const [values, setValues]   = useState({})
+  const [dirty, setDirty]     = useState({})
+  const [saving, setSaving]   = useState(false)
+  const [saved, setSaved]     = useState(false)
+  const [logoFile, setLogoFile]   = useState(null)
+  const [logoPreview, setLogoPreview] = useState('')
+  const [logoUploading, setLogoUploading] = useState(false)
+  const logoRef = useRef()
+
+  // Initialiser les valeurs depuis le context
+  useEffect(() => {
+    const initial = {}
+    SETTINGS_DEFS.forEach(cat => cat.fields.forEach(f => {
+      initial[f.key] = settings[f.key] ?? ''
+    }))
+    setValues(initial)
+    setLogoPreview(settings.school_logo_url || '')
+  }, [settings])
+
+  const handleChange = (key, val) => {
+    setValues(prev => ({ ...prev, [key]: val }))
+    setDirty(prev => ({ ...prev, [key]: true }))
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    const toUpdate = Object.keys(dirty).filter(k => dirty[k])
+    const { error } = await supabase.from('app_settings')
+      .upsert(toUpdate.map(k => ({
+        key: k,
+        value: values[k],
+        label: SETTINGS_DEFS.flatMap(c => c.fields).find(f => f.key === k)?.label || k,
+        category: SETTINGS_DEFS.find(c => c.fields.some(f => f.key === k))?.category || 'autre',
+        updated_at: new Date().toISOString(),
+      })), { onConflict: 'key' })
+    if (!error) {
+      setDirty({})
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+      await reload()
+    }
+    setSaving(false)
+  }
+
+  const handleLogoSelect = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+    setDirty(prev => ({ ...prev, school_logo_url: true }))
+  }
+
+  const handleLogoUpload = async () => {
+    if (!logoFile) return
+    setLogoUploading(true)
+    const ext = logoFile.name.split('.').pop()
+    const path = `logo/logo-ecole.${ext}`
+    const { error: upErr } = await supabase.storage.from('eleve-photos').upload(path, logoFile, { upsert: true, contentType: logoFile.type })
+    if (!upErr) {
+      const { data: { publicUrl } } = supabase.storage.from('eleve-photos').getPublicUrl(path)
+      handleChange('school_logo_url', publicUrl)
+      setLogoFile(null)
+    }
+    setLogoUploading(false)
+  }
+
+  const hasDirty = Object.values(dirty).some(Boolean)
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-8 pb-12">
+
+      {/* Logo */}
+      <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span>🖼️</span> Logo de l'école
+        </h3>
+        <div className="flex items-center gap-6">
+          <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden bg-gray-50">
+            {logoPreview
+              ? <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-1" />
+              : <span className="text-gray-300 text-xs text-center">Aucun logo</span>
+            }
+          </div>
+          <div className="flex flex-col gap-2">
+            <input ref={logoRef} type="file" accept="image/svg+xml,image/png,image/jpeg" className="hidden" onChange={handleLogoSelect} />
+            <button onClick={() => logoRef.current.click()}
+              className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:border-gray-400 text-gray-700 transition-colors">
+              Choisir un fichier…
+            </button>
+            {logoFile && (
+              <button onClick={handleLogoUpload} disabled={logoUploading}
+                className="text-sm px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50">
+                {logoUploading ? 'Upload…' : 'Uploader le logo'}
+              </button>
+            )}
+            {values.school_logo_url && (
+              <button onClick={() => { handleChange('school_logo_url', ''); setLogoPreview('') }}
+                className="text-xs text-red-500 hover:text-red-700 transition-colors">
+                Supprimer (revenir au logo par défaut)
+              </button>
+            )}
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 mt-3">Format recommandé : SVG ou PNG transparent. Si vide, le fichier /logo-ecole.svg est utilisé.</p>
+      </div>
+
+      {/* Sections par catégorie */}
+      {SETTINGS_DEFS.map(cat => (
+        <div key={cat.category} className="bg-white rounded-xl border border-gray-100 p-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span>{cat.icon}</span> {cat.label}
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            {cat.fields.map(field => (
+              <div key={field.key} className={field.half ? 'col-span-1' : 'col-span-2'}>
+                <label className="block text-xs font-medium text-gray-600 mb-1">{field.label}</label>
+                <input
+                  type={field.type || 'text'}
+                  value={values[field.key] ?? ''}
+                  onChange={e => handleChange(field.key, e.target.value)}
+                  placeholder={field.placeholder}
+                  className={`w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors ${
+                    dirty[field.key] ? 'border-primary/50 bg-primary/5' : 'border-gray-200'
+                  }`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {/* Bouton de sauvegarde */}
+      <div className="flex items-center justify-between pt-2">
+        <p className="text-xs text-gray-400">Les modifications s'appliquent immédiatement sur le site et dans les prochains PDFs générés.</p>
+        <button onClick={handleSave} disabled={!hasDirty || saving}
+          className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            saved ? 'bg-green-500 text-white' : hasDirty ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+          }`}>
+          {saving ? 'Sauvegarde…' : saved ? '✓ Sauvegardé' : 'Sauvegarder'}
+        </button>
+      </div>
     </div>
   )
 }
