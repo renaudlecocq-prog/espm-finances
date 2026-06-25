@@ -1699,3 +1699,9 @@ git push origin main
 - `RequireAuth` : en mode aperçu, l'admin pouvait accéder à toute URL directement car `role === 'admin'` court-circuitait la vérification de feature
 - La garde s'applique désormais si `viewAsRole` est actif, même pour l'admin
 - URL directes bloquées en aperçu si la feature est désactivée pour le rôle simulé
+
+## [v0.83i] — 2026-06-25 — UX Compositions : cercle de sélection déplacé
+### Changed
+- Compositions : le cercle de sélection n'est plus positionné en absolu sur la photo
+- Cercle maintenant inline dans la rangée flex (avant la photo), taille `w-4 h-4`
+- État non sélectionné plus visible : `border-gray-400` + légère ombre intérieure au lieu de `border-gray-200`

@@ -157,11 +157,6 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
       ${selected ? 'border-indigo-400 shadow-md ring-2 ring-indigo-300/60'
         : isDragging ? 'border-indigo-200 shadow-lg opacity-80'
         : 'border-gray-100 shadow-sm hover:border-indigo-200 hover:shadow-md'}`}>
-      <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onSelect(eleve.id) }}
-        className={`absolute top-1.5 left-1.5 z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors
-          ${selected ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-gray-200 hover:border-indigo-300'}`}>
-        {selected && <Check size={11} className="text-white" strokeWidth={3} />}
-      </button>
       {linked && (
         <div className="absolute top-1.5 right-1.5 z-10 bg-violet-100 rounded-full p-0.5">
           <Link size={10} className="text-violet-500" />
@@ -169,6 +164,11 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
       )}
       <div className={`p-2.5 pt-2 w-full min-w-0 ${compact ? '' : 'pb-3'}`}>
         <div className="flex items-center gap-2">
+          <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onSelect(eleve.id) }}
+            className={`shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors
+              ${selected ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-gray-400 hover:border-indigo-400 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]'}`}>
+            {selected && <Check size={9} className="text-white" strokeWidth={3} />}
+          </button>
           {fields.photo && <ElevePhoto
               username={eleve.smartschool_username}
               internalNumber={eleve.smartschool_internal_number}
