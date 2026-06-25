@@ -1733,3 +1733,9 @@ git push origin main
 ## [v0.85b] — 2026-06-25 — Compositions : migration localStorage → Supabase
 ### Added
 - Bandeau de migration : si des projets existent en localStorage (ancienne version), un bouton "Importer" les insère en DB Supabase puis nettoie le localStorage
+
+## v0.86 — Compositions : collaboration temps réel (2026-06-25)
+- Abonnement Supabase Realtime sur le projet ouvert : les changements d'un utilisateur s'affichent chez les autres sans rechargement
+- Auto-save déclenché sur chaque modification (debounce 1,5 s) → propagation quasi-instantanée
+- Indicateur "En direct" (point animé) dans la barre du board quand le canal est actif
+- Désinscription propre du canal à la fermeture du projet ou au retour à la liste
