@@ -1669,23 +1669,33 @@ function ProjetsTab() {
   // ── Save projet ────────────────────────────────────────────────────────────
   const saveProjet = async (form) => {
     setSaving(true)
-    const payload = {
-      nom: form.nom, description: form.description || null,
-      annee: parseInt(form.annee), categories: form.categories,
-      cloture: form.cloture || false, created_by: profile?.id,
+    try {
+      const payload = {
+        nom: form.nom,
+        description: form.description || null,
+        annee: parseInt(form.annee, 10),
+        categories: form.categories || [],
+        cloture: form.cloture || false,
+        created_by: profile?.id || null,
+      }
+      let newId = form.id
+      if (form.id) {
+        const { error } = await supabase.from('comptable_projets').update(payload).eq('id', form.id)
+        if (error) throw error
+      } else {
+        const { data, error } = await supabase.from('comptable_projets').insert(payload).select('id').single()
+        if (error) throw error
+        newId = data?.id
+      }
+      setEditProjet(null)
+      setShowProjetModal(false)
+      await loadProjets()
+      if (newId) setProjetId(newId)
+    } catch (err) {
+      alert('Erreur lors de la sauvegarde : ' + (err.message || err))
+    } finally {
+      setSaving(false)
     }
-    let newId = form.id
-    if (form.id) {
-      await supabase.from('comptable_projets').update(payload).eq('id', form.id)
-    } else {
-      const { data } = await supabase.from('comptable_projets').insert(payload).select().single()
-      newId = data?.id
-    }
-    setSaving(false)
-    setEditProjet(null)
-    setShowProjetModal(false)
-    await loadProjets()
-    if (newId) setProjetId(newId)
   }
 
   const deleteProjet = async () => {
@@ -1700,21 +1710,28 @@ function ProjetsTab() {
   // ── Save ligne ─────────────────────────────────────────────────────────────
   const saveLigne = async (form) => {
     setSaving(true)
-    const payload = {
-      projet_id: projetId, date: form.date, intitule: form.intitule,
-      categorie: form.categorie || null,
-      entree: form.entree ? parseFloat(form.entree) : null,
-      sortie: form.sortie ? parseFloat(form.sortie) : null,
-      commentaire: form.commentaire || null,
+    try {
+      const payload = {
+        projet_id: projetId, date: form.date, intitule: form.intitule,
+        categorie: form.categorie || null,
+        entree: form.entree ? parseFloat(form.entree) : null,
+        sortie: form.sortie ? parseFloat(form.sortie) : null,
+        commentaire: form.commentaire || null,
+      }
+      if (form.id) {
+        const { error } = await supabase.from('comptable_projet_lignes').update(payload).eq('id', form.id)
+        if (error) throw error
+      } else {
+        const { error } = await supabase.from('comptable_projet_lignes').insert(payload)
+        if (error) throw error
+      }
+      setEditLigne(null)
+      loadLignes()
+    } catch (err) {
+      alert('Erreur : ' + (err.message || err))
+    } finally {
+      setSaving(false)
     }
-    if (form.id) {
-      await supabase.from('comptable_projet_lignes').update(payload).eq('id', form.id)
-    } else {
-      await supabase.from('comptable_projet_lignes').insert(payload)
-    }
-    setSaving(false)
-    setEditLigne(null)
-    loadLignes()
   }
 
   const deleteLigne = async (id) => {

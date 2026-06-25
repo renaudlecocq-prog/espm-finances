@@ -1447,3 +1447,9 @@ git push origin main
   - Clôture de projet (lecture seule une fois clôturé)
   - Saisie d'une ligne : si Entrée remplie → Sortie se vide automatiquement (et vice versa)
   - Deux nouvelles tables Supabase : `comptable_projets` + `comptable_projet_lignes` avec RLS admin
+
+## [Develop] 2026-06-25 — FIX Projets : schema DB + gestion erreurs
+
+### Corrections
+- Migration DB : ajout colonnes `description` et `cloture` sur `comptable_projets` (table créée dans une session antérieure avec des colonnes manquantes)
+- `saveProjet` et `saveLigne` : ajout try/catch avec message d'erreur visible — les erreurs Supabase étaient silencieuses
