@@ -110,7 +110,7 @@ export default function Admin() {
   }
 
   const loadUsers = useCallback(() =>
-    supabase.from('profiles').select('*').order('created_at').then(({ data }) => setUsers(data || []))
+    supabase.from('profiles').select('*').then(({ data }) => setUsers((data || []).sort((a,b) => (a.nom||'').localeCompare(b.nom||'', 'fr') || (a.prenom||'').localeCompare(b.prenom||'', 'fr'))))
   , [])
 
   const loadSyncLogs = useCallback(() =>

@@ -1849,3 +1849,9 @@ git push origin main
 - Table dense : avatar initiales coloré par rôle + Nom + Email fusionnés en une colonne
 - Ligne "X utilisateurs sur Y" en pied de tableau
 - Tri par rôle + recherche combinables
+
+## [v0.95a] — Admin Utilisateurs : tri alphabétique + dernière connexion
+
+- Utilisateurs triés par nom puis prénom (localeCompare fr)
+- FIX dernière connexion : trigger Supabase `on_auth_user_login` qui copie `auth.users.last_sign_in_at` → `profiles.last_connexion` à chaque login
+- Backfill appliqué sur les connexions existantes
