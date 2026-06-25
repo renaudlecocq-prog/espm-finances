@@ -166,15 +166,24 @@ export default async function handler(req) {
             .filter(Boolean)
         : []
 
-      // Aménagements raisonnables — chercher dans les champs libres Smartschool
-      // Les champs possibles : basisroltekst, vrij1..vrij8, ou un groupe préfixé "AR"
+      // Troubles attestés / Aménagements raisonnables — Smartschool stocke ceci dans :
+      // - groups préfixés "AR", "Trouble", "Dys", ou contenant "aménagement"
+      // - champs libres vrij1..vrij8 avec contenu non vide (tout est capturé)
+      // - champ leerstoornis / stoornis si présent dans la réponse API
       const arGroups = Array.isArray(a.groups)
-        ? a.groups.filter(g => /^AR\b|aménagement|amenagement|raisonnable/i.test(g.name || '')).map(g => g.name.trim())
+        ? a.groups
+            .filter(g => /^AR\b|^trouble|^dys|aménagement|amenagement|raisonnable|attesté|atteste|difficulté/i.test(g.name || ''))
+            .map(g => g.name.trim())
         : []
-      const arFreeField = [a.vrij1, a.vrij2, a.vrij3, a.vrij4, a.vrij5, a.vrij6, a.vrij7, a.vrij8]
-        .filter(v => v && /aménagement|amenagement|ar\b/i.test(String(v)))
+      // Capturer tous les champs vrij non vides (y compris Troubles attestés selon config école)
+      const freeFields = [a.vrij1, a.vrij2, a.vrij3, a.vrij4, a.vrij5, a.vrij6, a.vrij7, a.vrij8]
+        .filter(v => v && String(v).trim())
         .map(v => String(v).trim())
-      const amenagements_raisonnables = [...arGroups, ...arFreeField].join(', ') || null
+      // Champ spécifique Smartschool pour troubles d'apprentissage (noms API possibles)
+      const leerstoornis = [a.leerstoornis, a.stoornis, a.leerstoornis_attested, a.troubles_attestes]
+        .filter(v => v && String(v).trim())
+        .map(v => String(v).trim())
+      const amenagements_raisonnables = [...arGroups, ...freeFields, ...leerstoornis].join(', ') || null
 
       if (isEleve) {
         elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, groupes_ss, amenagements_raisonnables, actif: true })

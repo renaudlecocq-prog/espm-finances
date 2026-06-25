@@ -1537,3 +1537,23 @@ git push origin main
 - Feature `compositions` ajoutée dans `permissions.js`
 - Entrée sidebar (visible `isMdp`) avec icône dédiée
 - Route `/compositions` dans App.jsx (RequireAuth `mdp`)
+
+
+## [Develop] 2026-06-25 — Compositions v2 : fixes + nouvelles fonctionnalités
+
+### Corrections
+- **Photos** : `ElevePhoto` réécrit en `fetch POST` vers `smartschool-photo.mjs` (l'ancienne version faisait un GET invalide). Utilise `smartschool_username` au lieu de `internalNumber`. Cache en `sessionStorage` par username.
+- **Bug JSX** : structure `EleveCard` corrigée (balises mal imbriquées introduites lors du premier patch).
+
+### Nouvelles fonctionnalités — Configuration
+- **Sélection individuelle** : recherche par nom + clic pour exclure/réintégrer un élève spécifique dans la composition (indépendamment du filtre année/classe)
+- **Champs personnalisés** : créer des champs ad hoc (ex: "Langue maternelle") — les valeurs sont saisies directement sur les vignettes du board via un mini-champ inline
+
+### Nouvelles fonctionnalités — Vignettes
+- **RLMO** : nouveau champ affiché sur les vignettes (`philosophie` + `groupe_choix_philo`), badge vert, toggle activable/désactivable
+- **Troubles attestés** : renommé depuis "Aménagements raisonnables" ; badge orange + détail complet sous la vignette
+- **Champs personnalisés** : mini-inputs inline éditables directement sur la carte (clic sans déclencher le DnD)
+
+### Amélioration sync Smartschool
+- Détection "Troubles attestés" élargie : groupes préfixés "AR", "trouble", "dys", champs libres `vrij1`–`vrij8` non vides, et champs API `leerstoornis`/`stoornis` si présents
+- Requête Supabase enrichie : `smartschool_username`, `philosophie`, `groupe_choix_philo` ajoutés au SELECT

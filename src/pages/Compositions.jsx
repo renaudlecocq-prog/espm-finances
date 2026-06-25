@@ -25,7 +25,8 @@ const DEFAULT_FIELDS = {
   photo:       { label: 'Photo',                  enabled: true  },
   classe:      { label: 'Classe actuelle',         enabled: true  },
   groupes:     { label: 'Groupes Smartschool',     enabled: true  },
-  amenagements:{ label: 'Aménagements raisonnables', enabled: true },
+  troubles:     { label: 'Troubles attestés',        enabled: true },
+  rlmo:         { label: 'RLMO',                      enabled: true  },
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -38,40 +39,57 @@ const getAnneFromClasse = (classe) => {
   return m ? m[1] : null
 }
 
-// ── Composant photo avec lazy load ───────────────────────────────────────────
-function ElevePhoto({ internalNumber, size = 48 }) {
-  const [url, setUrl] = useState(null)
+// ── Composant photo avec lazy load (POST → smartschool-photo.mjs) ────────────
+function ElevePhoto({ username, size = 48 }) {
+  const [src, setSrc] = useState(null)
   const [err, setErr] = useState(false)
 
   useEffect(() => {
-    if (!internalNumber) { setErr(true); return }
-    const token = sessionStorage.getItem('ss_photo_token_' + internalNumber)
-    if (token) { setUrl(token); return }
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    if (!username) { setErr(true); return }
+    const cached = sessionStorage.getItem('ss_photo_' + username)
+    if (cached) { setSrc(cached === 'null' ? null : cached); if (cached === 'null') setErr(true); return }
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setErr(true); return }
-      const photoUrl = `/.netlify/functions/smartschool-photo?internalNumber=${internalNumber}&token=${encodeURIComponent(session.access_token)}`
-      setUrl(photoUrl)
-      sessionStorage.setItem('ss_photo_token_' + internalNumber, photoUrl)
+      try {
+        const res = await fetch('/.netlify/functions/smartschool-photo', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ username }),
+        })
+        const data = await res.json()
+        if (data.photo) {
+          setSrc(data.photo)
+          sessionStorage.setItem('ss_photo_' + username, data.photo)
+        } else {
+          setErr(true)
+          sessionStorage.setItem('ss_photo_' + username, 'null')
+        }
+      } catch { setErr(true) }
     })
-  }, [internalNumber])
+  }, [username])
 
   const sz = `${size}px`
-  if (err || !url) return (
+  if (err || !src) return (
     <div style={{ width: sz, height: sz }}
       className="rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500 font-bold text-xs shrink-0">
       ?
     </div>
   )
   return (
-    <img src={url} alt="" style={{ width: sz, height: sz }}
+    <img src={src} alt="" style={{ width: sz, height: sz }}
       className="rounded-full object-cover shrink-0 border-2 border-white shadow-sm"
       onError={() => setErr(true)} />
   )
 }
 
 // ── Vignette élève (petite, pour le board) ───────────────────────────────────
-function EleveCard({ eleve, fields, selected, onSelect, linked, isDragging = false }) {
-  const hasAR = eleve.amenagements_raisonnables && eleve.amenagements_raisonnables.trim()
+function EleveCard({ eleve, fields, customFields, onCustomFieldChange, selected, onSelect, linked, isDragging = false }) {
+  const hasAR = eleve.amenagements_raisonnables?.trim()
+  const rlmo = [eleve.philosophie, eleve.groupe_choix_philo].filter(Boolean).join(' ') || null
   const groupes = Array.isArray(eleve.groupes_ss) ? eleve.groupes_ss.filter(Boolean) : []
 
   return (
@@ -90,10 +108,7 @@ function EleveCard({ eleve, fields, selected, onSelect, linked, isDragging = fal
         onPointerDown={e => e.stopPropagation()}
         onClick={e => { e.stopPropagation(); onSelect(eleve.id) }}
         className={`absolute top-1.5 left-1.5 z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors
-          ${selected
-            ? 'bg-indigo-500 border-indigo-500'
-            : 'bg-white border-gray-200 hover:border-indigo-300'
-          }`}
+          ${selected ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-gray-200 hover:border-indigo-300'}`}
       >
         {selected && <Check size={11} className="text-white" strokeWidth={3} />}
       </button>
@@ -106,10 +121,11 @@ function EleveCard({ eleve, fields, selected, onSelect, linked, isDragging = fal
       )}
 
       <div className="p-3 pt-2">
+        {/* Header : photo + nom */}
         <div className="flex items-start gap-2.5">
           {fields.photo && (
             <div className="shrink-0 mt-0.5">
-              <ElevePhoto internalNumber={eleve.smartschool_internal_number} size={40} />
+              <ElevePhoto username={eleve.smartschool_username} size={40} />
             </div>
           )}
           <div className="min-w-0 flex-1">
@@ -123,15 +139,18 @@ function EleveCard({ eleve, fields, selected, onSelect, linked, isDragging = fal
                   {eleve.classe}
                 </span>
               )}
-              {fields.amenagements && hasAR && (
+              {fields.rlmo && rlmo && (
+                <span className="text-[10px] font-semibold bg-green-50 text-green-700 rounded px-1.5 py-0.5 truncate max-w-[90px]" title={rlmo}>
+                  {rlmo}
+                </span>
+              )}
+              {fields.troubles && hasAR && (
                 <span className="text-[10px] font-semibold bg-orange-50 text-orange-600 rounded px-1.5 py-0.5 flex items-center gap-0.5">
-                  <AlertTriangle size={9} /> AR
+                  <AlertTriangle size={9} /> Troubles
                 </span>
               )}
               {fields.groupes && groupes.slice(0, 2).map((g, i) => (
-                <span key={i} className="text-[10px] bg-gray-50 text-gray-500 rounded px-1.5 py-0.5 truncate max-w-[80px]">
-                  {g}
-                </span>
+                <span key={i} className="text-[10px] bg-gray-50 text-gray-500 rounded px-1.5 py-0.5 truncate max-w-[80px]">{g}</span>
               ))}
               {fields.groupes && groupes.length > 2 && (
                 <span className="text-[10px] text-gray-400">+{groupes.length - 2}</span>
@@ -140,18 +159,38 @@ function EleveCard({ eleve, fields, selected, onSelect, linked, isDragging = fal
           </div>
         </div>
 
-        {fields.amenagements && hasAR && (
+        {/* Troubles attestés détail */}
+        {fields.troubles && hasAR && (
           <div className="mt-2 text-[10px] text-orange-700 bg-orange-50 rounded px-2 py-1 leading-snug border border-orange-100">
             {eleve.amenagements_raisonnables}
           </div>
         )}
+
+        {/* Champs personnalisés */}
+        {customFields && customFields.map(cf => (
+          <div key={cf.id} className="mt-1.5">
+            <div
+              onPointerDown={e => e.stopPropagation()}
+              className="flex items-center gap-1.5"
+            >
+              <span className="text-[10px] text-gray-400 shrink-0">{cf.label}:</span>
+              <input
+                value={cf.values?.[eleve.id] || ''}
+                onChange={e => onCustomFieldChange?.(cf.id, eleve.id, e.target.value)}
+                onClick={e => e.stopPropagation()}
+                placeholder="—"
+                className="text-[10px] flex-1 min-w-0 border-b border-gray-200 bg-transparent focus:outline-none focus:border-indigo-400 text-gray-700"
+              />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
 }
 
 // ── Carte sortable (wrapper DnD) ──────────────────────────────────────────────
-function SortableEleveCard({ eleve, fields, selected, onSelect, linked, groupId, selectedIds }) {
+function SortableEleveCard({ eleve, fields, customFields, onCustomFieldChange, selected, onSelect, linked, groupId, selectedIds }) {
   const {
     attributes, listeners, setNodeRef, transform, transition, isDragging,
   } = useSortable({
@@ -171,6 +210,8 @@ function SortableEleveCard({ eleve, fields, selected, onSelect, linked, groupId,
       <EleveCard
         eleve={eleve}
         fields={fields}
+        customFields={customFields}
+        onCustomFieldChange={onCustomFieldChange}
         selected={selected}
         onSelect={onSelect}
         linked={linked}
@@ -181,7 +222,7 @@ function SortableEleveCard({ eleve, fields, selected, onSelect, linked, groupId,
 }
 
 // ── Colonne du board ──────────────────────────────────────────────────────────
-function GroupColumn({ group, eleves, fields, selectedIds, onSelect, linkedSets, onRename, onDelete, isPool }) {
+function GroupColumn({ group, eleves, fields, customFields, onCustomFieldChange, selectedIds, onSelect, linkedSets, onRename, onDelete, isPool }) {
   const { setNodeRef, isOver } = useDroppable({ id: group.id, data: { type: 'column', groupId: group.id } })
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(group.name)
@@ -257,6 +298,8 @@ function GroupColumn({ group, eleves, fields, selectedIds, onSelect, linkedSets,
               key={eleve.id}
               eleve={eleve}
               fields={fields}
+              customFields={customFields}
+              onCustomFieldChange={onCustomFieldChange}
               selected={selectedIds.has(eleve.id)}
               onSelect={onSelect}
               linked={isLinked(eleve.id)}
@@ -291,9 +334,13 @@ export default function Compositions() {
   // ── Config ─────────────────────────────────────────────────────────────────
   const [selectedAnnees, setSelectedAnnees] = useState([])
   const [selectedClasses, setSelectedClasses] = useState([])
+  const [excludedIds, setExcludedIds] = useState(new Set()) // élèves exclus individuellement
   const [fields, setFields] = useState(DEFAULT_FIELDS)
   const [compositionName, setCompositionName] = useState('Nouvelle composition')
   const [customFields, setCustomFields] = useState([]) // { id, label, values: {eleveId: val} }
+  const [newCustomLabel, setNewCustomLabel] = useState('')
+  const [eleveSearch, setEleveSearch] = useState('')
+  const [editingCustomField, setEditingCustomField] = useState(null) // id du champ en cours d'édition
 
   // ── Board ──────────────────────────────────────────────────────────────────
   const [groups, setGroups] = useState([])    // [{ id, name }]
@@ -320,15 +367,19 @@ export default function Compositions() {
     if (selectedClasses.length > 0) {
       list = list.filter(e => selectedClasses.includes(e.classe))
     }
+    // Exclure les élèves désélectionnés individuellement
+    if (excludedIds.size > 0) {
+      list = list.filter(e => !excludedIds.has(e.id))
+    }
     return list
-  }, [allEleves, selectedAnnees, selectedClasses])
+  }, [allEleves, selectedAnnees, selectedClasses, excludedIds])
 
   // ── Charger les élèves ─────────────────────────────────────────────────────
   const loadEleves = useCallback(async () => {
     setLoading(true)
     const { data } = await supabase
       .from('eleves')
-      .select('id, nom, prenom, classe, smartschool_internal_number, groupes_ss, amenagements_raisonnables')
+      .select('id, nom, prenom, classe, smartschool_username, smartschool_internal_number, groupes_ss, amenagements_raisonnables, philosophie, groupe_choix_philo')
       .eq('actif', true)
       .order('nom')
     setAllEleves(data || [])
@@ -430,6 +481,12 @@ export default function Compositions() {
   }
 
   // ── Lier/délier la sélection ───────────────────────────────────────────────
+  const handleCustomFieldChange = useCallback((fieldId, eleveId, value) => {
+    setCustomFields(prev => prev.map(cf =>
+      cf.id === fieldId ? { ...cf, values: { ...cf.values, [eleveId]: value } } : cf
+    ))
+  }, [])
+
   const linkSelection = () => {
     if (selectedIds.size < 2) return
     const newSet = new Set(selectedIds)
@@ -467,10 +524,12 @@ export default function Compositions() {
       date: new Date().toISOString(),
       selectedAnnees,
       selectedClasses,
+      excludedIds: [...excludedIds],
       fields: Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v.enabled])),
       groups,
       assignments,
       linkedSets: linkedSets.map(s => [...s]),
+      customFields,
     }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
@@ -490,12 +549,14 @@ export default function Compositions() {
         if (data.name)            setCompositionName(data.name)
         if (data.selectedAnnees) setSelectedAnnees(data.selectedAnnees)
         if (data.selectedClasses) setSelectedClasses(data.selectedClasses)
+        if (data.excludedIds) setExcludedIds(new Set(data.excludedIds))
         if (data.fields)          setFields(prev => Object.fromEntries(
           Object.entries(prev).map(([k, v]) => [k, { ...v, enabled: data.fields[k] ?? v.enabled }])
         ))
         if (data.groups)          setGroups(data.groups)
         if (data.assignments)     setAssignments(data.assignments)
         if (data.linkedSets)      setLinkedSets(data.linkedSets.map(s => new Set(s)))
+        if (data.customFields)    setCustomFields(data.customFields)
       } catch { alert('Fichier JSON invalide') }
     }
     reader.readAsText(file)
@@ -672,6 +733,105 @@ export default function Compositions() {
             </div>
           </div>
 
+          {/* Sélection individuelle d'élèves */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700">Sélection individuelle</h3>
+              {excludedIds.size > 0 && (
+                <button onClick={() => setExcludedIds(new Set())}
+                  className="text-xs text-red-400 hover:text-red-600">
+                  Réintégrer tous ({excludedIds.size})
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 mb-3">Cliquer sur un élève pour l'exclure / le réintégrer dans la composition.</p>
+            <input
+              value={eleveSearch}
+              onChange={e => setEleveSearch(e.target.value)}
+              placeholder="Rechercher un élève…"
+              className="w-full max-w-xs text-xs border border-gray-200 rounded-lg px-3 py-1.5 mb-3 focus:outline-none focus:border-indigo-400"
+            />
+            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+              {allEleves
+                .filter(e => !eleveSearch || `${e.nom} ${e.prenom}`.toLowerCase().includes(eleveSearch.toLowerCase()))
+                .map(e => {
+                  // Hors filtre courant = grisé mais non exclu
+                  const inFilter = filteredEleves.some(f => f.id === e.id) || excludedIds.has(e.id)
+                  const excluded = excludedIds.has(e.id)
+                  return (
+                    <button key={e.id}
+                      onClick={() => setExcludedIds(prev => {
+                        const next = new Set(prev)
+                        if (next.has(e.id)) next.delete(e.id)
+                        else next.add(e.id)
+                        return next
+                      })}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors border ${
+                        excluded
+                          ? 'bg-red-50 border-red-200 text-red-500 line-through'
+                          : !inFilter
+                            ? 'bg-gray-50 border-gray-100 text-gray-300'
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-indigo-300'
+                      }`}
+                    >
+                      {excluded && <X size={10} />}
+                      {e.nom} {e.prenom}
+                      {e.classe && <span className="text-gray-400 ml-0.5">· {e.classe}</span>}
+                    </button>
+                  )
+                })
+              }
+            </div>
+          </div>
+
+          {/* Champs personnalisés */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-700">Champs personnalisés</h3>
+            </div>
+            <div className="flex gap-2 mb-4">
+              <input
+                value={newCustomLabel}
+                onChange={e => setNewCustomLabel(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && newCustomLabel.trim()) {
+                    setCustomFields(prev => [...prev, { id: 'cf_' + Date.now(), label: newCustomLabel.trim(), values: {} }])
+                    setNewCustomLabel('')
+                  }
+                }}
+                placeholder="Nom du champ (ex: Langue maternelle)"
+                className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
+              />
+              <button
+                onClick={() => {
+                  if (!newCustomLabel.trim()) return
+                  setCustomFields(prev => [...prev, { id: 'cf_' + Date.now(), label: newCustomLabel.trim(), values: {} }])
+                  setNewCustomLabel('')
+                }}
+                className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700">
+                <Plus size={13} /> Ajouter
+              </button>
+            </div>
+            {customFields.length === 0 ? (
+              <p className="text-sm text-gray-400">Aucun champ personnalisé — les valeurs peuvent être remplies sur les vignettes du board.</p>
+            ) : (
+              <div className="space-y-2">
+                {customFields.map(cf => (
+                  <div key={cf.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-700">{cf.label}</span>
+                      <span className="text-xs text-gray-400">{Object.values(cf.values).filter(Boolean).length} valeur{Object.values(cf.values).filter(Boolean).length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <button onClick={() => setCustomFields(prev => prev.filter(f => f.id !== cf.id))}
+                      className="text-gray-300 hover:text-red-400">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Groupes cibles */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5">
             <div className="flex items-center justify-between mb-4">
@@ -750,6 +910,8 @@ export default function Compositions() {
                     group={col}
                     eleves={getGroupEleves(col.id)}
                     fields={enabledFields}
+                    customFields={customFields}
+                    onCustomFieldChange={handleCustomFieldChange}
                     selectedIds={selectedIds}
                     onSelect={toggleSelect}
                     linkedSets={linkedSets}
@@ -776,6 +938,8 @@ export default function Compositions() {
                     <EleveCard
                       eleve={dragging}
                       fields={enabledFields}
+                      customFields={customFields}
+                      onCustomFieldChange={() => {}}
                       selected={selectedIds.has(dragging.id)}
                       onSelect={() => {}}
                       linked={isLinked(dragging.id)}
