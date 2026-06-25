@@ -1840,3 +1840,12 @@ git push origin main
 - Compteur "X / Y élèves avec photo" dans le header
 - Filtres locaux : "Tous" / "Avec photo" / "Sans photo"
 - Cumul avec le filtre Classe du PageHeader
+
+## [v0.95] — Admin Utilisateurs — interface compacte
+
+- Recherche dans le PageHeader (comme les autres pages)
+- Bouton "+ Inviter" déplacé dans le PageHeader
+- Chips de filtre par rôle (Tous / Admin / Financier / MdP / Responsable) avec compteur
+- Table dense : avatar initiales coloré par rôle + Nom + Email fusionnés en une colonne
+- Ligne "X utilisateurs sur Y" en pied de tableau
+- Tri par rôle + recherche combinables

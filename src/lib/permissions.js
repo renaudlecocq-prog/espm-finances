@@ -29,8 +29,8 @@ export const FEATURE_GROUPS = [...new Set(FEATURES.map(f => f.group))]
 export const ROLES = ['admin', 'financier', 'mdp', 'responsable']
 
 export const ROLE_META = {
-  admin:       { label: 'Admin',       color: 'bg-red-100 text-red-700 border border-red-200',       desc: 'Accès total — gestion des utilisateurs, toutes les données.' },
-  financier:   { label: 'Financier',   color: 'bg-blue-100 text-blue-700 border border-blue-200',    desc: 'Accès financier complet — factures, paiements, élèves, organismes.' },
-  mdp:         { label: 'MdP',         color: 'bg-green-100 text-green-700 border border-green-200', desc: 'Membres du personnel — activités et helpdesk.' },
-  responsable: { label: 'Responsable', color: 'bg-gray-100 text-gray-600 border border-gray-200',    desc: 'Parents / élèves majeurs — tableau de bord enfants uniquement.' },
+  admin:       { label: 'Admin',       color: 'bg-red-100 text-red-700 border border-red-200',       desc: 'Accès total — gestion des utilisateurs, toutes les données.',          dot: 'bg-red-500',    avatarBg: '#ef4444' },
+  financier:   { label: 'Financier',   color: 'bg-blue-100 text-blue-700 border border-blue-200',    desc: 'Accès financier complet — factures, paiements, élèves, organismes.',   dot: 'bg-blue-500',   avatarBg: '#3b82f6' },
+  mdp:         { label: 'MdP',         color: 'bg-green-100 text-green-700 border border-green-200', desc: 'Membres du personnel — activités et helpdesk.',                         dot: 'bg-green-500',  avatarBg: '#22c55e' },
+  responsable: { label: 'Responsable', color: 'bg-gray-100 text-gray-600 border border-gray-200',    desc: 'Parents / élèves majeurs — tableau de bord enfants uniquement.',       dot: 'bg-gray-400',   avatarBg: '#9ca3af' },
 }

@@ -53,6 +53,7 @@ export default function Admin() {
   const [inviteRole, setInviteRole]   = useState('mdp')
   const [inviteMsg, setInviteMsg]     = useState('')
   const [roleFilter, setRoleFilter]   = useState(null)
+  const [userSearch, setUserSearch]   = useState('')
   // ── État permissions ─────────────────────────────────────────────────────
   const [rolePermsData,   setRolePermsData]   = useState([])
   const [userOverrides,   setUserOverrides]   = useState([])
@@ -184,10 +185,16 @@ export default function Admin() {
         { key: 'photos',  label: 'Photos élèves' },
       ]}
       activeTab={tab}
-      onTabChange={setTab}
-      search={tab === 'photos' ? photosSearch : undefined}
-      onSearch={tab === 'photos' ? setPhotosSearch : undefined}
-      searchPlaceholder="Rechercher un élève…"
+      onTabChange={t => { setTab(t); setUserSearch('') }}
+      search={tab === 'photos' ? photosSearch : tab === 'utilisateurs' ? userSearch : undefined}
+      onSearch={tab === 'photos' ? setPhotosSearch : tab === 'utilisateurs' ? setUserSearch : undefined}
+      searchPlaceholder={tab === 'photos' ? 'Rechercher un élève…' : 'Rechercher un utilisateur…'}
+      actions={tab === 'utilisateurs' ? (
+        <button onClick={() => setInviteModal(true)}
+          className="btn-primary flex items-center gap-2 text-sm py-1.5 px-3">
+          <UserPlus size={15} /> + Inviter
+        </button>
+      ) : null}
       filters={tab === 'photos' && photosClasses.length > 0 ? (
         <MasterFilter
           filterDefs={[{ key: 'classe', label: 'Classe', options: photosClasses }]}
@@ -207,73 +214,86 @@ export default function Admin() {
     <div className="p-6 max-w-screen-xl mx-auto">
 
       {/* ── UTILISATEURS ─────────────────────────────── */}
-      {tab === 'utilisateurs' && (
-        <div className="space-y-6">
+      {tab === 'utilisateurs' && (() => {
+        const q = userSearch.toLowerCase().trim()
+        const displayed = users.filter(u => {
+          if (roleFilter && u.role !== roleFilter) return false
+          if (!q) return true
+          return (u.email || '').toLowerCase().includes(q)
+            || (u.nom || '').toLowerCase().includes(q)
+            || (u.prenom || '').toLowerCase().includes(q)
+        })
+        return (
+        <div className="space-y-4">
 
-          {/* Role cards — cliquables pour filtrer */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Chips rôles — compacts */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <button onClick={() => setRoleFilter(null)}
+              className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                !roleFilter ? 'bg-gray-800 text-white border-gray-800' : 'border-gray-200 text-gray-500 hover:border-gray-400'
+              }`}>
+              Tous <span className="ml-1 opacity-70">{users.length}</span>
+            </button>
             {ROLES.map(r => {
               const m = ROLE_META[r]
+              const n = countByRole(r)
               const active = roleFilter === r
               return (
                 <button key={r} onClick={() => setRoleFilter(active ? null : r)}
-                  className={`card p-4 text-left transition-all ${active ? 'ring-2 ring-primary shadow-md' : 'hover:shadow-sm'}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${m.color}`}>{m.label}</span>
-                    <span className="text-2xl font-bold text-primary">{countByRole(r)}</span>
-                  </div>
-                  <p className="text-xs text-gray-400 leading-snug">{m.desc}</p>
-                  {active && <p className="text-xs text-primary font-semibold mt-1">▲ filtre actif</p>}
+                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors flex items-center gap-1.5 ${
+                    active ? 'bg-gray-800 text-white border-gray-800' : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                  }`}>
+                  <span className={`w-2 h-2 rounded-full ${active ? 'bg-white' : m.dot}`} />
+                  {m.label}
+                  <span className={`${active ? 'opacity-70' : 'text-gray-400'}`}>{n}</span>
                 </button>
               )
             })}
           </div>
 
-          {/* Users table */}
-          <div className="card p-0">
-            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="font-semibold text-gray-700">
-                {roleFilter
-                  ? <>Utilisateurs — <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ROLE_META[roleFilter].color}`}>{ROLE_META[roleFilter].label}</span> ({users.filter(u => u.role === roleFilter).length})</>
-                  : <>Tous les utilisateurs ({users.length})</>}
-              </h2>
-              <button onClick={() => setInviteModal(true)}
-                className="btn-primary flex items-center gap-2 text-sm py-1.5 px-3">
-                <UserPlus size={15} /> + Inviter
-              </button>
-            </div>
+          {/* Table dense */}
+          <div className="card p-0 overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  {['Email','Nom','Rôle','Dernière connexion','Changer le rôle'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
-                  ))}
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Utilisateur</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Rôle</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Dernière connexion</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Changer le rôle</th>
                 </tr>
               </thead>
               <tbody>
-                {(roleFilter ? users.filter(u => u.role === roleFilter) : users).length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">Aucun utilisateur</td></tr>
-                ) : (roleFilter ? users.filter(u => u.role === roleFilter) : users).map(u => {
+                {displayed.length === 0 ? (
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">Aucun utilisateur</td></tr>
+                ) : displayed.map(u => {
                   const m = ROLE_META[u.role] || ROLE_META.responsable
+                  const nom = [u.prenom, u.nom].filter(Boolean).join(' ')
+                  const initiales = [(u.prenom||'')[0], (u.nom||'')[0]].filter(Boolean).join('').toUpperCase() || '?'
                   return (
-                    <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-700">
-                        {u.email}
-                        {u.role === 'admin' && myRole === 'admin' && (
-                          <span className="ml-1 text-xs text-gray-400">(vous)</span>
-                        )}
+                    <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white`}
+                            style={{background: m.avatarBg || '#6366f1'}}>
+                            {initiales}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-medium text-gray-800 truncate">
+                              {nom || '—'}
+                              {u.id === user?.id && <span className="ml-1.5 text-[10px] text-gray-400 font-normal">(vous)</span>}
+                            </div>
+                            <div className="text-xs text-gray-400 truncate">{u.email}</div>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 font-medium text-gray-800">
-                        {[u.nom, u.prenom].filter(Boolean).join(' ') || '—'}
-                      </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-2">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${m.color}`}>{m.label}</span>
                       </td>
-                      <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
+                      <td className="px-4 py-2 text-gray-400 text-xs whitespace-nowrap">
                         {u.last_connexion ? new Date(u.last_connexion).toLocaleString('fr-BE', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'}
                       </td>
-                      <td className="px-4 py-3">
-                        <select className="input text-sm max-w-[140px] py-1"
+                      <td className="px-4 py-2">
+                        <select className="input text-xs max-w-[130px] py-1"
                           value={u.role || ''} onChange={e => updateRole(u.id, e.target.value)}>
                           {ROLES.map(r => <option key={r} value={r}>{ROLE_META[r].label}</option>)}
                         </select>
@@ -283,9 +303,16 @@ export default function Admin() {
                 })}
               </tbody>
             </table>
+            {displayed.length > 0 && (
+              <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-50 bg-gray-50/50">
+                {displayed.length} utilisateur{displayed.length > 1 ? 's' : ''}
+                {(roleFilter || userSearch) ? ` sur ${users.length}` : ''}
+              </div>
+            )}
           </div>
         </div>
-      )}
+        )
+      })()}
 
       {/* ── DROITS ───────────────────────────────────── */}
       {tab === 'droits' && (
