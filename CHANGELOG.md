@@ -1637,3 +1637,11 @@ git push origin main
 
 **Sync sexe féminin :**
 - `smartschool-sync.mjs` : ajout de `geslacht === 'f'` comme alias pour féminin (en plus de `'v'`) — corrige les 350 filles sans sexe en DB
+
+## [Develop] 2026-06-25 — Compositions — Exclusion/inclusion individuelle d'élèves
+
+**Nouvelle UI dans la section "Source — Élèves" de la configuration :**
+- **Exclure un élève** (rouge) : champ de recherche → clic pour exclure → chip rouge avec ✕ pour retirer. Un élève exclu est retiré de la sélection filtrée même s'il correspondrait aux filtres.
+- **Ajouter un élève hors filtre** (vert) : champ de recherche → clic pour inclure → chip vert avec ✕ pour retirer. Un élève ajouté apparaît dans le board même s'il ne correspond pas aux filtres.
+- Compteur mis à jour : "+N ajouté(s)" en vert / "−N exclus" en rouge à côté du total
+- `includedIds` et `excludedIds` persistés dans localStorage et dans l'export JSON

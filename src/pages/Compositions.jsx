@@ -14,7 +14,7 @@ import {
   LayoutGrid, Plus, Trash2, Download, Upload, X, AlertTriangle,
   RefreshCw, Users, Link, Unlink, Check, FolderOpen, Settings,
   Maximize2, Minimize2, Search, ArrowLeft, Calendar, ChevronRight,
-  FileDown, FileUp, Table2,
+  FileDown, FileUp, Table2, PlusCircle, MinusCircle, CheckCircle2,
 } from 'lucide-react'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -222,10 +222,12 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
 
 // ── ConfigForm (réutilisé dans Create + Config modal) ─────────────────────────
 function ConfigForm({ allEleves, loading, onReload, filters, setFilters, excludedIds, setExcludedIds,
+    includedIds, setIncludedIds,
     fields, setFields, customFields, setCustomFields, compositionName, setCompositionName, showName = true,
     onExport, onImport }) {
 
   const [eleveSearch, setEleveSearch]   = useState('')
+  const [includeSearch, setIncludeSearch] = useState('')
   const [newCFLabel, setNewCFLabel]     = useState('')
 
   const availableClasses = useMemo(() =>
@@ -257,8 +259,11 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
         return matchAnnee || matchClasse
       })
     }
-    return list.filter(e => !excludedIds.has(e.id)).length
-  }, [allEleves, filters, excludedIds])
+    const baseIds = new Set(list.map(e => e.id))
+    return allEleves.filter(e =>
+      includedIds.has(e.id) || (baseIds.has(e.id) && !excludedIds.has(e.id))
+    ).length
+  }, [allEleves, filters, excludedIds, includedIds])
 
   const addCustomField = () => {
     if (!newCFLabel.trim()) return
@@ -286,36 +291,116 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
             <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
-        <div className="flex items-center gap-2 mb-2">
+
+        {/* Filtres */}
+        <div className="mb-2">
           <MasterFilter filters={filters} filterDefs={filterDefs} onChange={toggleFilter} onClearAll={() => setFilters({})} />
-          <div className="relative flex-1">
+        </div>
+
+        {/* Exclure */}
+        <div className="mb-2">
+          <div className="flex items-center gap-1.5 mb-1">
+            <MinusCircle size={11} className="text-red-400" />
+            <span className="text-xs font-medium text-gray-500">Exclure un élève</span>
+            {excludedIds.size > 0 && (
+              <button onClick={() => setExcludedIds(new Set())}
+                className="ml-auto text-xs text-red-400 hover:text-red-600">Tout retirer</button>
+            )}
+          </div>
+          <div className="relative">
             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={eleveSearch} onChange={e => setEleveSearch(e.target.value)}
-              placeholder="Exclure un élève…"
-              className="w-full text-xs border border-gray-200 rounded-lg pl-7 pr-3 py-1.5 focus:outline-none focus:border-indigo-400" />
+              placeholder="Rechercher un élève à exclure…"
+              className="w-full text-xs border border-gray-200 rounded-lg pl-7 pr-3 py-1.5 focus:outline-none focus:border-red-300" />
           </div>
+          {/* Résultats recherche exclusion */}
+          {eleveSearch && (
+            <div className="flex flex-wrap gap-1 mt-1.5 max-h-24 overflow-y-auto">
+              {allEleves.filter(e =>
+                `${e.nom} ${e.prenom}`.toLowerCase().includes(eleveSearch.toLowerCase()) && !includedIds.has(e.id)
+              ).slice(0, 20).map(e => (
+                <button key={e.id} onClick={() => {
+                  setExcludedIds(prev => { const n = new Set(prev); n.has(e.id) ? n.delete(e.id) : n.add(e.id); return n })
+                  setEleveSearch('')
+                }}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs border transition-colors
+                    ${excludedIds.has(e.id) ? 'bg-red-50 border-red-200 text-red-500' : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-red-300 hover:bg-red-50'}`}>
+                  {excludedIds.has(e.id) ? <CheckCircle2 size={9} className="text-red-400" /> : <MinusCircle size={9} className="text-gray-300" />}
+                  {e.nom} {e.prenom} <span className="text-gray-400">· {e.classe}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Chips exclus actifs */}
           {excludedIds.size > 0 && (
-            <button onClick={() => setExcludedIds(new Set())} className="text-xs text-red-400 hover:text-red-600 shrink-0">
-              ✕ {excludedIds.size}
-            </button>
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {allEleves.filter(e => excludedIds.has(e.id)).map(e => (
+                <span key={e.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-red-50 border border-red-200 text-red-600">
+                  {e.nom} {e.prenom} · {e.classe}
+                  <button onClick={() => setExcludedIds(prev => { const n = new Set(prev); n.delete(e.id); return n })}
+                    className="ml-0.5 hover:text-red-800"><X size={9} /></button>
+                </span>
+              ))}
+            </div>
           )}
         </div>
-        {eleveSearch && (
-          <div className="flex flex-wrap gap-1 mb-2 max-h-28 overflow-y-auto">
-            {allEleves.filter(e => `${e.nom} ${e.prenom}`.toLowerCase().includes(eleveSearch.toLowerCase())).slice(0, 25).map(e => (
-              <button key={e.id} onClick={() => setExcludedIds(prev => { const n = new Set(prev); n.has(e.id) ? n.delete(e.id) : n.add(e.id); return n })}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs border transition-colors
-                  ${excludedIds.has(e.id) ? 'bg-red-50 border-red-200 text-red-500 line-through' : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-indigo-300'}`}>
-                {excludedIds.has(e.id) && <X size={8} />}
-                {e.nom} {e.prenom} {e.classe && <span className="text-gray-400">· {e.classe}</span>}
-              </button>
-            ))}
+
+        {/* Ajouter hors filtre */}
+        <div className="mb-2">
+          <div className="flex items-center gap-1.5 mb-1">
+            <PlusCircle size={11} className="text-emerald-500" />
+            <span className="text-xs font-medium text-gray-500">Ajouter un élève hors filtre</span>
+            {includedIds.size > 0 && (
+              <button onClick={() => setIncludedIds(new Set())}
+                className="ml-auto text-xs text-emerald-600 hover:text-emerald-800">Tout retirer</button>
+            )}
           </div>
-        )}
+          <div className="relative">
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input value={includeSearch} onChange={e => setIncludeSearch(e.target.value)}
+              placeholder="Rechercher un élève à ajouter…"
+              className="w-full text-xs border border-gray-200 rounded-lg pl-7 pr-3 py-1.5 focus:outline-none focus:border-emerald-300" />
+          </div>
+          {/* Résultats recherche inclusion */}
+          {includeSearch && (
+            <div className="flex flex-wrap gap-1 mt-1.5 max-h-24 overflow-y-auto">
+              {allEleves.filter(e =>
+                `${e.nom} ${e.prenom}`.toLowerCase().includes(includeSearch.toLowerCase()) && !excludedIds.has(e.id)
+              ).slice(0, 20).map(e => (
+                <button key={e.id} onClick={() => {
+                  setIncludedIds(prev => { const n = new Set(prev); n.has(e.id) ? n.delete(e.id) : n.add(e.id); return n })
+                  setIncludeSearch('')
+                }}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs border transition-colors
+                    ${includedIds.has(e.id) ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-emerald-300 hover:bg-emerald-50'}`}>
+                  {includedIds.has(e.id) ? <CheckCircle2 size={9} className="text-emerald-500" /> : <PlusCircle size={9} className="text-gray-300" />}
+                  {e.nom} {e.prenom} <span className="text-gray-400">· {e.classe}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Chips inclus actifs */}
+          {includedIds.size > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {allEleves.filter(e => includedIds.has(e.id)).map(e => (
+                <span key={e.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-50 border border-emerald-200 text-emerald-700">
+                  {e.nom} {e.prenom} · {e.classe}
+                  <button onClick={() => setIncludedIds(prev => { const n = new Set(prev); n.delete(e.id); return n })}
+                    className="ml-0.5 hover:text-emerald-900"><X size={9} /></button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Compteur */}
         <div className="flex items-center gap-1.5">
           <Users size={12} className="text-indigo-400" />
-          <span className="text-xs text-gray-600"><span className="font-bold text-indigo-600">{filteredCount}</span> élève{filteredCount !== 1 ? 's' : ''} sélectionné{filteredCount !== 1 ? 's' : ''}</span>
-          {!filters.annee?.length && !filters.classe?.length && <span className="text-xs text-gray-400">— tous les élèves actifs</span>}
+          <span className="text-xs text-gray-600">
+            <span className="font-bold text-indigo-600">{filteredCount}</span> élève{filteredCount !== 1 ? 's' : ''} sélectionné{filteredCount !== 1 ? 's' : ''}
+          </span>
+          {includedIds.size > 0 && <span className="text-xs text-emerald-600">+{includedIds.size} ajouté{includedIds.size > 1 ? 's' : ''}</span>}
+          {excludedIds.size > 0 && <span className="text-xs text-red-500">−{excludedIds.size} exclus</span>}
         </div>
       </div>
 
@@ -398,6 +483,7 @@ export default function Compositions() {
   const [compositionName, setCompositionName] = useState('Nouvelle composition')
   const [filters, setFilters]                 = useState({})
   const [excludedIds, setExcludedIds]         = useState(new Set())
+  const [includedIds, setIncludedIds]         = useState(new Set())
   const [fields, setFields]                   = useState(DEFAULT_FIELDS)
   const [customFields, setCustomFields]       = useState([])
 
@@ -424,6 +510,7 @@ export default function Compositions() {
   const [draftName,         setDraftName]         = useState('Nouvelle composition')
   const [draftFilters,      setDraftFilters]       = useState({})
   const [draftExcludedIds,  setDraftExcludedIds]   = useState(new Set())
+  const [draftIncludedIds,  setDraftIncludedIds]   = useState(new Set())
   const [draftFields,       setDraftFields]        = useState(DEFAULT_FIELDS)
   const [draftCustomFields, setDraftCustomFields]  = useState([])
 
@@ -451,8 +538,11 @@ export default function Compositions() {
         return matchAnnee || matchClasse
       })
     }
-    return list.filter(e => !excludedIds.has(e.id))
-  }, [allEleves, filters, excludedIds])
+    const baseIds = new Set(list.map(e => e.id))
+    return allEleves.filter(e =>
+      includedIds.has(e.id) || (baseIds.has(e.id) && !excludedIds.has(e.id))
+    )
+  }, [allEleves, filters, excludedIds, includedIds])
 
   // ── Sync assignments ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -625,6 +715,7 @@ export default function Compositions() {
     if (d.name)           setCompositionName(d.name)
     if (d.filters)        setFilters(d.filters)
     if (d.excludedIds)    setExcludedIds(new Set(d.excludedIds))
+    if (d.includedIds)    setIncludedIds(new Set(d.includedIds))
     if (d.fields)         setFields(prev => Object.fromEntries(
       Object.entries(prev).map(([k,v]) => [k, { ...v, enabled: d.fields[k] ?? v.enabled }])
     ))
@@ -649,7 +740,7 @@ export default function Compositions() {
   }
 
   const confirmCreate = () => {
-    setCompositionName(draftName); setFilters(draftFilters); setExcludedIds(draftExcludedIds)
+    setCompositionName(draftName); setFilters(draftFilters); setExcludedIds(draftExcludedIds); setIncludedIds(draftIncludedIds)
     setFields(draftFields); setCustomFields(draftCustomFields)
     setGroups([]); setAssignments({}); setLinkedSets([]); setSelectedIds(new Set())
     setShowCreateModal(false)
@@ -659,7 +750,7 @@ export default function Compositions() {
   // ── Import JSON ───────────────────────────────────────────────────────────
   const exportJSON = () => {
     const date = new Date().toISOString()
-    const data = { name: compositionName, date, filters, excludedIds: [...excludedIds],
+    const data = { name: compositionName, date, filters, excludedIds: [...excludedIds], includedIds: [...includedIds],
       fields: Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,v.enabled])),
       customFields, groups, assignments, linkedSets: linkedSets.map(s=>[...s]), cardMode }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -783,6 +874,7 @@ export default function Compositions() {
                 allEleves={allEleves} loading={loading} onReload={loadEleves}
                 filters={draftFilters} setFilters={setDraftFilters}
                 excludedIds={draftExcludedIds} setExcludedIds={setDraftExcludedIds}
+                includedIds={draftIncludedIds} setIncludedIds={setDraftIncludedIds}
                 fields={draftFields} setFields={setDraftFields}
                 customFields={draftCustomFields} setCustomFields={setDraftCustomFields}
                 compositionName={draftName} setCompositionName={setDraftName}
@@ -909,6 +1001,7 @@ export default function Compositions() {
                 allEleves={allEleves} loading={loading} onReload={loadEleves}
                 filters={filters} setFilters={setFilters}
                 excludedIds={excludedIds} setExcludedIds={setExcludedIds}
+                includedIds={includedIds} setIncludedIds={setIncludedIds}
                 fields={fields} setFields={setFields}
                 customFields={customFields} setCustomFields={setCustomFields}
                 compositionName={compositionName} setCompositionName={setCompositionName}
