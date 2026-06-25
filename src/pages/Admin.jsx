@@ -41,6 +41,9 @@ export default function Admin() {
   const { demoMode, toggleDemo } = useDemo()
   const [searchParams] = useSearchParams()
   const [tab, setTab]             = useState(searchParams.get('onglet') || 'utilisateurs')
+  const [photosSearch, setPhotosSearch]   = useState('')
+  const [photosFilters, setPhotosFilters] = useState({})
+  const [photosClasses, setPhotosClasses] = useState([])
   const [users, setUsers]         = useState([])
   const [syncLogs, setSyncLogs]   = useState([])
   const [loading, setLoading]     = useState(true)
@@ -182,6 +185,24 @@ export default function Admin() {
       ]}
       activeTab={tab}
       onTabChange={setTab}
+      search={tab === 'photos' ? photosSearch : undefined}
+      onSearch={tab === 'photos' ? setPhotosSearch : undefined}
+      searchPlaceholder="Rechercher un élève…"
+      filters={tab === 'photos' && photosClasses.length > 0 ? (
+        <MasterFilter
+          filterDefs={[{ key: 'classe', label: 'Classe', options: photosClasses }]}
+          filters={photosFilters}
+          onChange={(key, val) => setPhotosFilters(prev => {
+            const cur = Array.isArray(prev[key]) ? prev[key] : []
+            const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
+            return next.length === 0
+              ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key))
+              : { ...prev, [key]: next }
+          })}
+          onClearAll={() => setPhotosFilters({})}
+          dark
+        />
+      ) : null}
     />
     <div className="p-6 max-w-screen-xl mx-auto">
 
@@ -653,7 +674,7 @@ export default function Admin() {
       {tab === 'natures' && <NaturesAdmin />}
 
       {/* ── PHOTOS ÉLÈVES ────────────────────────────── */}
-      {tab === 'photos' && <PhotosAdmin />}
+      {tab === 'photos' && <PhotosAdmin search={photosSearch} filters={photosFilters} onClassesReady={setPhotosClasses} />}
     </div>
     </>
   )
@@ -1428,15 +1449,13 @@ function CropModal({ eleve, onClose, onSaved }) {
 // ══════════════════════════════════════════════════════════
 //  PhotosGrid — grille filtrée des photos importées
 // ══════════════════════════════════════════════════════════
-function PhotosGrid({ eleves, search, onSearchChange, filters, onFiltersChange, onCrop }) {
+function PhotosGrid({ eleves, search, filters, onCrop }) {
   const withPhotos = useMemo(() => eleves.filter(e => e.photo_url), [eleves])
-  const classes    = useMemo(() => [...new Set(withPhotos.map(e => e.classe).filter(Boolean))].sort(), [withPhotos])
-  const filterDefs = useMemo(() => [{ key: 'classe', label: 'Classe', options: classes }], [classes])
 
   const filtered = useMemo(() => {
     let d = withPhotos
-    if (search.trim()) d = d.filter(e => `${e.prenom} ${e.nom}`.toLowerCase().includes(search.toLowerCase()))
-    if (filters.classe?.length) d = d.filter(e => filters.classe.includes(e.classe))
+    if (search?.trim()) d = d.filter(e => `${e.prenom} ${e.nom}`.toLowerCase().includes(search.toLowerCase()))
+    if (filters?.classe?.length) d = d.filter(e => filters.classe.includes(e.classe))
     return d
   }, [withPhotos, search, filters])
 
@@ -1444,33 +1463,12 @@ function PhotosGrid({ eleves, search, onSearchChange, filters, onFiltersChange, 
 
   return (
     <div className="mt-8">
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3">
         <h4 className="font-semibold text-gray-700 text-sm">
           {filtered.length !== withPhotos.length
             ? `${filtered.length} / ${withPhotos.length} photos`
             : `${withPhotos.length} photos importées`}
         </h4>
-        <div className="flex items-center gap-2">
-          <MasterFilter
-            filterDefs={filterDefs}
-            filters={filters}
-            onChange={(key, val) => {
-              onFiltersChange(prev => {
-                const cur = Array.isArray(prev[key]) ? prev[key] : []
-                const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
-                return next.length === 0
-                  ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key))
-                  : { ...prev, [key]: next }
-              })
-            }}
-            onClearAll={() => onFiltersChange({})}
-          />
-          <input
-            type="text" placeholder="Rechercher…" value={search}
-            onChange={e => onSearchChange(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-44 outline-none focus:border-indigo-300"
-          />
-        </div>
       </div>
       <div className="grid grid-cols-6 gap-3">
         {filtered.map(e => (
@@ -1494,7 +1492,7 @@ function PhotosGrid({ eleves, search, onSearchChange, filters, onFiltersChange, 
 // ══════════════════════════════════════════════════════════
 //  Photos Admin — import en masse
 // ══════════════════════════════════════════════════════════
-function PhotosAdmin() {
+function PhotosAdmin({ search, filters, onClassesReady }) {
   const [eleves, setEleves]       = useState([])
   const [loading, setLoading]     = useState(true)
   const [dragging, setDragging]   = useState(false)
@@ -1502,8 +1500,6 @@ function PhotosAdmin() {
   const [progress, setProgress]   = useState(null)   // { done, total }
   const inputRef                  = useRef(null)
   const [cropEleve, setCropEleve] = useState(null)
-  const [gridSearch, setGridSearch] = useState('')
-  const [gridFilters, setGridFilters] = useState({})
 
   // Charger tous les élèves (id, username, internal_number)
   useEffect(() => {
@@ -1511,7 +1507,13 @@ function PhotosAdmin() {
       .from('eleves')
       .select('id, nom, prenom, classe, smartschool_username, smartschool_internal_number, photo_url')
       .eq('actif', true)
-      .then(({ data }) => { setEleves(data || []); setLoading(false) })
+      .then(({ data }) => {
+        const loaded = data || []
+        setEleves(loaded)
+        setLoading(false)
+        const classes = [...new Set(loaded.filter(e => e.photo_url && e.classe).map(e => e.classe))].sort()
+        if (onClassesReady) onClassesReady(classes)
+      })
   }, [])
 
   // Index de matching : internnumber → élève, username → élève
@@ -1667,10 +1669,8 @@ function PhotosAdmin() {
       {/* Grille des photos existantes */}
       <PhotosGrid
         eleves={eleves}
-        search={gridSearch}
-        onSearchChange={setGridSearch}
-        filters={gridFilters}
-        onFiltersChange={setGridFilters}
+        search={search}
+        filters={filters}
         onCrop={setCropEleve}
       />
 

@@ -1818,3 +1818,10 @@ git push origin main
 
 - FIX : MasterFilter appelle `onChange(key, val)` (2 args) mais on passait `setGridFilters` (setState direct) → les clics ne faisaient rien
 - FIX : handler correct avec toggle multi-sélection + `onClearAll`
+
+## [v0.94e] — Photos élèves : filtre + recherche dans le PageHeader
+
+- REFACTO : filtre "Classe" et champ recherche déplacés dans la barre PageHeader (fond sombre), identique à la page Élèves
+- États `search` et `filters` remontés au niveau Admin, passés en props à PhotosAdmin puis PhotosGrid
+- Callback `onClassesReady` pour synchroniser les classes disponibles vers Admin dès le chargement
+- PhotosGrid simplifié : ne gère plus sa propre toolbar
