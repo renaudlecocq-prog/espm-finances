@@ -24,6 +24,7 @@ const DEFAULT_FIELDS = {
   classe:   { label: 'Classe actuelle',   enabled: true },
   groupes:  { label: 'Groupes SS',        enabled: true },
   troubles: { label: 'Troubles attestés', enabled: true },
+  sexe:     { label: 'Sexe',               enabled: true },
 }
 
 const getAnneFromClasse = c => { const m = c?.match(/^(\d)/); return m ? m[1] : null }
@@ -93,6 +94,9 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
             {compact && fields.classe && eleve.classe && (
               <span className="text-[10px] text-blue-500 font-medium">{eleve.classe}</span>
             )}
+            {compact && fields.sexe && eleve.sexe && (
+              <span className={`text-[10px] font-bold ml-0.5 ${eleve.sexe === 'M' ? 'text-blue-400' : eleve.sexe === 'F' ? 'text-pink-400' : 'text-gray-400'}`}>{eleve.sexe}</span>
+            )}
           </div>
         </div>
         {!compact && (
@@ -100,6 +104,9 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
             <div className="flex flex-wrap gap-1 mt-2">
               {fields.classe && eleve.classe && (
                 <span className="text-[10px] font-semibold bg-blue-50 text-blue-600 rounded px-1.5 py-0.5">{eleve.classe}</span>
+              )}
+              {fields.sexe && eleve.sexe && (
+                <span className={`text-[10px] font-semibold rounded px-1.5 py-0.5 ${eleve.sexe === 'M' ? 'bg-blue-50 text-blue-500' : eleve.sexe === 'F' ? 'bg-pink-50 text-pink-500' : 'bg-gray-100 text-gray-500'}`}>{eleve.sexe === 'M' ? 'Garçon' : eleve.sexe === 'F' ? 'Fille' : eleve.sexe}</span>
               )}
               {fields.troubles && hasAR && (
                 <span className="text-[10px] font-semibold bg-orange-50 text-orange-600 rounded px-1.5 py-0.5 flex items-center gap-0.5">
@@ -395,7 +402,7 @@ export default function Compositions() {
   const loadEleves = useCallback(async () => {
     setLoading(true)
     const { data } = await supabase.from('eleves')
-      .select('id, nom, prenom, classe, smartschool_username, smartschool_internal_number, groupes_ss, amenagements_raisonnables, philosophie, groupe_choix_philo')
+      .select('id, nom, prenom, classe, sexe, smartschool_username, smartschool_internal_number, groupes_ss, amenagements_raisonnables, philosophie, groupe_choix_philo')
       .eq('actif', true).order('nom')
     setAllEleves(data || [])
     setLoading(false)

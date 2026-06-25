@@ -170,10 +170,14 @@ export default async function handler(req) {
       const t1 = String(a['Troubles attestés']               || '').trim()
       const t2 = String(a['Aménagements raisonnables']       || '').trim()
       const t3 = String(a['Difficultés sans troubles attestés'] || '').trim()
-      const amenagements_raisonnables = [t1, t2, t3].filter(Boolean).join(' — ') || null
+      const amenagements_raisonnables = [t1, t2, t3].filter(Boolean).join(" — ") || null
+
+      // Sexe — champ standard Smartschool (geslacht : m/v/x)
+      const geslacht = String(a.geslacht || a.sex || "").trim().toLowerCase()
+      const sexe = geslacht === "m" ? "M" : geslacht === "v" ? "F" : geslacht === "x" ? "X" : null
 
       if (isEleve) {
-        elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, groupes_ss, amenagements_raisonnables, actif: true })
+        elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, groupes_ss, amenagements_raisonnables, sexe, actif: true })
       } else {
         personnelRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, actif: true })
       }
