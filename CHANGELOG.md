@@ -1813,3 +1813,8 @@ git push origin main
 
 - FIX : grille extraite dans composant `PhotosGrid` avec `useMemo` — le filtre Classe fonctionne maintenant
 - ADD : compteur "X / Y photos" quand un filtre est actif
+
+## [v0.94d] — FIX filtre classe photos — signature onChange correcte
+
+- FIX : MasterFilter appelle `onChange(key, val)` (2 args) mais on passait `setGridFilters` (setState direct) → les clics ne faisaient rien
+- FIX : handler correct avec toggle multi-sélection + `onClearAll`

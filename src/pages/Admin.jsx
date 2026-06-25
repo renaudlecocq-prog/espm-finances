@@ -1451,7 +1451,20 @@ function PhotosGrid({ eleves, search, onSearchChange, filters, onFiltersChange, 
             : `${withPhotos.length} photos importées`}
         </h4>
         <div className="flex items-center gap-2">
-          <MasterFilter filterDefs={filterDefs} filters={filters} onChange={onFiltersChange} />
+          <MasterFilter
+            filterDefs={filterDefs}
+            filters={filters}
+            onChange={(key, val) => {
+              onFiltersChange(prev => {
+                const cur = Array.isArray(prev[key]) ? prev[key] : []
+                const next = cur.includes(val) ? cur.filter(v => v !== val) : [...cur, val]
+                return next.length === 0
+                  ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key))
+                  : { ...prev, [key]: next }
+              })
+            }}
+            onClearAll={() => onFiltersChange({})}
+          />
           <input
             type="text" placeholder="Rechercher…" value={search}
             onChange={e => onSearchChange(e.target.value)}
