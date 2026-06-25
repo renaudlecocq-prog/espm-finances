@@ -1919,3 +1919,12 @@ git push origin main
 - Admin.jsx : onglet "Conseils de guidance" — CRUD matières/compétences/personnes/statuts + éditeur de templates avec référence des variables
 - Sidebar + route /conseils-de-guidance
 - Installation : browser-image-compression (dépendance manquante Helpdesk)
+
+## [v1.01] — Améliorations module Conseils de guidance
+- Filtre de classes déplacé dans le panneau élèves (plus visible, plus ergonomique)
+- Suppression de l'aperçu "Prompt IA" sous le bouton copier
+- Bouton renommé "Copier le commentaire" (copie le commentaire brut, pas le prompt IA)
+- Templates enrichis : intégration de toutes les variables (TA, freins, forces, suivi, personnes ressource, suivi_mention) dans les 27 templates
+- buildVars enrichi : personne_ressource_1/2, suivi_mention, ta_note, suivi_raisons
+- Admin.jsx : réorganisation des onglets en 3 groupes (Personnes & accès / École / Modules) avec sous-navigation dynamique
+- Installation @dnd-kit/* manquant (dependency Compositions)

@@ -42,7 +42,7 @@ function renderTemplate(body, vars) {
   return out
 }
 
-function buildVars(encoding, subjects, competencies, eleve) {
+function buildVars(encoding, subjects, competencies, eleve, resourcePersons = []) {
   const sexe = eleve?.sexe || 'X'
   const il_elle   = sexe === 'F' ? 'elle' : 'il'
   const Il_Elle   = sexe === 'F' ? 'Elle' : 'Il'
@@ -63,6 +63,16 @@ function buildVars(encoding, subjects, competencies, eleve) {
     return arr.slice(0, -1).join(', ') + ' et ' + arr[arr.length - 1]
   }
 
+  const p1 = resourcePersons.find(r => r.id === encoding?.resource_person_1_id)
+  const p2 = resourcePersons.find(r => r.id === encoding?.resource_person_2_id)
+  const persons = [p1?.name, p2?.name].filter(Boolean)
+
+  const suiviMention = (() => {
+    if (!encoding?.suivi_necessaire) return ''
+    if (persons.length) return `Un suivi est prévu avec ${persons.join(' et ')}.`
+    return 'Un suivi est prévu.'
+  })()
+
   return {
     prenom: eleve?.prenom || '',
     il_elle, Il_Elle, son_sa, le_la,
@@ -70,23 +80,28 @@ function buildVars(encoding, subjects, competencies, eleve) {
     matiere_difficulte: listFr(matiereDifficulte),
     matiere_ne:         listFr(matiereNE),
     competences:        listFr(compsNom),
-    ta_forces:   encoding?.ta_force    ? 'autonomie, investissement' : '',
-    ta_faiblesses: encoding?.ta_faiblesse ? 'travail autonome insuffisant' : '',
-    freins:   encoding?.freins   || '',
-    forces:   encoding?.forces   || '',
-    conseils: encoding?.conseils || '',
+    ta_forces:     encoding?.ta_force     ? 'Le travail autonome est un point fort.' : '',
+    ta_faiblesses: encoding?.ta_faiblesse ? 'Le travail autonome est à améliorer.' : '',
+    ta_note:       encoding?.ta_manual_text || '',
+    freins:        encoding?.freins   || '',
+    forces:        encoding?.forces   || '',
+    conseils:      encoding?.conseils || '',
     suivi_necessaire: encoding?.suivi_necessaire ? 'true' : '',
+    suivi_raisons:    encoding?.suivi_raisons || '',
+    personne_ressource_1: p1?.name || '',
+    personne_ressource_2: p2?.name || '',
+    suivi_mention:    suiviMention,
   }
 }
 
-function generateComment(encoding, subjects, competencies, templates, eleve) {
+function generateComment(encoding, subjects, competencies, templates, eleve, resourcePersons = []) {
   if (!encoding || !eleve) return ''
   const degree = degreeFromClasse(eleve.classe)
   const period = encoding.period
   const cas    = encoding.cas || 1
   const tpl = templates.find(t => t.cas === cas && t.degree === degree && t.period === period)
   if (!tpl) return ''
-  const vars = buildVars(encoding, subjects, competencies, eleve)
+  const vars = buildVars(encoding, subjects, competencies, eleve, resourcePersons)
   return renderTemplate(tpl.body, vars)
 }
 
@@ -277,7 +292,7 @@ export default function ConseilsDeGuidance() {
   const update = (patch) => {
     const next = { ...enc, ...patch }
     // Regénérer le commentaire
-    next.generated_comment = generateComment(next, currentSubjects, currentComps, templates, currentEleve)
+    next.generated_comment = generateComment(next, currentSubjects, currentComps, templates, currentEleve, resourcePersons)
     scheduleAutoSave(next)
   }
 
@@ -297,15 +312,12 @@ export default function ConseilsDeGuidance() {
   }
 
   // ── Commentaire généré ───────────────────────────────────────────────────────
-  const comment = generateComment(enc, currentSubjects, currentComps, templates, currentEleve)
+  const comment = generateComment(enc, currentSubjects, currentComps, templates, currentEleve, resourcePersons)
 
-  const promptIA = comment
-    ? `Voici le commentaire de bulletin d'un(e) élève. Corrige uniquement les fautes d'orthographe, d'accord et de ponctuation. Ne reformule pas, ne change pas l'ordre des informations, ne modifie pas le ton. Respecte le genre mentionné (il/elle). Retourne uniquement le texte corrigé, sans explication.\n\n"""\n${comment}\n"""`
-    : ''
 
-  const copyPrompt = () => {
-    if (!promptIA) return
-    navigator.clipboard.writeText(promptIA)
+  const copyComment = () => {
+    if (!comment) return
+    navigator.clipboard.writeText(comment)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -351,13 +363,6 @@ export default function ConseilsDeGuidance() {
           ))}
         </div>
 
-        {/* Filtre classe */}
-        <select value={classeFilter} onChange={e => setClasseFilter(e.target.value)}
-          className="input text-sm py-1.5 w-32">
-          <option value="">Toutes</option>
-          {classes.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-
         {/* Search */}
         <input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
           className="input text-sm py-1.5 w-40" />
@@ -387,6 +392,14 @@ export default function ConseilsDeGuidance() {
           <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs text-gray-500 font-medium flex justify-between">
             <span>{filteredEleves.length} élève{filteredEleves.length > 1 ? 's' : ''}</span>
             <span className="text-primary">{period}</span>
+          </div>
+          {/* Filtre classe */}
+          <div className="px-2 py-2 border-b border-gray-100 bg-white">
+            <select value={classeFilter} onChange={e => setClasseFilter(e.target.value)}
+              className="input text-xs py-1 w-full">
+              <option value="">Toutes les classes</option>
+              {classes.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {filteredEleves.map(e => (
@@ -597,19 +610,13 @@ export default function ConseilsDeGuidance() {
                 )}
 
                 {comment && (
-                  <div className="border-t border-gray-100 pt-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-gray-500 font-medium">Prompt IA (correction grammaticale)</span>
-                      <button onClick={copyPrompt}
-                        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all ${
-                          copied ? 'bg-green-100 text-green-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                        }`}>
-                        {copied ? <><Check size={12}/>Copié !</> : <><Copy size={12}/>Copier le prompt</>}
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-400 bg-gray-50 rounded p-2 line-clamp-3 border border-dashed border-gray-200">
-                      {promptIA}
-                    </p>
+                  <div className="border-t border-gray-100 pt-3 flex justify-end">
+                    <button onClick={copyComment}
+                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all ${
+                        copied ? 'bg-green-100 text-green-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                      }`}>
+                      {copied ? <><Check size={12}/>Copié !</> : <><Copy size={12}/>Copier le commentaire</>}
+                    </button>
                   </div>
                 )}
               </section>

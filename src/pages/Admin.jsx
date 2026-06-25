@@ -42,6 +42,24 @@ export default function Admin() {
   const { demoMode, toggleDemo } = useDemo()
   const [searchParams] = useSearchParams()
   const [tab, setTab]             = useState(searchParams.get('onglet') || 'utilisateurs')
+  const SECTION_TABS = {
+    personnes: [
+      { key: 'utilisateurs', label: 'Utilisateurs' },
+      { key: 'droits',       label: 'Droits' },
+      { key: 'photos',       label: 'Photos élèves' },
+    ],
+    ecole: [
+      { key: 'synchronisation', label: 'Synchronisation' },
+      { key: 'parametres',      label: 'Paramètres école' },
+    ],
+    modules: [
+      { key: 'helpdesk', label: 'Helpdesk' },
+      { key: 'natures',  label: 'Natures comptables' },
+      { key: 'guidance', label: 'Conseils de guidance' },
+    ],
+  }
+  const sectionOfTab = Object.entries(SECTION_TABS).find(([, tabs]) => tabs.some(t => t.key === tab))?.[0] || 'personnes'
+  const setSection = (s) => { setTab(SECTION_TABS[s][0].key); setUserSearch('') }
   const [photosSearch, setPhotosSearch]   = useState('')
   const [photosFilters, setPhotosFilters] = useState({})
   const [photosClasses, setPhotosClasses] = useState([])
@@ -178,17 +196,12 @@ export default function Admin() {
       title="Administration"
       subtitle="Gestion des utilisateurs et synchronisation Smartschool"
       tabs={[
-        { key: 'utilisateurs',  label: 'Utilisateurs' },
-        { key: 'droits',        label: 'Droits' },
-        { key: 'synchronisation', label: 'Synchronisation' },
-        { key: 'helpdesk', label: 'Helpdesk' },
-        { key: 'natures', label: 'Natures comptables' },
-        { key: 'photos',  label: 'Photos élèves' },
-        { key: 'parametres', label: 'Paramètres école' },
-        { key: 'guidance',    label: 'Conseils de guidance' },
+        { key: 'personnes', label: 'Personnes & accès' },
+        { key: 'ecole',     label: 'École' },
+        { key: 'modules',   label: 'Modules' },
       ]}
-      activeTab={tab}
-      onTabChange={t => { setTab(t); setUserSearch('') }}
+      activeTab={sectionOfTab}
+      onTabChange={setSection}
       search={tab === 'photos' ? photosSearch : tab === 'utilisateurs' ? userSearch : undefined}
       onSearch={tab === 'photos' ? setPhotosSearch : tab === 'utilisateurs' ? setUserSearch : undefined}
       searchPlaceholder={tab === 'photos' ? 'Rechercher un élève…' : 'Rechercher un utilisateur…'}
@@ -215,6 +228,20 @@ export default function Admin() {
       ) : null}
     />
     <div className="p-6 max-w-screen-xl mx-auto">
+
+      {/* ── Sous-navigation ──────────────────────────── */}
+      <div className="flex gap-1 mb-6 border-b border-gray-100 pb-0">
+        {SECTION_TABS[sectionOfTab].map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              tab === t.key
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       {/* ── UTILISATEURS ─────────────────────────────── */}
       {tab === 'utilisateurs' && (() => {
