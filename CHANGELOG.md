@@ -1928,3 +1928,9 @@ git push origin main
 - buildVars enrichi : personne_ressource_1/2, suivi_mention, ta_note, suivi_raisons
 - Admin.jsx : réorganisation des onglets en 3 groupes (Personnes & accès / École / Modules) avec sous-navigation dynamique
 - Installation @dnd-kit/* manquant (dependency Compositions)
+
+## [v1.02] — Navigation Conseils de guidance simplifiée
+- Onglet "Commentaires (à venir)" supprimé
+- P1/P2/P3 sont maintenant les 3 onglets principaux du PageHeader (même layout, données par période)
+- Filtre de classes repositionné dans la barre du PageHeader (avec search et statut realtime)
+- Panneau gauche simplifié (compteur seul, plus de filtre redondant)

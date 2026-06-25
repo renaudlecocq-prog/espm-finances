@@ -1,6 +1,5 @@
 // ConseilsDeGuidance.jsx — Encodage collaboratif des conseils de classe
-// Onglet 1 : Conseils (encodage par élève, commentaire automatique, temps réel)
-// Onglet 2 : Commentaires (à venir)
+// 3 onglets (P1/P2/P3) : même layout, données par période
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
@@ -346,22 +345,19 @@ export default function ConseilsDeGuidance() {
         title="Conseils de guidance"
         icon={<BookOpen size={20} />}
         tabs={[
-          { key: 'conseils',      label: 'Conseils' },
-          { key: 'commentaires',  label: 'Commentaires (à venir)', disabled: true },
+          { key: 'P1', label: 'Période 1' },
+          { key: 'P2', label: 'Période 2' },
+          { key: 'P3', label: 'Période 3' },
         ]}
-        defaultTab="conseils"
+        activeTab={period}
+        onTabChange={setPeriod}
       >
-        {/* Sélecteur période */}
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-          {['P1','P2','P3'].map(p => (
-            <button key={p} onClick={() => setPeriod(p)}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                period === p ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}>
-              {p}
-            </button>
-          ))}
-        </div>
+        {/* Filtre classe */}
+        <select value={classeFilter} onChange={e => setClasseFilter(e.target.value)}
+          className="input text-sm py-1.5 w-36">
+          <option value="">Toutes les classes</option>
+          {classes.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
 
         {/* Search */}
         <input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
@@ -391,16 +387,8 @@ export default function ConseilsDeGuidance() {
         <div className="w-72 flex-shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
           <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs text-gray-500 font-medium flex justify-between">
             <span>{filteredEleves.length} élève{filteredEleves.length > 1 ? 's' : ''}</span>
-            <span className="text-primary">{period}</span>
           </div>
-          {/* Filtre classe */}
-          <div className="px-2 py-2 border-b border-gray-100 bg-white">
-            <select value={classeFilter} onChange={e => setClasseFilter(e.target.value)}
-              className="input text-xs py-1 w-full">
-              <option value="">Toutes les classes</option>
-              {classes.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
+
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {filteredEleves.map(e => (
               <EleveRow key={e.id} eleve={e}
