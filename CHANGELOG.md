@@ -1490,3 +1490,15 @@ git push origin main
 - `xlsx` (SheetJS) — export Excel côté client
 - `recharts` — graphiques dans le Bilan
 
+
+## [Develop] 2026-06-25 — FIX PDF Bilan v2 : données correctes + header/footer + mise en page
+
+### Corrections
+- **Bug données vides** : la fonction utilisait `.gte('date', ...)` alors que la table `comptable_transactions` utilise `date_operation`. Fix : `.gte('date_operation', ...)` + `.lte('date_operation', ...)`. Ajout des données POP (`comptable_pop_lignes`) manquantes dans l'agrégation (même logique que BilanTab).
+- **Header/footer standard** : logo école + adresse + téléphone + email (identique aux autres rapports PDF)
+- **Mise en page 2 pages fixes** : Page 1 = Vue générale, Page 2 = Couverture élèves — chaque page a son propre header/footer avec "Page X / 2"
+- **Bouton "Imprimer / Enregistrer PDF"** ajouté (masqué à l'impression)
+- **Numéros de lignes** (#) sur chaque nature comptable
+- **Sauts de page** : `page-break-before: always` entre les deux sections, `page-break-inside: avoid` sur les en-têtes de catégories
+- Rendu paysage A4 optimisé (12mm marges, 297mm width)
+
