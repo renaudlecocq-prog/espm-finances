@@ -1940,3 +1940,4 @@ git push origin main
 - Flush immédiat du save en attente avant de changer de période (handlePeriodChange)
 - pendingSaveRef pour tracker le dernier enc non encore sauvé
 ## [v1.05] — Mentions légales : ajout section Développement (Renaud Lecocq + Francesc Altes)
+## [v1.06] — Mentions légales : Francesc Altes aussi bêta testeur

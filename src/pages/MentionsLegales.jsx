@@ -105,7 +105,7 @@ export default function MentionsLegales() {
               <span className="text-primary-lighter">Économe, École Secondaire Plurielle Maritime</span>
             </li>
             <li>
-              <strong className="text-primary">Francesc Altes</strong> — conception du module <em>Conseils de guidance</em> (prototype original) ;<br />
+              <strong className="text-primary">Francesc Altes</strong> — conception du module <em>Conseils de guidance</em> (prototype original) ; bêta testeur des fonctions en développement ;<br />
               <span className="text-primary-lighter">Membre du personnel, École Secondaire Plurielle Maritime</span>
             </li>
           </ul>
