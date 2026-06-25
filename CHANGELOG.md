@@ -1332,3 +1332,132 @@ git push origin main
 - `allItems` : tableau fusionné folders+boards trié par position, IDs préfixés (`folder-`, `board-`, `item-`)
 - `SortableItemCard` : wrapper @dnd-kit/sortable autour de `ItemCard`
 - `handleRootDragEnd` + `handleItemDragEnd` : réordonnement optimiste + mise à jour DB en parallèle
+
+## [Develop] 2026-06-24 — Page Économe v1 (Phase 1)
+
+### Nouveautés
+- **Page Économe** : nouvelle page comptable avec 5 onglets (Fonctionnement, Élèves, POP, Bilan, Projets)
+- **Tab Fonctionnement** : import CSV Belfius, liste transactions avec entrées/sorties, attribution Nature comptable inline
+- **Tab Élèves** : import CSV Belfius, liste transactions (paiements entrants), statut paiement (pending/imported/ignored)
+- **NatureSelect** : dropdown groupé par catégorie avec recherche plein-texte
+- **Barre de synthèse** : total entrées, total sorties, solde, nb non-classés
+- Filtres : année, mois, recherche texte, "en attente seulement" (onglet Élèves)
+- Import modal avec drag-and-drop, aperçu, détection doublons (via référence Belfius)
+- Onglets POP/Bilan/Projets en placeholder "En développement"
+- **Admin › Natures comptables** : onglet CRUD complet dans Admin.jsx (liste par catégorie, activation/désactivation, création/édition/suppression)
+
+### Technique
+- DB : migration `create_comptable_tables` appliquée (comptable_natures, comptable_imports, comptable_transactions, comptable_projets, comptable_projet_lignes + RLS admin-only)
+- DB : seed 60 natures comptables (catégories : Achats, Catering, Divers, Élèves, Entretien, ExtraMuros, Frais pédagogiques, Voyages Scolaires)
+- `src/pages/Econome.jsx` créé (~790 lignes)
+- `src/lib/permissions.js` : feature `econome` ajoutée
+- `src/components/layout/Sidebar.jsx` : icône + lien Économe
+- `src/App.jsx` : route `/econome` ajoutée (RequireAuth admin)
+- `src/pages/Admin.jsx` : onglet "Natures comptables" + composants NaturesAdmin + NatureModal
+
+## [Develop] 2026-06-24 — Économe : sélection multiple + bulk assign nature
+
+### Amélioration
+- **Cases à cocher** : chaque ligne de transaction est sélectionnable (clic sur la ligne ou sur la case)
+- **Select all** : case dans l'en-tête pour tout cocher/décocher (indeterminate si sélection partielle)
+- **Barre d'action bulk** : apparaît dès qu'une ligne est cochée — NatureSelect + "Appliquer (N)" + "Désélectionner"
+- Mise à jour en base par lots de 100 (`.in()`)
+- Clic sur ligne = toggle sélection ; clic NatureSelect ou bouton Supprimer = stop propagation
+
+## [Develop] 2026-06-25 — Économe : onglet Élèves identique à Fonctionnement
+
+### Correction
+- **Onglet Élèves** : affiche désormais toutes les transactions (entrées ET sorties), comme l'onglet Fonctionnement
+- Suppression du filtre `montantRaw <= 0` dans le parseur CSV pour le compte élèves
+- Colonnes Sortie + Solde visibles dans les deux onglets
+- `statut_paiement: 'pending'` uniquement sur les lignes avec `montant_entree` (pas sur les virements vers POP)
+
+## [Develop] 2026-06-25 — Économe : bulk action inline dans la barre de synthèse
+
+### UX
+- Les contrôles de sélection multiple (nb sélectionnées + NatureSelect + Appliquer + ✕) apparaissent
+  maintenant directement dans la barre ENTRÉES/SORTIES/SOLDE/TRANSACTIONS/NON CLASSÉ,
+  séparés par un diviseur vertical — plus de barre collante séparée au-dessus du tableau
+
+## [Develop] 2026-06-25 — FIX Économe : sélection se décochait immédiatement
+
+### Correction
+- `filtered` mémoïsé avec `useMemo` dans `CompteTab` — sans ça, chaque `setSelected` déclenchait un nouveau render → nouveau tableau `filtered` → l'`useEffect` dans `TransactionTable` réinitialisait la sélection en boucle
+- `useEffect` de reset supprimé de `TransactionTable` (le reset se fait maintenant uniquement après un bulk apply)
+
+## [Develop] 2026-06-25 — Phase 2 Économe : onglet POP + import depuis Économe
+
+### Nouvelles fonctionnalités
+- **Onglet POP** (Econome.jsx) : encodage manuel des notes de frais et factures transmises au Pouvoir Organisateur Pluriel
+  - Table avec Date de transmission, Fournisseur, N° pièce, Nature comptable, Montant, Commentaire
+  - Barre de synthèse : total transmis au POP, nombre de lignes, compteur Non classé
+  - Formulaire modal d'ajout/édition
+  - Attribution de nature comptable inline (même NatureSelect que les autres onglets)
+  - Filtre par année et par mois
+  - Nouvelle table Supabase : `comptable_pop_lignes` avec RLS admin
+- **Paiements.jsx** : nouveau bouton "Depuis Économe" dans le header
+  - Modal `PendingEconomeModal` : affiche toutes les transactions `comptable_transactions` (compte=eleves, statut_paiement=pending)
+  - Matching automatique des élèves par communication/libellé (normalisation accents + ponctuation)
+  - Dropdown de correction manuelle de l'association élève
+  - Import en lot avec marquage `statut_paiement='imported'` après succès
+  - Pré-sélection intelligente : cases cochées si élève trouvé automatiquement, décochées sinon
+  - Les lignes déjà importées s'affichent en grisé avec badge "Importé"
+
+## [Develop] 2026-06-25 — Phase 3 Économe : onglet Bilan mensuel
+
+### Nouvelles fonctionnalités
+- **Onglet Bilan** (Econome.jsx) : tableau croisé Produits / Charges par mois
+  - Sources de données fusionnées : `comptable_transactions` (Fonctionnement + Élèves) + `comptable_pop_lignes`
+  - Colonnes = 12 mois ; colonne Total annuel fixe à droite
+  - Seuls les mois avec données sont mis en valeur (les autres s'affichent en grisé)
+  - Section **PRODUITS** : natures `type_flux='produit'`, groupées par catégorie, avec sous-totaux catégorie cliquables (plier/déplier)
+  - Section **CHARGES** : natures `type_flux='charge'`, même structure (affichées avec signe −)
+  - Natures `type_flux='neutre'` exclues du bilan
+  - Ligne **SOLDE** avec indicateur dynamique : ✓ Sur couverture (vert) / ⚠ Sous couverture (rouge)
+  - Avertissement si des transactions sans nature ne sont pas comptabilisées
+
+## [Develop] 2026-06-25 — FIX Paiements : UX boutons + fermeture modal
+
+### Corrections
+- Modal "Depuis Économe" se ferme automatiquement après l'import réussi
+- Bouton "Import CSV" supprimé du header Paiements (remplacé par le flux Économe)
+- Bouton "+ Paiement" adopte le même style ghost que "Depuis Économe"
+
+## [Develop] 2026-06-25 — Bilan v2 : vue Couverture élèves + Admin in_couverture
+
+### Nouvelles fonctionnalités
+- **Bilan — Vue Couverture élèves** (onglet par défaut) :
+  - Affiche uniquement les charges marquées `in_couverture=true` (Extramuros, Voyages scolaires, Frais pédagogiques, Achats-Événements) confrontées à tous les encaissements élèves
+  - 3 cartes récap : Total dépenses / Total encaissé / Solde (Avance en indigo, Découvert en ambre)
+  - Tableau mensuel avec sous-totaux par catégorie pliables/dépliables
+- **Bilan — Vue Générale** (onglet secondaire) : tableau Produits/Charges complet conservé pour vision globale
+- **Migration DB** : colonne `in_couverture boolean` sur `comptable_natures` (28 natures marquées au seed)
+- **Admin — Natures comptables** : nouveau toggle "Couverture élèves" dans le formulaire d'édition
+
+## [Develop] 2026-06-25 — Phase 4 Économe : onglet Projets
+
+### Nouvelles fonctionnalités
+- **Onglet Projets** (Econome.jsx) : modèle universel pour les petits projets (Pâtes, Fancy Fair, Rhétos…)
+  - Création/édition/suppression de projets (nom, année, description, catégories configurables)
+  - Catégories entièrement configurables par projet (tags ajout/suppression dans le modal, ou texte libre si aucune catégorie définie)
+  - Table de lignes : Date, Intitulé, Catégorie, Entrée, Sortie, Commentaire
+  - Affichage groupé par catégorie avec sous-totaux (Entrée / Sortie / Solde) pliables/dépliables
+  - Grand total en pied de tableau
+  - 3 cartes récap en haut : Total entrées / Total sorties / Solde
+  - Clôture de projet (lecture seule une fois clôturé)
+  - Saisie d'une ligne : si Entrée remplie → Sortie se vide automatiquement (et vice versa)
+  - Deux nouvelles tables Supabase : `comptable_projets` + `comptable_projet_lignes` avec RLS admin
+
+## [Develop] 2026-06-25 — FIX Projets : schema DB + gestion erreurs
+
+### Corrections
+- Migration DB : ajout colonnes `description` et `cloture` sur `comptable_projets` (table créée dans une session antérieure avec des colonnes manquantes)
+- `saveProjet` et `saveLigne` : ajout try/catch avec message d'erreur visible — les erreurs Supabase étaient silencieuses
+
+## [Develop] 2026-06-25 — FIX Projets : colonnes date_ligne/note/commentaire
+
+### Corrections
+- `comptable_projet_lignes` : table ancienne avec `date_ligne` au lieu de `date` et `note` au lieu de `commentaire`
+- Migration : ajout colonnes `date`, `commentaire`, `position` + synchronisation `date ← date_ligne`
+- Code : payload envoie maintenant les deux noms (`date`+`date_ligne`, `commentaire`+`note`) pour compat
+- Affichage date et commentaire dans l'édition : fallback sur l'ancienne colonne

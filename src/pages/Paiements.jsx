@@ -401,6 +401,7 @@ export default function Paiements() {
   , [])
   const [sort, setSort] = useState({ col: 'date', dir: 'desc' })
   const [showImport, setShowImport] = useState(false)
+  const [showPending, setShowPending] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editPaiement, setEditPaiement] = useState(null)
   const [ficheId, setFicheId] = useState(null)
@@ -514,12 +515,18 @@ export default function Paiements() {
       info={`${filtered.length} résultat${filtered.length !== 1 ? 's' : ''}`}
       actions={isFinancier ? (
         <>
-          <button onClick={() => setShowImport(true)}
+          <button onClick={() => setShowPending(true)}
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
             style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
-            <Upload size={12} /> Import CSV
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:'inline',marginRight:4}}>
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5.51"/>
+            </svg>
+            Depuis Économe
           </button>
-          <button onClick={() => setShowForm(v => !v)} className="btn-primary text-xs py-1.5 px-3">
+
+          <button onClick={() => setShowForm(v => !v)}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+            style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
             + Paiement
           </button>
         </>
@@ -640,6 +647,14 @@ export default function Paiements() {
       </div>
 
       {/* Modals */}
+      {showPending && (
+        <PendingEconomeModal
+          eleves={eleves}
+          existingRefs={existingRefs}
+          onClose={() => setShowPending(false)}
+          onImported={reload}
+        />
+      )}
       {showImport && (
         <ImportModal eleves={eleves} existingRefs={existingRefs} existingSignatures={existingSignatures} onClose={() => setShowImport(false)} onImported={reload} />
       )}
@@ -648,6 +663,221 @@ export default function Paiements() {
       )}
       <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
     </div>
+    </div>
+  )
+}
+
+// ── Modal "Récupérer encodages depuis Économe / onglet Élèves" ─────────────
+function PendingEconomeModal({ eleves, existingRefs, onClose, onImported }) {
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [importing, setImporting] = useState(false)
+  const [selected, setSelected] = useState(new Set())
+
+  // Normalisation pour matching élève
+  const norm = s => (s || '').toLowerCase()
+    .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
+
+  const matchEleve = comm => {
+    const c = norm(comm)
+    let best = null, bestScore = 0
+    for (const el of eleves) {
+      const n = norm(el.nom), p = norm(el.prenom)
+      let score = 0
+      if (c.includes(n) && n.length > 2) score += n.length * 2
+      if (c.includes(p) && p.length > 2) score += p.length * 2
+      if (c.includes(norm(el.classe))) score += 5
+      if (score > bestScore) { bestScore = score; best = el }
+    }
+    return bestScore >= 6 ? best : null
+  }
+
+  useEffect(() => {
+    supabase.from('comptable_transactions')
+      .select('*')
+      .eq('compte', 'eleves')
+      .eq('statut_paiement', 'pending')
+      .not('montant_entree', 'is', null)
+      .order('date_operation', { ascending: false })
+      .then(({ data }) => {
+        const mapped = (data || []).map(tx => ({
+          ...tx,
+          matchedEleve: matchEleve(tx.communication || tx.libelle || ''),
+          eleve_id: matchEleve(tx.communication || tx.libelle || '')?.id || '',
+          alreadyImported: existingRefs.has(tx.id),
+        }))
+        setRows(mapped)
+        // Pré-sélectionner toutes les non-importées avec un élève trouvé
+        setSelected(new Set(mapped.filter(r => !r.alreadyImported && r.eleve_id).map(r => r.id)))
+        setLoading(false)
+      })
+  }, [])
+
+  const toggleRow = id => setSelected(s => {
+    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n
+  })
+
+  const setEleveForRow = (txId, eleveId) => {
+    setRows(prev => prev.map(r => r.id === txId ? { ...r, eleve_id: eleveId } : r))
+  }
+
+  const doImport = async () => {
+    const toImport = rows.filter(r => selected.has(r.id) && r.eleve_id)
+    if (!toImport.length) return
+    setImporting(true)
+    try {
+      // Insérer dans paiements
+      const payload = toImport.map(r => ({
+        eleve_id: r.eleve_id,
+        date: r.date_operation,
+        montant: r.montant_entree,
+        paye_par: 'responsable',
+        mode: 'virement',
+        communication: r.communication || r.libelle || '',
+        reference_belfius: r.id, // utilise l'UUID de la transaction comme ref unique
+      }))
+      const { error } = await supabase.from('paiements').insert(payload)
+      if (error) throw error
+
+      // Marquer les transactions comme importées
+      const ids = toImport.map(r => r.id)
+      for (let i = 0; i < ids.length; i += 100) {
+        await supabase.from('comptable_transactions')
+          .update({ statut_paiement: 'imported' })
+          .in('id', ids.slice(i, i + 100))
+      }
+
+      await onImported()
+      onClose()
+    } catch (err) {
+      alert('Erreur : ' + err.message)
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const importable = rows.filter(r => selected.has(r.id) && r.eleve_id).length
+  const fmtDate = d => { if (!d) return '—'; const [y,m,j] = d.split('-'); return `${j}/${m}/${y}` }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div>
+            <h2 className="font-semibold text-gray-800">Récupérer depuis l'onglet Élèves (Économe)</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Transactions encodées dans Économe, non encore importées ici</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X size={18} className="text-gray-500" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 p-5">
+          {loading ? (
+            <div className="text-center py-12 text-gray-400">Chargement…</div>
+          ) : rows.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <p className="font-medium">Aucun encodage en attente</p>
+              <p className="text-sm mt-1">Importez d'abord un CSV dans l'onglet Élèves de la page Économe.</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-gray-100">
+                  <th className="w-8 px-2 py-2">
+                    <input type="checkbox"
+                      checked={rows.filter(r => !r.alreadyImported).every(r => selected.has(r.id))}
+                      onChange={e => {
+                        const ids = rows.filter(r => !r.alreadyImported).map(r => r.id)
+                        setSelected(e.target.checked ? new Set(ids) : new Set())
+                      }}
+                      className="rounded border-gray-300 text-indigo-600" />
+                  </th>
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Date</th>
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Libellé / Communication</th>
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Élève associé</th>
+                  <th className="text-right px-3 py-2 text-xs font-semibold text-gray-500">Montant</th>
+                  <th className="text-center px-3 py-2 text-xs font-semibold text-gray-500">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(r => (
+                  <tr key={r.id} className={`border-b border-gray-50 ${r.alreadyImported ? 'opacity-40' : 'hover:bg-gray-50/60'}`}>
+                    <td className="px-2 py-2">
+                      <input type="checkbox"
+                        checked={selected.has(r.id)}
+                        disabled={r.alreadyImported}
+                        onChange={() => toggleRow(r.id)}
+                        className="rounded border-gray-300 text-indigo-600" />
+                    </td>
+                    <td className="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">{fmtDate(r.date_operation)}</td>
+                    <td className="px-3 py-2 max-w-[220px]">
+                      <p className="text-xs font-medium text-gray-700 truncate">{r.libelle || '—'}</p>
+                      {r.communication && <p className="text-[11px] text-gray-400 truncate">{r.communication}</p>}
+                    </td>
+                    <td className="px-3 py-2">
+                      {r.alreadyImported ? (
+                        <span className="text-xs text-gray-400 italic">{r.matchedEleve ? `${r.matchedEleve.prenom} ${r.matchedEleve.nom}` : '—'}</span>
+                      ) : (
+                        <select
+                          value={r.eleve_id || ''}
+                          onChange={e => setEleveForRow(r.id, e.target.value)}
+                          className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[180px] focus:outline-none focus:border-indigo-400"
+                        >
+                          <option value="">— Non associé —</option>
+                          {eleves.map(el => (
+                            <option key={el.id} value={el.id}>
+                              {el.prenom} {el.nom} {el.classe ? `(${el.classe})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <span className="text-xs font-semibold text-green-600">
+                        {Number(r.montant_entree).toFixed(2)} €
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {r.alreadyImported
+                        ? <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Importé</span>
+                        : !r.eleve_id
+                          ? <span className="text-[10px] bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full font-medium">Sans élève</span>
+                          : <span className="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-medium">Prêt</span>
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between">
+          <p className="text-xs text-gray-400">
+            {importable} paiement{importable !== 1 ? 's' : ''} à importer
+            {rows.filter(r => selected.has(r.id) && !r.eleve_id).length > 0 && (
+              <span className="text-amber-500 ml-2">
+                ({rows.filter(r => selected.has(r.id) && !r.eleve_id).length} sans élève associé — seront ignorés)
+              </span>
+            )}
+          </p>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+              Annuler
+            </button>
+            <button
+              onClick={doImport}
+              disabled={importable === 0 || importing}
+              className="flex items-center gap-2 px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg
+                hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {importing ? 'Import en cours…' : `Importer ${importable} paiement${importable !== 1 ? 's' : ''}`}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
