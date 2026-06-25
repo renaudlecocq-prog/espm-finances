@@ -1662,3 +1662,10 @@ git push origin main
 - `ElevePhoto` : priorité absolue à `photo_url` stockée en DB (zéro appel Smartschool si photo présente)
 - Upload photo par clic : cliquer sur la photo (ou le "?") dans Compositions ouvre un file picker → resize client-side 300×300 → upload Supabase Storage → sauvegarde en DB
 - Suppression du debug sync (champs `_debug_sample_keys` / `_debug_photo_keys`)
+
+## [Unreleased — admin photos]
+### Added
+- Admin → onglet "Photos élèves" : import en masse par glisser-déposer
+  - Matching par nom de fichier = numéro interne (ex: `4849.jpg`) ou username Smartschool (ex: `elif.kaplaner.jpg`)
+  - Resize automatique 300×300, upload Supabase Storage, sauvegarde `photo_url` en DB
+  - Barre de progression + rapport OK/KO détaillé

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -177,6 +177,7 @@ export default function Admin() {
         { key: 'synchronisation', label: 'Synchronisation' },
         { key: 'helpdesk', label: 'Helpdesk' },
         { key: 'natures', label: 'Natures comptables' },
+        { key: 'photos',  label: 'Photos élèves' },
       ]}
       activeTab={tab}
       onTabChange={setTab}
@@ -649,6 +650,9 @@ export default function Admin() {
 
       {/* ── NATURES COMPTABLES ───────────────────────── */}
       {tab === 'natures' && <NaturesAdmin />}
+
+      {/* ── PHOTOS ÉLÈVES ────────────────────────────── */}
+      {tab === 'photos' && <PhotosAdmin />}
     </div>
     </>
   )
@@ -1291,6 +1295,177 @@ function NatureModal({ item, categories, saving, onSave, onClose }) {
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════
+//  Photos Admin — import en masse
+// ══════════════════════════════════════════════════════════
+function PhotosAdmin() {
+  const [eleves, setEleves]       = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [dragging, setDragging]   = useState(false)
+  const [results, setResults]     = useState(null)   // { ok: [], ko: [] }
+  const [progress, setProgress]   = useState(null)   // { done, total }
+  const inputRef                  = useRef(null)
+
+  // Charger tous les élèves (id, username, internal_number)
+  useEffect(() => {
+    supabase
+      .from('eleves')
+      .select('id, nom, prenom, smartschool_username, smartschool_internal_number')
+      .eq('actif', true)
+      .then(({ data }) => { setEleves(data || []); setLoading(false) })
+  }, [])
+
+  // Index de matching : internnumber → élève, username → élève
+  const index = useMemo(() => {
+    const m = new Map()
+    for (const e of eleves) {
+      if (e.smartschool_internal_number) m.set(e.smartschool_internal_number.toLowerCase(), e)
+      if (e.smartschool_username) m.set(e.smartschool_username.toLowerCase(), e)
+    }
+    return m
+  }, [eleves])
+
+  const resizeImage = (file) => new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const MAX = 300
+      const ratio = Math.min(MAX / img.width, MAX / img.height, 1)
+      const canvas = document.createElement('canvas')
+      canvas.width  = Math.round(img.width  * ratio)
+      canvas.height = Math.round(img.height * ratio)
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob')), 'image/jpeg', 0.85)
+    }
+    img.onerror = reject
+    img.src = URL.createObjectURL(file)
+  })
+
+  const processFiles = useCallback(async (files) => {
+    const list = Array.from(files).filter(f => f.type.startsWith('image/'))
+    if (!list.length) return
+    setResults(null)
+    setProgress({ done: 0, total: list.length })
+    const ok = [], ko = []
+    for (let i = 0; i < list.length; i++) {
+      const file = list[i]
+      // Extraire la clé depuis le nom de fichier (sans extension)
+      const key = file.name.replace(/\.[^.]+$/, '').toLowerCase().trim()
+      const eleve = index.get(key)
+      if (!eleve) {
+        ko.push({ filename: file.name, reason: 'Aucun élève trouvé pour "' + key + '"' })
+        setProgress({ done: i + 1, total: list.length })
+        continue
+      }
+      try {
+        const blob = await resizeImage(file)
+        const path = `${eleve.id}.jpg`
+        const { error: upErr } = await supabase.storage
+          .from('eleve-photos')
+          .upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
+        if (upErr) throw upErr
+        const { data: { publicUrl } } = supabase.storage.from('eleve-photos').getPublicUrl(path)
+        const urlWithTs = `${publicUrl}?t=${Date.now()}`
+        await supabase.from('eleves').update({ photo_url: urlWithTs }).eq('id', eleve.id)
+        ok.push({ filename: file.name, name: `${eleve.prenom} ${eleve.nom}` })
+      } catch (e) {
+        ko.push({ filename: file.name, reason: e.message || 'Erreur upload' })
+      }
+      setProgress({ done: i + 1, total: list.length })
+    }
+    setResults({ ok, ko })
+    setProgress(null)
+  }, [index])
+
+  const onDrop = useCallback((e) => {
+    e.preventDefault(); setDragging(false)
+    processFiles(e.dataTransfer.files)
+  }, [processFiles])
+
+  if (loading) return <div className="p-6 text-gray-400 text-sm">Chargement des élèves…</div>
+
+  const pct = progress ? Math.round((progress.done / progress.total) * 100) : 0
+
+  return (
+    <div className="max-w-2xl">
+      <div className="mb-6">
+        <h3 className="font-semibold text-gray-800 mb-1">Import de photos en masse</h3>
+        <p className="text-sm text-gray-500">
+          Dépose des images dont le nom correspond au <strong>numéro interne</strong> ou au <strong>nom d'utilisateur Smartschool</strong> de l'élève.<br />
+          Exemples : <code className="bg-gray-100 px-1 rounded text-xs">4849.jpg</code> ou <code className="bg-gray-100 px-1 rounded text-xs">elif.kaplaner.jpg</code>
+        </p>
+      </div>
+
+      {/* Drop zone */}
+      <div
+        onDragOver={e => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        onClick={() => inputRef.current?.click()}
+        className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors
+          ${dragging ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}>
+        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
+          <svg className="w-6 h-6 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-gray-700">
+          {dragging ? 'Dépose ici' : 'Glisse-dépose des photos ou clique pour sélectionner'}
+        </p>
+        <p className="text-xs text-gray-400">JPEG, PNG, WebP — redimensionnés automatiquement à 300×300</p>
+        <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
+          onChange={e => { processFiles(e.target.files); e.target.value = '' }} />
+      </div>
+
+      {/* Progress */}
+      {progress && (
+        <div className="mt-4">
+          <div className="flex justify-between text-xs text-gray-500 mb-1">
+            <span>Import en cours…</span>
+            <span>{progress.done} / {progress.total}</span>
+          </div>
+          <div className="w-full bg-gray-100 rounded-full h-2">
+            <div className="bg-indigo-500 h-2 rounded-full transition-all" style={{ width: pct + '%' }} />
+          </div>
+        </div>
+      )}
+
+      {/* Résultats */}
+      {results && (
+        <div className="mt-6 space-y-4">
+          {results.ok.length > 0 && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-emerald-700 mb-2">
+                ✓ {results.ok.length} photo{results.ok.length > 1 ? 's' : ''} importée{results.ok.length > 1 ? 's' : ''}
+              </p>
+              <div className="text-xs text-emerald-600 space-y-0.5 max-h-40 overflow-y-auto">
+                {results.ok.map((r, i) => (
+                  <div key={i}><span className="font-medium">{r.name}</span> <span className="text-emerald-400">({r.filename})</span></div>
+                ))}
+              </div>
+            </div>
+          )}
+          {results.ko.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-red-700 mb-2">
+                ✗ {results.ko.length} fichier{results.ko.length > 1 ? 's' : ''} non importé{results.ko.length > 1 ? 's' : ''}
+              </p>
+              <div className="text-xs text-red-500 space-y-0.5 max-h-40 overflow-y-auto">
+                {results.ko.map((r, i) => (
+                  <div key={i}><span className="font-medium">{r.filename}</span> — {r.reason}</div>
+                ))}
+              </div>
+            </div>
+          )}
+          <button onClick={() => setResults(null)}
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+            Effacer les résultats
+          </button>
+        </div>
+      )}
     </div>
   )
 }
