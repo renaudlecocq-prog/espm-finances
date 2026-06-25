@@ -79,12 +79,13 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: 'JSON invalide' }), { status: 400, headers })
   }
 
-  const { username } = body
-  if (!username)
-    return new Response(JSON.stringify({ error: 'username requis' }), { status: 400, headers })
+  const { username, internalNumber } = body
+  const userIdentifier = internalNumber || username
+  if (!userIdentifier)
+    return new Response(JSON.stringify({ error: 'username ou internalNumber requis' }), { status: 400, headers })
 
   try {
-    const b64 = await getAccountPhoto(SS_URL, SS_CODE, username)
+    const b64 = await getAccountPhoto(SS_URL, SS_CODE, userIdentifier)
     if (!b64)
       return new Response(JSON.stringify({ photo: null }), { status: 200, headers })
     return new Response(

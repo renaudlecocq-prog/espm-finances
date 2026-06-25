@@ -39,13 +39,14 @@ function writeSaved(list) {
 }
 
 // ── ElevePhoto (POST → smartschool-photo.mjs) ─────────────────────────────────
-function ElevePhoto({ username, size = 40 }) {
+function ElevePhoto({ username, internalNumber, size = 40 }) {
   const [src, setSrc]   = useState(null)
   const [err, setErr]   = useState(false)
+  const cacheKey = internalNumber ? 'ssp_n_' + internalNumber : 'ssp_u_' + username
 
   useEffect(() => {
-    if (!username) { setErr(true); return }
-    const cached = sessionStorage.getItem('ssp_' + username)
+    if (!internalNumber && !username) { setErr(true); return }
+    const cached = sessionStorage.getItem(cacheKey)
     if (cached) { if (cached === 'null') setErr(true); else setSrc(cached); return }
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setErr(true); return }
@@ -53,11 +54,11 @@ function ElevePhoto({ username, size = 40 }) {
         const r = await fetch('/.netlify/functions/smartschool-photo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-          body: JSON.stringify({ username }),
+          body: JSON.stringify({ internalNumber, username }),
         })
         const d = await r.json()
-        if (d.photo) { setSrc(d.photo); sessionStorage.setItem('ssp_' + username, d.photo) }
-        else { setErr(true); sessionStorage.setItem('ssp_' + username, 'null') }
+        if (d.photo) { setSrc(d.photo); sessionStorage.setItem(cacheKey, d.photo) }
+        else { setErr(true); sessionStorage.setItem(cacheKey, 'null') }
       } catch { setErr(true) }
     })
   }, [username])
@@ -97,7 +98,7 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
       <div className={`p-2.5 pt-2 ${compact ? '' : 'pb-3'}`}>
         {/* Header: photo + nom */}
         <div className="flex items-center gap-2">
-          {fields.photo && <ElevePhoto username={eleve.smartschool_username} size={compact ? 32 : 40} />}
+          {fields.photo && <ElevePhoto username={eleve.smartschool_username} internalNumber={eleve.smartschool_internal_number} size={compact ? 32 : 40} />}
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold text-gray-800 leading-tight truncate">{eleve.nom?.toUpperCase()}</p>
             <p className="text-xs text-gray-500 leading-tight truncate">{eleve.prenom}</p>
@@ -116,10 +117,9 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
                   <AlertTriangle size={9} /> Troubles
                 </span>
               )}
-              {fields.groupes && groupes.slice(0, 2).map((g, i) => (
-                <span key={i} className="text-[10px] bg-gray-50 text-gray-500 rounded px-1.5 py-0.5 truncate max-w-[90px]">{g}</span>
+              {fields.groupes && groupes.map((g, i) => (
+                <span key={i} className="text-[10px] bg-gray-50 text-gray-500 rounded px-1.5 py-0.5">{g}</span>
               ))}
-              {fields.groupes && groupes.length > 2 && <span className="text-[10px] text-gray-400">+{groupes.length - 2}</span>}
             </div>
 
             {fields.troubles && hasAR && (
@@ -178,7 +178,7 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
 
   const arCount   = eleves.filter(e => e.amenagements_raisonnables?.trim()).length
   const isLinked  = id => linkedSets.some(s => s.has(id))
-  const colW      = cardMode === 'compact' ? 170 : 220
+  const colW      = cardMode === 'compact' ? 170 : 240
 
   return (
     <div className={`flex flex-col rounded-2xl border-2 transition-colors shrink-0
@@ -262,8 +262,9 @@ export default function Compositions() {
 
   // ── Sauvegarde ────────────────────────────────────────────────────────────
   const [savedList, setSavedList]       = useState(() => loadSaved())
-  const [showSaveModal, setShowSaveModal] = useState(false)
   const [showLoadModal, setShowLoadModal] = useState(false)
+  const [lastSaved, setLastSaved]         = useState(null)
+  const autoSaveTimer                     = useRef(null)
 
   // ── FilterDefs ─────────────────────────────────────────────────────────────
   const availableClasses = useMemo(() =>
@@ -307,6 +308,31 @@ export default function Compositions() {
   }, [])
 
   useEffect(() => { loadEleves() }, [loadEleves])
+
+  // ── Auto-save (debounced 1.5s) ─────────────────────────────────────────────
+  useEffect(() => {
+    clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(() => {
+      const date = new Date().toISOString()
+      const data = {
+        name: compositionName, date,
+        filters, excludedIds: [...excludedIds],
+        fields: Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v.enabled])),
+        customFields, groups, assignments,
+        linkedSets: linkedSets.map(s => [...s]),
+        cardMode,
+      }
+      const entryId = 'comp_' + compositionName.replace(/\W+/g, '_').toLowerCase()
+      const entry   = { id: entryId, name: compositionName, date, data }
+      setSavedList(prev => {
+        const list = [entry, ...prev.filter(c => c.id !== entryId)]
+        writeSaved(list)
+        return list
+      })
+      setLastSaved(date)
+    }, 1500)
+    return () => clearTimeout(autoSaveTimer.current)
+  }, [compositionName, filters, excludedIds, fields, customFields, groups, assignments, linkedSets, cardMode]) // eslint-disable-line
 
   // ── Sync assignments ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -484,11 +510,7 @@ export default function Compositions() {
                 <X size={13} /> {selectedIds.size} sél.
               </button>
             )}
-            {/* Sauvegarde */}
-            <button onClick={() => setShowSaveModal(true)} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-              style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
-              <Save size={13} /> Sauvegarder
-            </button>
+
             <button onClick={() => setShowLoadModal(true)} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
               style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
               <FolderOpen size={13} /> {savedList.length > 0 ? `Ouvrir (${savedList.length})` : 'Ouvrir'}
@@ -498,22 +520,7 @@ export default function Compositions() {
       />
       <input id="import-json" type="file" accept=".json" className="hidden" onChange={importJSON} />
 
-      {/* ── MODAL Sauvegarder ─────────────────────────────────────────── */}
-      {showSaveModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowSaveModal(false)}>
-          <div className="bg-white rounded-2xl p-6 shadow-2xl w-96" onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-bold text-gray-800 mb-4">Sauvegarder la composition</h3>
-            <input value={compositionName} onChange={e => setCompositionName(e.target.value)}
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-4 focus:outline-none focus:border-indigo-400" />
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowSaveModal(false)} className="text-sm text-gray-500 px-4 py-2 hover:text-gray-700">Annuler</button>
-              <button onClick={saveComposition} className="text-sm font-semibold bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                Sauvegarder
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* ── MODAL Ouvrir ──────────────────────────────────────────────── */}
       {showLoadModal && (
@@ -568,6 +575,11 @@ export default function Compositions() {
           {/* Barre info */}
           <div className="px-4 py-2 bg-white border-b border-gray-100 flex items-center gap-3 shrink-0">
             <span className="text-sm font-semibold text-gray-600">{compositionName}</span>
+            {lastSaved && (
+              <span className="text-xs text-green-500 flex items-center gap-1">
+                <Check size={11} /> Sauvegardé {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
             <span className="text-xs text-gray-400">{filteredEleves.length} élèves · {groups.length} groupe{groups.length !== 1 ? 's' : ''}</span>
             {selectedIds.size > 0 && (
               <span className="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded-full">
@@ -764,9 +776,31 @@ export default function Compositions() {
 
           {/* CTA */}
           <div className="flex justify-end pb-4">
-            <button onClick={() => setInnerTab('board')} disabled={filteredEleves.length === 0}
+            <button onClick={() => {
+                // Sauvegarde immédiate avant de basculer
+                clearTimeout(autoSaveTimer.current)
+                const date = new Date().toISOString()
+                const data = {
+                  name: compositionName, date,
+                  filters, excludedIds: [...excludedIds],
+                  fields: Object.fromEntries(Object.entries(fields).map(([k,v]) => [k,v.enabled])),
+                  customFields, groups, assignments,
+                  linkedSets: linkedSets.map(s => [...s]),
+                  cardMode,
+                }
+                const entryId = 'comp_' + compositionName.replace(/\W+/g,'_').toLowerCase()
+                const entry   = { id: entryId, name: compositionName, date, data }
+                setSavedList(prev => {
+                  const list = [entry, ...prev.filter(c => c.id !== entryId)]
+                  writeSaved(list)
+                  return list
+                })
+                setLastSaved(date)
+                setInnerTab('board')
+              }}
+              disabled={filteredEleves.length === 0}
               className="flex items-center gap-2 bg-indigo-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-              <LayoutGrid size={16} /> Ouvrir le board →
+              <LayoutGrid size={16} /> Accéder à la composition →
             </button>
           </div>
         </div>

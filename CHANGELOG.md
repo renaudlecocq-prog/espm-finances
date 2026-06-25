@@ -1585,3 +1585,20 @@ git push origin main
 - **Recherche** : champ de recherche par nom d'élève (pour exclure individuellement) déplacé sur la même ligne que le bouton Filtres
 - **Exclusion individuelle** : les résultats de recherche apparaissent uniquement quand un terme est tapé (plus de grille de 670 pills affichée en permanence) — cliquer sur un résultat exclut/réintègre l'élève
 - **Compteur d'exclus** : affiché à droite de la ligne filtres/recherche quand ≥1 élève exclu, avec bouton "✕ N exclus" pour tout réintégrer
+
+## [Develop] 2026-06-25 — Compositions v3.2 : photos, étendu, auto-save
+
+### Fix photos
+- **`smartschool-photo.mjs`** : accepte maintenant `internalNumber` comme `$userIdentifier` (prioritaire sur `username`). Cohérent avec `smartschool-notify.mjs` qui utilise déjà le numéro interne — le champ unique API de la plateforme est "numéro interne", pas l'identifiant web.
+- **`ElevePhoto`** : passe `internalNumber` (smartschool_internal_number) en priorité, `username` en fallback. Cache sessionStorage séparé par type d'identifiant.
+
+### Mode étendu
+- Tous les groupes SS affichés (plus de limite à 2)
+- Largeur carte étendu : 220 → 240px
+- Tags groupes sans troncature
+
+### Auto-save + UX
+- **Auto-save débounced 1.5s** : toute modification (nom, filtres, groupes, assignments, champs, mode carte) déclenche une sauvegarde automatique sous le nom de la composition
+- **"Accéder à la composition"** (ex "Ouvrir le board") : sauvegarde immédiate avant de basculer vers le board
+- **Bouton "Sauvegarder" supprimé** : remplacé par l'auto-save + indicateur "✓ Sauvegardé HH:MM" dans la barre du board
+- **"Ouvrir"** : toujours disponible pour charger une composition sauvegardée précédemment
