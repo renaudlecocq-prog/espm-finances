@@ -1939,3 +1939,4 @@ git push origin main
 - loadEncodings merge au lieu de remplacer (setEncodings prev => merge)
 - Flush immédiat du save en attente avant de changer de période (handlePeriodChange)
 - pendingSaveRef pour tracker le dernier enc non encore sauvé
+## [v1.05] — Mentions légales : ajout section Développement (Renaud Lecocq + Francesc Altes)

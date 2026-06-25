@@ -97,13 +97,28 @@ export default function MentionsLegales() {
           <p>Le logo ESPM et les marques associées sont la propriété du Pouvoir Organisateur Pluriel ASBL.</p>
         </Section>
 
-        <Section title="7. Responsabilité">
+        <Section title="7. Développement">
+          <p>Ce module a été conçu et développé au sein de l'ESPM par :</p>
+          <ul className="list-disc list-inside space-y-1 pl-2">
+            <li>
+              <strong className="text-primary">Renaud Lecocq</strong> — conception, architecture et développement de l'application (ESPM+) ;<br />
+              <span className="text-primary-lighter">Économe, École Secondaire Plurielle Maritime</span>
+            </li>
+            <li>
+              <strong className="text-primary">Francesc Altes</strong> — conception du module <em>Conseils de guidance</em> (prototype original) ;<br />
+              <span className="text-primary-lighter">Membre du personnel, École Secondaire Plurielle Maritime</span>
+            </li>
+          </ul>
+          <p>Ce logiciel est un développement interne, non commercial, destiné exclusivement à l'usage de l'établissement. Le code source n'est pas distribué publiquement.</p>
+        </Section>
+
+        <Section title="8. Responsabilité">
           <p>L'ESPM s'efforce de maintenir ce module à jour et disponible. En cas d'indisponibilité temporaire pour maintenance ou incident technique, la responsabilité de l'école ne pourra être engagée.</p>
           <p>Les données affichées sont issues des systèmes internes de l'école (ProEco, Smartschool). En cas d'erreur ou de divergence, contactez l'économat : <a href="mailto:renaud.lecocq@espmaritime.be" className="hover:underline">renaud.lecocq@espmaritime.be</a></p>
         </Section>
 
         <p className="text-xs text-primary-lighter border-t border-gray-100 pt-6 mt-4">
-          Dernière mise à jour : juin 2026 · École Secondaire Plurielle Maritime
+          Dernière mise à jour : juin 2026 · École Secondaire Plurielle Maritime · v1.04
         </p>
       </div>
     </div>
