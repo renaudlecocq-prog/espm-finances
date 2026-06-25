@@ -1461,3 +1461,28 @@ git push origin main
 - Migration : ajout colonnes `date`, `commentaire`, `position` + synchronisation `date ← date_ligne`
 - Code : payload envoie maintenant les deux noms (`date`+`date_ligne`, `commentaire`+`note`) pour compat
 - Affichage date et commentaire dans l'édition : fallback sur l'ancienne colonne
+
+## [Main] 2026-06-25 — v1.00 — Module Économe complet
+
+### Résumé du déploiement en production
+Merge de toutes les phases du module Économe (develop → main).
+
+**Phase 1 — Import CSV & classification**
+- Onglet Fonctionnement : import CSV Belfius, classification par nature comptable, sélection multiple + bulk assign
+- Onglet Élèves : idem, avec suivi statut paiement (pending/imported) + toutes transactions (entrées + sorties)
+- Admin : CRUD Natures comptables avec catégories, type_flux, in_bilan, in_couverture
+
+**Phase 2 — POP & intégration Paiements**
+- Onglet POP : encodage manuel notes de frais transmises au Pouvoir Organisateur Pluriel
+- Paiements : bouton "Depuis Économe" — import des transactions Élèves en attente vers Paiements avec matching auto élève
+
+**Phase 3 — Bilan mensuel**
+- Vue Couverture élèves (défaut) : dépenses couvertes par élèves vs encaissements parents, par mois
+- Vue Générale : tableau Produits/Charges complet avec solde SUR/SOUS couverture
+
+**Phase 4 — Projets**
+- Projets libres (Pâtes, Fancy Fair, Rhétos…) avec catégories configurables par projet
+- Lignes Date/Intitulé/Catégorie/Entrée/Sortie groupées avec sous-totaux + grand total
+- Clôture de projet (lecture seule)
+
+**DB** : 5 nouvelles tables (`comptable_imports`, `comptable_transactions`, `comptable_natures`, `comptable_pop_lignes`, `comptable_projets`, `comptable_projet_lignes`), 60 natures seédées, RLS admin
