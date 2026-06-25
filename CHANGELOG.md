@@ -1729,3 +1729,7 @@ git push origin main
 ### Migration DB
 - Nouvelle table `compositions_projets` (id UUID, nom TEXT, updated_at TIMESTAMPTZ, data JSONB)
 - RLS : tous les utilisateurs authentifiés peuvent lire/écrire
+
+## [v0.85b] — 2026-06-25 — Compositions : migration localStorage → Supabase
+### Added
+- Bandeau de migration : si des projets existent en localStorage (ancienne version), un bouton "Importer" les insère en DB Supabase puis nettoie le localStorage

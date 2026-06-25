@@ -622,6 +622,26 @@ export default function Compositions() {
 
   useEffect(() => { loadProjects() }, [loadProjects])
 
+  // ── Migration localStorage → Supabase ─────────────────────────────────────
+  const [migrating, setMigrating] = useState(false)
+  const hasLocalData = (() => { try { const d = JSON.parse(localStorage.getItem('espm_compositions_v1') || '[]'); return d.length > 0 } catch { return false } })()
+
+  const migrateFromLocalStorage = async () => {
+    setMigrating(true)
+    try {
+      const old = JSON.parse(localStorage.getItem('espm_compositions_v1') || '[]')
+      for (const entry of old) {
+        const now = entry.date || new Date().toISOString()
+        await supabase.from('compositions_projets')
+          .insert({ nom: entry.name || entry.data?.name || 'Sans titre', updated_at: now, data: entry.data || {} })
+      }
+      localStorage.removeItem('espm_compositions_v1')
+      await loadProjects()
+    } finally {
+      setMigrating(false)
+    }
+  }
+
   // ── Élèves filtrés ────────────────────────────────────────────────────────
   const filteredEleves = useMemo(() => {
     let list = allEleves
@@ -938,6 +958,18 @@ export default function Compositions() {
       />
 
       <div className="flex-1 overflow-y-auto p-6">
+        {!dbLoading && hasLocalData && (
+          <div className="mb-4 flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-amber-800">
+              <span className="text-base">📦</span>
+              <span>Des projets de l'ancienne version (stockage local) ont été détectés. Importer vers Supabase pour les retrouver partout ?</span>
+            </div>
+            <button onClick={migrateFromLocalStorage} disabled={migrating}
+              className="shrink-0 text-xs font-semibold bg-amber-600 text-white px-3 py-1.5 rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors">
+              {migrating ? 'Migration…' : 'Importer'}
+            </button>
+          </div>
+        )}
         {dbLoading ? (
           <div className="flex items-center justify-center h-full text-gray-400 text-sm">Chargement…</div>
         ) : savedList.length === 0 ? (
