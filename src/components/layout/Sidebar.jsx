@@ -141,18 +141,18 @@ export default function Sidebar() {
   }, [collapsed])
 
   const links = [
-    { to: '/',                 label: 'Accueil',      icon: 'home',      show: true },
-    { to: '/groupes',          label: 'Élèves',       icon: 'groupes',   show: isMdp },
-    { to: '/activites',        label: 'Activités',    icon: 'activites', show: isMdp },
-    { to: '/eleves',           label: 'Soldes',       icon: 'soldes',    show: isFinancier },
-    { to: '/factures',         label: 'Factures',     icon: 'factures',  show: isFinancier },
-    { to: '/paiements',        label: 'Paiements',    icon: 'paiements', show: isFinancier },
-    { to: '/articles',         label: 'Articles',     icon: 'articles',  show: isFinancier },
-    { to: '/assistant-social', label: 'Suivi social', icon: 'social',    show: isFinancier },
-    { to: '/helpdesk',          label: 'Helpdesk',     icon: 'helpdesk',  show: isMdp },
-    { to: '/salle-des-profs',  label: 'Salle des profs', icon: 'salle', show: isMdp },
-    { to: '/econome',          label: 'Économe',         icon: 'econome', show: can('econome') || isAdmin },
-    { to: '/compositions',      label: 'Compositions',    icon: 'compositions', show: isMdp },
+    { to: '/',                 label: 'Accueil',         icon: 'home',         show: true },
+    { to: '/activites',        label: 'Activités',       icon: 'activites',    show: isMdp },
+    { to: '/articles',         label: 'Articles',        icon: 'articles',     show: isFinancier },
+    { to: '/compositions',     label: 'Compositions',    icon: 'compositions', show: isMdp },
+    { to: '/econome',          label: 'Économe',         icon: 'econome',      show: can('econome') || isAdmin },
+    { to: '/groupes',          label: 'Élèves',          icon: 'groupes',      show: isMdp },
+    { to: '/factures',         label: 'Factures',        icon: 'factures',     show: isFinancier },
+    { to: '/helpdesk',         label: 'Helpdesk',        icon: 'helpdesk',     show: isMdp },
+    { to: '/paiements',        label: 'Paiements',       icon: 'paiements',    show: isFinancier },
+    { to: '/salle-des-profs',  label: 'Salle des profs', icon: 'salle',        show: isMdp },
+    { to: '/eleves',           label: 'Soldes',          icon: 'soldes',       show: isFinancier },
+    { to: '/assistant-social', label: 'Suivi social',    icon: 'social',       show: isFinancier },
   ]
 
   const logout = async () => { await supabase.auth.signOut(); navigate('/login') }
