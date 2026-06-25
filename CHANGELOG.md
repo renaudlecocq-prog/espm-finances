@@ -1462,27 +1462,31 @@ git push origin main
 - Code : payload envoie maintenant les deux noms (`date`+`date_ligne`, `commentaire`+`note`) pour compat
 - Affichage date et commentaire dans l'édition : fallback sur l'ancienne colonne
 
-## [Main] 2026-06-25 — v1.00 — Module Économe complet
+## [Develop] 2026-06-25 — Phase 5 Économe : Exports Excel, Graphiques Bilan, PDF
 
-### Résumé du déploiement en production
-Merge de toutes les phases du module Économe (develop → main).
+### Nouvelles fonctionnalités
+- **Export Excel** (SheetJS) :
+  - Onglets Fonctionnement et Élèves : bouton "Excel" → colonnes Date, Libellé, Nature, Catégorie, Entrée, Sortie, Solde cumulé — filename `ESPM_{compte}_{annee}.xlsx`
+  - Onglet POP : bouton "Excel" → colonnes Date, Fournisseur, N° pièce, Nature, Catégorie, Montant, Solde cumulé — filename `ESPM_POP_{annee}.xlsx`
+  - Largeurs de colonnes auto-ajustées
+- **Graphiques Bilan** (recharts) :
+  - Composant `BilanCharts` partagé entre Vue Couverture et Vue Générale, rétractable/déployable
+  - Barres groupées comparant les deux flux par mois (Dépenses/Encaissements ou Charges/Produits)
+  - Courbe de solde cumulatif avec remplissage de zone
+- **PDF Bilan** — `netlify/functions/econome-bilan-pdf.mjs` :
+  - GET `?annee=YYYY&token=JWT` → HTML avec `window.print()` automatique
+  - Page de vue générale (Produits/Charges par mois avec solde) + page couverture élèves
+  - Cartes récap : Total produits / Total charges / Solde général / Couverture élèves
+  - Rendu paysage A4 optimisé (@media print)
+- **PDF Projets** — `netlify/functions/econome-projet-pdf.mjs` :
+  - GET `?projetId=UUID&token=JWT` → HTML avec `window.print()` automatique
+  - Lignes groupées par catégorie avec sous-totaux, grand total, cartes récap
+  - Badge statut (En cours / Clôturé), description du projet si renseignée
+- **Boutons PDF** dans l'UI :
+  - Tab Bilan : bouton "PDF Bilan" dans la toolbar (à côté du sélecteur d'année)
+  - Tab Projets : bouton "PDF Projet" dans la toolbar (visible quand un projet est sélectionné)
 
-**Phase 1 — Import CSV & classification**
-- Onglet Fonctionnement : import CSV Belfius, classification par nature comptable, sélection multiple + bulk assign
-- Onglet Élèves : idem, avec suivi statut paiement (pending/imported) + toutes transactions (entrées + sorties)
-- Admin : CRUD Natures comptables avec catégories, type_flux, in_bilan, in_couverture
+### Dépendances ajoutées
+- `xlsx` (SheetJS) — export Excel côté client
+- `recharts` — graphiques dans le Bilan
 
-**Phase 2 — POP & intégration Paiements**
-- Onglet POP : encodage manuel notes de frais transmises au Pouvoir Organisateur Pluriel
-- Paiements : bouton "Depuis Économe" — import des transactions Élèves en attente vers Paiements avec matching auto élève
-
-**Phase 3 — Bilan mensuel**
-- Vue Couverture élèves (défaut) : dépenses couvertes par élèves vs encaissements parents, par mois
-- Vue Générale : tableau Produits/Charges complet avec solde SUR/SOUS couverture
-
-**Phase 4 — Projets**
-- Projets libres (Pâtes, Fancy Fair, Rhétos…) avec catégories configurables par projet
-- Lignes Date/Intitulé/Catégorie/Entrée/Sortie groupées avec sous-totaux + grand total
-- Clôture de projet (lecture seule)
-
-**DB** : 5 nouvelles tables (`comptable_imports`, `comptable_transactions`, `comptable_natures`, `comptable_pop_lignes`, `comptable_projets`, `comptable_projet_lignes`), 60 natures seédées, RLS admin
