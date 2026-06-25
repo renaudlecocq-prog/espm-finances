@@ -8,14 +8,14 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../lib/supabase'
 import PageHeader from '../components/ui/PageHeader'
+import MasterFilter from '../components/ui/MasterFilter'
 import {
-  Settings, LayoutGrid, Plus, Trash2, Download, Upload, X, AlertTriangle,
-  RefreshCw, Users, Link, Unlink, Check, Save, FolderOpen, ChevronDown,
-  Maximize2, Minimize2,
+  LayoutGrid, Plus, Trash2, Download, Upload, X, AlertTriangle,
+  RefreshCw, Users, Link, Unlink, Check, Save, FolderOpen,
+  Maximize2, Minimize2, Search,
 } from 'lucide-react'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
-const ANNEES = ['1', '2', '3', '4', '5', '6']
 const POOL_ID = '__pool__'
 const LS_KEY  = 'espm_compositions_v1'
 
@@ -244,8 +244,7 @@ export default function Compositions() {
 
   // ── Config ─────────────────────────────────────────────────────────────────
   const [compositionName, setCompositionName] = useState('Nouvelle composition')
-  const [selectedAnnees, setSelectedAnnees]   = useState([])
-  const [selectedClasses, setSelectedClasses] = useState([])
+  const [filters, setFilters]                 = useState({})
   const [excludedIds, setExcludedIds]         = useState(new Set())
   const [fields, setFields]                   = useState(DEFAULT_FIELDS)
   const [customFields, setCustomFields]       = useState([])
@@ -266,22 +265,36 @@ export default function Compositions() {
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showLoadModal, setShowLoadModal] = useState(false)
 
-  // ── Classes dispo ──────────────────────────────────────────────────────────
+  // ── FilterDefs ─────────────────────────────────────────────────────────────
   const availableClasses = useMemo(() =>
     [...new Set(allEleves.map(e => e.classe).filter(Boolean))].sort()
   , [allEleves])
 
+  const filterDefs = useMemo(() => [
+    {
+      key: 'annee', label: 'Année',
+      options: [...new Set(allEleves.map(e => getAnneFromClasse(e.classe)).filter(Boolean))].sort().map(a => `${a}e`),
+    },
+    { key: 'classe', label: 'Classe', options: availableClasses },
+  ], [allEleves, availableClasses])
+
+  const toggleFilter = (key, val) => setFilters(prev => {
+    const cur = prev[key] || []
+    const next = cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val]
+    return { ...prev, [key]: next }
+  })
+
   // ── Élèves filtrés ─────────────────────────────────────────────────────────
   const filteredEleves = useMemo(() => {
     let list = allEleves
-    if (selectedAnnees.length > 0)
-      list = list.filter(e => { const a = getAnneFromClasse(e.classe); return a && selectedAnnees.includes(a) })
-    if (selectedClasses.length > 0)
-      list = list.filter(e => selectedClasses.includes(e.classe))
+    if (filters.annee?.length)
+      list = list.filter(e => { const a = getAnneFromClasse(e.classe); return a && filters.annee.includes(`${a}e`) })
+    if (filters.classe?.length)
+      list = list.filter(e => filters.classe.includes(e.classe))
     if (excludedIds.size > 0)
       list = list.filter(e => !excludedIds.has(e.id))
     return list
-  }, [allEleves, selectedAnnees, selectedClasses, excludedIds])
+  }, [allEleves, filters, excludedIds])
 
   // ── Chargement élèves ──────────────────────────────────────────────────────
   const loadEleves = useCallback(async () => {
@@ -378,7 +391,7 @@ export default function Compositions() {
   const serializeComposition = () => ({
     name: compositionName,
     date: new Date().toISOString(),
-    selectedAnnees, selectedClasses,
+    filters,
     excludedIds: [...excludedIds],
     fields: Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v.enabled])),
     customFields,
@@ -390,8 +403,9 @@ export default function Compositions() {
 
   const deserializeComposition = data => {
     if (data.name)            setCompositionName(data.name)
-    if (data.selectedAnnees) setSelectedAnnees(data.selectedAnnees)
-    if (data.selectedClasses) setSelectedClasses(data.selectedClasses)
+    if (data.filters)         setFilters(data.filters)
+    // legacy compat
+    else if (data.selectedAnnees || data.selectedClasses) setFilters({ annee: (data.selectedAnnees||[]).map(a=>`${a}e`), classe: data.selectedClasses||[] })
     if (data.excludedIds)     setExcludedIds(new Set(data.excludedIds))
     if (data.fields)          setFields(prev => Object.fromEntries(
       Object.entries(prev).map(([k, v]) => [k, { ...v, enabled: data.fields[k] ?? v.enabled }])
@@ -631,50 +645,62 @@ export default function Compositions() {
 
           {/* Source */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-700">Source — Élèves à composer</h3>
               <button onClick={loadEleves} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400">
                 <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               </button>
             </div>
 
-            {/* Filtre années */}
-            <div className="mb-3">
-              <p className="text-xs text-gray-400 font-medium mb-2">Par année</p>
-              <div className="flex flex-wrap gap-1.5">
-                {ANNEES.map(a => (
-                  <button key={a} onClick={() => setSelectedAnnees(prev =>
-                    prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]
-                  )}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors
-                      ${selectedAnnees.includes(a) ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                    {a}e
-                  </button>
-                ))}
-                {selectedAnnees.length > 0 && (
-                  <button onClick={() => setSelectedAnnees([])} className="text-xs text-gray-400 hover:text-red-500 px-1">✕</button>
-                )}
+            {/* Ligne filtres + recherche */}
+            <div className="flex items-center gap-2 mb-3">
+              <MasterFilter
+                filters={filters}
+                filterDefs={filterDefs}
+                onChange={toggleFilter}
+                onClearAll={() => setFilters({})}
+              />
+              <div className="relative flex-1">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={eleveSearch}
+                  onChange={e => setEleveSearch(e.target.value)}
+                  placeholder="Rechercher un élève à exclure…"
+                  className="w-full text-xs border border-gray-200 rounded-lg pl-7 pr-3 py-1.5 focus:outline-none focus:border-indigo-400"
+                />
               </div>
-            </div>
-
-            {/* Filtre classes */}
-            <div className="mb-3">
-              <p className="text-xs text-gray-400 font-medium mb-2">Par classe</p>
-              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                {availableClasses.map(c => (
-                  <button key={c} onClick={() => setSelectedClasses(prev =>
-                    prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]
-                  )}
-                    className={`px-2 py-1 rounded-lg text-xs font-semibold transition-colors
-                      ${selectedClasses.includes(c) ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                    {c}
-                  </button>
-                ))}
-              </div>
-              {selectedClasses.length > 0 && (
-                <button onClick={() => setSelectedClasses([])} className="text-xs text-gray-400 hover:text-red-500 mt-1">✕ Effacer classes</button>
+              {excludedIds.size > 0 && (
+                <button onClick={() => setExcludedIds(new Set())}
+                  className="text-xs text-red-400 hover:text-red-600 whitespace-nowrap shrink-0">
+                  ✕ {excludedIds.size} exclu{excludedIds.size > 1 ? 's' : ''}
+                </button>
               )}
             </div>
+
+            {/* Résultats de recherche */}
+            {eleveSearch && (
+              <div className="flex flex-wrap gap-1.5 mb-3 max-h-32 overflow-y-auto">
+                {allEleves
+                  .filter(e => `${e.nom} ${e.prenom}`.toLowerCase().includes(eleveSearch.toLowerCase()))
+                  .slice(0, 30)
+                  .map(e => {
+                    const excluded = excludedIds.has(e.id)
+                    return (
+                      <button key={e.id} onClick={() => setExcludedIds(prev => {
+                        const n = new Set(prev); n.has(e.id) ? n.delete(e.id) : n.add(e.id); return n
+                      })}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs border transition-colors
+                          ${excluded
+                            ? 'bg-red-50 border-red-200 text-red-500 line-through'
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50'}`}>
+                        {excluded && <X size={9} />}
+                        {e.nom} {e.prenom}
+                        {e.classe && <span className="text-gray-400 ml-1">· {e.classe}</span>}
+                      </button>
+                    )
+                  })}
+              </div>
+            )}
 
             {/* Résumé */}
             <div className="flex items-center gap-2">
@@ -682,44 +708,9 @@ export default function Compositions() {
               <span className="text-sm text-gray-600">
                 <span className="font-bold text-indigo-600">{filteredEleves.length}</span> élève{filteredEleves.length !== 1 ? 's' : ''} sélectionné{filteredEleves.length !== 1 ? 's' : ''}
               </span>
-              {(selectedAnnees.length === 0 && selectedClasses.length === 0) && (
+              {!filters.annee?.length && !filters.classe?.length && (
                 <span className="text-xs text-gray-400">— tous les élèves actifs</span>
               )}
-            </div>
-
-            {/* Exclusion individuelle */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-gray-500 font-medium">Exclure des élèves individuels</p>
-                {excludedIds.size > 0 && (
-                  <button onClick={() => setExcludedIds(new Set())} className="text-xs text-red-400 hover:text-red-600">
-                    Réintégrer tous ({excludedIds.size})
-                  </button>
-                )}
-              </div>
-              <input value={eleveSearch} onChange={e => setEleveSearch(e.target.value)}
-                placeholder="Rechercher…" className="w-full text-xs border border-gray-200 rounded-lg px-3 py-1.5 mb-2 focus:outline-none focus:border-indigo-400" />
-              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
-                {allEleves
-                  .filter(e => !eleveSearch || `${e.nom} ${e.prenom}`.toLowerCase().includes(eleveSearch.toLowerCase()))
-                  .map(e => {
-                    const excluded = excludedIds.has(e.id)
-                    const visible  = filteredEleves.some(f => f.id === e.id) || excluded
-                    return (
-                      <button key={e.id} onClick={() => setExcludedIds(prev => {
-                        const n = new Set(prev); n.has(e.id) ? n.delete(e.id) : n.add(e.id); return n
-                      })}
-                        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs border transition-colors
-                          ${excluded ? 'bg-red-50 border-red-200 text-red-500 line-through'
-                            : !visible ? 'bg-gray-50 border-gray-100 text-gray-300'
-                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-indigo-300'}`}>
-                        {excluded && <X size={9} />}
-                        {e.nom} {e.prenom}
-                        {e.classe && <span className="text-gray-400">· {e.classe}</span>}
-                      </button>
-                    )
-                  })}
-              </div>
             </div>
           </div>
 

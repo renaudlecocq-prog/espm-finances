@@ -1577,3 +1577,11 @@ git push origin main
   - Bouton "Sauvegarder" dans le header → modal avec nom éditable
   - Bouton "Ouvrir (N)" dans le header → liste des compositions avec date, charger ou supprimer
   - Import/export JSON disponibles dans la modal "Ouvrir"
+
+## [Develop] 2026-06-25 — Compositions v3.1 : Source refonte avec MasterFilter
+
+### Configuration — Source
+- **Filtres** : remplacement des pills "Par année / Par classe" par le composant `MasterFilter` (identique à la page Élèves) — dropdown avec colonnes Année et Classe, compteur de filtres actifs
+- **Recherche** : champ de recherche par nom d'élève (pour exclure individuellement) déplacé sur la même ligne que le bouton Filtres
+- **Exclusion individuelle** : les résultats de recherche apparaissent uniquement quand un terme est tapé (plus de grille de 670 pills affichée en permanence) — cliquer sur un résultat exclut/réintègre l'élève
+- **Compteur d'exclus** : affiché à droite de la ligne filtres/recherche quand ≥1 élève exclu, avec bouton "✕ N exclus" pour tout réintégrer
