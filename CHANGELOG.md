@@ -1693,3 +1693,9 @@ git push origin main
 - Routes protégées par feature : `/eleves`, `/groupes`, `/paiements`, `/factures`, `/activites`, `/articles`, `/assistant-social`, `/helpdesk`, `/salle-des-profs`, `/econome`, `/compositions`
 - Accès direct par URL (bypass sidebar) désormais bloqué si la feature est désactivée pour le rôle
 - Admin toujours autorisé (pas de `can()` check pour `role === 'admin'`)
+
+## [v0.83h] — 2026-06-25 — FIX RequireAuth : bloque aussi l'admin en aperçu
+### Fixed
+- `RequireAuth` : en mode aperçu, l'admin pouvait accéder à toute URL directement car `role === 'admin'` court-circuitait la vérification de feature
+- La garde s'applique désormais si `viewAsRole` est actif, même pour l'admin
+- URL directes bloquées en aperçu si la feature est désactivée pour le rôle simulé
