@@ -1611,3 +1611,14 @@ git push origin main
 
 ### Debug
 - `smartschool-debug.mjs` : endpoint temporaire de diagnostic (à supprimer après usage)
+
+## [Develop] 2026-06-25 — Compositions v4 : liste projets + modals
+
+### Refonte UX complète (v4)
+- **Suppression des deux onglets** (Config / Composition) remplacée par une architecture page unique
+- **Vue liste** : grille de cartes projets + carte "+ Nouveau projet" en première position ; chaque carte affiche nom, date, nombre de groupes et élèves placés
+- **Modal de création** : formulaire complet (nom, source/filtres, champs, champs personnalisés) à l'ouverture d'un nouveau projet
+- **Modal de configuration** : même formulaire, accessible via bouton "Configuration" dans la barre du board ; modifications appliquées en temps réel
+- **Vue board** : barre d'info avec retour vers la liste (← Mes projets), indicateur de sauvegarde, toggle compact/étendu, bouton "Nouveau groupe"
+- **Suppression** d'un projet depuis la vue liste (icône poubelle au survol)
+- **Import JSON** : depuis la vue liste (bouton "Importer JSON")
