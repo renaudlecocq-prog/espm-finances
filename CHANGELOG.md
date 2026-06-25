@@ -1762,3 +1762,9 @@ git push origin main
 - FIX : `lastNonce` (valeur unique) remplacé par `lastNonces` (Set) — plusieurs saves en vol ne causent plus de faux positifs realtime
 - FIX : `justLoaded` ref — skip du premier auto-save inutile après ouverture d'une composition (données déjà en DB)
 - Résultat : "Enregistrement…" n'apparaît plus au simple chargement d'une composition, et les changements utilisateur restent sauvegardés correctement
+
+## [v0.88b] — FIX boucle Enregistrement (sync assignments bail out)
+
+- FIX ROOT CAUSE : l'effet sync assignments créait toujours un nouvel objet `{ ...prev }` même quand aucun élève n'était ajouté
+- Ce nouvel objet (référence différente) déclenchait l'effet auto-save → "Enregistrement…" en boucle au chargement
+- Fix : `return prev` (même référence) quand `toAdd.length === 0` → React bail out, pas de re-render, pas de save inutile

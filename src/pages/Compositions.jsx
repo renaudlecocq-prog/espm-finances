@@ -664,10 +664,14 @@ export default function Compositions() {
   }, [allEleves, filters, excludedIds, includedIds])
 
   // ── Sync assignments ──────────────────────────────────────────────────────
+  // IMPORTANT : retourner `prev` si aucun élève n'est ajouté — même référence → React bail out
+  // → pas de re-render → l'effet auto-save ne se déclenche pas inutilement après chargement
   useEffect(() => {
     setAssignments(prev => {
+      const toAdd = filteredEleves.filter(e => !(e.id in prev))
+      if (toAdd.length === 0) return prev  // aucun ajout → même référence → pas de save
       const next = { ...prev }
-      for (const e of filteredEleves) { if (!(e.id in next)) next[e.id] = POOL_ID }
+      for (const e of toAdd) next[e.id] = POOL_ID
       return next
     })
   }, [filteredEleves])
