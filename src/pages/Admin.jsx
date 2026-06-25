@@ -1045,6 +1045,7 @@ export function NaturesAdmin() {
       sous_categorie: form.sous_categorie,
       type_flux: form.type_flux,
       in_bilan: form.in_bilan,
+      in_couverture: form.in_couverture ?? false,
       actif: form.actif,
     }
     if (form.id) {
@@ -1079,7 +1080,7 @@ export function NaturesAdmin() {
           <p className="text-xs text-gray-400 mt-0.5">{natures.length} natures · {natures.filter(n => !n.actif).length} désactivées</p>
         </div>
         <button
-          onClick={() => setEditItem({ libelle: '', categorie: '', sous_categorie: '', type_flux: 'charge', in_bilan: true, actif: true })}
+          onClick={() => setEditItem({ libelle: '', categorie: '', sous_categorie: '', type_flux: 'charge', in_bilan: true, in_couverture: false, actif: true })}
           className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
         >
           + Nouvelle nature
@@ -1267,6 +1268,11 @@ function NatureModal({ item, categories, saving, onSave, onClose }) {
                 <input type="checkbox" checked={form.actif} onChange={e => set('actif', e.target.checked)}
                   className="rounded" />
                 Actif
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer" title="Cette charge est compensée par les encaissements élèves (Extramuros, Voyages, Frais péda…)">
+                <input type="checkbox" checked={form.in_couverture ?? false} onChange={e => set('in_couverture', e.target.checked)}
+                  className="rounded accent-indigo-500" />
+                <span>Couverture élèves</span>
               </label>
             </div>
           </div>

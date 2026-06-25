@@ -1422,3 +1422,14 @@ git push origin main
 - Modal "Depuis Économe" se ferme automatiquement après l'import réussi
 - Bouton "Import CSV" supprimé du header Paiements (remplacé par le flux Économe)
 - Bouton "+ Paiement" adopte le même style ghost que "Depuis Économe"
+
+## [Develop] 2026-06-25 — Bilan v2 : vue Couverture élèves + Admin in_couverture
+
+### Nouvelles fonctionnalités
+- **Bilan — Vue Couverture élèves** (onglet par défaut) :
+  - Affiche uniquement les charges marquées `in_couverture=true` (Extramuros, Voyages scolaires, Frais pédagogiques, Achats-Événements) confrontées à tous les encaissements élèves
+  - 3 cartes récap : Total dépenses / Total encaissé / Solde (Avance en indigo, Découvert en ambre)
+  - Tableau mensuel avec sous-totaux par catégorie pliables/dépliables
+- **Bilan — Vue Générale** (onglet secondaire) : tableau Produits/Charges complet conservé pour vision globale
+- **Migration DB** : colonne `in_couverture boolean` sur `comptable_natures` (28 natures marquées au seed)
+- **Admin — Natures comptables** : nouveau toggle "Couverture élèves" dans le formulaire d'édition
