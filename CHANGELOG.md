@@ -1651,3 +1651,7 @@ git push origin main
 - **Toast de confirmation** après import Excel : message vert "N valeurs importées sur X champs" (4 sec) ou rouge avec explication en cas d'erreur
 - **Normalisation Unicode NFC** sur les noms de colonnes avant comparaison — corrige les cas où `è` encodé différemment (Excel vs JS) empêchait le matching silencieusement
 - Recherche de colonne par `findIndex` + `normalize` au lieu de `indexOf` strict
+
+## [Unreleased]
+### Debug
+- sync: logger les champs disponibles dans getAllAccountsExtended pour trouver le champ photo des élèves importés en masse

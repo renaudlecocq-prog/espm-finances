@@ -216,7 +216,16 @@ export default async function handler(req) {
       details:            `OK — ${elevesCount} élèves, ${personnelCount} personnel`,
     })
 
-    return new Response(JSON.stringify({ success: true, eleves: elevesCount, personnel: personnelCount }), { status: 200, headers })
+    // Debug : identifier les champs photo/foto dans les données brutes Smartschool
+    const firstEleve = list.find(a => String(a.basisrol ?? '').trim() === '1')
+    const sampleKeys = firstEleve ? Object.keys(firstEleve).sort() : []
+    const photoKeys  = sampleKeys.filter(k => /photo|foto|picture|image|bild|profi/i.test(k))
+
+    return new Response(JSON.stringify({
+      success: true, eleves: elevesCount, personnel: personnelCount,
+      _debug_sample_keys: sampleKeys,
+      _debug_photo_keys: photoKeys,
+    }), { status: 200, headers })
 
   } catch (err) {
     const msg = err.message || String(err)
