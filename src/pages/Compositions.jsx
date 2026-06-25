@@ -73,7 +73,7 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
   const compact = cardMode === 'compact'
 
   return (
-    <div className={`relative rounded-xl border bg-white transition-all select-none cursor-grab active:cursor-grabbing
+    <div className={`relative rounded-xl border bg-white transition-all select-none cursor-grab active:cursor-grabbing overflow-hidden
       ${selected ? 'border-indigo-400 shadow-md ring-2 ring-indigo-300/60'
         : isDragging ? 'border-indigo-200 shadow-lg opacity-80'
         : 'border-gray-100 shadow-sm hover:border-indigo-200 hover:shadow-md'}`}>
@@ -127,7 +127,7 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
             {customFields?.map(cf => (
               <div key={cf.id} className="mt-1" onPointerDown={e => e.stopPropagation()}>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-gray-400 shrink-0">{cf.label}:</span>
+                  <span className="text-[10px] text-gray-400 shrink-0 truncate max-w-[70px]">{cf.label}:</span>
                   <input value={cf.values?.[eleve.id] || ''} onChange={e => onCFChange?.(cf.id, eleve.id, e.target.value)}
                     onClick={e => e.stopPropagation()} placeholder="—"
                     className="text-[10px] flex-1 min-w-0 border-b border-gray-200 bg-transparent focus:outline-none focus:border-indigo-400 text-gray-700" />
