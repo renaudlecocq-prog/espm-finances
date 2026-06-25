@@ -19,8 +19,6 @@ import {
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const POOL_ID = '__pool__'
-const LS_KEY  = 'espm_compositions_v1'
-
 const DEFAULT_FIELDS = {
   photo:    { label: 'Photo',             enabled: true },
   classe:   { label: 'Classe actuelle',   enabled: true },
@@ -31,9 +29,7 @@ const DEFAULT_FIELDS = {
 
 const getAnneFromClasse = c => { const m = c?.match(/^(\d)/); return m ? m[1] : null }
 
-// ── LocalStorage ──────────────────────────────────────────────────────────────
-function loadSaved() { try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]') } catch { return [] } }
-function writeSaved(list) { try { localStorage.setItem(LS_KEY, JSON.stringify(list)) } catch {} }
+
 
 // ── ElevePhoto ─────────────────────────────────────────────────────────────────
 // photoUrl  : URL stockée en DB (priorité absolue, pas d'appel Smartschool)
@@ -584,7 +580,8 @@ export default function Compositions() {
   const [cardMode, setCardMode]       = useState('etendu')
 
   // ── Sauvegarde ────────────────────────────────────────────────────────────
-  const [savedList, setSavedList]   = useState(() => loadSaved())
+  const [savedList, setSavedList]   = useState([])
+  const [dbLoading, setDbLoading]    = useState(true)
   const [lastSaved, setLastSaved]   = useState(null)
   const autoSaveTimer               = useRef(null)
 
@@ -613,6 +610,18 @@ export default function Compositions() {
 
   useEffect(() => { loadEleves() }, [loadEleves])
 
+  // ── Chargement projets depuis Supabase ────────────────────────────────────
+  const loadProjects = useCallback(async () => {
+    setDbLoading(true)
+    const { data } = await supabase.from('compositions_projets')
+      .select('id, nom, updated_at, data')
+      .order('updated_at', { ascending: false })
+    setSavedList((data || []).map(r => ({ id: r.id, name: r.nom, date: r.updated_at, data: r.data })))
+    setDbLoading(false)
+  }, [])
+
+  useEffect(() => { loadProjects() }, [loadProjects])
+
   // ── Élèves filtrés ────────────────────────────────────────────────────────
   const filteredEleves = useMemo(() => {
     let list = allEleves
@@ -640,26 +649,34 @@ export default function Compositions() {
     })
   }, [filteredEleves])
 
+  // ── currentProjectId : UUID du projet en cours d'édition ────────────────
+  const currentProjectId = useRef(null)
+
   // ── Auto-save ─────────────────────────────────────────────────────────────
   const doSave = useCallback((immediate = false) => {
-    const save = () => {
-      const date    = new Date().toISOString()
-      const entryId = 'comp_' + compositionName.replace(/\W+/g, '_').toLowerCase()
-      const data    = {
-        name: compositionName, date, filters, excludedIds: [...excludedIds],
+    const save = async () => {
+      const now  = new Date().toISOString()
+      const data = {
+        name: compositionName, date: now, filters, excludedIds: [...excludedIds], includedIds: [...includedIds],
         fields: Object.fromEntries(Object.entries(fields).map(([k,v]) => [k,v.enabled])),
         customFields, groups, assignments, linkedSets: linkedSets.map(s => [...s]), cardMode,
       }
-      const entry = { id: entryId, name: compositionName, date, data }
-      setSavedList(prev => { const list = [entry, ...prev.filter(c => c.id !== entryId)]; writeSaved(list); return list })
-      setLastSaved(date)
+      const pid = currentProjectId.current
+      if (!pid) return // pas encore de projet créé
+      const { error } = await supabase.from('compositions_projets')
+        .update({ nom: compositionName, updated_at: now, data })
+        .eq('id', pid)
+      if (!error) {
+        setSavedList(prev => prev.map(p => p.id === pid ? { ...p, name: compositionName, date: now, data } : p))
+        setLastSaved(now)
+      }
     }
     if (immediate) { clearTimeout(autoSaveTimer.current); save() }
     else {
       clearTimeout(autoSaveTimer.current)
       autoSaveTimer.current = setTimeout(save, 1500)
     }
-  }, [compositionName, filters, excludedIds, fields, customFields, groups, assignments, linkedSets, cardMode])
+  }, [compositionName, filters, excludedIds, includedIds, fields, customFields, groups, assignments, linkedSets, cardMode])
 
   useEffect(() => {
     if (view === 'board') doSave()
@@ -821,6 +838,7 @@ export default function Compositions() {
 
   // ── Désérialisation ───────────────────────────────────────────────────────
   const loadComposition = entry => {
+    currentProjectId.current = entry.id
     const d = entry.data
     if (d.name)           setCompositionName(d.name)
     if (d.filters)        setFilters(d.filters)
@@ -837,9 +855,10 @@ export default function Compositions() {
     setView('board')
   }
 
-  const deleteComposition = id => {
-    const list = savedList.filter(c => c.id !== id)
-    setSavedList(list); writeSaved(list)
+  const deleteComposition = async id => {
+    await supabase.from('compositions_projets').delete().eq('id', id)
+    setSavedList(prev => prev.filter(c => c.id !== id))
+    if (currentProjectId.current === id) { currentProjectId.current = null; setView('list') }
   }
 
   // ── Créer nouvelle composition ────────────────────────────────────────────
@@ -849,7 +868,22 @@ export default function Compositions() {
     setShowCreateModal(true)
   }
 
-  const confirmCreate = () => {
+  const confirmCreate = async () => {
+    const now = new Date().toISOString()
+    const data = {
+      name: draftName, date: now, filters: draftFilters,
+      excludedIds: [...draftExcludedIds], includedIds: [...draftIncludedIds],
+      fields: Object.fromEntries(Object.entries(draftFields).map(([k,v]) => [k,v.enabled])),
+      customFields: draftCustomFields, groups: [], assignments: {}, linkedSets: [], cardMode: 'etendu',
+    }
+    const { data: rows, error } = await supabase.from('compositions_projets')
+      .insert({ nom: draftName, updated_at: now, data })
+      .select('id, nom, updated_at, data')
+      .single()
+    if (error || !rows) { console.error('Erreur création projet:', error); return }
+    const entry = { id: rows.id, name: rows.nom, date: rows.updated_at, data: rows.data }
+    currentProjectId.current = rows.id
+    setSavedList(prev => [entry, ...prev])
     setCompositionName(draftName); setFilters(draftFilters); setExcludedIds(draftExcludedIds); setIncludedIds(draftIncludedIds)
     setFields(draftFields); setCustomFields(draftCustomFields)
     setGroups([]); setAssignments({}); setLinkedSets([]); setSelectedIds(new Set())
@@ -904,7 +938,9 @@ export default function Compositions() {
       />
 
       <div className="flex-1 overflow-y-auto p-6">
-        {savedList.length === 0 ? (
+        {dbLoading ? (
+          <div className="flex items-center justify-center h-full text-gray-400 text-sm">Chargement…</div>
+        ) : savedList.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4">
               <LayoutGrid size={28} className="text-indigo-400" />

@@ -1717,3 +1717,15 @@ git push origin main
 - Footer : affichage de la version (`v0.83j`) après le copyright, injectée depuis `package.json` via Vite `define`
 - `vite.config.js` : injection de `__APP_VERSION__` au build
 - `package.json` : version alignée sur le versioning ESPM+ (`0.83j`)
+
+## [v0.85] — 2026-06-25 — Compositions : persistance Supabase
+### Changed
+- Compositions : migration de localStorage vers Supabase (`compositions_projets` table)
+- Les projets sont maintenant partagés entre tous les navigateurs/environnements
+- Création : INSERT en DB → UUID Supabase (plus de slug localStorage)
+- Auto-save : UPDATE en DB toutes les 1,5s pendant l'édition
+- Suppression : DELETE en DB
+- Liste : chargement depuis Supabase au montage avec état "Chargement…"
+### Migration DB
+- Nouvelle table `compositions_projets` (id UUID, nom TEXT, updated_at TIMESTAMPTZ, data JSONB)
+- RLS : tous les utilisateurs authentifiés peuvent lire/écrire
