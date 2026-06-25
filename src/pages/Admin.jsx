@@ -6,6 +6,7 @@ import { RefreshCw, UserPlus, Shield, Lock } from "lucide-react"
 import PageHeader from "../components/ui/PageHeader"
 import { useDemo } from "../context/DemoContext"
 import { FEATURES, ROLES, ROLE_META, FEATURE_GROUPS } from '../lib/permissions'
+import MasterFilter from '../components/ui/MasterFilter'
 
 // ── Toggle de permission ──────────────────────────────────────────────────────
 function PermToggle({ value, onChange, disabled, saving }) {
@@ -1435,12 +1436,13 @@ function PhotosAdmin() {
   const inputRef                  = useRef(null)
   const [cropEleve, setCropEleve] = useState(null)
   const [gridSearch, setGridSearch] = useState('')
+  const [gridFilters, setGridFilters] = useState({})
 
   // Charger tous les élèves (id, username, internal_number)
   useEffect(() => {
     supabase
       .from('eleves')
-      .select('id, nom, prenom, smartschool_username, smartschool_internal_number, photo_url')
+      .select('id, nom, prenom, classe, smartschool_username, smartschool_internal_number, photo_url')
       .eq('actif', true)
       .then(({ data }) => { setEleves(data || []); setLoading(false) })
   }, [])
@@ -1598,19 +1600,24 @@ function PhotosAdmin() {
       {/* Grille des photos existantes */}
       {(() => {
         const withPhotos = eleves.filter(e => e.photo_url)
-        const filtered = gridSearch.trim()
-          ? withPhotos.filter(e => `${e.prenom} ${e.nom}`.toLowerCase().includes(gridSearch.toLowerCase()))
-          : withPhotos
+        const classes = [...new Set(withPhotos.map(e => e.classe).filter(Boolean))].sort()
+        const filterDefs = [{ key: 'classe', label: 'Classe', options: classes }]
+        let filtered = withPhotos
+        if (gridSearch.trim()) filtered = filtered.filter(e => `${e.prenom} ${e.nom}`.toLowerCase().includes(gridSearch.toLowerCase()))
+        if (gridFilters.classe?.length) filtered = filtered.filter(e => gridFilters.classe.includes(e.classe))
         if (!withPhotos.length) return null
         return (
           <div className="mt-8">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-semibold text-gray-700 text-sm">{withPhotos.length} photos importées</h4>
-              <input
-                type="text" placeholder="Rechercher…" value={gridSearch}
-                onChange={e => setGridSearch(e.target.value)}
-                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-44 outline-none focus:border-indigo-300"
-              />
+              <div className="flex items-center gap-2">
+                <MasterFilter defs={filterDefs} filters={gridFilters} onChange={setGridFilters} />
+                <input
+                  type="text" placeholder="Rechercher…" value={gridSearch}
+                  onChange={e => setGridSearch(e.target.value)}
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-44 outline-none focus:border-indigo-300"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-6 gap-3">
               {filtered.map(e => (

@@ -1799,3 +1799,8 @@ git push origin main
 - ADD Admin → Photos élèves : grille de toutes les photos importées avec barre de recherche par nom
 - ADD CropModal : outil de recadrage circulaire — glisser pour repositionner, slider pour zoomer, enregistrement 300×300 JPEG
 - FIX upload individuel (ElevePhoto dans Compositions) : `remove` + `upload` au lieu de `upsert: true` pour forcer le bust de cache CDN et garantir l'écrasement de l'ancien fichier
+
+## [v0.94a] — Photos élèves : filtre par classe dans la grille
+
+- ADD filtre "Classe" via MasterFilter dans la grille de photos (onglet Photos élèves)
+- La grille affiche maintenant les classes disponibles dans le menu filtre, comme la page Élèves
