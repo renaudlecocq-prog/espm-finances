@@ -1774,3 +1774,10 @@ git push origin main
 - FIX : `setHasPending(true)` déplacé DANS la fonction async `save()` — supprime le re-render synchrone avant le timer qui pouvait déclencher la boucle
 - FIX : `setHasPending(false)` appelé AUSSI en cas d'erreur Supabase — le spinner ne peut plus rester bloqué indéfiniment
 - Résultat : "Enregistrement…" n'apparaît plus au chargement, et disparaît toujours après la save (succès ou erreur)
+
+## [v0.91] — FIX collaboration Compositions — realtime crash + stale data
+
+- BUG ROOT CAUSE : `subscribeToProject` référençait `lastSaveTs.current` (variable jamais déclarée) → `ReferenceError` à chaque update reçu → la collaboration live était totalement cassée pour tous les utilisateurs
+- FIX 1 : Remplacement de `lastSaveTs.current` par le système de nonces déjà en place — `if (nonce && lastNonces.current.has(nonce)) return` — filtre correctement nos propres saves sans crasher
+- FIX 2 : `loadComposition` devient `async` et fait un fetch fresh depuis Supabase au moment du clic — évite que l'utilisateur charge une version stale de `savedList` si une autre personne a sauvegardé après le chargement de la liste
+- Résultat : deux utilisateurs qui ouvrent la même composition voient maintenant les DnD de l'autre en temps réel

@@ -910,11 +910,12 @@ export default function Compositions() {
       const ch = supabase.channel(`comp_${pid}`)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'compositions_projets', filter: `id=eq.${pid}` },
           (payload) => {
-            // Ignorer nos propres sauvegardes pour éviter une boucle
-            if (payload.new.updated_at === lastSaveTs.current) return
+            // Ignorer nos propres sauvegardes (nonce) pour éviter une boucle
+            const nonce = payload.new.data?._nonce
+            if (nonce && lastNonces.current.has(nonce)) return
             applyCompositionData(payload.new.data || {})
             setLastSaved(payload.new.updated_at)
-            setLastSavedBy(payload.new.updated_by || 'Quelqu\'un')
+            setLastSavedBy(payload.new.updated_by || 'Quelqu\'un d\'autre')
           })
         .subscribe()
       realtimeRef.current = ch
@@ -924,16 +925,20 @@ export default function Compositions() {
   }, [applyCompositionData])
 
   // ── Désérialisation ───────────────────────────────────────────────────────
-  const loadComposition = entry => {
+  const loadComposition = async (entry) => {
     currentProjectId.current = entry.id
-    pendingSave.current = false   // rien à sauvegarder au chargement
-    justLoaded.current = true        // skip le premier auto-save (données déjà en DB)
+    pendingSave.current = false
+    justLoaded.current = true
     setHasPending(false)
-    applyCompositionData(entry.data)
-    setLastSaved(entry.date || null)
-    setLastSavedBy(null)
-    setView('board')          // navigate first — realtime is best-effort
+    setView('board')
     subscribeToProject(entry.id)
+    // Fetch fresh depuis Supabase pour éviter les données stales dans savedList
+    const { data: fresh } = await supabase.from('compositions_projets')
+      .select('id, nom, updated_at, data').eq('id', entry.id).single()
+    const d = fresh ? { ...fresh.data, _id: fresh.id, _date: fresh.updated_at } : entry.data
+    applyCompositionData(d)
+    setLastSaved(fresh?.updated_at || entry.date || null)
+    setLastSavedBy(null)
   }
 
   const deleteComposition = async id => {
