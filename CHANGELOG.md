@@ -1679,3 +1679,10 @@ git push origin main
 - Sidebar : tous les items utilisent désormais `can('feature')` au lieu du check de rôle (`isMdp`, `isFinancier`)
 - Désactiver une feature dans Admin → Droits retire maintenant correctement l'entrée du menu pour ce rôle
 - Corrige : Salle des profs restait visible en aperçu MdP même après désactivation
+
+## [v0.83f] — 2026-06-25 — FIX Aperçu : can() charge les permissions du rôle simulé
+### Fixed
+- `AuthContext` : en mode aperçu, `can()` retournait `false` pour toutes les features → sidebar vide
+- Ajout de `previewPermissions` : chargement des `role_permissions` du rôle aperçu depuis la DB dès activation
+- `can()` utilise désormais `previewPermissions` en mode aperçu au lieu de retourner `false` hardcodé
+- L'aperçu reflète fidèlement les droits configurés dans Admin → Droits pour le rôle simulé
