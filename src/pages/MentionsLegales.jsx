@@ -32,6 +32,8 @@ export default function MentionsLegales() {
           <p><strong className="text-primary">Pouvoir Organisateur :</strong> Pouvoir Organisateur Pluriel ASBL<br /></p>
           <p><strong className="text-primary">Responsable de publication :</strong> Économat de l'ESPM<br />
           Contact : <a href="mailto:renaud.lecocq@espmaritime.be" className="hover:underline">renaud.lecocq@espmaritime.be</a></p>
+          <p><strong className="text-primary">Développeur de l'application :</strong> ASBL SchoolPlus (en cours de constitution)<br />
+          Contact : <a href="mailto:renaud.lecocq@gmail.com" className="hover:underline">renaud.lecocq@gmail.com</a></p>
         </Section>
 
         <Section title="2. Hébergement">
@@ -93,23 +95,31 @@ export default function MentionsLegales() {
         </Section>
 
         <Section title="6. Propriété intellectuelle">
-          <p>L'ensemble des contenus de ce module (code, textes, logos) est la propriété exclusive de l'École Secondaire Plurielle Maritime ou de ses partenaires. Toute reproduction, même partielle, est interdite sans autorisation écrite préalable.</p>
-          <p>Le logo ESPM et les marques associées sont la propriété du Pouvoir Organisateur Pluriel ASBL.</p>
+          <p><strong className="text-primary">Application et code source :</strong><br />
+          Le code source, l'architecture, le design et les fonctionnalités de l'application <strong>ESPM+</strong> sont la propriété exclusive de l'<strong>ASBL SchoolPlus</strong> (en cours de constitution), qui en détient les droits patrimoniaux et commerciaux. L'École Secondaire Plurielle Maritime bénéficie d'une licence d'utilisation exclusive dans le cadre de sa gestion interne.</p>
+          <p>Toute reproduction, adaptation, distribution ou commercialisation du code ou de l'application, même partielle, est interdite sans autorisation écrite préalable de l'ASBL SchoolPlus.</p>
+
+          <p><strong className="text-primary">Données scolaires et logo :</strong><br />
+          Le logo ESPM, les marques associées, ainsi que l'ensemble des données scolaires (élèves, parents, finances, documents) contenues dans la base de données sont la propriété du <strong>Pouvoir Organisateur Pluriel ASBL</strong>. Ces données sont hébergées et traitées exclusivement pour le compte de l'établissement, conformément au RGPD.</p>
+
+          <p><strong className="text-primary">Contenus produits par l'établissement :</strong><br />
+          Les documents, rapports et exports générés via l'application (PDF de factures, rapports d'activités, etc.) sont la propriété de l'école et du Pouvoir Organisateur Pluriel ASBL.</p>
         </Section>
 
         <Section title="7. Développement">
-          <p>Ce module a été conçu et développé au sein de l'ESPM par :</p>
+          <p>L'application ESPM+ est développée sous l'égide de l'<strong className="text-primary">ASBL SchoolPlus</strong> (en cours de constitution), dont l'objet social est le développement et la commercialisation de solutions numériques pour les établissements scolaires.</p>
+          <p>Contributeurs :</p>
           <ul className="list-disc list-inside space-y-1 pl-2">
             <li>
               <strong className="text-primary">Renaud Lecocq</strong> — conception, architecture et développement de l'application (ESPM+) ;<br />
-              <span className="text-primary-lighter">Économe, École Secondaire Plurielle Maritime</span>
+              <span className="text-primary-lighter">Fondateur de l'ASBL SchoolPlus · Économe, École Secondaire Plurielle Maritime</span>
             </li>
             <li>
               <strong className="text-primary">Francesc Altes</strong> — conception du module <em>Conseils de guidance</em> (prototype original) ; bêta testeur des fonctions en développement ;<br />
               <span className="text-primary-lighter">Membre du personnel, École Secondaire Plurielle Maritime</span>
             </li>
           </ul>
-          <p>Ce logiciel est un développement interne, non commercial, destiné exclusivement à l'usage de l'établissement. Le code source n'est pas distribué publiquement.</p>
+          <p>Le code source n'est pas distribué publiquement. Tout intérêt pour une utilisation dans un autre établissement peut être adressé à : <a href="mailto:renaud.lecocq@gmail.com" className="hover:underline">renaud.lecocq@gmail.com</a></p>
         </Section>
 
         <Section title="8. Responsabilité">

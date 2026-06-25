@@ -1941,3 +1941,4 @@ git push origin main
 - pendingSaveRef pour tracker le dernier enc non encore sauvé
 ## [v1.05] — Mentions légales : ajout section Développement (Renaud Lecocq + Francesc Altes)
 ## [v1.06] — Mentions légales : Francesc Altes aussi bêta testeur
+## [v1.07] — Mentions légales : distinction PI SchoolPlus / PO Pluriel + section Développement mise à jour
