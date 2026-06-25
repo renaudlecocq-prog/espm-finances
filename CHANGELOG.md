@@ -1453,3 +1453,11 @@ git push origin main
 ### Corrections
 - Migration DB : ajout colonnes `description` et `cloture` sur `comptable_projets` (table créée dans une session antérieure avec des colonnes manquantes)
 - `saveProjet` et `saveLigne` : ajout try/catch avec message d'erreur visible — les erreurs Supabase étaient silencieuses
+
+## [Develop] 2026-06-25 — FIX Projets : colonnes date_ligne/note/commentaire
+
+### Corrections
+- `comptable_projet_lignes` : table ancienne avec `date_ligne` au lieu de `date` et `note` au lieu de `commentaire`
+- Migration : ajout colonnes `date`, `commentaire`, `position` + synchronisation `date ← date_ligne`
+- Code : payload envoie maintenant les deux noms (`date`+`date_ligne`, `commentaire`+`note`) pour compat
+- Affichage date et commentaire dans l'édition : fallback sur l'ancienne colonne

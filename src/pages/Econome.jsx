@@ -1712,11 +1712,15 @@ function ProjetsTab() {
     setSaving(true)
     try {
       const payload = {
-        projet_id: projetId, date: form.date, intitule: form.intitule,
+        projet_id: projetId,
+        date: form.date,
+        date_ligne: form.date,   // compat ancienne colonne
+        intitule: form.intitule,
         categorie: form.categorie || null,
         entree: form.entree ? parseFloat(form.entree) : null,
         sortie: form.sortie ? parseFloat(form.sortie) : null,
         commentaire: form.commentaire || null,
+        note: form.commentaire || null,  // compat ancienne colonne
       }
       if (form.id) {
         const { error } = await supabase.from('comptable_projet_lignes').update(payload).eq('id', form.id)
@@ -1897,7 +1901,7 @@ function ProjetsTab() {
                       <ProjetCatSection key={cat}
                         categorie={cat} lignes={catLignes}
                         catEntree={catEntree} catSortie={catSortie} catSolde={catSolde}
-                        onEdit={l => setEditLigne({ ...l, entree: l.entree || '', sortie: l.sortie || '' })}
+                        onEdit={l => setEditLigne({ ...l, date: l.date || l.date_ligne, commentaire: l.commentaire || l.note || '', entree: l.entree || '', sortie: l.sortie || '' })}
                         onDelete={deleteLigne}
                         cloture={projet.cloture}
                       />
@@ -1977,7 +1981,7 @@ function ProjetCatSection({ categorie, lignes, catEntree, catSortie, catSolde, o
       {/* Lignes */}
       {open && lignes.map(l => (
         <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50/40">
-          <td className="px-3 py-2 text-xs text-gray-500 whitespace-nowrap pl-6">{fmtDate(l.date)}</td>
+          <td className="px-3 py-2 text-xs text-gray-500 whitespace-nowrap pl-6">{fmtDate(l.date || l.date_ligne)}</td>
           <td className="px-3 py-2 text-xs text-gray-800 font-medium">{l.intitule}</td>
           <td className="px-3 py-2 text-xs text-gray-400">{l.categorie || '—'}</td>
           <td className="px-3 py-2 text-right text-xs text-green-600 font-medium tabular-nums">
