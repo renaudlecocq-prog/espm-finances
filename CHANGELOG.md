@@ -1831,3 +1831,12 @@ git push origin main
 - Photos agrandies : 56px → 80px
 - Grille 6 colonnes → 5 colonnes (plus d'espace)
 - Nom de l'élève en text-xs au lieu de text-[10px]
+
+## [v0.94g] — Photos élèves : grille tous élèves + upload individuel
+
+- La grille affiche maintenant TOUS les élèves actifs (pas seulement ceux avec une photo)
+- Élèves sans photo : cercle grisé avec initiales, icône "+" au survol pour uploader
+- Cliquer un élève sans photo ouvre un sélecteur de fichier pour uploader directement
+- Compteur "X / Y élèves avec photo" dans le header
+- Filtres locaux : "Tous" / "Avec photo" / "Sans photo"
+- Cumul avec le filtre Classe du PageHeader

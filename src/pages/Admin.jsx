@@ -1447,41 +1447,93 @@ function CropModal({ eleve, onClose, onSaved }) {
 
 
 // ══════════════════════════════════════════════════════════
-//  PhotosGrid — grille filtrée des photos importées
+//  PhotosGrid — grille tous élèves (avec ou sans photo)
 // ══════════════════════════════════════════════════════════
-function PhotosGrid({ eleves, search, filters, onCrop }) {
-  const withPhotos = useMemo(() => eleves.filter(e => e.photo_url), [eleves])
+function PhotosGrid({ eleves, search, filters, onCrop, onUploadFor }) {
+  const [photoFilter, setPhotoFilter] = useState('tous') // 'tous' | 'avec' | 'sans'
+  const uploadRef = useRef(null)
+  const [uploadTarget, setUploadTarget] = useState(null)
 
   const filtered = useMemo(() => {
-    let d = withPhotos
+    let d = eleves
     if (search?.trim()) d = d.filter(e => `${e.prenom} ${e.nom}`.toLowerCase().includes(search.toLowerCase()))
     if (filters?.classe?.length) d = d.filter(e => filters.classe.includes(e.classe))
+    if (photoFilter === 'avec') d = d.filter(e => e.photo_url)
+    if (photoFilter === 'sans') d = d.filter(e => !e.photo_url)
     return d
-  }, [withPhotos, search, filters])
+  }, [eleves, search, filters, photoFilter])
 
-  if (!withPhotos.length) return null
+  const nbAvec = useMemo(() => eleves.filter(e => e.photo_url).length, [eleves])
+
+  const handleClickSansPhoto = (e) => {
+    setUploadTarget(e)
+    uploadRef.current?.click()
+  }
+
+  const handleFileChange = (ev) => {
+    if (!uploadTarget || !ev.target.files?.length) return
+    onUploadFor(uploadTarget, ev.target.files[0])
+    ev.target.value = ''
+    setUploadTarget(null)
+  }
+
+  const initials = (e) => `${(e.prenom||'')[0]||''}${(e.nom||'')[0]||''}`.toUpperCase()
+
+  if (!eleves.length) return null
 
   return (
     <div className="mt-8">
-      <div className="mb-3">
-        <h4 className="font-semibold text-gray-700 text-sm">
-          {filtered.length !== withPhotos.length
-            ? `${filtered.length} / ${withPhotos.length} photos`
-            : `${withPhotos.length} photos importées`}
+      <input ref={uploadRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      {/* Header compteur + filtre local */}
+      <div className="flex items-center justify-between mb-3 gap-3">
+        <h4 className="font-semibold text-gray-700 text-sm shrink-0">
+          {nbAvec} / {eleves.length} élèves avec photo
+          {filtered.length < eleves.length && ` — ${filtered.length} affichés`}
         </h4>
+        <div className="flex gap-1">
+          {[['tous','Tous'],['avec','Avec photo'],['sans','Sans photo']].map(([val,label]) => (
+            <button key={val} onClick={() => setPhotoFilter(val)}
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                photoFilter === val
+                  ? 'bg-indigo-600 border-indigo-600 text-white'
+                  : 'border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600'
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="grid grid-cols-5 gap-4">
         {filtered.map(e => (
-          <div key={e.id} className="flex flex-col items-center gap-1 group cursor-pointer" onClick={() => onCrop(e)}>
+          <div key={e.id}
+            className="flex flex-col items-center gap-1 group cursor-pointer"
+            onClick={() => e.photo_url ? onCrop(e) : handleClickSansPhoto(e)}>
             <div className="relative">
-              <img src={e.photo_url} alt="" className="w-20 h-20 rounded-full object-cover border border-gray-200" />
-              <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0H3m4 0l-4 4M17 8v12m0 0h4m-4 0l4-4" />
-                </svg>
-              </div>
+              {e.photo_url ? (
+                <>
+                  <img src={e.photo_url} alt="" className="w-20 h-20 rounded-full object-cover border border-gray-200" />
+                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0H3m4 0l-4 4M17 8v12m0 0h4m-4 0l4-4" />
+                    </svg>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <span className="text-gray-400 font-semibold text-lg">{initials(e)}</span>
+                  </div>
+                  <div className="absolute inset-0 rounded-full bg-indigo-500/10 border-2 border-indigo-300 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <svg className="w-6 h-6 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                </>
+              )}
             </div>
-            <span className="text-xs text-gray-500 text-center leading-tight">{e.prenom}<br/>{e.nom}</span>
+            <span className={`text-xs text-center leading-tight ${e.photo_url ? 'text-gray-500' : 'text-gray-400'}`}>
+              {e.prenom}<br/>{e.nom}
+            </span>
           </div>
         ))}
       </div>
@@ -1584,6 +1636,22 @@ function PhotosAdmin({ search, filters, onClassesReady }) {
     processFiles(e.dataTransfer.files)
   }, [processFiles])
 
+  const uploadForEleve = useCallback(async (eleve, file) => {
+    try {
+      const blob = await resizeImage(file)
+      const path = `${eleve.id}.jpg`
+      await supabase.storage.from('eleve-photos').remove([path])
+      const { error: upErr } = await supabase.storage.from('eleve-photos').upload(path, blob, { contentType: 'image/jpeg' })
+      if (upErr) throw upErr
+      const { data: { publicUrl } } = supabase.storage.from('eleve-photos').getPublicUrl(path)
+      const urlWithTs = `${publicUrl}?t=${Date.now()}`
+      await supabase.from('eleves').update({ photo_url: urlWithTs }).eq('id', eleve.id)
+      setEleves(prev => prev.map(el => el.id === eleve.id ? { ...el, photo_url: urlWithTs } : el))
+    } catch (e) {
+      console.error('uploadForEleve', e)
+    }
+  }, [resizeImage])
+
   if (loading) return <div className="p-6 text-gray-400 text-sm">Chargement des élèves…</div>
 
   const pct = progress ? Math.round((progress.done / progress.total) * 100) : 0
@@ -1672,6 +1740,7 @@ function PhotosAdmin({ search, filters, onClassesReady }) {
         search={search}
         filters={filters}
         onCrop={setCropEleve}
+        onUploadFor={uploadForEleve}
       />
 
       {cropEleve && (
