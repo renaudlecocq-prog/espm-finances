@@ -1371,3 +1371,10 @@ git push origin main
 - Suppression du filtre `montantRaw <= 0` dans le parseur CSV pour le compte élèves
 - Colonnes Sortie + Solde visibles dans les deux onglets
 - `statut_paiement: 'pending'` uniquement sur les lignes avec `montant_entree` (pas sur les virements vers POP)
+
+## [Develop] 2026-06-25 — Économe : bulk action inline dans la barre de synthèse
+
+### UX
+- Les contrôles de sélection multiple (nb sélectionnées + NatureSelect + Appliquer + ✕) apparaissent
+  maintenant directement dans la barre ENTRÉES/SORTIES/SOLDE/TRANSACTIONS/NON CLASSÉ,
+  séparés par un diviseur vertical — plus de barre collante séparée au-dessus du tableau

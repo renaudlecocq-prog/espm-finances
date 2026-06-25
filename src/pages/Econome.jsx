@@ -364,12 +364,10 @@ function ImportModal({ compte, onClose, onImported }) {
 }
 
 // ── Transaction table ─────────────────────────────────────────────────────────
-function TransactionTable({ transactions, natures, compte, onNatureChange, onDelete, onBulkNatureChange }) {
+function TransactionTable({ transactions, natures, compte, onNatureChange, onDelete, selected, setSelected }) {
   const [sort, setSort] = useState({ col: 'date_operation', dir: 'desc' })
-  const [selected, setSelected] = useState(new Set())
-  const [bulkNature, setBulkNature] = useState(null)
 
-  // Reset selection when transactions change (e.g. after filter)
+  // Reset selection when transactions change (filter change)
   useEffect(() => { setSelected(new Set()) }, [transactions])
 
   const allIds = transactions.map(t => t.id)
@@ -385,13 +383,6 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
     n.has(id) ? n.delete(id) : n.add(id)
     return n
   })
-
-  const applyBulk = async () => {
-    if (!bulkNature) return
-    await onBulkNatureChange([...selected], bulkNature)
-    setSelected(new Set())
-    setBulkNature(null)
-  }
 
   const toggleSort = col => setSort(s =>
     s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'asc' }
@@ -424,35 +415,6 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        {/* ── Bulk action bar ── */}
-        {selected.size > 0 && (
-          <div className="flex items-center gap-3 px-3 py-2.5 bg-indigo-50 border-b border-indigo-100 sticky top-0 z-10">
-            <span className="text-xs font-medium text-indigo-700">
-              {selected.size} ligne{selected.size > 1 ? 's' : ''} sélectionnée{selected.size > 1 ? 's' : ''}
-            </span>
-            <div className="flex-1 max-w-xs">
-              <NatureSelect
-                value={bulkNature}
-                natures={natures}
-                onChange={setBulkNature}
-              />
-            </div>
-            <button
-              onClick={applyBulk}
-              disabled={!bulkNature}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-lg
-                hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Check size={12} /> Appliquer ({selected.size})
-            </button>
-            <button
-              onClick={() => { setSelected(new Set()); setBulkNature(null) }}
-              className="text-xs text-indigo-500 hover:text-indigo-700 px-2 py-1 hover:bg-indigo-100 rounded-lg"
-            >
-              Désélectionner
-            </button>
-          </div>
-        )}
         <thead>
           <tr className="border-b-2 border-gray-100">
             {/* Checkbox select all */}
@@ -563,7 +525,7 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
 }
 
 // ── Summary bar ───────────────────────────────────────────────────────────────
-function SummaryBar({ transactions, compte }) {
+function SummaryBar({ transactions, compte, selected, bulkNature, setBulkNature, applyBulk, deselectAll, natures }) {
   const totalEntree = transactions.reduce((s, t) => s + Number(t.montant_entree || 0), 0)
   const totalSortie = transactions.reduce((s, t) => s + Number(t.montant_sortie || 0), 0)
   const solde = totalEntree - totalSortie
@@ -609,6 +571,36 @@ function SummaryBar({ transactions, compte }) {
           </div>
         </div>
       )}
+
+      {/* ── Bulk action (inline) ── */}
+      {selected && selected.size > 0 && (
+        <>
+          <div className="w-px h-8 bg-gray-200 self-center mx-1" />
+          <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-1.5">
+            <span className="text-xs font-medium text-indigo-700 whitespace-nowrap">
+              {selected.size} sélectionnée{selected.size > 1 ? 's' : ''}
+            </span>
+            <div className="w-44">
+              <NatureSelect value={bulkNature} natures={natures} onChange={setBulkNature} />
+            </div>
+            <button
+              onClick={applyBulk}
+              disabled={!bulkNature}
+              className="flex items-center gap-1 px-3 py-1 text-xs font-medium bg-indigo-600 text-white rounded-lg
+                hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              <Check size={11} /> Appliquer ({selected.size})
+            </button>
+            <button
+              onClick={deselectAll}
+              className="p-1 hover:bg-indigo-100 rounded text-indigo-400 hover:text-indigo-600"
+              title="Désélectionner tout"
+            >
+              <X size={13} />
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -617,6 +609,8 @@ function SummaryBar({ transactions, compte }) {
 function CompteTab({ compte, natures }) {
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState(new Set())
+  const [bulkNature, setBulkNature] = useState(null)
   const [showImport, setShowImport] = useState(false)
   const [annee, setAnnee] = useState(new Date().getFullYear())
   const [moisFilter, setMoisFilter] = useState(0) // 0 = tous
@@ -657,7 +651,6 @@ function CompteTab({ compte, natures }) {
 
   const handleBulkNatureChange = async (ids, natureId) => {
     const nature = natures.find(n => n.id === natureId)
-    // Update in batches of 100 (Supabase .in() limit)
     for (let i = 0; i < ids.length; i += 100) {
       const chunk = ids.slice(i, i + 100)
       await supabase.from('comptable_transactions')
@@ -667,7 +660,12 @@ function CompteTab({ compte, natures }) {
     setTransactions(prev => prev.map(t =>
       ids.includes(t.id) ? { ...t, nature_id: natureId, nature_libelle: nature?.libelle } : t
     ))
+    setSelected(new Set())
+    setBulkNature(null)
   }
+
+  const applyBulk = () => handleBulkNatureChange([...selected], bulkNature)
+  const deselectAll = () => { setSelected(new Set()); setBulkNature(null) }
 
   const filtered = transactions.filter(t => {
     if (pendingOnly && t.statut_paiement !== 'pending') return false
@@ -759,7 +757,8 @@ function CompteTab({ compte, natures }) {
             compte={compte}
             onNatureChange={handleNatureChange}
             onDelete={handleDelete}
-            onBulkNatureChange={handleBulkNatureChange}
+            selected={selected}
+            setSelected={setSelected}
           />
         )}
       </div>
