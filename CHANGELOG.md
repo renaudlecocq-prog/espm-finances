@@ -1402,3 +1402,16 @@ git push origin main
   - Import en lot avec marquage `statut_paiement='imported'` après succès
   - Pré-sélection intelligente : cases cochées si élève trouvé automatiquement, décochées sinon
   - Les lignes déjà importées s'affichent en grisé avec badge "Importé"
+
+## [Develop] 2026-06-25 — Phase 3 Économe : onglet Bilan mensuel
+
+### Nouvelles fonctionnalités
+- **Onglet Bilan** (Econome.jsx) : tableau croisé Produits / Charges par mois
+  - Sources de données fusionnées : `comptable_transactions` (Fonctionnement + Élèves) + `comptable_pop_lignes`
+  - Colonnes = 12 mois ; colonne Total annuel fixe à droite
+  - Seuls les mois avec données sont mis en valeur (les autres s'affichent en grisé)
+  - Section **PRODUITS** : natures `type_flux='produit'`, groupées par catégorie, avec sous-totaux catégorie cliquables (plier/déplier)
+  - Section **CHARGES** : natures `type_flux='charge'`, même structure (affichées avec signe −)
+  - Natures `type_flux='neutre'` exclues du bilan
+  - Ligne **SOLDE** avec indicateur dynamique : ✓ Sur couverture (vert) / ⚠ Sous couverture (rouge)
+  - Avertissement si des transactions sans nature ne sont pas comptabilisées

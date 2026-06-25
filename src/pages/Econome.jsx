@@ -849,13 +849,7 @@ export default function Econome() {
           <CompteTab compte="eleves" natures={natures} />
         )}
         {activeTab === 'pop' && <PopTab natures={natures} />}
-        {activeTab === 'bilan' && (
-          <PlaceholderTab
-            label="Bilan mensuel"
-            icon={<TrendingUp size={24} className="text-gray-400" />}
-            desc="Récapitulatif mensuel automatique — Produits / Charges / Couverture. En cours de développement."
-          />
-        )}
+        {activeTab === 'bilan' && <BilanTab natures={natures} />}
         {activeTab === 'projets' && (
           <PlaceholderTab
             label="Petits projets"
@@ -1165,5 +1159,329 @@ function PopLigneModal({ item, natures, saving, onSave, onClose }) {
         </div>
       </div>
     </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════
+//  Tab Bilan — Tableau croisé Produits / Charges par mois
+// ══════════════════════════════════════════════════════════
+
+const MOIS_FULL = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+
+function BilanTab({ natures }) {
+  const [annee, setAnnee] = useState(new Date().getFullYear())
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState(null)   // { produits, charges, nonClasses }
+
+  // Map nature_id → { type_flux, libelle, categorie }
+  const naturesMap = useMemo(() => {
+    const m = {}
+    for (const n of natures) m[n.id] = n
+    return m
+  }, [natures])
+
+  const load = useCallback(async () => {
+    setLoading(true)
+
+    // Fetch transactions de toutes les comptes pour l'année
+    const [{ data: txs }, { data: pop }] = await Promise.all([
+      supabase.from('comptable_transactions')
+        .select('date_operation, nature_id, nature_libelle, montant_entree, montant_sortie')
+        .gte('date_operation', `${annee}-01-01`)
+        .lte('date_operation', `${annee}-12-31`),
+      supabase.from('comptable_pop_lignes')
+        .select('date_transmission, nature_id, nature_libelle, montant')
+        .eq('annee', annee),
+    ])
+
+    // ── Agrégation ────────────────────────────────────────────────────────────
+    // key = nature_id, value = { libelle, categorie, type_flux, mois: [0..12] }
+    const agg = {}      // { [nature_id]: { libelle, categorie, type_flux, mois: Array(13) } }
+    let nonClasses = 0
+
+    const ensureNature = (nature_id, nature_libelle) => {
+      if (!agg[nature_id]) {
+        const nat = naturesMap[nature_id]
+        agg[nature_id] = {
+          libelle: nat?.libelle || nature_libelle || nature_id,
+          categorie: nat?.categorie || '—',
+          type_flux: nat?.type_flux || 'neutre',
+          mois: Array(13).fill(0),   // index 1..12 = mois, index 0 unused
+        }
+      }
+      return agg[nature_id]
+    }
+
+    for (const tx of (txs || [])) {
+      if (!tx.nature_id) { nonClasses++; continue }
+      const nat = naturesMap[tx.nature_id]
+      if (!nat || nat.type_flux === 'neutre') continue
+      const m = parseInt((tx.date_operation || '').split('-')[1]) || 0
+      if (m < 1 || m > 12) continue
+      const entry = ensureNature(tx.nature_id, tx.nature_libelle)
+      if (nat.type_flux === 'produit') {
+        entry.mois[m] += Number(tx.montant_entree || 0)
+      } else {
+        // charge: on prend montant_sortie (positif dans DB) ou montant_entree si inattendu
+        entry.mois[m] += Number(tx.montant_sortie || 0)
+      }
+    }
+
+    for (const pl of (pop || [])) {
+      if (!pl.nature_id) { nonClasses++; continue }
+      const nat = naturesMap[pl.nature_id]
+      if (!nat || nat.type_flux === 'neutre') continue
+      const m = parseInt((pl.date_transmission || '').split('-')[1]) || 0
+      if (m < 1 || m > 12) continue
+      const entry = ensureNature(pl.nature_id, pl.nature_libelle)
+      // Les POP sont toujours des charges
+      entry.mois[m] += Number(pl.montant || 0)
+    }
+
+    // Calculer totaux par ligne
+    for (const e of Object.values(agg)) {
+      e.total = e.mois.slice(1).reduce((s, v) => s + v, 0)
+    }
+
+    // Séparer produits / charges, trier par catégorie puis libellé
+    const sort = arr => arr.sort((a, b) =>
+      a.categorie.localeCompare(b.categorie) || a.libelle.localeCompare(b.libelle)
+    )
+    const produits = sort(Object.values(agg).filter(e => e.type_flux === 'produit'))
+    const charges  = sort(Object.values(agg).filter(e => e.type_flux === 'charge'))
+
+    setData({ produits, charges, nonClasses })
+    setLoading(false)
+  }, [annee, naturesMap])
+
+  useEffect(() => { load() }, [load])
+
+  // ── Mois actifs (au moins une valeur non nulle dans produits+charges) ───────
+  const moisActifs = useMemo(() => {
+    if (!data) return []
+    const actifs = []
+    for (let m = 1; m <= 12; m++) {
+      const hasData = [...data.produits, ...data.charges].some(e => e.mois[m] !== 0)
+      actifs.push({ m, hasData })
+    }
+    return actifs
+  }, [data])
+
+  const totalProduitsMois = m => data?.produits.reduce((s, e) => s + e.mois[m], 0) || 0
+  const totalChargesMois  = m => data?.charges.reduce((s, e) => s + e.mois[m], 0) || 0
+  const soldeMois         = m => totalProduitsMois(m) - totalChargesMois(m)
+
+  const totalProduitsAnnee = data?.produits.reduce((s, e) => s + e.total, 0) || 0
+  const totalChargesAnnee  = data?.charges.reduce((s, e) => s + e.total, 0) || 0
+  const soldeAnnee = totalProduitsAnnee - totalChargesAnnee
+
+  const anneOptions = []
+  for (let y = 2024; y <= new Date().getFullYear() + 1; y++) anneOptions.push(y)
+
+  const cell = (val, cls = '') =>
+    <td className={`px-2 py-2 text-right text-xs tabular-nums whitespace-nowrap ${cls}`}>
+      {val !== 0 ? fmtEur(val) : <span className="text-gray-200">—</span>}
+    </td>
+
+  return (
+    <div>
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 mb-5">
+        <select value={annee} onChange={e => { setAnnee(Number(e.target.value)) }}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-400">
+          {anneOptions.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+        <button onClick={load} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
+          <RefreshCw size={15} />
+        </button>
+        {data?.nonClasses > 0 && (
+          <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-1.5">
+            <AlertTriangle size={13} />
+            {data.nonClasses} transaction{data.nonClasses > 1 ? 's' : ''} sans nature — non comptabilisée{data.nonClasses > 1 ? 's' : ''}
+          </div>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20 gap-2 text-gray-400">
+          <Loader2 size={18} className="animate-spin" /> Chargement…
+        </div>
+      ) : !data ? null : (
+        <div className="bg-white rounded-xl border border-gray-100 overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="border-b-2 border-gray-100">
+                <th className="sticky left-0 bg-white text-left px-4 py-3 text-xs font-semibold text-gray-600 min-w-[220px] z-10">
+                  Nature comptable
+                </th>
+                {moisActifs.map(({ m, hasData }) => (
+                  <th key={m} className={`px-2 py-3 text-right text-xs font-semibold w-24
+                    ${hasData ? 'text-gray-600' : 'text-gray-300'}`}>
+                    {MOIS_LABELS[m]}
+                  </th>
+                ))}
+                <th className="px-2 py-3 text-right text-xs font-semibold text-gray-700 border-l border-gray-100 w-28">
+                  Total {annee}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+
+              {/* ── SECTION PRODUITS ── */}
+              <tr className="bg-green-50 border-b border-green-100">
+                <td colSpan={moisActifs.length + 2}
+                  className="sticky left-0 px-4 py-2 text-xs font-bold text-green-700 uppercase tracking-wide">
+                  Produits
+                </td>
+              </tr>
+
+              {data.produits.length === 0 ? (
+                <tr><td colSpan={moisActifs.length + 2} className="px-4 py-3 text-xs text-gray-400 italic">
+                  Aucune transaction classée en Produit pour {annee}
+                </td></tr>
+              ) : (() => {
+                // Grouper par catégorie
+                const cats = {}
+                for (const e of data.produits) {
+                  if (!cats[e.categorie]) cats[e.categorie] = []
+                  cats[e.categorie].push(e)
+                }
+                return Object.entries(cats).map(([cat, lignes]) => (
+                  <BilanSection key={cat} categorie={cat} lignes={lignes}
+                    moisActifs={moisActifs} colorClass="text-green-600" />
+                ))
+              })()}
+
+              {/* Total produits */}
+              <tr className="border-t-2 border-green-200 bg-green-50/50">
+                <td className="sticky left-0 bg-green-50/50 px-4 py-2.5 text-xs font-bold text-green-700 z-10">
+                  TOTAL PRODUITS
+                </td>
+                {moisActifs.map(({ m }) => (
+                  <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums whitespace-nowrap text-green-600">
+                    {totalProduitsMois(m) ? fmtEur(totalProduitsMois(m)) : <span className="text-gray-200">—</span>}
+                  </td>
+                ))}
+                <td className="px-2 py-2.5 text-right text-xs font-bold text-green-700 border-l border-gray-100 tabular-nums">
+                  {fmtEur(totalProduitsAnnee)}
+                </td>
+              </tr>
+
+              {/* ── SECTION CHARGES ── */}
+              <tr className="bg-red-50 border-t-4 border-gray-100 border-b border-red-100">
+                <td colSpan={moisActifs.length + 2}
+                  className="sticky left-0 px-4 py-2 text-xs font-bold text-red-600 uppercase tracking-wide">
+                  Charges
+                </td>
+              </tr>
+
+              {data.charges.length === 0 ? (
+                <tr><td colSpan={moisActifs.length + 2} className="px-4 py-3 text-xs text-gray-400 italic">
+                  Aucune transaction classée en Charge pour {annee}
+                </td></tr>
+              ) : (() => {
+                const cats = {}
+                for (const e of data.charges) {
+                  if (!cats[e.categorie]) cats[e.categorie] = []
+                  cats[e.categorie].push(e)
+                }
+                return Object.entries(cats).map(([cat, lignes]) => (
+                  <BilanSection key={cat} categorie={cat} lignes={lignes}
+                    moisActifs={moisActifs} colorClass="text-red-500" negative />
+                ))
+              })()}
+
+              {/* Total charges */}
+              <tr className="border-t-2 border-red-200 bg-red-50/50">
+                <td className="sticky left-0 bg-red-50/50 px-4 py-2.5 text-xs font-bold text-red-600 z-10">
+                  TOTAL CHARGES
+                </td>
+                {moisActifs.map(({ m }) => (
+                  <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums whitespace-nowrap text-red-500">
+                    {totalChargesMois(m) ? <>−{fmtEur(totalChargesMois(m))}</> : <span className="text-gray-200">—</span>}
+                  </td>
+                ))}
+                <td className="px-2 py-2.5 text-right text-xs font-bold text-red-600 border-l border-gray-100 tabular-nums">
+                  −{fmtEur(totalChargesAnnee)}
+                </td>
+              </tr>
+
+              {/* ── SOLDE ── */}
+              <tr className="border-t-4 border-gray-300 bg-gray-50">
+                <td className="sticky left-0 bg-gray-50 px-4 py-3 z-10">
+                  <div className="text-xs font-bold text-gray-800">SOLDE {annee}</div>
+                  <div className={`text-[10px] font-semibold mt-0.5 ${soldeAnnee >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    {soldeAnnee >= 0 ? '✓ Sur couverture' : '⚠ Sous couverture'}
+                  </div>
+                </td>
+                {moisActifs.map(({ m }) => {
+                  const s = soldeMois(m)
+                  return (
+                    <td key={m} className={`px-2 py-3 text-right text-xs font-bold tabular-nums whitespace-nowrap
+                      ${s > 0 ? 'text-green-600' : s < 0 ? 'text-red-500' : 'text-gray-200'}`}>
+                      {s !== 0
+                        ? <>{s > 0 ? '+' : '−'}{fmtEur(Math.abs(s))}</>
+                        : '—'}
+                    </td>
+                  )
+                })}
+                <td className={`px-2 py-3 text-right text-sm font-extrabold border-l border-gray-200 tabular-nums
+                  ${soldeAnnee >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                  {soldeAnnee >= 0 ? '+' : '−'}{fmtEur(Math.abs(soldeAnnee))}
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Ligne de section avec en-tête catégorie + lignes natures
+function BilanSection({ categorie, lignes, moisActifs, colorClass, negative = false }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <>
+      {/* En-tête catégorie */}
+      <tr className="border-b border-gray-50 cursor-pointer hover:bg-gray-50/40 select-none"
+        onClick={() => setOpen(o => !o)}>
+        <td className="sticky left-0 bg-white px-4 py-1.5 z-10">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-gray-400">{open ? '▾' : '▸'}</span>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{categorie}</span>
+          </div>
+        </td>
+        {moisActifs.map(({ m }) => {
+          const tot = lignes.reduce((s, e) => s + e.mois[m], 0)
+          return (
+            <td key={m} className={`px-2 py-1.5 text-right text-xs font-semibold tabular-nums whitespace-nowrap
+              ${tot ? colorClass : 'text-gray-200'}`}>
+              {tot ? (negative ? <>−{fmtEur(tot)}</> : fmtEur(tot)) : '—'}
+            </td>
+          )
+        })}
+        <td className={`px-2 py-1.5 text-right text-xs font-semibold border-l border-gray-100 tabular-nums ${colorClass}`}>
+          {(() => { const t = lignes.reduce((s, e) => s + e.total, 0); return t ? (negative ? <>−{fmtEur(t)}</> : fmtEur(t)) : '—' })()}
+        </td>
+      </tr>
+      {/* Lignes natures */}
+      {open && lignes.map(e => (
+        <tr key={e.libelle} className="border-b border-gray-50 hover:bg-gray-50/30">
+          <td className="sticky left-0 bg-white px-4 py-1.5 z-10 pl-8 text-xs text-gray-600">{e.libelle}</td>
+          {moisActifs.map(({ m }) => (
+            <td key={m} className={`px-2 py-1.5 text-right text-xs tabular-nums whitespace-nowrap
+              ${e.mois[m] ? colorClass : 'text-gray-200'}`}>
+              {e.mois[m] ? (negative ? <>−{fmtEur(e.mois[m])}</> : fmtEur(e.mois[m])) : '—'}
+            </td>
+          ))}
+          <td className={`px-2 py-1.5 text-right text-xs border-l border-gray-100 tabular-nums font-medium ${colorClass}`}>
+            {e.total ? (negative ? <>−{fmtEur(e.total)}</> : fmtEur(e.total)) : '—'}
+          </td>
+        </tr>
+      ))}
+    </>
   )
 }
