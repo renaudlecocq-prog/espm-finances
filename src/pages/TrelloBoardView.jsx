@@ -235,8 +235,12 @@ function CardDetailModal({ card, lists, profiles, boardColor, boardType, onClose
   const [desc,  setDesc]        = useState(card.description || '')
   const [newItem, setNewItem]   = useState('')
   const [activity, setActivity] = useState([])
-  // items gérés par le parent via openCard → pas de state local
   const [dirty, setDirty]       = useState(false)
+  // ── Autosave (espace partagé uniquement) ────────────────────────────────────
+  const isShared      = boardType !== 'personal'
+  const saveTimerRef  = useRef(null)
+  const [saving,   setSaving]  = useState(false)
+  const [savedAt,  setSavedAt] = useState(null)
 
   const currentList = lists.find(l => l.id === card.list_id)
 
@@ -246,10 +250,30 @@ function CardDetailModal({ card, lists, profiles, boardColor, boardType, onClose
       .then(({ data }) => setActivity(data || []))
   }, [card.id])
 
+  // Déclenche un save avec debounce (1s) ou immédiat
+  const scheduleAutoSave = (newTitle, newDesc, immediate = false) => {
+    if (!isShared) return          // casier → save manuel uniquement
+    if (!newTitle.trim()) return
+    clearTimeout(saveTimerRef.current)
+    const doSave = async () => {
+      setSaving(true)
+      await onSave(card.id, { title: newTitle.trim(), description: newDesc })
+      setSaving(false)
+      setSavedAt(new Date())
+      setDirty(false)
+    }
+    if (immediate) doSave()
+    else saveTimerRef.current = setTimeout(doSave, 1000)
+  }
+
+  // Nettoyage timer au démontage
+  useEffect(() => () => clearTimeout(saveTimerRef.current), [])
+
+  // Save manuel (espace perso ou fallback)
   const handleSave = () => {
     if (!title.trim()) return
-    onSave(card.id, { title: title.trim(), description: desc })
-    setDirty(false)
+    if (isShared) { scheduleAutoSave(title, desc, true) }
+    else { onSave(card.id, { title: title.trim(), description: desc }); setDirty(false) }
   }
 
   const handleAddItem = async () => {
@@ -282,13 +306,18 @@ function CardDetailModal({ card, lists, profiles, boardColor, boardType, onClose
         <div style={{ padding: '20px 24px' }}>
           {/* Header */}
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 16 }}>
-            <textarea value={title} onChange={e => { setTitle(e.target.value); setDirty(true) }} rows={2}
+            <textarea value={title} onChange={e => { setTitle(e.target.value); setDirty(true); scheduleAutoSave(e.target.value, desc) }} rows={2}
+              onBlur={() => dirty && scheduleAutoSave(title, desc, true)}
               style={{ flex: 1, fontSize: 16, fontWeight: 700, color: '#111', border: 'none',
                 outline: 'none', resize: 'none', fontFamily: 'inherit', lineHeight: 1.4,
                 padding: '4px 0', borderBottom: dirty ? `2px solid ${boardColor}` : '2px solid transparent' }} />
-            <button onClick={onClose}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF',
-                fontSize: 22, lineHeight: 1, flexShrink: 0 }}>×</button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
+              {isShared && saving && <span style={{ fontSize: 10, color: '#9CA3AF', whiteSpace: 'nowrap' }}>Enregistrement…</span>}
+              {isShared && !saving && savedAt && <span style={{ fontSize: 10, color: '#10B981', whiteSpace: 'nowrap' }}>✓ {savedAt.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>}
+              <button onClick={onClose}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF',
+                  fontSize: 22, lineHeight: 1 }}>×</button>
+            </div>
           </div>
 
           {/* Dans la liste */}
@@ -299,17 +328,17 @@ function CardDetailModal({ card, lists, profiles, boardColor, boardType, onClose
           {/* Description */}
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>📝 Description</div>
-            <textarea value={desc} onChange={e => { setDesc(e.target.value); setDirty(true) }} rows={3}
+            <textarea value={desc} onChange={e => { setDesc(e.target.value); setDirty(true); scheduleAutoSave(title, e.target.value) }} rows={3}
               placeholder="Ajouter une description…"
               style={{ width: '100%', padding: '8px 10px', borderRadius: 8, fontSize: 13,
                 border: '1.5px solid #E5E7EB', outline: 'none', resize: 'vertical',
                 fontFamily: 'inherit', boxSizing: 'border-box', backgroundColor: '#F9FAFB' }}
               onFocus={e => e.target.style.borderColor = boardColor}
-              onBlur={e => e.target.style.borderColor = '#E5E7EB'} />
+              onBlur={e => { e.target.style.borderColor = '#E5E7EB'; dirty && scheduleAutoSave(title, desc, true) }} />
           </div>
 
-          {/* Bouton sauvegarder si modifié */}
-          {dirty && (
+          {/* Bouton sauvegarder : uniquement pour le casier (autosave dans l'espace partagé) */}
+          {dirty && !isShared && (
             <div style={{ marginBottom: 16 }}>
               <button onClick={handleSave}
                 style={{ padding: '7px 16px', borderRadius: 8, border: 'none',
