@@ -1905,3 +1905,7 @@ git push origin main
 - Bloc "Prise en charge par organisme tiers" si OT actif pour l'élève
 - Bloc "Nous contacter" avec noms/tél depuis les paramètres école (plus hardcodés)
 - FIX : useSettings() manquait dans DetailFacture (s() était undefined → crash sur factures validées)
+
+## [v0.99] — Curseur drag & drop instantané
+- Remplacement du curseur `cursor: grab` natif (qui chargeait son ombre en différé sur Windows) par un curseur SVG embarqué (data URI) dans index.css — classe `.cursor-grab-custom` / `.cursor-grabbing-custom`
+- Appliqué sur les cards Trello (TrelloBoardView.jsx) et la grille SalleDProfs (SalleDProfs.jsx) et les vignettes élèves Compositions (Compositions.jsx)

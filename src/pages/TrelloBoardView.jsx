@@ -41,10 +41,11 @@ function SortableCard({ card, profiles, onOpen, onToggle, canEdit }) {
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
       <div
+        className="cursor-grab-custom"
         style={{
           backgroundColor: '#fff', borderRadius: 10, padding: '10px 12px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.09)', border: '1px solid #F3F4F6',
-          cursor: 'grab', userSelect: 'none', marginBottom: 8,
+          userSelect: 'none', marginBottom: 8,
           opacity: card.completed ? 0.6 : 1,
           borderLeft: card.completed ? '3px solid #10B981' : '3px solid transparent',
           transition: 'box-shadow 0.15s',

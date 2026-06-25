@@ -152,7 +152,7 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
   const compact = cardMode === 'compact'
 
   return (
-    <div className={`relative rounded-xl border bg-white transition-all select-none cursor-grab active:cursor-grabbing overflow-hidden
+    <div className={`relative rounded-xl border bg-white transition-all select-none cursor-grab-custom active:cursor-grabbing-custom overflow-hidden
       ${selected ? 'border-indigo-400 shadow-md ring-2 ring-indigo-300/60'
         : isDragging ? 'border-indigo-200 shadow-lg opacity-80'
         : 'border-gray-100 shadow-sm hover:border-indigo-200 hover:shadow-md'}`}>

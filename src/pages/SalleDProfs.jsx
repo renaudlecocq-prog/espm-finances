@@ -63,8 +63,9 @@ function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, canEdit }) {
   return (
     <div ref={setNodeRef} style={sortStyle} {...attributes} {...listeners}>
     <div onClick={!isSortDragging ? onOpen : undefined}
+      className="cursor-grab-custom"
       style={{
-        borderRadius: 14, overflow: 'hidden', cursor: 'grab', backgroundColor: '#fff',
+        borderRadius: 14, overflow: 'hidden', backgroundColor: '#fff',
         boxShadow: board.pinned
           ? `0 0 0 2px ${board.color}, 0 4px 20px ${board.color}40`
           : '0 2px 8px rgba(0,0,0,0.08)',
