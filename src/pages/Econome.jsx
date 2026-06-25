@@ -61,9 +61,6 @@ const parseBelfiusCompte = (text, compte) => {
 
     if (!dateCompta) continue
 
-    // Pour l'onglet Élèves : garder seulement les entrées (>0)
-    if (compte === 'eleves' && montantRaw <= 0) continue
-
     const montant_entree = montantRaw > 0 ? montantRaw : null
     const montant_sortie = montantRaw < 0 ? Math.abs(montantRaw) : null
     const dateparts = dateCompta.split('-')
@@ -237,7 +234,7 @@ function ImportModal({ compte, onClose, onImported }) {
         solde_compte: r.solde_compte,
         nature_id: null,
         created_by: profile?.id,
-        ...(compte === 'eleves' ? { statut_paiement: 'pending' } : {}),
+        ...(compte === 'eleves' && r.montant_entree ? { statut_paiement: 'pending' } : {}),
       }))
 
       // Insérer par lots de 200
@@ -481,12 +478,10 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
               onClick={() => toggleSort('montant_entree')}>
               Entrée <SortIcon col="montant_entree" />
             </th>
-            {compte !== 'eleves' && (
-              <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 cursor-pointer"
-                onClick={() => toggleSort('montant_sortie')}>
-                Sortie <SortIcon col="montant_sortie" />
-              </th>
-            )}
+            <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 cursor-pointer"
+              onClick={() => toggleSort('montant_sortie')}>
+              Sortie <SortIcon col="montant_sortie" />
+            </th>
             <th className="w-8 px-2 py-2.5"></th>
           </tr>
         </thead>
@@ -545,13 +540,11 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
                   <span className="text-green-600 font-semibold text-xs">{fmtEur(tx.montant_entree)}</span>
                 ) : <span className="text-gray-300 text-xs">—</span>}
               </td>
-              {compte !== 'eleves' && (
-                <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                  {tx.montant_sortie ? (
-                    <span className="text-red-500 font-semibold text-xs">{fmtEur(tx.montant_sortie)}</span>
-                  ) : <span className="text-gray-300 text-xs">—</span>}
-                </td>
-              )}
+              <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                {tx.montant_sortie ? (
+                  <span className="text-red-500 font-semibold text-xs">{fmtEur(tx.montant_sortie)}</span>
+                ) : <span className="text-gray-300 text-xs">—</span>}
+              </td>
               <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
                 <button
                   onClick={() => onDelete(tx.id)}
@@ -585,25 +578,21 @@ function SummaryBar({ transactions, compte }) {
           <p className="text-sm font-bold text-green-700">{fmtEur(totalEntree)}</p>
         </div>
       </div>
-      {compte !== 'eleves' && (
-        <div className="flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-lg px-4 py-2.5 min-w-[150px]">
-          <TrendingDown size={16} className="text-red-400 shrink-0" />
-          <div>
-            <p className="text-[10px] text-red-500 font-medium uppercase tracking-wide">Sorties</p>
-            <p className="text-sm font-bold text-red-600">{fmtEur(totalSortie)}</p>
-          </div>
+      <div className="flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-lg px-4 py-2.5 min-w-[150px]">
+        <TrendingDown size={16} className="text-red-400 shrink-0" />
+        <div>
+          <p className="text-[10px] text-red-500 font-medium uppercase tracking-wide">Sorties</p>
+          <p className="text-sm font-bold text-red-600">{fmtEur(totalSortie)}</p>
         </div>
-      )}
-      {compte !== 'eleves' && (
-        <div className={`flex items-center gap-2.5 border rounded-lg px-4 py-2.5 min-w-[150px]
-          ${solde >= 0 ? 'bg-indigo-50 border-indigo-100' : 'bg-orange-50 border-orange-100'}`}>
-          <Minus size={16} className={solde >= 0 ? 'text-indigo-500' : 'text-orange-500'} />
-          <div>
-            <p className={`text-[10px] font-medium uppercase tracking-wide ${solde >= 0 ? 'text-indigo-600' : 'text-orange-600'}`}>Solde</p>
-            <p className={`text-sm font-bold ${solde >= 0 ? 'text-indigo-700' : 'text-orange-600'}`}>{fmtEur(solde)}</p>
-          </div>
+      </div>
+      <div className={`flex items-center gap-2.5 border rounded-lg px-4 py-2.5 min-w-[150px]
+        ${solde >= 0 ? 'bg-indigo-50 border-indigo-100' : 'bg-orange-50 border-orange-100'}`}>
+        <Minus size={16} className={solde >= 0 ? 'text-indigo-500' : 'text-orange-500'} />
+        <div>
+          <p className={`text-[10px] font-medium uppercase tracking-wide ${solde >= 0 ? 'text-indigo-600' : 'text-orange-600'}`}>Solde</p>
+          <p className={`text-sm font-bold ${solde >= 0 ? 'text-indigo-700' : 'text-orange-600'}`}>{fmtEur(solde)}</p>
         </div>
-      )}
+      </div>
       <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-100 rounded-lg px-4 py-2.5">
         <FileText size={16} className="text-gray-400 shrink-0" />
         <div>

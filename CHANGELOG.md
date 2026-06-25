@@ -1363,3 +1363,11 @@ git push origin main
 - **Barre d'action bulk** : apparaît dès qu'une ligne est cochée — NatureSelect + "Appliquer (N)" + "Désélectionner"
 - Mise à jour en base par lots de 100 (`.in()`)
 - Clic sur ligne = toggle sélection ; clic NatureSelect ou bouton Supprimer = stop propagation
+
+## [Develop] 2026-06-25 — Économe : onglet Élèves identique à Fonctionnement
+
+### Correction
+- **Onglet Élèves** : affiche désormais toutes les transactions (entrées ET sorties), comme l'onglet Fonctionnement
+- Suppression du filtre `montantRaw <= 0` dans le parseur CSV pour le compte élèves
+- Colonnes Sortie + Solde visibles dans les deux onglets
+- `statut_paiement: 'pending'` uniquement sur les lignes avec `montant_entree` (pas sur les virements vers POP)
