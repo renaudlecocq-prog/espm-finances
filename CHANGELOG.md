@@ -1673,3 +1673,9 @@ git push origin main
 ## [v0.83d] — 2026-06-25 — Sidebar ordre alphabétique
 ### Changed
 - Sidebar : menus réordonnés alphabétiquement (Activités → Articles → Compositions → Économe → Élèves → Factures → Helpdesk → Paiements → Salle des profs → Soldes → Suivi social)
+
+## [v0.83e] — 2026-06-25 — FIX Sidebar : droits par feature
+### Fixed
+- Sidebar : tous les items utilisent désormais `can('feature')` au lieu du check de rôle (`isMdp`, `isFinancier`)
+- Désactiver une feature dans Admin → Droits retire maintenant correctement l'entrée du menu pour ce rôle
+- Corrige : Salle des profs restait visible en aperçu MdP même après désactivation
