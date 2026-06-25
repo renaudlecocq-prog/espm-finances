@@ -1433,3 +1433,17 @@ git push origin main
 - **Bilan — Vue Générale** (onglet secondaire) : tableau Produits/Charges complet conservé pour vision globale
 - **Migration DB** : colonne `in_couverture boolean` sur `comptable_natures` (28 natures marquées au seed)
 - **Admin — Natures comptables** : nouveau toggle "Couverture élèves" dans le formulaire d'édition
+
+## [Develop] 2026-06-25 — Phase 4 Économe : onglet Projets
+
+### Nouvelles fonctionnalités
+- **Onglet Projets** (Econome.jsx) : modèle universel pour les petits projets (Pâtes, Fancy Fair, Rhétos…)
+  - Création/édition/suppression de projets (nom, année, description, catégories configurables)
+  - Catégories entièrement configurables par projet (tags ajout/suppression dans le modal, ou texte libre si aucune catégorie définie)
+  - Table de lignes : Date, Intitulé, Catégorie, Entrée, Sortie, Commentaire
+  - Affichage groupé par catégorie avec sous-totaux (Entrée / Sortie / Solde) pliables/dépliables
+  - Grand total en pied de tableau
+  - 3 cartes récap en haut : Total entrées / Total sorties / Solde
+  - Clôture de projet (lecture seule une fois clôturé)
+  - Saisie d'une ligne : si Entrée remplie → Sortie se vide automatiquement (et vice versa)
+  - Deux nouvelles tables Supabase : `comptable_projets` + `comptable_projet_lignes` avec RLS admin

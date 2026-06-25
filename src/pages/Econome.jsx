@@ -850,13 +850,7 @@ export default function Econome() {
         )}
         {activeTab === 'pop' && <PopTab natures={natures} />}
         {activeTab === 'bilan' && <BilanTab natures={natures} />}
-        {activeTab === 'projets' && (
-          <PlaceholderTab
-            label="Petits projets"
-            icon={<PlusCircle size={24} className="text-gray-400" />}
-            desc="Pâtes, Fancy Fair, Rhétos… Modèle universel avec sous-totaux par catégorie. En cours de développement."
-          />
-        )}
+        {activeTab === 'projets' && <ProjetsTab />}
       </div>
     </div>
   )
@@ -1628,5 +1622,537 @@ function BilanSection({ categorie, lignes, moisActifs, colorClass, negative = fa
         </tr>
       ))}
     </>
+  )
+}
+
+// ══════════════════════════════════════════════════════════
+//  Tab Projets — Pâtes, Fancy Fair, Rhétos…
+// ══════════════════════════════════════════════════════════
+function ProjetsTab() {
+  const { profile } = useAuth()
+  const [projets, setProjets] = useState([])
+  const [projetId, setProjetId] = useState(null)
+  const [lignes, setLignes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadingLignes, setLoadingLignes] = useState(false)
+  const [showProjetModal, setShowProjetModal] = useState(false)
+  const [editProjet, setEditProjet] = useState(null)
+  const [editLigne, setEditLigne] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  // ── Charger projets ────────────────────────────────────────────────────────
+  const loadProjets = useCallback(async () => {
+    setLoading(true)
+    const { data } = await supabase.from('comptable_projets')
+      .select('*').order('annee', { ascending: false }).order('nom')
+    setProjets(data || [])
+    if (data?.length && !projetId) setProjetId(data[0].id)
+    setLoading(false)
+  }, [projetId])
+
+  useEffect(() => { loadProjets() }, [])
+
+  // ── Charger lignes du projet actif ─────────────────────────────────────────
+  const loadLignes = useCallback(async () => {
+    if (!projetId) return
+    setLoadingLignes(true)
+    const { data } = await supabase.from('comptable_projet_lignes')
+      .select('*').eq('projet_id', projetId).order('date').order('position')
+    setLignes(data || [])
+    setLoadingLignes(false)
+  }, [projetId])
+
+  useEffect(() => { loadLignes() }, [projetId])
+
+  const projet = projets.find(p => p.id === projetId)
+
+  // ── Save projet ────────────────────────────────────────────────────────────
+  const saveProjet = async (form) => {
+    setSaving(true)
+    const payload = {
+      nom: form.nom, description: form.description || null,
+      annee: parseInt(form.annee), categories: form.categories,
+      cloture: form.cloture || false, created_by: profile?.id,
+    }
+    let newId = form.id
+    if (form.id) {
+      await supabase.from('comptable_projets').update(payload).eq('id', form.id)
+    } else {
+      const { data } = await supabase.from('comptable_projets').insert(payload).select().single()
+      newId = data?.id
+    }
+    setSaving(false)
+    setEditProjet(null)
+    setShowProjetModal(false)
+    await loadProjets()
+    if (newId) setProjetId(newId)
+  }
+
+  const deleteProjet = async () => {
+    if (!projet) return
+    if (!confirm(`Supprimer le projet "${projet.nom}" et toutes ses lignes ?`)) return
+    await supabase.from('comptable_projets').delete().eq('id', projetId)
+    setProjetId(null)
+    setProjets(prev => prev.filter(p => p.id !== projetId))
+    setLignes([])
+  }
+
+  // ── Save ligne ─────────────────────────────────────────────────────────────
+  const saveLigne = async (form) => {
+    setSaving(true)
+    const payload = {
+      projet_id: projetId, date: form.date, intitule: form.intitule,
+      categorie: form.categorie || null,
+      entree: form.entree ? parseFloat(form.entree) : null,
+      sortie: form.sortie ? parseFloat(form.sortie) : null,
+      commentaire: form.commentaire || null,
+    }
+    if (form.id) {
+      await supabase.from('comptable_projet_lignes').update(payload).eq('id', form.id)
+    } else {
+      await supabase.from('comptable_projet_lignes').insert(payload)
+    }
+    setSaving(false)
+    setEditLigne(null)
+    loadLignes()
+  }
+
+  const deleteLigne = async (id) => {
+    if (!confirm('Supprimer cette ligne ?')) return
+    await supabase.from('comptable_projet_lignes').delete().eq('id', id)
+    setLignes(prev => prev.filter(l => l.id !== id))
+  }
+
+  // ── Calculs ────────────────────────────────────────────────────────────────
+  const grouped = useMemo(() => {
+    // Grouper lignes par catégorie (null → '—')
+    const cats = {}
+    for (const l of lignes) {
+      const key = l.categorie || '—'
+      if (!cats[key]) cats[key] = []
+      cats[key].push(l)
+    }
+    return cats
+  }, [lignes])
+
+  const totalEntree = lignes.reduce((s, l) => s + Number(l.entree || 0), 0)
+  const totalSortie = lignes.reduce((s, l) => s + Number(l.sortie || 0), 0)
+  const solde = totalEntree - totalSortie
+
+  const anneOptions = []
+  for (let y = 2023; y <= new Date().getFullYear() + 1; y++) anneOptions.push(y)
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20 gap-2 text-gray-400">
+      <Loader2 size={18} className="animate-spin" /> Chargement…
+    </div>
+  )
+
+  return (
+    <div>
+      {/* ── Sélecteur de projet ── */}
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+        {projets.length > 0 ? (
+          <select value={projetId || ''} onChange={e => setProjetId(e.target.value)}
+            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-400 max-w-xs">
+            {projets.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.nom} ({p.annee}){p.cloture ? ' ✓' : ''}
+              </option>
+            ))}
+          </select>
+        ) : null}
+        <button
+          onClick={() => { setEditProjet({ nom: '', description: '', annee: new Date().getFullYear(), categories: [], cloture: false }); setShowProjetModal(true) }}
+          className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+        >
+          <PlusCircle size={14} /> Nouveau projet
+        </button>
+        {projet && (
+          <>
+            <button onClick={() => { setEditProjet({ ...projet }); setShowProjetModal(true) }}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 px-2 py-1.5 hover:bg-gray-100 rounded-lg">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Configurer
+            </button>
+            <button onClick={deleteProjet}
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 px-2 py-1.5 hover:bg-red-50 rounded-lg">
+              <Trash2 size={13} /> Supprimer
+            </button>
+          </>
+        )}
+      </div>
+
+      {projets.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-100 p-16 text-center">
+          <PlusCircle size={32} className="mx-auto mb-3 text-gray-300" />
+          <p className="font-medium text-gray-500">Aucun projet</p>
+          <p className="text-xs text-gray-400 mt-1">Créez un projet pour Pâtes, Fancy Fair, Rhétos…</p>
+          <button
+            onClick={() => { setEditProjet({ nom: '', description: '', annee: new Date().getFullYear(), categories: [], cloture: false }); setShowProjetModal(true) }}
+            className="mt-4 px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            Créer un premier projet
+          </button>
+        </div>
+      ) : !projet ? null : (
+        <>
+          {/* ── Cartes récap ── */}
+          <div className="flex flex-wrap gap-3 mb-4">
+            {projet.description && (
+              <div className="flex-1 min-w-[200px] bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
+                <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wide">Description</p>
+                <p className="text-xs text-indigo-700 mt-0.5">{projet.description}</p>
+              </div>
+            )}
+            <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-center">
+              <p className="text-[10px] text-green-600 font-semibold uppercase tracking-wide">Entrées</p>
+              <p className="text-base font-bold text-green-600">{fmtEur(totalEntree)}</p>
+            </div>
+            <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-center">
+              <p className="text-[10px] text-red-500 font-semibold uppercase tracking-wide">Sorties</p>
+              <p className="text-base font-bold text-red-500">{fmtEur(totalSortie)}</p>
+            </div>
+            <div className={`rounded-xl px-4 py-3 text-center border ${solde >= 0 ? 'bg-indigo-50 border-indigo-100' : 'bg-amber-50 border-amber-100'}`}>
+              <p className={`text-[10px] font-semibold uppercase tracking-wide ${solde >= 0 ? 'text-indigo-500' : 'text-amber-600'}`}>Solde</p>
+              <p className={`text-base font-bold ${solde >= 0 ? 'text-indigo-600' : 'text-amber-600'}`}>
+                {solde >= 0 ? '+' : ''}{fmtEur(solde)}
+              </p>
+            </div>
+            {projet.cloture && (
+              <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-xl px-4 py-3">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span className="text-xs font-medium text-gray-500">Clôturé</span>
+              </div>
+            )}
+          </div>
+
+          {/* ── Bouton + ligne ── */}
+          <div className="flex justify-end mb-3">
+            <button
+              onClick={() => setEditLigne({
+                date: new Date().toISOString().slice(0,10),
+                intitule: '', categorie: projet.categories[0] || '',
+                entree: '', sortie: '', commentaire: ''
+              })}
+              disabled={projet.cloture}
+              className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-40"
+            >
+              <PlusCircle size={14} /> Ajouter une ligne
+            </button>
+          </div>
+
+          {/* ── Table par catégorie ── */}
+          {loadingLignes ? (
+            <div className="flex items-center justify-center py-10 gap-2 text-gray-400">
+              <Loader2 size={16} className="animate-spin" /> Chargement…
+            </div>
+          ) : lignes.length === 0 ? (
+            <div className="bg-white rounded-xl border border-gray-100 p-12 text-center text-gray-400">
+              <p className="text-sm">Aucune ligne pour ce projet</p>
+              <p className="text-xs mt-1">Cliquez sur "Ajouter une ligne" pour commencer.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b-2 border-gray-100">
+                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Date</th>
+                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Intitulé</th>
+                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 w-32">Catégorie</th>
+                    <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 w-28">Entrée</th>
+                    <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 w-28">Sortie</th>
+                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Commentaire</th>
+                    <th className="w-16 px-2 py-2.5"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(grouped).map(([cat, catLignes]) => {
+                    const catEntree = catLignes.reduce((s, l) => s + Number(l.entree || 0), 0)
+                    const catSortie = catLignes.reduce((s, l) => s + Number(l.sortie || 0), 0)
+                    const catSolde  = catEntree - catSortie
+                    return (
+                      <ProjetCatSection key={cat}
+                        categorie={cat} lignes={catLignes}
+                        catEntree={catEntree} catSortie={catSortie} catSolde={catSolde}
+                        onEdit={l => setEditLigne({ ...l, entree: l.entree || '', sortie: l.sortie || '' })}
+                        onDelete={deleteLigne}
+                        cloture={projet.cloture}
+                      />
+                    )
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-gray-200 bg-gray-50">
+                    <td colSpan={3} className="px-3 py-3 text-xs font-bold text-gray-700 uppercase">Total</td>
+                    <td className="px-3 py-3 text-right text-sm font-bold text-green-600 tabular-nums">
+                      {totalEntree ? fmtEur(totalEntree) : '—'}
+                    </td>
+                    <td className="px-3 py-3 text-right text-sm font-bold text-red-500 tabular-nums">
+                      {totalSortie ? fmtEur(totalSortie) : '—'}
+                    </td>
+                    <td className={`px-3 py-3 text-right text-sm font-extrabold tabular-nums ${solde >= 0 ? 'text-indigo-600' : 'text-amber-600'}`}>
+                      {solde >= 0 ? '+' : '−'}{fmtEur(Math.abs(solde))}
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Modals */}
+      {showProjetModal && editProjet && (
+        <ProjetModal
+          item={editProjet}
+          saving={saving}
+          anneOptions={anneOptions}
+          onSave={saveProjet}
+          onClose={() => { setShowProjetModal(false); setEditProjet(null) }}
+        />
+      )}
+      {editLigne && (
+        <LigneModal
+          item={editLigne}
+          categories={projet?.categories || []}
+          saving={saving}
+          onSave={saveLigne}
+          onClose={() => setEditLigne(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── Section catégorie dans la table ───────────────────────────────────────────
+function ProjetCatSection({ categorie, lignes, catEntree, catSortie, catSolde, onEdit, onDelete, cloture }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <>
+      {/* En-tête catégorie */}
+      <tr className="border-b border-gray-100 bg-gray-50/80 cursor-pointer select-none hover:bg-gray-100/60"
+        onClick={() => setOpen(o => !o)}>
+        <td colSpan={3} className="px-3 py-1.5">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-gray-400">{open ? '▾' : '▸'}</span>
+            <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">{categorie}</span>
+            <span className="text-[10px] text-gray-400 ml-1">({lignes.length})</span>
+          </div>
+        </td>
+        <td className="px-3 py-1.5 text-right text-xs font-bold text-green-600 tabular-nums">
+          {catEntree ? fmtEur(catEntree) : '—'}
+        </td>
+        <td className="px-3 py-1.5 text-right text-xs font-bold text-red-500 tabular-nums">
+          {catSortie ? fmtEur(catSortie) : '—'}
+        </td>
+        <td className={`px-3 py-1.5 text-right text-xs font-bold tabular-nums ${catSolde > 0 ? 'text-indigo-600' : catSolde < 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+          {catSolde !== 0 ? <>{catSolde > 0 ? '+' : '−'}{fmtEur(Math.abs(catSolde))}</> : '—'}
+        </td>
+        <td />
+      </tr>
+      {/* Lignes */}
+      {open && lignes.map(l => (
+        <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50/40">
+          <td className="px-3 py-2 text-xs text-gray-500 whitespace-nowrap pl-6">{fmtDate(l.date)}</td>
+          <td className="px-3 py-2 text-xs text-gray-800 font-medium">{l.intitule}</td>
+          <td className="px-3 py-2 text-xs text-gray-400">{l.categorie || '—'}</td>
+          <td className="px-3 py-2 text-right text-xs text-green-600 font-medium tabular-nums">
+            {l.entree ? fmtEur(l.entree) : ''}
+          </td>
+          <td className="px-3 py-2 text-right text-xs text-red-500 font-medium tabular-nums">
+            {l.sortie ? fmtEur(l.sortie) : ''}
+          </td>
+          <td className="px-3 py-2 text-xs text-gray-400 max-w-[180px] truncate">{l.commentaire || ''}</td>
+          <td className="px-2 py-2">
+            {!cloture && (
+              <div className="flex items-center gap-1">
+                <button onClick={() => onEdit(l)}
+                  className="p-1.5 hover:bg-indigo-50 rounded text-gray-300 hover:text-indigo-500">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button onClick={() => onDelete(l.id)}
+                  className="p-1.5 hover:bg-red-50 rounded text-gray-300 hover:text-red-400">
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            )}
+          </td>
+        </tr>
+      ))}
+    </>
+  )
+}
+
+// ── Modal création/édition projet ─────────────────────────────────────────────
+function ProjetModal({ item, saving, anneOptions, onSave, onClose }) {
+  const [form, setForm] = useState({ ...item, categories: item.categories ? [...item.categories] : [] })
+  const [newCat, setNewCat] = useState('')
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const addCat = () => {
+    const c = newCat.trim()
+    if (!c || form.categories.includes(c)) return
+    set('categories', [...form.categories, c])
+    setNewCat('')
+  }
+  const removeCat = cat => set('categories', form.categories.filter(c => c !== cat))
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-800">{item.id ? 'Modifier le projet' : 'Nouveau projet'}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><X size={16} className="text-gray-500" /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Nom du projet *</label>
+              <input value={form.nom} onChange={e => set('nom', e.target.value)}
+                placeholder="ex: Pâtes 2026, Fancy Fair…"
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Année *</label>
+              <select value={form.annee} onChange={e => set('annee', parseInt(e.target.value))}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400">
+                {anneOptions.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <input value={form.description || ''} onChange={e => set('description', e.target.value)}
+              placeholder="Courte description du projet"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Catégories</label>
+            <div className="flex gap-2 mb-2">
+              <input value={newCat} onChange={e => setNewCat(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCat())}
+                placeholder="Ajouter une catégorie…"
+                className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-400" />
+              <button onClick={addCat} type="button"
+                className="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600">
+                Ajouter
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5 min-h-[28px]">
+              {form.categories.length === 0
+                ? <span className="text-xs text-gray-400 italic">Aucune catégorie — les lignes seront non catégorisées</span>
+                : form.categories.map(c => (
+                  <span key={c} className="flex items-center gap-1 bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full border border-indigo-100">
+                    {c}
+                    <button onClick={() => removeCat(c)} className="hover:text-red-500 ml-0.5">×</button>
+                  </span>
+                ))
+              }
+            </div>
+          </div>
+          {item.id && (
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" checked={form.cloture} onChange={e => set('cloture', e.target.checked)}
+                className="rounded border-gray-300 text-indigo-600" />
+              Projet clôturé (lecture seule)
+            </label>
+          )}
+        </div>
+        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Annuler</button>
+          <button onClick={() => onSave(form)} disabled={!form.nom || saving}
+            className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+            {saving ? 'Enregistrement…' : (item.id ? 'Enregistrer' : 'Créer le projet')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal ajout/édition ligne ─────────────────────────────────────────────────
+function LigneModal({ item, categories, saving, onSave, onClose }) {
+  const [form, setForm] = useState({ ...item })
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const hasCategories = categories.length > 0
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-800">{item.id ? 'Modifier' : 'Nouvelle'} ligne</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><X size={16} className="text-gray-500" /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Date *</label>
+              <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Catégorie</label>
+              {hasCategories ? (
+                <select value={form.categorie || ''} onChange={e => set('categorie', e.target.value)}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400">
+                  <option value="">— Sans catégorie —</option>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              ) : (
+                <input value={form.categorie || ''} onChange={e => set('categorie', e.target.value)}
+                  placeholder="Catégorie libre"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+              )}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Intitulé *</label>
+            <input value={form.intitule} onChange={e => set('intitule', e.target.value)}
+              placeholder="Description de l'opération"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Entrée (€)</label>
+              <input type="number" step="0.01" min="0" value={form.entree || ''}
+                onChange={e => { set('entree', e.target.value); if (e.target.value) set('sortie', '') }}
+                placeholder="0.00"
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-green-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Sortie (€)</label>
+              <input type="number" step="0.01" min="0" value={form.sortie || ''}
+                onChange={e => { set('sortie', e.target.value); if (e.target.value) set('entree', '') }}
+                placeholder="0.00"
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-red-400" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Commentaire</label>
+            <input value={form.commentaire || ''} onChange={e => set('commentaire', e.target.value)}
+              placeholder="Facultatif"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+          </div>
+        </div>
+        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Annuler</button>
+          <button onClick={() => onSave(form)}
+            disabled={!form.date || !form.intitule || (!form.entree && !form.sortie) || saving}
+            className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+            {saving ? 'Enregistrement…' : (item.id ? 'Enregistrer' : 'Ajouter')}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
