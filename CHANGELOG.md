@@ -1655,3 +1655,10 @@ git push origin main
 ## [Unreleased]
 ### Debug
 - sync: logger les champs disponibles dans getAllAccountsExtended pour trouver le champ photo des élèves importés en masse
+
+## [Unreleased — photos ESPM+]
+### Added
+- Migration Supabase : colonne `photo_url` sur `eleves` + bucket public `eleve-photos` (512 KB max, JPEG/PNG/WebP)
+- `ElevePhoto` : priorité absolue à `photo_url` stockée en DB (zéro appel Smartschool si photo présente)
+- Upload photo par clic : cliquer sur la photo (ou le "?") dans Compositions ouvre un file picker → resize client-side 300×300 → upload Supabase Storage → sauvegarde en DB
+- Suppression du debug sync (champs `_debug_sample_keys` / `_debug_photo_keys`)

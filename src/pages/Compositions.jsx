@@ -36,12 +36,18 @@ function loadSaved() { try { return JSON.parse(localStorage.getItem(LS_KEY) || '
 function writeSaved(list) { try { localStorage.setItem(LS_KEY, JSON.stringify(list)) } catch {} }
 
 // ── ElevePhoto ─────────────────────────────────────────────────────────────────
-function ElevePhoto({ username, internalNumber, size = 40 }) {
-  const [src, setSrc] = useState(null)
-  const [err, setErr] = useState(false)
-  const cacheKey = internalNumber ? 'ssp_n_' + internalNumber : 'ssp_u_' + username
+// photoUrl  : URL stockée en DB (priorité absolue, pas d'appel Smartschool)
+// onUpload  : callback(url) optionnel — si fourni, clic sur la photo ouvre un file picker
+function ElevePhoto({ username, internalNumber, photoUrl = null, eleveId = null, onUpload = null, size = 40 }) {
+  const [src, setSrc]             = useState(photoUrl || null)
+  const [err, setErr]             = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const inputRef                  = useRef(null)
+  const cacheKey                  = internalNumber ? 'ssp_n_' + internalNumber : 'ssp_u_' + username
 
+  // Si une photo DB est fournie, l'utiliser directement (pas d'appel Smartschool)
   useEffect(() => {
+    if (photoUrl) { setSrc(photoUrl); setErr(false); return }
     if (!internalNumber && !username) { setErr(true); return }
     const cached = sessionStorage.getItem(cacheKey)
     if (cached) { if (cached === 'null') setErr(true); else setSrc(cached); return }
@@ -58,16 +64,90 @@ function ElevePhoto({ username, internalNumber, size = 40 }) {
         else { setErr(true); sessionStorage.setItem(cacheKey, 'null') }
       } catch { setErr(true) }
     })
-  }, [username, internalNumber, cacheKey])
+  }, [username, internalNumber, photoUrl, cacheKey])
+
+  // Resize + upload vers Supabase storage
+  const handleFile = useCallback(async (file) => {
+    if (!file || !eleveId) return
+    setUploading(true)
+    try {
+      const resized = await new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => {
+          const MAX = 300
+          const ratio = Math.min(MAX / img.width, MAX / img.height, 1)
+          const canvas = document.createElement('canvas')
+          canvas.width  = Math.round(img.width  * ratio)
+          canvas.height = Math.round(img.height * ratio)
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob')), 'image/jpeg', 0.85)
+        }
+        img.onerror = reject
+        img.src = URL.createObjectURL(file)
+      })
+      const path = `${eleveId}.jpg`
+      const { error: upErr } = await supabase.storage
+        .from('eleve-photos')
+        .upload(path, resized, { upsert: true, contentType: 'image/jpeg' })
+      if (upErr) throw upErr
+      const { data: { publicUrl } } = supabase.storage.from('eleve-photos').getPublicUrl(path)
+      const urlWithTs = `${publicUrl}?t=${Date.now()}`
+      await supabase.from('eleves').update({ photo_url: urlWithTs }).eq('id', eleveId)
+      setSrc(urlWithTs)
+      setErr(false)
+      if (onUpload) onUpload(urlWithTs)
+    } catch (e) {
+      console.error('Photo upload error:', e)
+    } finally {
+      setUploading(false)
+    }
+  }, [eleveId, onUpload])
 
   const sz = `${size}px`
-  if (err || !src)
-    return <div style={{ width: sz, height: sz }} className="rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500 font-bold text-xs shrink-0">?</div>
-  return <img src={src} alt="" style={{ width: sz, height: sz }} className="rounded-full object-cover shrink-0 border-2 border-white shadow-sm" onError={() => setErr(true)} />
+  const canUpload = !!onUpload && !!eleveId
+
+  const placeholder = (
+    <div
+      style={{ width: sz, height: sz }}
+      onClick={canUpload ? () => inputRef.current?.click() : undefined}
+      className={`rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500 font-bold text-xs shrink-0${canUpload ? ' cursor-pointer hover:bg-indigo-200 transition-colors' : ''}`}
+      title={canUpload ? 'Cliquer pour uploader une photo' : ''}>
+      {uploading
+        ? <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+        : '?'}
+    </div>
+  )
+
+  return (
+    <>
+      {canUpload && (
+        <input ref={inputRef} type="file" accept="image/*" className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }} />
+      )}
+      {(err || !src)
+        ? placeholder
+        : <div style={{ width: sz, height: sz }}
+            onClick={canUpload ? () => inputRef.current?.click() : undefined}
+            className={`relative rounded-full shrink-0${canUpload ? ' cursor-pointer group' : ''}`}
+            title={canUpload ? 'Cliquer pour changer la photo' : ''}>
+            <img src={src} alt="" style={{ width: sz, height: sz }}
+              className="rounded-full object-cover border-2 border-white shadow-sm"
+              onError={() => setErr(true)} />
+            {canUpload && (
+              <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                {uploading
+                  ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <span className="text-white text-[9px] font-bold">PHOTO</span>}
+              </div>
+            )}
+          </div>
+      }
+    </>
+  )
 }
 
 // ── EleveCard ──────────────────────────────────────────────────────────────────
-function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, isDragging }) {
+function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, isDragging, onPhotoUpload }) {
   const hasAR  = eleve.amenagements_raisonnables?.trim()
   const groupes = Array.isArray(eleve.groupes_ss) ? eleve.groupes_ss.filter(Boolean) : []
   const compact = cardMode === 'compact'
@@ -89,7 +169,13 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
       )}
       <div className={`p-2.5 pt-2 w-full min-w-0 ${compact ? '' : 'pb-3'}`}>
         <div className="flex items-center gap-2">
-          {fields.photo && <ElevePhoto username={eleve.smartschool_username} internalNumber={eleve.smartschool_internal_number} size={compact ? 32 : 40} />}
+          {fields.photo && <ElevePhoto
+              username={eleve.smartschool_username}
+              internalNumber={eleve.smartschool_internal_number}
+              photoUrl={eleve.photo_url || null}
+              eleveId={eleve.id}
+              onUpload={onPhotoUpload ? (url) => onPhotoUpload(eleve.id, url) : null}
+              size={compact ? 32 : 40} />}
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold text-gray-800 leading-tight truncate">{eleve.nom?.toUpperCase()}</p>
             <p className="text-xs text-gray-500 leading-tight truncate">{eleve.prenom}</p>
@@ -142,20 +228,20 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
 }
 
 // ── SortableEleveCard ──────────────────────────────────────────────────────────
-function SortableEleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, groupId, selectedIds }) {
+function SortableEleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, groupId, selectedIds, onPhotoUpload }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: eleve.id, data: { type: 'card', eleveId: eleve.id, groupId, selectedIds },
   })
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} {...attributes} {...listeners}>
       <EleveCard eleve={eleve} fields={fields} customFields={customFields} onCFChange={onCFChange}
-        selected={selected} onSelect={onSelect} linked={linked} cardMode={cardMode} isDragging={isDragging} />
+        selected={selected} onSelect={onSelect} linked={linked} cardMode={cardMode} isDragging={isDragging} onPhotoUpload={onPhotoUpload} />
     </div>
   )
 }
 
 // ── GroupColumn ────────────────────────────────────────────────────────────────
-function GroupColumn({ group, eleves, fields, customFields, onCFChange, selectedIds, onSelect, linkedSets, onRename, onDelete, cardMode, isPool }) {
+function GroupColumn({ group, eleves, fields, customFields, onCFChange, selectedIds, onSelect, linkedSets, onRename, onDelete, cardMode, isPool, onPhotoUpload }) {
   const { setNodeRef, isOver } = useDroppable({ id: group.id, data: { type: 'column', groupId: group.id } })
   const [editing, setEditing] = useState(false)
   const [name, setName]       = useState(group.name)
@@ -207,7 +293,7 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
           {eleves.map(eleve => (
             <SortableEleveCard key={eleve.id} eleve={eleve} fields={fields} customFields={customFields} onCFChange={onCFChange}
               selected={selectedIds.has(eleve.id)} onSelect={onSelect} linked={isLinked(eleve.id)}
-              cardMode={cardMode} groupId={group.id} selectedIds={selectedIds} />
+              cardMode={cardMode} groupId={group.id} selectedIds={selectedIds} onPhotoUpload={onPhotoUpload} />
           ))}
         </SortableContext>
         {eleves.length === 0 && (
@@ -519,7 +605,7 @@ export default function Compositions() {
   const loadEleves = useCallback(async () => {
     setLoading(true)
     const { data } = await supabase.from('eleves')
-      .select('id, nom, prenom, classe, sexe, smartschool_username, smartschool_internal_number, groupes_ss, amenagements_raisonnables, philosophie, groupe_choix_philo')
+      .select('id, nom, prenom, classe, sexe, smartschool_username, smartschool_internal_number, groupes_ss, amenagements_raisonnables, philosophie, groupe_choix_philo, photo_url')
       .eq('actif', true).order('nom')
     setAllEleves(data || [])
     setLoading(false)
@@ -985,7 +1071,8 @@ export default function Compositions() {
               <GroupColumn key={col.id} group={col} eleves={getGroupEleves(col.id)}
                 fields={enabledFields} customFields={customFields} onCFChange={handleCFChange}
                 selectedIds={selectedIds} onSelect={toggleSelect} linkedSets={linkedSets}
-                onRename={renameGroup} onDelete={deleteGroup} cardMode={cardMode} isPool={col.id === POOL_ID} />
+                onRename={renameGroup} onDelete={deleteGroup} cardMode={cardMode} isPool={col.id === POOL_ID}
+                onPhotoUpload={(eleveId, url) => setAllEleves(prev => prev.map(e => e.id === eleveId ? { ...e, photo_url: url } : e))} />
             ))}
             <button onClick={addGroup}
               className="shrink-0 w-[170px] h-20 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-indigo-300 hover:text-indigo-400 transition-colors flex flex-col items-center justify-center gap-1">
