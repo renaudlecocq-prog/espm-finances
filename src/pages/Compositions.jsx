@@ -147,7 +147,7 @@ function ElevePhoto({ username, internalNumber, photoUrl = null, eleveId = null,
 }
 
 // ── EleveCard ──────────────────────────────────────────────────────────────────
-function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, isDragging, onPhotoUpload }) {
+function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, isDragging }) {
   const hasAR  = eleve.amenagements_raisonnables?.trim()
   const groupes = Array.isArray(eleve.groupes_ss) ? eleve.groupes_ss.filter(Boolean) : []
   const compact = cardMode === 'compact'
@@ -174,7 +174,7 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
               internalNumber={eleve.smartschool_internal_number}
               photoUrl={eleve.photo_url || null}
               eleveId={eleve.id}
-              onUpload={onPhotoUpload ? (url) => onPhotoUpload(eleve.id, url) : null}
+              onUpload={null}
               size={compact ? 32 : 40} />}
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold text-gray-800 leading-tight truncate">{eleve.nom?.toUpperCase()}</p>
@@ -228,20 +228,20 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
 }
 
 // ── SortableEleveCard ──────────────────────────────────────────────────────────
-function SortableEleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, groupId, selectedIds, onPhotoUpload }) {
+function SortableEleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, groupId, selectedIds }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: eleve.id, data: { type: 'card', eleveId: eleve.id, groupId, selectedIds },
   })
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} {...attributes} {...listeners}>
       <EleveCard eleve={eleve} fields={fields} customFields={customFields} onCFChange={onCFChange}
-        selected={selected} onSelect={onSelect} linked={linked} cardMode={cardMode} isDragging={isDragging} onPhotoUpload={onPhotoUpload} />
+        selected={selected} onSelect={onSelect} linked={linked} cardMode={cardMode} isDragging={isDragging} />
     </div>
   )
 }
 
 // ── GroupColumn ────────────────────────────────────────────────────────────────
-function GroupColumn({ group, eleves, fields, customFields, onCFChange, selectedIds, onSelect, linkedSets, onRename, onDelete, cardMode, isPool, onPhotoUpload }) {
+function GroupColumn({ group, eleves, fields, customFields, onCFChange, selectedIds, onSelect, linkedSets, onRename, onDelete, cardMode, isPool }) {
   const { setNodeRef, isOver } = useDroppable({ id: group.id, data: { type: 'column', groupId: group.id } })
   const [editing, setEditing] = useState(false)
   const [name, setName]       = useState(group.name)
@@ -293,7 +293,7 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
           {eleves.map(eleve => (
             <SortableEleveCard key={eleve.id} eleve={eleve} fields={fields} customFields={customFields} onCFChange={onCFChange}
               selected={selectedIds.has(eleve.id)} onSelect={onSelect} linked={isLinked(eleve.id)}
-              cardMode={cardMode} groupId={group.id} selectedIds={selectedIds} onPhotoUpload={onPhotoUpload} />
+              cardMode={cardMode} groupId={group.id} selectedIds={selectedIds} />
           ))}
         </SortableContext>
         {eleves.length === 0 && (
@@ -1071,8 +1071,7 @@ export default function Compositions() {
               <GroupColumn key={col.id} group={col} eleves={getGroupEleves(col.id)}
                 fields={enabledFields} customFields={customFields} onCFChange={handleCFChange}
                 selectedIds={selectedIds} onSelect={toggleSelect} linkedSets={linkedSets}
-                onRename={renameGroup} onDelete={deleteGroup} cardMode={cardMode} isPool={col.id === POOL_ID}
-                onPhotoUpload={(eleveId, url) => setAllEleves(prev => prev.map(e => e.id === eleveId ? { ...e, photo_url: url } : e))} />
+                onRename={renameGroup} onDelete={deleteGroup} cardMode={cardMode} isPool={col.id === POOL_ID} />
             ))}
             <button onClick={addGroup}
               className="shrink-0 w-[170px] h-20 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-indigo-300 hover:text-indigo-400 transition-colors flex flex-col items-center justify-center gap-1">

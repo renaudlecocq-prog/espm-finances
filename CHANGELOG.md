@@ -1705,3 +1705,9 @@ git push origin main
 - Compositions : le cercle de sélection n'est plus positionné en absolu sur la photo
 - Cercle maintenant inline dans la rangée flex (avant la photo), taille `w-4 h-4`
 - État non sélectionné plus visible : `border-gray-400` + légère ombre intérieure au lieu de `border-gray-200`
+
+## [v0.83j] — 2026-06-25 — Compositions : suppression upload photo individuel
+### Changed
+- Compositions : suppression du clic pour uploader une photo directement sur la carte
+- L'upload de photos passe désormais exclusivement par Admin → Photos élèves (import en masse)
+- Nettoyage complet de la prop `onPhotoUpload` dans `EleveCard`, `SortableEleveCard` et `GroupColumn`
