@@ -1,148 +1,115 @@
-// Compositions.jsx — Outil de composition de classes
+// Compositions.jsx — Outil de composition de classes (v3)
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   DndContext, DragOverlay, closestCorners, PointerSensor, TouchSensor,
   useSensor, useSensors, useDroppable,
 } from '@dnd-kit/core'
-import {
-  SortableContext, useSortable, verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
 import {
-  Settings, LayoutGrid, Plus, Trash2, Download, Upload,
-  X, AlertTriangle, ChevronDown, RefreshCw, Users, Link, Unlink,
-  Check, GripVertical, Eye, EyeOff,
+  Settings, LayoutGrid, Plus, Trash2, Download, Upload, X, AlertTriangle,
+  RefreshCw, Users, Link, Unlink, Check, Save, FolderOpen, ChevronDown,
+  Maximize2, Minimize2,
 } from 'lucide-react'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const ANNEES = ['1', '2', '3', '4', '5', '6']
 const POOL_ID = '__pool__'
+const LS_KEY  = 'espm_compositions_v1'
 
 const DEFAULT_FIELDS = {
-  photo:       { label: 'Photo',                  enabled: true  },
-  classe:      { label: 'Classe actuelle',         enabled: true  },
-  groupes:     { label: 'Groupes Smartschool',     enabled: true  },
-  troubles:     { label: 'Troubles attestés',        enabled: true },
-  rlmo:         { label: 'RLMO',                      enabled: true  },
+  photo:    { label: 'Photo',            enabled: true  },
+  classe:   { label: 'Classe actuelle',  enabled: true  },
+  groupes:  { label: 'Groupes SS',       enabled: true  },
+  troubles: { label: 'Troubles attestés',enabled: true  },
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const initials = (prenom, nom) =>
-  ((prenom?.[0] || '') + (nom?.[0] || '')).toUpperCase()
+const getAnneFromClasse = c => { const m = c?.match(/^(\d)/); return m ? m[1] : null }
+const getRlmo = e => [e.philosophie, e.groupe_choix_philo].filter(Boolean).join(' ') || null
 
-const getAnneFromClasse = (classe) => {
-  if (!classe) return null
-  const m = classe.match(/^(\d)/)
-  return m ? m[1] : null
+// ── LocalStorage helpers ──────────────────────────────────────────────────────
+function loadSaved() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]') } catch { return [] }
+}
+function writeSaved(list) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(list)) } catch {}
 }
 
-// ── Composant photo avec lazy load (POST → smartschool-photo.mjs) ────────────
-function ElevePhoto({ username, size = 48 }) {
-  const [src, setSrc] = useState(null)
-  const [err, setErr] = useState(false)
+// ── ElevePhoto (POST → smartschool-photo.mjs) ─────────────────────────────────
+function ElevePhoto({ username, size = 40 }) {
+  const [src, setSrc]   = useState(null)
+  const [err, setErr]   = useState(false)
 
   useEffect(() => {
     if (!username) { setErr(true); return }
-    const cached = sessionStorage.getItem('ss_photo_' + username)
-    if (cached) { setSrc(cached === 'null' ? null : cached); if (cached === 'null') setErr(true); return }
-
+    const cached = sessionStorage.getItem('ssp_' + username)
+    if (cached) { if (cached === 'null') setErr(true); else setSrc(cached); return }
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setErr(true); return }
       try {
-        const res = await fetch('/.netlify/functions/smartschool-photo', {
+        const r = await fetch('/.netlify/functions/smartschool-photo', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
           body: JSON.stringify({ username }),
         })
-        const data = await res.json()
-        if (data.photo) {
-          setSrc(data.photo)
-          sessionStorage.setItem('ss_photo_' + username, data.photo)
-        } else {
-          setErr(true)
-          sessionStorage.setItem('ss_photo_' + username, 'null')
-        }
+        const d = await r.json()
+        if (d.photo) { setSrc(d.photo); sessionStorage.setItem('ssp_' + username, d.photo) }
+        else { setErr(true); sessionStorage.setItem('ssp_' + username, 'null') }
       } catch { setErr(true) }
     })
   }, [username])
 
   const sz = `${size}px`
-  if (err || !src) return (
-    <div style={{ width: sz, height: sz }}
-      className="rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500 font-bold text-xs shrink-0">
-      ?
-    </div>
-  )
-  return (
-    <img src={src} alt="" style={{ width: sz, height: sz }}
-      className="rounded-full object-cover shrink-0 border-2 border-white shadow-sm"
-      onError={() => setErr(true)} />
-  )
+  if (err || !src)
+    return <div style={{ width: sz, height: sz }} className="rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500 font-bold text-xs shrink-0">?</div>
+  return <img src={src} alt="" style={{ width: sz, height: sz }} className="rounded-full object-cover shrink-0 border-2 border-white shadow-sm" onError={() => setErr(true)} />
 }
 
-// ── Vignette élève (petite, pour le board) ───────────────────────────────────
-function EleveCard({ eleve, fields, customFields, onCustomFieldChange, selected, onSelect, linked, isDragging = false }) {
-  const hasAR = eleve.amenagements_raisonnables?.trim()
-  const rlmo = [eleve.philosophie, eleve.groupe_choix_philo].filter(Boolean).join(' ') || null
+// ── EleveCard ─────────────────────────────────────────────────────────────────
+function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, isDragging }) {
+  const hasAR  = eleve.amenagements_raisonnables?.trim()
   const groupes = Array.isArray(eleve.groupes_ss) ? eleve.groupes_ss.filter(Boolean) : []
+  const compact = cardMode === 'compact'
 
   return (
-    <div
-      className={`relative rounded-xl border bg-white transition-all select-none cursor-grab active:cursor-grabbing
-        ${selected
-          ? 'border-indigo-400 shadow-md ring-2 ring-indigo-300/60'
-          : isDragging
-            ? 'border-indigo-200 shadow-lg opacity-80'
-            : 'border-gray-100 shadow-sm hover:border-indigo-200 hover:shadow-md'
-        }`}
+    <div className={`relative rounded-xl border bg-white transition-all select-none cursor-grab active:cursor-grabbing
+      ${selected ? 'border-indigo-400 shadow-md ring-2 ring-indigo-300/60'
+        : isDragging ? 'border-indigo-200 shadow-lg opacity-80'
+        : 'border-gray-100 shadow-sm hover:border-indigo-200 hover:shadow-md'}`}
       style={{ userSelect: 'none' }}
     >
-      {/* Checkbox sélection */}
-      <button
-        onPointerDown={e => e.stopPropagation()}
-        onClick={e => { e.stopPropagation(); onSelect(eleve.id) }}
+      {/* Checkbox */}
+      <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onSelect(eleve.id) }}
         className={`absolute top-1.5 left-1.5 z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors
-          ${selected ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-gray-200 hover:border-indigo-300'}`}
-      >
+          ${selected ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-gray-200 hover:border-indigo-300'}`}>
         {selected && <Check size={11} className="text-white" strokeWidth={3} />}
       </button>
 
-      {/* Badge lien */}
       {linked && (
         <div className="absolute top-1.5 right-1.5 z-10 bg-violet-100 rounded-full p-0.5">
           <Link size={10} className="text-violet-500" />
         </div>
       )}
 
-      <div className="p-3 pt-2">
-        {/* Header : photo + nom */}
-        <div className="flex items-start gap-2.5">
-          {fields.photo && (
-            <div className="shrink-0 mt-0.5">
-              <ElevePhoto username={eleve.smartschool_username} size={40} />
-            </div>
-          )}
+      <div className={`p-2.5 pt-2 ${compact ? '' : 'pb-3'}`}>
+        {/* Header: photo + nom */}
+        <div className="flex items-center gap-2">
+          {fields.photo && <ElevePhoto username={eleve.smartschool_username} size={compact ? 32 : 40} />}
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-gray-800 leading-tight truncate">
-              {eleve.nom?.toUpperCase()}
-            </p>
+            <p className="text-xs font-bold text-gray-800 leading-tight truncate">{eleve.nom?.toUpperCase()}</p>
             <p className="text-xs text-gray-500 leading-tight truncate">{eleve.prenom}</p>
-            <div className="flex flex-wrap gap-1 mt-1.5">
+          </div>
+        </div>
+
+        {/* Détails (mode étendu seulement) */}
+        {!compact && (
+          <>
+            <div className="flex flex-wrap gap-1 mt-2">
               {fields.classe && eleve.classe && (
-                <span className="text-[10px] font-semibold bg-blue-50 text-blue-600 rounded px-1.5 py-0.5">
-                  {eleve.classe}
-                </span>
-              )}
-              {fields.rlmo && rlmo && (
-                <span className="text-[10px] font-semibold bg-green-50 text-green-700 rounded px-1.5 py-0.5 truncate max-w-[90px]" title={rlmo}>
-                  {rlmo}
-                </span>
+                <span className="text-[10px] font-semibold bg-blue-50 text-blue-600 rounded px-1.5 py-0.5">{eleve.classe}</span>
               )}
               {fields.troubles && hasAR && (
                 <span className="text-[10px] font-semibold bg-orange-50 text-orange-600 rounded px-1.5 py-0.5 flex items-center gap-0.5">
@@ -150,169 +117,115 @@ function EleveCard({ eleve, fields, customFields, onCustomFieldChange, selected,
                 </span>
               )}
               {fields.groupes && groupes.slice(0, 2).map((g, i) => (
-                <span key={i} className="text-[10px] bg-gray-50 text-gray-500 rounded px-1.5 py-0.5 truncate max-w-[80px]">{g}</span>
+                <span key={i} className="text-[10px] bg-gray-50 text-gray-500 rounded px-1.5 py-0.5 truncate max-w-[90px]">{g}</span>
               ))}
-              {fields.groupes && groupes.length > 2 && (
-                <span className="text-[10px] text-gray-400">+{groupes.length - 2}</span>
-              )}
+              {fields.groupes && groupes.length > 2 && <span className="text-[10px] text-gray-400">+{groupes.length - 2}</span>}
             </div>
-          </div>
-        </div>
 
-        {/* Troubles attestés détail */}
-        {fields.troubles && hasAR && (
-          <div className="mt-2 text-[10px] text-orange-700 bg-orange-50 rounded px-2 py-1 leading-snug border border-orange-100">
-            {eleve.amenagements_raisonnables}
-          </div>
+            {fields.troubles && hasAR && (
+              <div className="mt-1.5 text-[10px] text-orange-700 bg-orange-50 rounded px-2 py-1 border border-orange-100 leading-snug">
+                {eleve.amenagements_raisonnables}
+              </div>
+            )}
+
+            {customFields?.map(cf => (
+              <div key={cf.id} className="mt-1" onPointerDown={e => e.stopPropagation()}>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-gray-400 shrink-0">{cf.label}:</span>
+                  <input
+                    value={cf.values?.[eleve.id] || ''}
+                    onChange={e => onCFChange?.(cf.id, eleve.id, e.target.value)}
+                    onClick={e => e.stopPropagation()}
+                    placeholder="—"
+                    className="text-[10px] flex-1 min-w-0 border-b border-gray-200 bg-transparent focus:outline-none focus:border-indigo-400 text-gray-700"
+                  />
+                </div>
+              </div>
+            ))}
+          </>
         )}
 
-        {/* Champs personnalisés */}
-        {customFields && customFields.map(cf => (
-          <div key={cf.id} className="mt-1.5">
-            <div
-              onPointerDown={e => e.stopPropagation()}
-              className="flex items-center gap-1.5"
-            >
-              <span className="text-[10px] text-gray-400 shrink-0">{cf.label}:</span>
-              <input
-                value={cf.values?.[eleve.id] || ''}
-                onChange={e => onCustomFieldChange?.(cf.id, eleve.id, e.target.value)}
-                onClick={e => e.stopPropagation()}
-                placeholder="—"
-                className="text-[10px] flex-1 min-w-0 border-b border-gray-200 bg-transparent focus:outline-none focus:border-indigo-400 text-gray-700"
-              />
-            </div>
-          </div>
-        ))}
+        {/* Mode compact : classe en inline sous le nom */}
+        {compact && fields.classe && eleve.classe && (
+          <span className="text-[10px] text-blue-500 font-medium">{eleve.classe}</span>
+        )}
       </div>
     </div>
   )
 }
 
-// ── Carte sortable (wrapper DnD) ──────────────────────────────────────────────
-function SortableEleveCard({ eleve, fields, customFields, onCustomFieldChange, selected, onSelect, linked, groupId, selectedIds }) {
-  const {
-    attributes, listeners, setNodeRef, transform, transition, isDragging,
-  } = useSortable({
-    id: eleve.id,
-    data: { type: 'card', eleveId: eleve.id, groupId, selectedIds },
+// ── SortableEleveCard ─────────────────────────────────────────────────────────
+function SortableEleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, groupId, selectedIds }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: eleve.id, data: { type: 'card', eleveId: eleve.id, groupId, selectedIds },
   })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-    zIndex: isDragging ? 999 : undefined,
-  }
-
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <EleveCard
-        eleve={eleve}
-        fields={fields}
-        customFields={customFields}
-        onCustomFieldChange={onCustomFieldChange}
-        selected={selected}
-        onSelect={onSelect}
-        linked={linked}
-        isDragging={isDragging}
-      />
+      <EleveCard eleve={eleve} fields={fields} customFields={customFields} onCFChange={onCFChange}
+        selected={selected} onSelect={onSelect} linked={linked} cardMode={cardMode} isDragging={isDragging} />
     </div>
   )
 }
 
-// ── Colonne du board ──────────────────────────────────────────────────────────
-function GroupColumn({ group, eleves, fields, customFields, onCustomFieldChange, selectedIds, onSelect, linkedSets, onRename, onDelete, isPool }) {
+// ── GroupColumn ───────────────────────────────────────────────────────────────
+function GroupColumn({ group, eleves, fields, customFields, onCFChange, selectedIds, onSelect, linkedSets, onRename, onDelete, cardMode, isPool }) {
   const { setNodeRef, isOver } = useDroppable({ id: group.id, data: { type: 'column', groupId: group.id } })
   const [editing, setEditing] = useState(false)
-  const [name, setName] = useState(group.name)
-  const inputRef = useRef(null)
-
-  const arCount = eleves.filter(e => e.amenagements_raisonnables?.trim()).length
-
+  const [name, setName]       = useState(group.name)
+  const inputRef              = useRef(null)
   useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
 
-  const isLinked = (eleveId) =>
-    linkedSets.some(set => set.has(eleveId))
+  const arCount   = eleves.filter(e => e.amenagements_raisonnables?.trim()).length
+  const isLinked  = id => linkedSets.some(s => s.has(id))
+  const colW      = cardMode === 'compact' ? 170 : 220
 
   return (
-    <div
-      className={`flex flex-col rounded-2xl border-2 transition-colors shrink-0
-        ${isPool
-          ? 'border-gray-200 bg-gray-50/80'
-          : isOver
-            ? 'border-indigo-300 bg-indigo-50/40'
-            : 'border-gray-100 bg-white'
-        }`}
-      style={{ width: 220, minHeight: 300 }}
+    <div className={`flex flex-col rounded-2xl border-2 transition-colors shrink-0
+      ${isPool ? 'border-gray-200 bg-gray-50/80' : isOver ? 'border-indigo-300 bg-indigo-50/40' : 'border-gray-100 bg-white'}`}
+      style={{ width: colW, minHeight: 300 }}
     >
-      {/* Header colonne */}
-      <div className={`px-3 py-2.5 border-b ${isPool ? 'border-gray-200' : 'border-gray-100'} flex items-center gap-2`}>
+      {/* Header */}
+      <div className={`px-3 py-2 border-b flex items-center gap-2 ${isPool ? 'border-gray-200' : 'border-gray-100'}`}>
         <div className="flex-1 min-w-0">
           {editing ? (
-            <input
-              ref={inputRef}
-              value={name}
-              onChange={e => setName(e.target.value)}
+            <input ref={inputRef} value={name} onChange={e => setName(e.target.value)}
               onBlur={() => { setEditing(false); onRename(group.id, name) }}
               onKeyDown={e => { if (e.key === 'Enter') { setEditing(false); onRename(group.id, name) } }}
-              className="w-full text-sm font-semibold border-b border-indigo-400 outline-none bg-transparent"
-            />
+              className="w-full text-xs font-semibold border-b border-indigo-400 outline-none bg-transparent" />
           ) : (
-            <button
-              onClick={() => !isPool && setEditing(true)}
-              className={`text-sm font-bold truncate text-left w-full ${isPool ? 'text-gray-500 cursor-default' : 'text-gray-700 hover:text-indigo-600'}`}
-            >
+            <button onClick={() => !isPool && setEditing(true)}
+              className={`text-xs font-bold truncate text-left w-full ${isPool ? 'text-gray-500 cursor-default' : 'text-gray-700 hover:text-indigo-600'}`}>
               {group.name}
             </button>
           )}
         </div>
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-          isPool ? 'bg-gray-200 text-gray-600' : 'bg-indigo-100 text-indigo-600'
-        }`}>
+        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${isPool ? 'bg-gray-200 text-gray-600' : 'bg-indigo-100 text-indigo-600'}`}>
           {eleves.length}
         </span>
         {arCount > 0 && (
-          <span className="text-[10px] font-semibold bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full">
-            {arCount} AR
-          </span>
+          <span className="text-[10px] font-semibold bg-orange-100 text-orange-600 px-1 py-0.5 rounded-full">{arCount}AR</span>
         )}
         {!isPool && (
-          <button onClick={() => onDelete(group.id)} className="text-gray-300 hover:text-red-400 transition-colors ml-0.5">
-            <X size={14} />
+          <button onClick={() => onDelete(group.id)} className="text-gray-300 hover:text-red-400 ml-0.5">
+            <X size={12} />
           </button>
         )}
       </div>
 
-      {/* Zone de drop */}
-      <div
-        ref={setNodeRef}
-        className={`flex-1 flex flex-col gap-2 p-2 overflow-y-auto transition-colors ${
-          isOver ? 'bg-indigo-50/60' : ''
-        }`}
-        style={{ maxHeight: 'calc(100vh - 220px)' }}
-      >
+      {/* Drop zone */}
+      <div ref={setNodeRef} className={`flex-1 flex flex-col gap-1.5 p-1.5 overflow-y-auto transition-colors ${isOver ? 'bg-indigo-50/60' : ''}`}
+        style={{ maxHeight: 'calc(100vh - 200px)' }}>
         <SortableContext items={eleves.map(e => e.id)} strategy={verticalListSortingStrategy}>
           {eleves.map(eleve => (
-            <SortableEleveCard
-              key={eleve.id}
-              eleve={eleve}
-              fields={fields}
-              customFields={customFields}
-              onCustomFieldChange={onCustomFieldChange}
-              selected={selectedIds.has(eleve.id)}
-              onSelect={onSelect}
-              linked={isLinked(eleve.id)}
-              groupId={group.id}
-              selectedIds={selectedIds}
-            />
+            <SortableEleveCard key={eleve.id} eleve={eleve} fields={fields} customFields={customFields} onCFChange={onCFChange}
+              selected={selectedIds.has(eleve.id)} onSelect={onSelect} linked={isLinked(eleve.id)}
+              cardMode={cardMode} groupId={group.id} selectedIds={selectedIds} />
           ))}
         </SortableContext>
         {eleves.length === 0 && (
-          <div className="flex-1 flex items-center justify-center py-8">
-            <p className={`text-xs ${isPool ? 'text-gray-300' : 'text-gray-300'}`}>
-              {isPool ? 'Tous assignés ✓' : 'Déposer ici'}
-            </p>
+          <div className="flex-1 flex items-center justify-center py-6">
+            <p className="text-xs text-gray-300">{isPool ? 'Tous placés ✓' : 'Déposer ici'}</p>
           </div>
         )}
       </div>
@@ -324,33 +237,36 @@ function GroupColumn({ group, eleves, fields, customFields, onCustomFieldChange,
 //  Page principale
 // ══════════════════════════════════════════════════════════════════════════════
 export default function Compositions() {
-  const { profile } = useAuth()
-
-  // ── État global ────────────────────────────────────────────────────────────
-  const [innerTab, setInnerTab]   = useState('config')   // 'config' | 'board'
-  const [loading, setLoading]     = useState(false)
+  // ── Onglets (Composition en premier) ──────────────────────────────────────
+  const [innerTab, setInnerTab] = useState('board')
+  const [loading, setLoading]   = useState(false)
   const [allEleves, setAllEleves] = useState([])
 
   // ── Config ─────────────────────────────────────────────────────────────────
-  const [selectedAnnees, setSelectedAnnees] = useState([])
-  const [selectedClasses, setSelectedClasses] = useState([])
-  const [excludedIds, setExcludedIds] = useState(new Set()) // élèves exclus individuellement
-  const [fields, setFields] = useState(DEFAULT_FIELDS)
   const [compositionName, setCompositionName] = useState('Nouvelle composition')
-  const [customFields, setCustomFields] = useState([]) // { id, label, values: {eleveId: val} }
-  const [newCustomLabel, setNewCustomLabel] = useState('')
-  const [eleveSearch, setEleveSearch] = useState('')
-  const [editingCustomField, setEditingCustomField] = useState(null) // id du champ en cours d'édition
+  const [selectedAnnees, setSelectedAnnees]   = useState([])
+  const [selectedClasses, setSelectedClasses] = useState([])
+  const [excludedIds, setExcludedIds]         = useState(new Set())
+  const [fields, setFields]                   = useState(DEFAULT_FIELDS)
+  const [customFields, setCustomFields]       = useState([])
+  const [newCFLabel, setNewCFLabel]           = useState('')
+  const [eleveSearch, setEleveSearch]         = useState('')
 
   // ── Board ──────────────────────────────────────────────────────────────────
-  const [groups, setGroups] = useState([])    // [{ id, name }]
-  const [assignments, setAssignments] = useState({})  // { eleveId: groupId | POOL_ID }
+  const [groups, setGroups]       = useState([])
+  const [assignments, setAssignments] = useState({})
   const [selectedIds, setSelectedIds] = useState(new Set())
-  const [linkedSets, setLinkedSets] = useState([])   // [Set<eleveId>]
-  const [activeId, setActiveId] = useState(null)
-  const [dragging, setDragging] = useState(null)
+  const [linkedSets, setLinkedSets]   = useState([])
+  const [activeId, setActiveId]       = useState(null)
+  const [dragging, setDragging]       = useState(null)
+  const [cardMode, setCardMode]       = useState('etendu') // 'compact' | 'etendu'
 
-  // ── Classes disponibles ────────────────────────────────────────────────────
+  // ── Sauvegarde ────────────────────────────────────────────────────────────
+  const [savedList, setSavedList]       = useState(() => loadSaved())
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [showLoadModal, setShowLoadModal] = useState(false)
+
+  // ── Classes dispo ──────────────────────────────────────────────────────────
   const availableClasses = useMemo(() =>
     [...new Set(allEleves.map(e => e.classe).filter(Boolean))].sort()
   , [allEleves])
@@ -358,221 +274,169 @@ export default function Compositions() {
   // ── Élèves filtrés ─────────────────────────────────────────────────────────
   const filteredEleves = useMemo(() => {
     let list = allEleves
-    if (selectedAnnees.length > 0) {
-      list = list.filter(e => {
-        const ann = getAnneFromClasse(e.classe)
-        return ann && selectedAnnees.includes(ann)
-      })
-    }
-    if (selectedClasses.length > 0) {
+    if (selectedAnnees.length > 0)
+      list = list.filter(e => { const a = getAnneFromClasse(e.classe); return a && selectedAnnees.includes(a) })
+    if (selectedClasses.length > 0)
       list = list.filter(e => selectedClasses.includes(e.classe))
-    }
-    // Exclure les élèves désélectionnés individuellement
-    if (excludedIds.size > 0) {
+    if (excludedIds.size > 0)
       list = list.filter(e => !excludedIds.has(e.id))
-    }
     return list
   }, [allEleves, selectedAnnees, selectedClasses, excludedIds])
 
-  // ── Charger les élèves ─────────────────────────────────────────────────────
+  // ── Chargement élèves ──────────────────────────────────────────────────────
   const loadEleves = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('eleves')
+    const { data } = await supabase.from('eleves')
       .select('id, nom, prenom, classe, smartschool_username, smartschool_internal_number, groupes_ss, amenagements_raisonnables, philosophie, groupe_choix_philo')
-      .eq('actif', true)
-      .order('nom')
+      .eq('actif', true).order('nom')
     setAllEleves(data || [])
     setLoading(false)
   }, [])
 
   useEffect(() => { loadEleves() }, [loadEleves])
 
-  // Sync assignments quand filteredEleves change
+  // ── Sync assignments ───────────────────────────────────────────────────────
   useEffect(() => {
     setAssignments(prev => {
       const next = { ...prev }
-      // Ajouter les nouveaux élèves dans le pool
-      for (const e of filteredEleves) {
-        if (!(e.id in next)) next[e.id] = POOL_ID
-      }
+      for (const e of filteredEleves) { if (!(e.id in next)) next[e.id] = POOL_ID }
       return next
     })
   }, [filteredEleves])
 
-  // ── DnD Sensors ───────────────────────────────────────────────────────────
+  // ── DnD ───────────────────────────────────────────────────────────────────
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor,   { activationConstraint: { delay: 200, tolerance: 8 } })
   )
-
-  // ── Helpers board ──────────────────────────────────────────────────────────
-  const getGroupEleves = useCallback((groupId) =>
-    filteredEleves.filter(e => (assignments[e.id] ?? POOL_ID) === groupId)
+  const getGroupEleves = useCallback(gid =>
+    filteredEleves.filter(e => (assignments[e.id] ?? POOL_ID) === gid)
   , [filteredEleves, assignments])
 
-  const toggleSelect = useCallback((eleveId) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(eleveId)) next.delete(eleveId)
-      else next.add(eleveId)
-      return next
-    })
+  const toggleSelect = useCallback(id => {
+    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   }, [])
-
   const clearSelection = () => setSelectedIds(new Set())
 
-  // ── Gestion groupes ────────────────────────────────────────────────────────
+  // ── Groupes ────────────────────────────────────────────────────────────────
   const addGroup = () => {
     const id = 'g_' + Date.now()
     setGroups(prev => [...prev, { id, name: `Groupe ${prev.length + 1}` }])
   }
-
-  const renameGroup = (id, name) => {
-    setGroups(prev => prev.map(g => g.id === id ? { ...g, name } : g))
-  }
-
-  const deleteGroup = (id) => {
+  const renameGroup = (id, name) => setGroups(prev => prev.map(g => g.id === id ? { ...g, name } : g))
+  const deleteGroup = id => {
     setGroups(prev => prev.filter(g => g.id !== id))
     setAssignments(prev => {
-      const next = { ...prev }
-      for (const [eleveId, gId] of Object.entries(next)) {
-        if (gId === id) next[eleveId] = POOL_ID
-      }
-      return next
+      const n = { ...prev }; for (const [k, v] of Object.entries(n)) { if (v === id) n[k] = POOL_ID }; return n
     })
   }
 
   // ── DnD handlers ──────────────────────────────────────────────────────────
   const handleDragStart = ({ active }) => {
     setActiveId(active.id)
-    const eleve = filteredEleves.find(e => e.id === active.id)
-    setDragging(eleve)
+    setDragging(filteredEleves.find(e => e.id === active.id))
   }
-
   const handleDragEnd = ({ active, over }) => {
-    setActiveId(null)
-    setDragging(null)
+    setActiveId(null); setDragging(null)
     if (!over) return
-
     const targetGroupId = over.data?.current?.groupId ?? over.id
     if (!targetGroupId) return
-
-    // Ids à déplacer : si sélection active ET l'élève draggé est dans la sélection
-    let idsToMove = [active.id]
-    if (selectedIds.has(active.id) && selectedIds.size > 1) {
-      idsToMove = [...selectedIds]
-    }
-    // Inclure les cartes liées
-    const linked = new Set(idsToMove)
-    for (const id of idsToMove) {
-      for (const linkSet of linkedSets) {
-        if (linkSet.has(id)) linkSet.forEach(lid => linked.add(lid))
-      }
-    }
-
+    let ids = [active.id]
+    if (selectedIds.has(active.id) && selectedIds.size > 1) ids = [...selectedIds]
+    const linked = new Set(ids)
+    for (const id of ids) for (const s of linkedSets) { if (s.has(id)) s.forEach(x => linked.add(x)) }
     setAssignments(prev => {
-      const next = { ...prev }
-      for (const id of linked) {
-        if (id in next) next[id] = targetGroupId
-      }
-      return next
+      const n = { ...prev }; for (const id of linked) { if (id in n) n[id] = targetGroupId }; return n
     })
   }
 
-  // ── Lier/délier la sélection ───────────────────────────────────────────────
-  const handleCustomFieldChange = useCallback((fieldId, eleveId, value) => {
-    setCustomFields(prev => prev.map(cf =>
-      cf.id === fieldId ? { ...cf, values: { ...cf.values, [eleveId]: value } } : cf
-    ))
-  }, [])
-
+  // ── Lier/délier ───────────────────────────────────────────────────────────
   const linkSelection = () => {
     if (selectedIds.size < 2) return
-    const newSet = new Set(selectedIds)
-    // Fusionner avec les ensembles existants qui se recoupent
-    const merged = [newSet]
-    const remaining = linkedSets.filter(s => {
-      for (const id of s) {
-        if (newSet.has(id)) {
-          s.forEach(x => merged[0].add(x))
-          return false
-        }
-      }
-      return true
-    })
-    setLinkedSets([...remaining, ...merged])
-    clearSelection()
+    const ns = new Set(selectedIds)
+    const merged = [ns]
+    const rest = linkedSets.filter(s => { for (const id of s) { if (ns.has(id)) { s.forEach(x => merged[0].add(x)); return false } } return true })
+    setLinkedSets([...rest, ...merged]); clearSelection()
   }
-
   const unlinkSelection = () => {
-    setLinkedSets(prev => prev.filter(s => {
-      for (const id of selectedIds) { if (s.has(id)) return false }
-      return true
-    }))
+    setLinkedSets(prev => prev.filter(s => { for (const id of selectedIds) { if (s.has(id)) return false } return true }))
     clearSelection()
   }
+  const isLinked = useCallback(id => linkedSets.some(s => s.has(id)), [linkedSets])
 
-  const isLinked = useCallback((eleveId) =>
-    linkedSets.some(s => s.has(eleveId))
-  , [linkedSets])
+  // ── Champs personnalisés ──────────────────────────────────────────────────
+  const handleCFChange = useCallback((fieldId, eleveId, value) => {
+    setCustomFields(prev => prev.map(cf => cf.id === fieldId ? { ...cf, values: { ...cf.values, [eleveId]: value } } : cf))
+  }, [])
+  const addCustomField = () => {
+    if (!newCFLabel.trim()) return
+    setCustomFields(prev => [...prev, { id: 'cf_' + Date.now(), label: newCFLabel.trim(), values: {} }])
+    setNewCFLabel('')
+  }
 
-  // ── Import / Export JSON ───────────────────────────────────────────────────
+  // ── Sérialisation ─────────────────────────────────────────────────────────
+  const serializeComposition = () => ({
+    name: compositionName,
+    date: new Date().toISOString(),
+    selectedAnnees, selectedClasses,
+    excludedIds: [...excludedIds],
+    fields: Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v.enabled])),
+    customFields,
+    groups,
+    assignments,
+    linkedSets: linkedSets.map(s => [...s]),
+    cardMode,
+  })
+
+  const deserializeComposition = data => {
+    if (data.name)            setCompositionName(data.name)
+    if (data.selectedAnnees) setSelectedAnnees(data.selectedAnnees)
+    if (data.selectedClasses) setSelectedClasses(data.selectedClasses)
+    if (data.excludedIds)     setExcludedIds(new Set(data.excludedIds))
+    if (data.fields)          setFields(prev => Object.fromEntries(
+      Object.entries(prev).map(([k, v]) => [k, { ...v, enabled: data.fields[k] ?? v.enabled }])
+    ))
+    if (data.customFields)    setCustomFields(data.customFields)
+    if (data.groups)          setGroups(data.groups)
+    if (data.assignments)     setAssignments(data.assignments)
+    if (data.linkedSets)      setLinkedSets(data.linkedSets.map(s => new Set(s)))
+    if (data.cardMode)        setCardMode(data.cardMode)
+  }
+
+  const saveComposition = () => {
+    const data  = serializeComposition()
+    const id    = 'comp_' + Date.now()
+    const entry = { id, name: compositionName, date: data.date, data }
+    const list  = [entry, ...savedList.filter(c => c.name !== compositionName)]
+    setSavedList(list); writeSaved(list); setShowSaveModal(false)
+  }
+
+  const loadComposition = entry => {
+    deserializeComposition(entry.data); setShowLoadModal(false)
+  }
+
+  const deleteComposition = id => {
+    const list = savedList.filter(c => c.id !== id)
+    setSavedList(list); writeSaved(list)
+  }
+
   const exportJSON = () => {
-    const data = {
-      name: compositionName,
-      date: new Date().toISOString(),
-      selectedAnnees,
-      selectedClasses,
-      excludedIds: [...excludedIds],
-      fields: Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v.enabled])),
-      groups,
-      assignments,
-      linkedSets: linkedSets.map(s => [...s]),
-      customFields,
-    }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
+    const blob = new Blob([JSON.stringify(serializeComposition(), null, 2)], { type: 'application/json' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
     a.download = `composition_${compositionName.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(a.href)
+    a.click(); URL.revokeObjectURL(a.href)
   }
 
-  const importJSON = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const importJSON = e => {
+    const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => {
-      try {
-        const data = JSON.parse(ev.target.result)
-        if (data.name)            setCompositionName(data.name)
-        if (data.selectedAnnees) setSelectedAnnees(data.selectedAnnees)
-        if (data.selectedClasses) setSelectedClasses(data.selectedClasses)
-        if (data.excludedIds) setExcludedIds(new Set(data.excludedIds))
-        if (data.fields)          setFields(prev => Object.fromEntries(
-          Object.entries(prev).map(([k, v]) => [k, { ...v, enabled: data.fields[k] ?? v.enabled }])
-        ))
-        if (data.groups)          setGroups(data.groups)
-        if (data.assignments)     setAssignments(data.assignments)
-        if (data.linkedSets)      setLinkedSets(data.linkedSets.map(s => new Set(s)))
-        if (data.customFields)    setCustomFields(data.customFields)
-      } catch { alert('Fichier JSON invalide') }
-    }
-    reader.readAsText(file)
-    e.target.value = ''
+    reader.onload = ev => { try { deserializeComposition(JSON.parse(ev.target.result)) } catch { alert('JSON invalide') } }
+    reader.readAsText(file); e.target.value = ''
   }
 
-  // ── Champs affichés ────────────────────────────────────────────────────────
-  const enabledFields = useMemo(() =>
-    Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v.enabled]))
-  , [fields])
-
-  // ── Colonnes du board ──────────────────────────────────────────────────────
-  const allColumns = useMemo(() => [
-    { id: POOL_ID, name: 'Pool — Élèves à placer', isPool: true },
-    ...groups,
-  ], [groups])
+  // ── Colonnes board ─────────────────────────────────────────────────────────
+  const allColumns = useMemo(() => [{ id: POOL_ID, name: 'Pool — Élèves à placer', isPool: true }, ...groups], [groups])
+  const enabledFields = useMemo(() => Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v.enabled])), [fields])
 
   // ══ RENDER ══════════════════════════════════════════════════════════════════
   return (
@@ -581,370 +445,163 @@ export default function Compositions() {
         title="Compositions"
         subtitle="Outil de composition de classes"
         tabs={[
-          { key: 'config', label: 'Configuration' },
           { key: 'board',  label: 'Composition' },
+          { key: 'config', label: 'Configuration' },
         ]}
         activeTab={innerTab}
         onTabChange={setInnerTab}
         actions={
           <div className="flex items-center gap-2">
+            {/* Actions Composition */}
             {innerTab === 'board' && selectedIds.size >= 2 && (
-              <button onClick={linkSelection}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors">
+              <button onClick={linkSelection} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors">
                 <Link size={13} /> Lier
               </button>
             )}
             {innerTab === 'board' && selectedIds.size >= 1 && (
-              <button onClick={unlinkSelection}
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+              <button onClick={unlinkSelection} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
                 style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
                 <Unlink size={13} /> Délier
               </button>
             )}
             {innerTab === 'board' && selectedIds.size >= 1 && (
-              <button onClick={clearSelection}
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+              <button onClick={clearSelection} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
                 style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
                 <X size={13} /> {selectedIds.size} sél.
               </button>
             )}
-            {innerTab === 'config' && (
-              <button onClick={() => document.getElementById('import-json').click()}
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
-                <Upload size={13} /> Import JSON
-              </button>
-            )}
-            <button onClick={exportJSON}
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+            {/* Sauvegarde */}
+            <button onClick={() => setShowSaveModal(true)} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
               style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
-              <Download size={13} /> Export JSON
+              <Save size={13} /> Sauvegarder
+            </button>
+            <button onClick={() => setShowLoadModal(true)} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+              style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+              <FolderOpen size={13} /> {savedList.length > 0 ? `Ouvrir (${savedList.length})` : 'Ouvrir'}
             </button>
           </div>
         }
       />
       <input id="import-json" type="file" accept=".json" className="hidden" onChange={importJSON} />
 
-      {/* ── TAB CONFIGURATION ─────────────────────────────────────────── */}
-      {innerTab === 'config' && (
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-
-          {/* Nom */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Nom de la composition</h3>
-            <input
-              value={compositionName}
-              onChange={e => setCompositionName(e.target.value)}
-              className="w-full max-w-md text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
-              placeholder="Ex : Composition 2026-2027 — 3e année"
-            />
-          </div>
-
-          {/* Source */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-700">Source — Élèves à composer</h3>
-              <button onClick={loadEleves} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400">
-                <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+      {/* ── MODAL Sauvegarder ─────────────────────────────────────────── */}
+      {showSaveModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowSaveModal(false)}>
+          <div className="bg-white rounded-2xl p-6 shadow-2xl w-96" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-gray-800 mb-4">Sauvegarder la composition</h3>
+            <input value={compositionName} onChange={e => setCompositionName(e.target.value)}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-4 focus:outline-none focus:border-indigo-400" />
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowSaveModal(false)} className="text-sm text-gray-500 px-4 py-2 hover:text-gray-700">Annuler</button>
+              <button onClick={saveComposition} className="text-sm font-semibold bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                Sauvegarder
               </button>
             </div>
-
-            <div className="space-y-4">
-              {/* Filtrer par année */}
-              <div>
-                <p className="text-xs text-gray-500 font-medium mb-2">Par année scolaire</p>
-                <div className="flex flex-wrap gap-2">
-                  {ANNEES.map(a => (
-                    <button key={a} onClick={() => setSelectedAnnees(prev =>
-                      prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]
-                    )}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                        selectedAnnees.includes(a)
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {a}e année
-                    </button>
-                  ))}
-                  {selectedAnnees.length > 0 && (
-                    <button onClick={() => setSelectedAnnees([])}
-                      className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-red-500">
-                      Effacer
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Filtrer par classe */}
-              <div>
-                <p className="text-xs text-gray-500 font-medium mb-2">Ou par classe précise</p>
-                <div className="flex flex-wrap gap-2">
-                  {availableClasses.map(c => (
-                    <button key={c} onClick={() => setSelectedClasses(prev =>
-                      prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]
-                    )}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                        selectedClasses.includes(c)
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Résumé */}
-              <div className="flex items-center gap-2 pt-1">
-                <Users size={14} className="text-indigo-400" />
-                <span className="text-sm text-gray-600">
-                  <span className="font-bold text-indigo-600">{filteredEleves.length}</span> élève{filteredEleves.length !== 1 ? 's' : ''} sélectionné{filteredEleves.length !== 1 ? 's' : ''}
-                  {filteredEleves.length === 0 && !selectedAnnees.length && !selectedClasses.length && (
-                    <span className="text-gray-400 ml-1">(aucun filtre → tous les élèves actifs)</span>
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Champs vignette */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Champs affichés sur les vignettes</h3>
-            <div className="space-y-2">
-              {Object.entries(fields).map(([key, field]) => (
-                <div key={key} className="flex items-center gap-3">
-                  <button
-                    onClick={() => setFields(prev => ({ ...prev, [key]: { ...prev[key], enabled: !prev[key].enabled } }))}
-                    className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${
-                      field.enabled ? 'bg-indigo-500' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${
-                      field.enabled ? 'left-[18px]' : 'left-0.5'
-                    }`} />
-                  </button>
-                  <span className={`text-sm ${field.enabled ? 'text-gray-700' : 'text-gray-400'}`}>
-                    {field.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Sélection individuelle d'élèves */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700">Sélection individuelle</h3>
-              {excludedIds.size > 0 && (
-                <button onClick={() => setExcludedIds(new Set())}
-                  className="text-xs text-red-400 hover:text-red-600">
-                  Réintégrer tous ({excludedIds.size})
-                </button>
-              )}
-            </div>
-            <p className="text-xs text-gray-400 mb-3">Cliquer sur un élève pour l'exclure / le réintégrer dans la composition.</p>
-            <input
-              value={eleveSearch}
-              onChange={e => setEleveSearch(e.target.value)}
-              placeholder="Rechercher un élève…"
-              className="w-full max-w-xs text-xs border border-gray-200 rounded-lg px-3 py-1.5 mb-3 focus:outline-none focus:border-indigo-400"
-            />
-            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
-              {allEleves
-                .filter(e => !eleveSearch || `${e.nom} ${e.prenom}`.toLowerCase().includes(eleveSearch.toLowerCase()))
-                .map(e => {
-                  // Hors filtre courant = grisé mais non exclu
-                  const inFilter = filteredEleves.some(f => f.id === e.id) || excludedIds.has(e.id)
-                  const excluded = excludedIds.has(e.id)
-                  return (
-                    <button key={e.id}
-                      onClick={() => setExcludedIds(prev => {
-                        const next = new Set(prev)
-                        if (next.has(e.id)) next.delete(e.id)
-                        else next.add(e.id)
-                        return next
-                      })}
-                      className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors border ${
-                        excluded
-                          ? 'bg-red-50 border-red-200 text-red-500 line-through'
-                          : !inFilter
-                            ? 'bg-gray-50 border-gray-100 text-gray-300'
-                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-indigo-300'
-                      }`}
-                    >
-                      {excluded && <X size={10} />}
-                      {e.nom} {e.prenom}
-                      {e.classe && <span className="text-gray-400 ml-0.5">· {e.classe}</span>}
-                    </button>
-                  )
-                })
-              }
-            </div>
-          </div>
-
-          {/* Champs personnalisés */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-700">Champs personnalisés</h3>
-            </div>
-            <div className="flex gap-2 mb-4">
-              <input
-                value={newCustomLabel}
-                onChange={e => setNewCustomLabel(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && newCustomLabel.trim()) {
-                    setCustomFields(prev => [...prev, { id: 'cf_' + Date.now(), label: newCustomLabel.trim(), values: {} }])
-                    setNewCustomLabel('')
-                  }
-                }}
-                placeholder="Nom du champ (ex: Langue maternelle)"
-                className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
-              />
-              <button
-                onClick={() => {
-                  if (!newCustomLabel.trim()) return
-                  setCustomFields(prev => [...prev, { id: 'cf_' + Date.now(), label: newCustomLabel.trim(), values: {} }])
-                  setNewCustomLabel('')
-                }}
-                className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700">
-                <Plus size={13} /> Ajouter
-              </button>
-            </div>
-            {customFields.length === 0 ? (
-              <p className="text-sm text-gray-400">Aucun champ personnalisé — les valeurs peuvent être remplies sur les vignettes du board.</p>
-            ) : (
-              <div className="space-y-2">
-                {customFields.map(cf => (
-                  <div key={cf.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-700">{cf.label}</span>
-                      <span className="text-xs text-gray-400">{Object.values(cf.values).filter(Boolean).length} valeur{Object.values(cf.values).filter(Boolean).length !== 1 ? 's' : ''}</span>
-                    </div>
-                    <button onClick={() => setCustomFields(prev => prev.filter(f => f.id !== cf.id))}
-                      className="text-gray-300 hover:text-red-400">
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Groupes cibles */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-700">Groupes cibles</h3>
-              <button onClick={addGroup}
-                className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700">
-                <Plus size={13} /> Ajouter un groupe
-              </button>
-            </div>
-            {groups.length === 0 ? (
-              <p className="text-sm text-gray-400">Aucun groupe — cliquer "Ajouter un groupe" pour commencer.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {groups.map(g => (
-                  <div key={g.id} className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1.5">
-                    <span className="text-sm font-medium text-indigo-700">{g.name}</span>
-                    <span className="text-xs text-indigo-400">{getGroupEleves(g.id).length}</span>
-                    <button onClick={() => deleteGroup(g.id)} className="text-indigo-300 hover:text-red-400 ml-1">
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            {groups.length > 0 && (
-              <p className="text-xs text-gray-400 mt-3">
-                Double-cliquer sur le nom d'un groupe dans le board pour le renommer.
-              </p>
-            )}
-          </div>
-
-          {/* CTA */}
-          <div className="flex justify-end">
-            <button
-              onClick={() => setInnerTab('board')}
-              disabled={filteredEleves.length === 0}
-              className="flex items-center gap-2 bg-indigo-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <LayoutGrid size={16} /> Ouvrir le board →
-            </button>
           </div>
         </div>
       )}
 
-      {/* ── TAB BOARD ─────────────────────────────────────────────────── */}
+      {/* ── MODAL Ouvrir ──────────────────────────────────────────────── */}
+      {showLoadModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowLoadModal(false)}>
+          <div className="bg-white rounded-2xl p-6 shadow-2xl w-[480px]" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-gray-800">Compositions sauvegardées</h3>
+              <div className="flex gap-2">
+                <button onClick={() => document.getElementById('import-json').click()}
+                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700">
+                  <Upload size={12} /> Importer JSON
+                </button>
+                <button onClick={() => { exportJSON(); setShowLoadModal(false) }}
+                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700">
+                  <Download size={12} /> Exporter JSON
+                </button>
+              </div>
+            </div>
+            {savedList.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">Aucune composition sauvegardée.</p>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {savedList.map(entry => (
+                  <div key={entry.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-100 hover:border-indigo-200 group">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700">{entry.name}</p>
+                      <p className="text-xs text-gray-400">{new Date(entry.date).toLocaleDateString('fr-BE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => loadComposition(entry)}
+                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100">
+                        Charger
+                      </button>
+                      <button onClick={() => deleteComposition(entry.id)} className="text-gray-300 hover:text-red-400">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="mt-4 flex justify-end">
+              <button onClick={() => setShowLoadModal(false)} className="text-sm text-gray-500 hover:text-gray-700">Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB COMPOSITION ────────────────────────────────────────────── */}
       {innerTab === 'board' && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Infos bar */}
-          <div className="px-4 py-2 bg-white border-b border-gray-100 flex items-center gap-4 shrink-0">
+          {/* Barre info */}
+          <div className="px-4 py-2 bg-white border-b border-gray-100 flex items-center gap-3 shrink-0">
             <span className="text-sm font-semibold text-gray-600">{compositionName}</span>
             <span className="text-xs text-gray-400">{filteredEleves.length} élèves · {groups.length} groupe{groups.length !== 1 ? 's' : ''}</span>
             {selectedIds.size > 0 && (
               <span className="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded-full">
-                {selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}
-                {' — '}
+                {selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''} —{' '}
                 <button onClick={clearSelection} className="underline">désélectionner</button>
               </span>
             )}
-            <button onClick={addGroup} className="ml-auto flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700">
-              <Plus size={13} /> Nouveau groupe
-            </button>
+            <div className="ml-auto flex items-center gap-2">
+              {/* Toggle mode carte */}
+              <button onClick={() => setCardMode(m => m === 'compact' ? 'etendu' : 'compact')}
+                title={cardMode === 'compact' ? 'Mode étendu' : 'Mode compact'}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 border border-gray-200 px-2.5 py-1.5 rounded-lg hover:border-indigo-300 transition-colors">
+                {cardMode === 'compact' ? <Maximize2 size={13} /> : <Minimize2 size={13} />}
+                {cardMode === 'compact' ? 'Étendu' : 'Compact'}
+              </button>
+              {/* Nouveau groupe */}
+              <button onClick={addGroup}
+                className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 border border-indigo-200 hover:border-indigo-300 px-2.5 py-1.5 rounded-lg transition-colors">
+                <Plus size={13} /> Nouveau groupe
+              </button>
+            </div>
           </div>
 
           {/* Board Kanban */}
           <div className="flex-1 overflow-x-auto overflow-y-hidden">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCorners}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-            >
-              <div className="flex gap-4 p-4 h-full items-start" style={{ minWidth: 'max-content' }}>
+            <DndContext sensors={sensors} collisionDetection={closestCorners}
+              onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+              <div className="flex gap-3 p-4 h-full items-start" style={{ minWidth: 'max-content' }}>
                 {allColumns.map(col => (
-                  <GroupColumn
-                    key={col.id}
-                    group={col}
-                    eleves={getGroupEleves(col.id)}
-                    fields={enabledFields}
-                    customFields={customFields}
-                    onCustomFieldChange={handleCustomFieldChange}
-                    selectedIds={selectedIds}
-                    onSelect={toggleSelect}
-                    linkedSets={linkedSets}
-                    onRename={renameGroup}
-                    onDelete={deleteGroup}
-                    isPool={col.id === POOL_ID}
-                  />
+                  <GroupColumn key={col.id} group={col} eleves={getGroupEleves(col.id)}
+                    fields={enabledFields} customFields={customFields} onCFChange={handleCFChange}
+                    selectedIds={selectedIds} onSelect={toggleSelect} linkedSets={linkedSets}
+                    onRename={renameGroup} onDelete={deleteGroup} cardMode={cardMode}
+                    isPool={col.id === POOL_ID} />
                 ))}
-
-                {/* Bouton ajouter colonne */}
-                <button
-                  onClick={addGroup}
-                  className="shrink-0 w-[220px] h-24 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-indigo-300 hover:text-indigo-400 transition-colors flex flex-col items-center justify-center gap-1.5"
-                >
-                  <Plus size={20} />
+                <button onClick={addGroup}
+                  className="shrink-0 w-[170px] h-20 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-indigo-300 hover:text-indigo-400 transition-colors flex flex-col items-center justify-center gap-1">
+                  <Plus size={18} />
                   <span className="text-xs font-medium">Nouveau groupe</span>
                 </button>
               </div>
 
-              {/* DragOverlay */}
               <DragOverlay>
                 {dragging && (
-                  <div className="w-[196px] rotate-2 shadow-2xl">
-                    <EleveCard
-                      eleve={dragging}
-                      fields={enabledFields}
-                      customFields={customFields}
-                      onCustomFieldChange={() => {}}
-                      selected={selectedIds.has(dragging.id)}
-                      onSelect={() => {}}
-                      linked={isLinked(dragging.id)}
-                      isDragging={true}
-                    />
+                  <div style={{ width: cardMode === 'compact' ? 150 : 196 }} className="rotate-2 shadow-2xl">
+                    <EleveCard eleve={dragging} fields={enabledFields} customFields={customFields}
+                      onCFChange={() => {}} selected={selectedIds.has(dragging.id)} onSelect={() => {}}
+                      linked={isLinked(dragging.id)} cardMode={cardMode} isDragging />
                     {selectedIds.has(dragging.id) && selectedIds.size > 1 && (
                       <div className="mt-1 text-center">
                         <span className="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full shadow">
@@ -956,6 +613,170 @@ export default function Compositions() {
                 )}
               </DragOverlay>
             </DndContext>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB CONFIGURATION ──────────────────────────────────────────── */}
+      {innerTab === 'config' && (
+        <div className="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto w-full space-y-5">
+
+          {/* Nom */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Nom de la composition</h3>
+            <input value={compositionName} onChange={e => setCompositionName(e.target.value)}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
+              placeholder="Ex : Composition 2026-2027 — 3e année" />
+          </div>
+
+          {/* Source */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-700">Source — Élèves à composer</h3>
+              <button onClick={loadEleves} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400">
+                <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+              </button>
+            </div>
+
+            {/* Filtre années */}
+            <div className="mb-3">
+              <p className="text-xs text-gray-400 font-medium mb-2">Par année</p>
+              <div className="flex flex-wrap gap-1.5">
+                {ANNEES.map(a => (
+                  <button key={a} onClick={() => setSelectedAnnees(prev =>
+                    prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]
+                  )}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors
+                      ${selectedAnnees.includes(a) ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                    {a}e
+                  </button>
+                ))}
+                {selectedAnnees.length > 0 && (
+                  <button onClick={() => setSelectedAnnees([])} className="text-xs text-gray-400 hover:text-red-500 px-1">✕</button>
+                )}
+              </div>
+            </div>
+
+            {/* Filtre classes */}
+            <div className="mb-3">
+              <p className="text-xs text-gray-400 font-medium mb-2">Par classe</p>
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                {availableClasses.map(c => (
+                  <button key={c} onClick={() => setSelectedClasses(prev =>
+                    prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]
+                  )}
+                    className={`px-2 py-1 rounded-lg text-xs font-semibold transition-colors
+                      ${selectedClasses.includes(c) ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+              {selectedClasses.length > 0 && (
+                <button onClick={() => setSelectedClasses([])} className="text-xs text-gray-400 hover:text-red-500 mt-1">✕ Effacer classes</button>
+              )}
+            </div>
+
+            {/* Résumé */}
+            <div className="flex items-center gap-2">
+              <Users size={13} className="text-indigo-400" />
+              <span className="text-sm text-gray-600">
+                <span className="font-bold text-indigo-600">{filteredEleves.length}</span> élève{filteredEleves.length !== 1 ? 's' : ''} sélectionné{filteredEleves.length !== 1 ? 's' : ''}
+              </span>
+              {(selectedAnnees.length === 0 && selectedClasses.length === 0) && (
+                <span className="text-xs text-gray-400">— tous les élèves actifs</span>
+              )}
+            </div>
+
+            {/* Exclusion individuelle */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-500 font-medium">Exclure des élèves individuels</p>
+                {excludedIds.size > 0 && (
+                  <button onClick={() => setExcludedIds(new Set())} className="text-xs text-red-400 hover:text-red-600">
+                    Réintégrer tous ({excludedIds.size})
+                  </button>
+                )}
+              </div>
+              <input value={eleveSearch} onChange={e => setEleveSearch(e.target.value)}
+                placeholder="Rechercher…" className="w-full text-xs border border-gray-200 rounded-lg px-3 py-1.5 mb-2 focus:outline-none focus:border-indigo-400" />
+              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
+                {allEleves
+                  .filter(e => !eleveSearch || `${e.nom} ${e.prenom}`.toLowerCase().includes(eleveSearch.toLowerCase()))
+                  .map(e => {
+                    const excluded = excludedIds.has(e.id)
+                    const visible  = filteredEleves.some(f => f.id === e.id) || excluded
+                    return (
+                      <button key={e.id} onClick={() => setExcludedIds(prev => {
+                        const n = new Set(prev); n.has(e.id) ? n.delete(e.id) : n.add(e.id); return n
+                      })}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs border transition-colors
+                          ${excluded ? 'bg-red-50 border-red-200 text-red-500 line-through'
+                            : !visible ? 'bg-gray-50 border-gray-100 text-gray-300'
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-indigo-300'}`}>
+                        {excluded && <X size={9} />}
+                        {e.nom} {e.prenom}
+                        {e.classe && <span className="text-gray-400">· {e.classe}</span>}
+                      </button>
+                    )
+                  })}
+              </div>
+            </div>
+          </div>
+
+          {/* Champs vignette */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h3 className="text-sm font-semibold text-gray-700 mb-4">Champs affichés sur les vignettes</h3>
+            <div className="space-y-2.5">
+              {Object.entries(fields).map(([key, field]) => (
+                <div key={key} className="flex items-center gap-3">
+                  <button onClick={() => setFields(prev => ({ ...prev, [key]: { ...prev[key], enabled: !prev[key].enabled } }))}
+                    className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${field.enabled ? 'bg-indigo-500' : 'bg-gray-200'}`}>
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${field.enabled ? 'left-[18px]' : 'left-0.5'}`} />
+                  </button>
+                  <span className={`text-sm ${field.enabled ? 'text-gray-700' : 'text-gray-400'}`}>{field.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Champs personnalisés */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h3 className="text-sm font-semibold text-gray-700 mb-4">Champs personnalisés</h3>
+            <div className="flex gap-2 mb-3">
+              <input value={newCFLabel} onChange={e => setNewCFLabel(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addCustomField()}
+                placeholder="Nom du champ (ex: Langue maternelle)"
+                className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+              <button onClick={addCustomField}
+                className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700">
+                <Plus size={13} /> Ajouter
+              </button>
+            </div>
+            {customFields.length === 0 ? (
+              <p className="text-sm text-gray-400">Aucun champ. Les valeurs se saisissent sur les vignettes du board.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {customFields.map(cf => (
+                  <div key={cf.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-700">{cf.label}</span>
+                      <span className="text-xs text-gray-400">{Object.values(cf.values).filter(Boolean).length} valeur{Object.values(cf.values).filter(Boolean).length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <button onClick={() => setCustomFields(prev => prev.filter(f => f.id !== cf.id))} className="text-gray-300 hover:text-red-400">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* CTA */}
+          <div className="flex justify-end pb-4">
+            <button onClick={() => setInnerTab('board')} disabled={filteredEleves.length === 0}
+              className="flex items-center gap-2 bg-indigo-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              <LayoutGrid size={16} /> Ouvrir le board →
+            </button>
           </div>
         </div>
       )}

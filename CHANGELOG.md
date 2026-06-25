@@ -1557,3 +1557,23 @@ git push origin main
 ### Amélioration sync Smartschool
 - Détection "Troubles attestés" élargie : groupes préfixés "AR", "trouble", "dys", champs libres `vrij1`–`vrij8` non vides, et champs API `leerstoornis`/`stoornis` si présents
 - Requête Supabase enrichie : `smartschool_username`, `philosophie`, `groupe_choix_philo` ajoutés au SELECT
+
+## [Develop] 2026-06-25 — Compositions v3 : refonte UI + persistance localStorage
+
+### Général
+- **Ordre onglets inversé** : "Composition" devient le premier onglet (tab par défaut), "Configuration" en second
+- **RLMO supprimé** : champ RLMO retiré de DEFAULT_FIELDS et des vignettes (déjà visible dans les groupes Smartschool → pas de double affichage)
+
+### Configuration
+- **Import/export JSON** déplacés : retirés de la Config, accessibles dans la modal "Ouvrir" (export) et via "Ouvrir" (import)
+- **Source compacte** : filtre par année (pills) + filtre par classe (chips scrollables) dans un bloc condensé, plus compact que les anciens boutons
+- **"Groupes cibles" supprimé** : section retirée (déjà gérée dans le board Composition)
+- **Ordre des sections** réorganisé : Nom → Source → Champs affichés → Champs personnalisés → CTA (les champs perso sont maintenant juste après les champs affichés)
+
+### Composition
+- **Bouton "+ Nouveau groupe" droit supprimé** : seul le bouton dans la barre info et la colonne ghost restent
+- **Mode compact / étendu** : bouton toggle dans la barre du board — Compact = photo + nom + prénom uniquement, Étendu = photo + nom + prénom + groupes + troubles + champs perso
+- **Persistance localStorage** : les compositions sont sauvegardées dans `localStorage` (`espm_compositions_v1`) — load/save avec noms personnalisables
+  - Bouton "Sauvegarder" dans le header → modal avec nom éditable
+  - Bouton "Ouvrir (N)" dans le header → liste des compositions avec date, charger ou supprimer
+  - Import/export JSON disponibles dans la modal "Ouvrir"
