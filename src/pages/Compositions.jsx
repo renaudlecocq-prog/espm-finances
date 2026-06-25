@@ -230,10 +230,15 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
 
   const filteredCount = useMemo(() => {
     let list = allEleves
-    if (filters.annee?.length)
-      list = list.filter(e => { const a = getAnneFromClasse(e.classe); return a && filters.annee.includes(`${a}e`) })
-    if (filters.classe?.length)
-      list = list.filter(e => filters.classe.includes(e.classe))
+    const hasAnnee = filters.annee?.length > 0
+    const hasClasse = filters.classe?.length > 0
+    if (hasAnnee || hasClasse) {
+      list = list.filter(e => {
+        const matchAnnee = hasAnnee && (() => { const a = getAnneFromClasse(e.classe); return a && filters.annee.includes(`${a}e`) })()
+        const matchClasse = hasClasse && filters.classe.includes(e.classe)
+        return matchAnnee || matchClasse
+      })
+    }
     return list.filter(e => !excludedIds.has(e.id)).length
   }, [allEleves, filters, excludedIds])
 
@@ -401,10 +406,15 @@ export default function Compositions() {
   // ── Élèves filtrés ────────────────────────────────────────────────────────
   const filteredEleves = useMemo(() => {
     let list = allEleves
-    if (filters.annee?.length)
-      list = list.filter(e => { const a = getAnneFromClasse(e.classe); return a && filters.annee.includes(`${a}e`) })
-    if (filters.classe?.length)
-      list = list.filter(e => filters.classe.includes(e.classe))
+    const hasAnnee = filters.annee?.length > 0
+    const hasClasse = filters.classe?.length > 0
+    if (hasAnnee || hasClasse) {
+      list = list.filter(e => {
+        const matchAnnee = hasAnnee && (() => { const a = getAnneFromClasse(e.classe); return a && filters.annee.includes(`${a}e`) })()
+        const matchClasse = hasClasse && filters.classe.includes(e.classe)
+        return matchAnnee || matchClasse
+      })
+    }
     return list.filter(e => !excludedIds.has(e.id))
   }, [allEleves, filters, excludedIds])
 
