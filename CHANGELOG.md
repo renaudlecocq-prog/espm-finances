@@ -1686,3 +1686,10 @@ git push origin main
 - Ajout de `previewPermissions` : chargement des `role_permissions` du rôle aperçu depuis la DB dès activation
 - `can()` utilise désormais `previewPermissions` en mode aperçu au lieu de retourner `false` hardcodé
 - L'aperçu reflète fidèlement les droits configurés dans Admin → Droits pour le rôle simulé
+
+## [v0.83g] — 2026-06-25 — FIX routes : garde feature sur chaque route
+### Fixed
+- `RequireAuth` : ajout prop `feature` (string ou array) — vérifie `can()` en plus du check de rôle
+- Routes protégées par feature : `/eleves`, `/groupes`, `/paiements`, `/factures`, `/activites`, `/articles`, `/assistant-social`, `/helpdesk`, `/salle-des-profs`, `/econome`, `/compositions`
+- Accès direct par URL (bypass sidebar) désormais bloqué si la feature est désactivée pour le rôle
+- Admin toujours autorisé (pas de `can()` check pour `role === 'admin'`)
