@@ -1461,3 +1461,32 @@ git push origin main
 - Migration : ajout colonnes `date`, `commentaire`, `position` + synchronisation `date ← date_ligne`
 - Code : payload envoie maintenant les deux noms (`date`+`date_ligne`, `commentaire`+`note`) pour compat
 - Affichage date et commentaire dans l'édition : fallback sur l'ancienne colonne
+
+## [Develop] 2026-06-25 — Phase 5 Économe : Exports Excel, Graphiques Bilan, PDF
+
+### Nouvelles fonctionnalités
+- **Export Excel** (SheetJS) :
+  - Onglets Fonctionnement et Élèves : bouton "Excel" → colonnes Date, Libellé, Nature, Catégorie, Entrée, Sortie, Solde cumulé — filename `ESPM_{compte}_{annee}.xlsx`
+  - Onglet POP : bouton "Excel" → colonnes Date, Fournisseur, N° pièce, Nature, Catégorie, Montant, Solde cumulé — filename `ESPM_POP_{annee}.xlsx`
+  - Largeurs de colonnes auto-ajustées
+- **Graphiques Bilan** (recharts) :
+  - Composant `BilanCharts` partagé entre Vue Couverture et Vue Générale, rétractable/déployable
+  - Barres groupées comparant les deux flux par mois (Dépenses/Encaissements ou Charges/Produits)
+  - Courbe de solde cumulatif avec remplissage de zone
+- **PDF Bilan** — `netlify/functions/econome-bilan-pdf.mjs` :
+  - GET `?annee=YYYY&token=JWT` → HTML avec `window.print()` automatique
+  - Page de vue générale (Produits/Charges par mois avec solde) + page couverture élèves
+  - Cartes récap : Total produits / Total charges / Solde général / Couverture élèves
+  - Rendu paysage A4 optimisé (@media print)
+- **PDF Projets** — `netlify/functions/econome-projet-pdf.mjs` :
+  - GET `?projetId=UUID&token=JWT` → HTML avec `window.print()` automatique
+  - Lignes groupées par catégorie avec sous-totaux, grand total, cartes récap
+  - Badge statut (En cours / Clôturé), description du projet si renseignée
+- **Boutons PDF** dans l'UI :
+  - Tab Bilan : bouton "PDF Bilan" dans la toolbar (à côté du sélecteur d'année)
+  - Tab Projets : bouton "PDF Projet" dans la toolbar (visible quand un projet est sélectionné)
+
+### Dépendances ajoutées
+- `xlsx` (SheetJS) — export Excel côté client
+- `recharts` — graphiques dans le Bilan
+

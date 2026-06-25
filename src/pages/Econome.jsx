@@ -5,8 +5,13 @@ import PageHeader from '../components/ui/PageHeader'
 import {
   Upload, X, Check, ChevronDown, Search, AlertTriangle, Loader2,
   RefreshCw, PlusCircle, Trash2, ChevronUp, ChevronsUpDown,
-  FileText, TrendingUp, TrendingDown, Minus,
+  FileText, TrendingUp, TrendingDown, Minus, Download,
 } from 'lucide-react'
+import * as XLSX from 'xlsx'
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer, ComposedChart, Area,
+} from 'recharts'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtEur = n => n == null ? '—' : Number(n).toFixed(2).replace('.', ',') + ' €'
@@ -731,6 +736,27 @@ function CompteTab({ compte, natures }) {
           <RefreshCw size={15} />
         </button>
         <button
+          onClick={() => {
+            const label = compte === 'fonctionnement' ? 'Fonctionnement' : 'Eleves'
+            const header = ['Date', 'Libellé', 'Nature', 'Catégorie', 'Entrée (€)', 'Sortie (€)', 'Solde cumulé (€)']
+            let solde = 0
+            const rows = [header, ...filtered.map(t => {
+              const e = Number(t.montant_entree || 0), s = Number(t.montant_sortie || 0)
+              solde += e - s
+              const nat = natures.find(n => n.id === t.nature_id)
+              return [
+                t.date_operation || '', t.libelle || '', t.nature_libelle || '',
+                nat?.categorie || '', e || '', s || '', Math.round(solde * 100) / 100
+              ]
+            })]
+            exportToExcel(rows, `ESPM_${label}_${annee}.xlsx`)
+          }}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600"
+          title="Exporter en Excel"
+        >
+          <Download size={13} /> Excel
+        </button>
+        <button
           onClick={() => setShowImport(true)}
           className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
         >
@@ -954,6 +980,26 @@ function PopTab({ natures }) {
         <div className="flex-1" />
         <button onClick={load} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
           <RefreshCw size={15} />
+        </button>
+        <button
+          onClick={() => {
+            const header = ['Date', 'Fournisseur', 'N° pièce', 'Nature', 'Catégorie', 'Montant (€)', 'Solde cumulé (€)']
+            let solde = 0
+            const rows = [header, ...filtered.map(l => {
+              solde -= Number(l.montant || 0)
+              const nat = chargesNatures.find(n => n.id === l.nature_id)
+              return [
+                l.date_transmission || '', l.fournisseur || '', l.numero_piece || '',
+                l.nature_libelle || '', nat?.categorie || '',
+                Number(l.montant || 0), Math.round(solde * 100) / 100
+              ]
+            })]
+            exportToExcel(rows, `ESPM_POP_${annee}.xlsx`)
+          }}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600"
+          title="Exporter en Excel"
+        >
+          <Download size={13} /> Excel
         </button>
         <button
           onClick={() => setEditItem({
@@ -1272,6 +1318,17 @@ function BilanTab({ natures }) {
         <button onClick={load} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
           <RefreshCw size={15} />
         </button>
+        <button
+          onClick={async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+            if (!token) return
+            window.open(`/.netlify/functions/econome-bilan-pdf?annee=${annee}&token=${encodeURIComponent(token)}`, '_blank')
+          }}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+        >
+          <FileText size={13} /> PDF Bilan
+        </button>
         {/* Inner tabs */}
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1 ml-2">
           {[
@@ -1304,6 +1361,77 @@ function BilanTab({ natures }) {
         <VueCouverture data={data} moisActifs={moisActifs} annee={annee} />
       ) : (
         <VueGenerale data={data} moisActifs={moisActifs} annee={annee} />
+      )}
+    </div>
+  )
+}
+
+
+// ── Composant graphiques Bilan (partagé entre Couverture et Général) ──────────
+function BilanCharts({ chartData, barKeys, colors, title }) {
+  const [show, setShow] = useState(false)
+  if (!chartData || chartData.every(d => !d.val1 && !d.val2)) return null
+
+  const fmtTooltip = v => Number(v).toLocaleString('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+
+  // Solde cumulé
+  let cumul = 0
+  const dataWithCumul = chartData.map(d => {
+    cumul += (d.val2 || 0) - (d.val1 || 0)
+    return { ...d, cumul: Math.round(cumul * 100) / 100 }
+  })
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <button
+        onClick={() => setShow(s => !s)}
+        className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50/60 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <TrendingUp size={15} className="text-indigo-400" />
+          <span className="text-sm font-semibold text-gray-700">{title}</span>
+        </div>
+        <ChevronDown size={15} className={`text-gray-400 transition-transform ${show ? 'rotate-180' : ''}`} />
+      </button>
+
+      {show && (
+        <div className="px-4 pb-5 space-y-6">
+          {/* Barres groupées */}
+          <div>
+            <p className="text-xs text-gray-400 mb-3 font-medium">Comparaison mensuelle</p>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
+                barCategoryGap="30%" barGap={2}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <XAxis dataKey="mois" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false}
+                  tickFormatter={v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v} />
+                <Tooltip formatter={fmtTooltip} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="val1" name={barKeys[0]} fill={colors[0]} radius={[3,3,0,0]} />
+                <Bar dataKey="val2" name={barKeys[1]} fill={colors[1]} radius={[3,3,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Courbe solde cumulé */}
+          <div>
+            <p className="text-xs text-gray-400 mb-3 font-medium">Évolution du solde cumulé</p>
+            <ResponsiveContainer width="100%" height={180}>
+              <ComposedChart data={dataWithCumul} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <XAxis dataKey="mois" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false}
+                  tickFormatter={v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v >= -1000 ? v : (v/1000).toFixed(1)+'k'} />
+                <Tooltip formatter={fmtTooltip} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                <Area type="monotone" dataKey="cumul" name="Solde cumulé"
+                  fill={colors[2] + '22'} stroke={colors[2]} strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="cumul" stroke={colors[2]} strokeWidth={2}
+                  dot={{ r: 3, fill: colors[2] }} activeDot={{ r: 5 }} name="Solde cumulé" legendType="none" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -1467,6 +1595,17 @@ function VueCouverture({ data, moisActifs, annee }) {
           </tbody>
         </table>
       </div>
+      {/* Graphiques couverture */}
+      <BilanCharts
+        chartData={moisActifs.map(({ m }) => ({
+          mois: MOIS_LABELS[m],
+          val1: Math.round(totalDepMois(m) * 100) / 100,
+          val2: Math.round(totalEncMois(m) * 100) / 100,
+        }))}
+        barKeys={['Dépenses élèves', 'Encaissements']}
+        colors={['#f87171', '#4ade80', '#6366f1']}
+        title="Graphiques — Couverture élèves"
+      />
       <p className="text-xs text-gray-400 mt-1">
         * Les charges non marquées "couverture élèves" (Achats divers, Entretien, etc.) n'apparaissent pas dans cette vue.
         Consultez la <button className="underline hover:text-gray-600" onClick={() => {}}>Vue générale</button> pour le tableau complet.
@@ -1487,6 +1626,7 @@ function VueGenerale({ data, moisActifs, annee }) {
   const soldeAnnee = totalProduitsAnnee - totalChargesAnnee
 
   return (
+    <>
     <div className="bg-white rounded-xl border border-gray-100 overflow-x-auto">
       <table className="min-w-full text-sm">
         <thead>
@@ -1580,6 +1720,18 @@ function VueGenerale({ data, moisActifs, annee }) {
         </tbody>
       </table>
     </div>
+
+    <BilanCharts
+      chartData={moisActifs.map(({ m }) => ({
+        mois: MOIS_LABELS[m],
+        val1: Math.round(totalChargesMois(m) * 100) / 100,
+        val2: Math.round(totalProduitsMois(m) * 100) / 100,
+      }))}
+      barKeys={['Charges', 'Produits']}
+      colors={['#f87171', '#4ade80', '#6366f1']}
+      title="Graphiques — Vue générale Produits / Charges"
+    />
+    </>
   )
 }
 
@@ -1802,6 +1954,17 @@ function ProjetsTab() {
             <button onClick={deleteProjet}
               className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 px-2 py-1.5 hover:bg-red-50 rounded-lg">
               <Trash2 size={13} /> Supprimer
+            </button>
+            <button
+              onClick={async () => {
+                const { data: { session } } = await supabase.auth.getSession()
+                const token = session?.access_token
+                if (!token || !projetId) return
+                window.open(`/.netlify/functions/econome-projet-pdf?projetId=${projetId}&token=${encodeURIComponent(token)}`, '_blank')
+              }}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+            >
+              <FileText size={13} /> PDF Projet
             </button>
           </>
         )}
