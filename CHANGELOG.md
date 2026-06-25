@@ -1625,3 +1625,15 @@ git push origin main
 ## [Develop] 2026-06-25 — Fix filtres Compositions (OR entre dimensions)
 
 - Filtres année + classe maintenant combinés en **OR** : sélectionner '2e' + 'AC Shinigamis' retourne les élèves de 2e OU les élèves d'AC Shinigamis (au lieu de l'intersection vide)
+
+## [Develop] 2026-06-25 — Compositions v4 — Fix export Excel + sync sexe féminin
+
+**Export Excel refactorisé :**
+- `exportXLSX` déplacé dans le composant parent (accès à `assignments`, `groups`, `filteredEleves`)
+- Colonne **"Groupe composition"** : affiche le vrai nom du groupe (Pool / Groupe 1…) au lieu de "(à compléter)"
+- Colonnes **"Groupe SS N"** : une colonne par groupe Smartschool (Groupe SS 1, Groupe SS 2…) selon le max parmi les élèves exportés
+- Colonne **id** renommée `!!! id (ne pas modifier) !!!` et placée en dernière position
+- Import XLSX mis à jour pour retrouver la colonne id par son nouveau nom
+
+**Sync sexe féminin :**
+- `smartschool-sync.mjs` : ajout de `geslacht === 'f'` comme alias pour féminin (en plus de `'v'`) — corrige les 350 filles sans sexe en DB

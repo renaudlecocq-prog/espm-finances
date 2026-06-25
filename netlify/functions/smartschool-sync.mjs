@@ -174,7 +174,7 @@ export default async function handler(req) {
 
       // Sexe — champ standard Smartschool (geslacht : m/v/x)
       const geslacht = String(a.geslacht || a.sex || "").trim().toLowerCase()
-      const sexe = geslacht === "m" ? "M" : geslacht === "v" ? "F" : geslacht === "x" ? "X" : null
+      const sexe = geslacht === "m" ? "M" : geslacht === "v" || geslacht === "f" ? "F" : geslacht === "x" ? "X" : null
 
       if (isEleve) {
         elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, groupes_ss, amenagements_raisonnables, sexe, actif: true })

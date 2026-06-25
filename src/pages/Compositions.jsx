@@ -222,7 +222,8 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
 
 // ── ConfigForm (réutilisé dans Create + Config modal) ─────────────────────────
 function ConfigForm({ allEleves, loading, onReload, filters, setFilters, excludedIds, setExcludedIds,
-    fields, setFields, customFields, setCustomFields, compositionName, setCompositionName, showName = true }) {
+    fields, setFields, customFields, setCustomFields, compositionName, setCompositionName, showName = true,
+    onExport, onImport }) {
 
   const [eleveSearch, setEleveSearch]   = useState('')
   const [newCFLabel, setNewCFLabel]     = useState('')
@@ -263,59 +264,6 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
     if (!newCFLabel.trim()) return
     setCustomFields(prev => [...prev, { id: 'cf_' + Date.now(), label: newCFLabel.trim(), values: {} }])
     setNewCFLabel('')
-  }
-
-  // ── Export XLSX ────────────────────────────────────────────────────────────
-  const exportXLSX = () => {
-    const cfLabels = customFields.map(cf => cf.label)
-    const headers  = ['__id__', 'Nom', 'Prénom', 'Classe', 'Sexe', 'Groupe', ...cfLabels]
-    const rows = allEleves.filter(e => {
-      const hasAnnee = filters.annee?.length > 0
-      const hasClasse = filters.classe?.length > 0
-      if (!hasAnnee && !hasClasse) return !excludedIds.has(e.id)
-      const matchA = hasAnnee && (() => { const a = e.classe?.match(/^(\d)/)?.[1]; return a && filters.annee.includes(a + 'e') })()
-      const matchC = hasClasse && filters.classe.includes(e.classe)
-      return (matchA || matchC) && !excludedIds.has(e.id)
-    })
-    const wsData = [headers, ...rows.map(e => [
-      e.id, e.nom, e.prenom, e.classe || '', e.sexe || '',
-      '(à compléter)',
-      ...customFields.map(cf => cf.values?.[e.id] || '')
-    ])]
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.aoa_to_sheet(wsData)
-    ws['!cols'] = [{ wch: 5 }, { wch: 20 }, { wch: 18 }, { wch: 14 }, { wch: 6 }, { wch: 25 }, ...customFields.map(() => ({ wch: 22 }))]
-    XLSX.utils.book_append_sheet(wb, ws, 'Composition')
-    XLSX.writeFile(wb, `composition_${compositionName.replace(/\s+/g, '_')}.xlsx`)
-  }
-
-  const importXLSX = (e) => {
-    const file = e.target.files?.[0]; if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      try {
-        const wb   = XLSX.read(ev.target.result, { type: 'binary' })
-        const ws   = wb.Sheets[wb.SheetNames[0]]
-        const data = XLSX.utils.sheet_to_json(ws, { header: 1 })
-        if (data.length < 2) return
-        const headers = data[0].map(String)
-        const idIdx   = headers.indexOf('__id__')
-        if (idIdx === -1) { alert('Format invalide — colonne __id__ manquante'); return }
-        const updated = customFields.map(cf => {
-          const colIdx = headers.indexOf(cf.label)
-          if (colIdx === -1) return cf
-          const newValues = { ...cf.values }
-          for (let i = 1; i < data.length; i++) {
-            const row = data[i]; const id = String(row[idIdx] || '').trim()
-            if (id && row[colIdx] !== undefined && row[colIdx] !== null)
-              newValues[id] = String(row[colIdx])
-          }
-          return { ...cf, values: newValues }
-        })
-        setCustomFields(updated)
-      } catch { alert('Erreur de lecture du fichier Excel') }
-    }
-    reader.readAsBinaryString(file); e.target.value = ''
   }
 
   return (
@@ -414,16 +362,22 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
         {customFields.length === 0 && <p className="text-xs text-gray-400">Aucun champ personnalisé.</p>}
 
         {/* Export / Import Excel */}
-        <div className="flex gap-2 pt-1 border-t border-gray-100 mt-2">
-          <button onClick={exportXLSX}
-            className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1.5 rounded-lg transition-colors flex-1 justify-center">
-            <FileDown size={12} /> Exporter vers Excel
-          </button>
-          <label className="flex items-center gap-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1.5 rounded-lg transition-colors flex-1 justify-center cursor-pointer">
-            <FileUp size={12} /> Importer depuis Excel
-            <input type="file" accept=".xlsx,.xls" className="hidden" onChange={importXLSX} />
-          </label>
-        </div>
+        {(onExport || onImport) && (
+          <div className="flex gap-2 pt-1 border-t border-gray-100 mt-2">
+            {onExport && (
+              <button onClick={onExport}
+                className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1.5 rounded-lg transition-colors flex-1 justify-center">
+                <FileDown size={12} /> Exporter vers Excel
+              </button>
+            )}
+            {onImport && (
+              <label className="flex items-center gap-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1.5 rounded-lg transition-colors flex-1 justify-center cursor-pointer">
+                <FileUp size={12} /> Importer depuis Excel
+                <input type="file" accept=".xlsx,.xls" className="hidden" onChange={onImport} />
+              </label>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -589,6 +543,81 @@ export default function Compositions() {
   const handleCFChange = useCallback((fieldId, eleveId, value) => {
     setCustomFields(prev => prev.map(cf => cf.id === fieldId ? { ...cf, values: { ...cf.values, [eleveId]: value } } : cf))
   }, [])
+
+  // ── Export / Import XLSX ────────────────────────────────────────────────────
+  const exportXLSX = useCallback(() => {
+    // Colonnes Groupes SS — on calcule le max de groupes parmi tous les élèves
+    const maxGS = Math.max(0, ...filteredEleves.map(e => (e.groupes_ss || []).length))
+    const gsHeaders = maxGS > 0 ? Array.from({ length: maxGS }, (_, i) => `Groupe SS ${i + 1}`) : []
+    const cfLabels  = customFields.map(cf => cf.label)
+
+    // Header — __id__ en dernier pour décourager de le modifier
+    const headers = ['Nom', 'Prénom', 'Classe', 'Sexe', 'Groupe composition', ...gsHeaders, ...cfLabels, '!!! id (ne pas modifier) !!!']
+
+    const rows = filteredEleves.map(e => {
+      const gid       = assignments[e.id] ?? POOL_ID
+      const groupeNom = gid === POOL_ID ? '(Pool)' : (groups.find(g => g.id === gid)?.name || '(Pool)')
+      const gsValues  = Array.from({ length: maxGS }, (_, i) => (e.groupes_ss || [])[i] || '')
+      return [
+        e.nom, e.prenom, e.classe || '', e.sexe || '', groupeNom,
+        ...gsValues,
+        ...customFields.map(cf => cf.values?.[e.id] || ''),
+        e.id,
+      ]
+    })
+
+    const wsData = [headers, ...rows]
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.aoa_to_sheet(wsData)
+
+    // Largeurs colonnes
+    const idColIdx = headers.length - 1
+    ws['!cols'] = [
+      { wch: 20 }, { wch: 18 }, { wch: 14 }, { wch: 6 }, { wch: 22 },
+      ...gsHeaders.map(() => ({ wch: 28 })),
+      ...cfLabels.map(() => ({ wch: 22 })),
+      { wch: 38 },
+    ]
+
+    // Colorer l'en-tête de la colonne id en rouge
+    const idCellRef = XLSX.utils.encode_cell({ r: 0, c: idColIdx })
+    if (ws[idCellRef]) {
+      ws[idCellRef].s = { font: { color: { rgb: 'CC0000' }, bold: true } }
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Composition')
+    XLSX.writeFile(wb, `composition_${compositionName.replace(/\s+/g, '_')}.xlsx`)
+  }, [filteredEleves, assignments, groups, customFields, compositionName])
+
+  const importXLSX = useCallback((e) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const wb   = XLSX.read(ev.target.result, { type: 'binary' })
+        const ws   = wb.Sheets[wb.SheetNames[0]]
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 })
+        if (data.length < 2) return
+        const headers = data[0].map(String)
+        const idIdx   = headers.findIndex(h => h.includes('id (ne pas') || h === '__id__')
+        if (idIdx === -1) { alert('Format invalide — colonne id introuvable'); return }
+        const updated = customFields.map(cf => {
+          const colIdx = headers.indexOf(cf.label)
+          if (colIdx === -1) return cf
+          const newValues = { ...cf.values }
+          for (let i = 1; i < data.length; i++) {
+            const row = data[i]
+            const id  = String(row[idIdx] || '').trim()
+            if (id && row[colIdx] !== undefined && row[colIdx] !== null && String(row[colIdx]).trim() !== '')
+              newValues[id] = String(row[colIdx])
+          }
+          return { ...cf, values: newValues }
+        })
+        setCustomFields(updated)
+      } catch (err) { alert('Erreur de lecture du fichier Excel : ' + err.message) }
+    }
+    reader.readAsBinaryString(file); e.target.value = ''
+  }, [customFields])
 
   // ── Désérialisation ───────────────────────────────────────────────────────
   const loadComposition = entry => {
@@ -873,11 +902,7 @@ export default function Compositions() {
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
               <h3 className="text-sm font-bold text-gray-800">Configuration — {compositionName}</h3>
 
-                <button onClick={exportJSON} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
-                  <Download size={12} /> Exporter JSON
-                </button>
                 <button onClick={() => setShowConfigModal(false)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
-              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-6">
               <ConfigForm
@@ -887,7 +912,7 @@ export default function Compositions() {
                 fields={fields} setFields={setFields}
                 customFields={customFields} setCustomFields={setCustomFields}
                 compositionName={compositionName} setCompositionName={setCompositionName}
-                showName
+                showName onExport={exportXLSX} onImport={importXLSX}
               />
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end shrink-0">
