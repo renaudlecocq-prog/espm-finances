@@ -1415,3 +1415,10 @@ git push origin main
   - Natures `type_flux='neutre'` exclues du bilan
   - Ligne **SOLDE** avec indicateur dynamique : ✓ Sur couverture (vert) / ⚠ Sous couverture (rouge)
   - Avertissement si des transactions sans nature ne sont pas comptabilisées
+
+## [Develop] 2026-06-25 — FIX Paiements : UX boutons + fermeture modal
+
+### Corrections
+- Modal "Depuis Économe" se ferme automatiquement après l'import réussi
+- Bouton "Import CSV" supprimé du header Paiements (remplacé par le flux Économe)
+- Bouton "+ Paiement" adopte le même style ghost que "Depuis Économe"

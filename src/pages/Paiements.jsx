@@ -523,12 +523,10 @@ export default function Paiements() {
             </svg>
             Depuis Économe
           </button>
-          <button onClick={() => setShowImport(true)}
+
+          <button onClick={() => setShowForm(v => !v)}
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
             style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
-            <Upload size={12} /> Import CSV
-          </button>
-          <button onClick={() => setShowForm(v => !v)} className="btn-primary text-xs py-1.5 px-3">
             + Paiement
           </button>
         </>
@@ -750,7 +748,8 @@ function PendingEconomeModal({ eleves, existingRefs, onClose, onImported }) {
           .in('id', ids.slice(i, i + 100))
       }
 
-      onImported()
+      await onImported()
+      onClose()
     } catch (err) {
       alert('Erreur : ' + err.message)
     } finally {
