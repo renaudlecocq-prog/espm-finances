@@ -198,6 +198,7 @@ export default async function handler(req) {
   if (!batchId || !token) return new Response('Paramètres manquants', { status: 400 })
 
   const supa = createClient(SUPABASE_URL, SUPABASE_SRK)
+  const ss = await getSchoolSettings(supa)
   const { data: { user }, error: authErr } = await supa.auth.getUser(token)
   if (authErr || !user) return new Response('Non autorisé', { status: 401 })
 

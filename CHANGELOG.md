@@ -1877,3 +1877,9 @@ git push origin main
 - FIX Factures.jsx : import useSettings manquant (ReferenceError)
 - Bénéficiaire branché dans les PDF factures individuelles, batch et organismes tiers
 - Onglet Paramètres : carte d'impact collapsible ("Où ces variables sont-elles utilisées ?")
+
+## [v0.96b] — FIX fonctions PDF : getSchoolSettings non injectée
+
+- FIX facture-pdf.mjs, factures-batch-pdf.mjs, econome-bilan-pdf.mjs, econome-projet-pdf.mjs :
+  le client Supabase s'appelle `supa` dans ces fichiers (pas `supabase`) — le regex initial
+  n'avait pas injecté `const ss = await getSchoolSettings(supa)`, provoquant un crash TypeError

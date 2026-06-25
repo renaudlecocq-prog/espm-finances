@@ -1,7 +1,7 @@
 {
   "name": "espm-finances",
   "private": true,
-  "version": "0.96a",
+  "version": "0.96b",
   "type": "module",
   "scripts": {
     "dev": "vite",
