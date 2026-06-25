@@ -301,7 +301,7 @@ function getParticipantEleves(allEleves, form) {
 
   return allEleves
     .filter(e => addSet.has(e.id) && !removeSet.has(e.id))
-    .map(e => ({ value: e.id, label: `${e.nom || ''} ${e.prenom || ''} (${e.classe || ''})`.trim() }))
+    .map(e => ({ value: e.id, label: `${e.nom || ''} ${e.prenom || ''} (${e.classe || ''})`.trim(), id: e.id, matricule: e.matricule, nom: e.nom, prenom: e.prenom, classe: e.classe }))
     .sort((a, b) => a.label.localeCompare(b.label))
 }
 
@@ -1160,7 +1160,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
   const eleveOptions = useMemo(() =>
     allEleves
-      .map(e => ({ value: e.id, label: `${e.nom || ''} ${e.prenom || ''} (${e.classe || ''})`.trim() }))
+      .map(e => ({ value: e.id, label: `${e.nom || ''} ${e.prenom || ''} (${e.classe || ''})`.trim(), id: e.id, matricule: e.matricule, nom: e.nom, prenom: e.prenom, classe: e.classe }))
       .sort((a, b) => a.label.localeCompare(b.label)),
     [allEleves]
   )

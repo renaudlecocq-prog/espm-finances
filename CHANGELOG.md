@@ -1890,3 +1890,10 @@ git push origin main
   acompte voyage (eleve_id null) : toutes les références à `eleve.xxx` sont désormais
   sécurisées avec des gardes null (opérateur ternaire + optional chaining)
 - Les factures sans élève génèrent maintenant un PDF avec "—" à la place du nom/classe
+
+## [v0.97] — FIX acomptes voyage : eleve_id null dans les factures générées
+
+- ROOT CAUSE : getParticipantEleves() retournait { value, label } mais genererAcompte()
+  utilisait e.id et e.matricule — donc eleve_id était undefined → null en DB
+- FIX : ajout de id, matricule, nom, prenom, classe dans les objets participantEleves
+- Les futures générations d'acomptes et de solde voyage auront l'élève correctement lié
