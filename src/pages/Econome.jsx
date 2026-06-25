@@ -848,13 +848,7 @@ export default function Econome() {
         {activeTab === 'eleves' && (
           <CompteTab compte="eleves" natures={natures} />
         )}
-        {activeTab === 'pop' && (
-          <PlaceholderTab
-            label="POP — Notes de frais"
-            icon={<FileText size={24} className="text-gray-400" />}
-            desc="Encodage manuel des factures transmises au Pouvoir Organisateur Pluriel. En cours de développement."
-          />
-        )}
+        {activeTab === 'pop' && <PopTab natures={natures} />}
         {activeTab === 'bilan' && (
           <PlaceholderTab
             label="Bilan mensuel"
@@ -869,6 +863,306 @@ export default function Econome() {
             desc="Pâtes, Fancy Fair, Rhétos… Modèle universel avec sous-totaux par catégorie. En cours de développement."
           />
         )}
+      </div>
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════
+//  Tab POP — Notes de frais / Factures transmises au POP
+// ══════════════════════════════════════════════════════════
+function PopTab({ natures }) {
+  const { profile } = useAuth()
+  const [lignes, setLignes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [annee, setAnnee] = useState(new Date().getFullYear())
+  const [moisFilter, setMoisFilter] = useState(0)
+  const [editItem, setEditItem] = useState(null)   // null | 'new' | ligne object
+  const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const chargesNatures = natures.filter(n => n.type_flux === 'charge' || n.type_flux === 'neutre')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    let q = supabase.from('comptable_pop_lignes')
+      .select('*')
+      .eq('annee', annee)
+      .order('date_transmission', { ascending: false })
+    if (moisFilter > 0) q = q.eq('mois', moisFilter)
+    const { data } = await q
+    setLignes(data || [])
+    setLoading(false)
+  }, [annee, moisFilter])
+
+  useEffect(() => { load() }, [load])
+
+  const filtered = useMemo(() => lignes.filter(l => {
+    if (!search) return true
+    const s = search.toLowerCase()
+    return (l.fournisseur || '').toLowerCase().includes(s)
+      || (l.numero_piece || '').toLowerCase().includes(s)
+      || (l.nature_libelle || '').toLowerCase().includes(s)
+      || (l.commentaire || '').toLowerCase().includes(s)
+  }), [lignes, search])
+
+  const totalMontant = filtered.reduce((s, l) => s + Number(l.montant || 0), 0)
+  const nonClasses = filtered.filter(l => !l.nature_id).length
+
+  const saveLigne = async form => {
+    setSaving(true)
+    const nature = natures.find(n => n.id === form.nature_id)
+    const dateparts = form.date_transmission.split('-')
+    const payload = {
+      annee: parseInt(dateparts[0]),
+      mois: parseInt(dateparts[1]),
+      date_transmission: form.date_transmission,
+      fournisseur: form.fournisseur || null,
+      numero_piece: form.numero_piece || null,
+      nature_id: form.nature_id || null,
+      nature_libelle: nature?.libelle || null,
+      montant: parseFloat(form.montant) || 0,
+      commentaire: form.commentaire || null,
+      created_by: profile?.id,
+    }
+    if (form.id) {
+      await supabase.from('comptable_pop_lignes').update(payload).eq('id', form.id)
+    } else {
+      await supabase.from('comptable_pop_lignes').insert(payload)
+    }
+    setSaving(false)
+    setEditItem(null)
+    load()
+  }
+
+  const deleteLigne = async id => {
+    if (!confirm('Supprimer cette ligne ?')) return
+    await supabase.from('comptable_pop_lignes').delete().eq('id', id)
+    setLignes(prev => prev.filter(l => l.id !== id))
+  }
+
+  const anneOptions = []
+  for (let y = 2024; y <= new Date().getFullYear() + 1; y++) anneOptions.push(y)
+
+  return (
+    <div>
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <select value={annee} onChange={e => setAnnee(Number(e.target.value))}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-400">
+          {anneOptions.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+        <select value={moisFilter} onChange={e => setMoisFilter(Number(e.target.value))}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-400">
+          <option value={0}>Tous les mois</option>
+          {MOIS_LABELS.slice(1).map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
+        </select>
+        <div className="relative flex-1 min-w-[200px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher fournisseur, pièce, nature…"
+            className="w-full text-sm pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-400" />
+        </div>
+        <div className="flex-1" />
+        <button onClick={load} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+          <RefreshCw size={15} />
+        </button>
+        <button
+          onClick={() => setEditItem({
+            date_transmission: new Date().toISOString().slice(0,10),
+            fournisseur: '', numero_piece: '', nature_id: null, montant: '', commentaire: ''
+          })}
+          className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+        >
+          <PlusCircle size={15} /> Ajouter une ligne
+        </button>
+      </div>
+
+      {/* Barre de synthèse */}
+      {!loading && (
+        <div className="flex flex-wrap gap-3 mb-4">
+          <div className="flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-lg px-4 py-2.5">
+            <TrendingDown size={16} className="text-red-400 shrink-0" />
+            <div>
+              <p className="text-[10px] text-red-500 font-medium uppercase tracking-wide">Total transmis au POP</p>
+              <p className="text-sm font-bold text-red-600">{fmtEur(totalMontant)}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-100 rounded-lg px-4 py-2.5">
+            <FileText size={16} className="text-gray-400 shrink-0" />
+            <div>
+              <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Lignes</p>
+              <p className="text-sm font-bold text-gray-700">{filtered.length}</p>
+            </div>
+          </div>
+          {nonClasses > 0 && (
+            <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-100 rounded-lg px-4 py-2.5">
+              <AlertTriangle size={16} className="text-amber-500 shrink-0" />
+              <div>
+                <p className="text-[10px] text-amber-600 font-medium uppercase tracking-wide">Non classé</p>
+                <p className="text-sm font-bold text-amber-700">{nonClasses}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-16 gap-2 text-gray-400">
+            <Loader2 size={18} className="animate-spin" /> Chargement…
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <FileText size={32} className="mx-auto mb-3 text-gray-300" />
+            <p className="text-sm">Aucune note de frais pour cette période</p>
+            <p className="text-xs mt-1">Cliquez sur "Ajouter une ligne" pour encoder une facture</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b-2 border-gray-100">
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Date</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Fournisseur</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">N° pièce</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 min-w-[180px]">Nature comptable</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500">Montant</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Commentaire</th>
+                <th className="w-16 px-2 py-2.5"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(l => (
+                <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                  <td className="px-3 py-2.5 text-gray-500 text-xs whitespace-nowrap">{fmtDate(l.date_transmission)}</td>
+                  <td className="px-3 py-2.5 text-gray-800 text-xs font-medium max-w-[160px] truncate">{l.fournisseur || '—'}</td>
+                  <td className="px-3 py-2.5 text-gray-500 text-xs">{l.numero_piece || '—'}</td>
+                  <td className="px-3 py-2.5">
+                    <NatureSelect
+                      value={l.nature_id}
+                      natures={natures}
+                      onChange={async natureId => {
+                        const nature = natures.find(n => n.id === natureId)
+                        await supabase.from('comptable_pop_lignes')
+                          .update({ nature_id: natureId, nature_libelle: nature?.libelle || null })
+                          .eq('id', l.id)
+                        setLignes(prev => prev.map(x => x.id === l.id
+                          ? { ...x, nature_id: natureId, nature_libelle: nature?.libelle }
+                          : x))
+                      }}
+                    />
+                  </td>
+                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                    <span className="text-red-500 font-semibold text-xs">{fmtEur(l.montant)}</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-gray-400 text-xs max-w-[200px] truncate">{l.commentaire || ''}</td>
+                  <td className="px-2 py-2.5">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => setEditItem({ ...l })}
+                        className="p-1.5 hover:bg-indigo-50 rounded text-gray-300 hover:text-indigo-500 transition-colors">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                      <button onClick={() => deleteLigne(l.id)}
+                        className="p-1.5 hover:bg-red-50 rounded text-gray-300 hover:text-red-400 transition-colors">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Modal ajout/édition */}
+      {editItem && (
+        <PopLigneModal
+          item={editItem}
+          natures={natures}
+          saving={saving}
+          onSave={saveLigne}
+          onClose={() => setEditItem(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+function PopLigneModal({ item, natures, saving, onSave, onClose }) {
+  const [form, setForm] = useState({ ...item })
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-800">
+            {item.id ? 'Modifier' : 'Nouvelle'} note de frais / facture POP
+          </h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X size={16} className="text-gray-500" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Date de transmission *</label>
+              <input type="date" value={form.date_transmission}
+                onChange={e => set('date_transmission', e.target.value)}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">N° pièce / référence</label>
+              <input value={form.numero_piece || ''} onChange={e => set('numero_piece', e.target.value)}
+                placeholder="ex: FAC-2026-001"
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Fournisseur</label>
+            <input value={form.fournisseur || ''} onChange={e => set('fournisseur', e.target.value)}
+              placeholder="Nom du fournisseur ou prestataire"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Nature comptable</label>
+              <NatureSelect value={form.nature_id} natures={natures} onChange={v => set('nature_id', v)} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Montant (€) *</label>
+              <input type="number" step="0.01" min="0" value={form.montant || ''}
+                onChange={e => set('montant', e.target.value)}
+                placeholder="0.00"
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Commentaire</label>
+            <textarea value={form.commentaire || ''} onChange={e => set('commentaire', e.target.value)}
+              rows={2} placeholder="Description, contexte…"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400 resize-none" />
+          </div>
+        </div>
+
+        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+            Annuler
+          </button>
+          <button
+            onClick={() => onSave(form)}
+            disabled={!form.date_transmission || !form.montant || saving}
+            className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {saving ? 'Enregistrement…' : (item.id ? 'Enregistrer' : 'Ajouter')}
+          </button>
+        </div>
       </div>
     </div>
   )

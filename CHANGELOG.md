@@ -1384,3 +1384,21 @@ git push origin main
 ### Correction
 - `filtered` mémoïsé avec `useMemo` dans `CompteTab` — sans ça, chaque `setSelected` déclenchait un nouveau render → nouveau tableau `filtered` → l'`useEffect` dans `TransactionTable` réinitialisait la sélection en boucle
 - `useEffect` de reset supprimé de `TransactionTable` (le reset se fait maintenant uniquement après un bulk apply)
+
+## [Develop] 2026-06-25 — Phase 2 Économe : onglet POP + import depuis Économe
+
+### Nouvelles fonctionnalités
+- **Onglet POP** (Econome.jsx) : encodage manuel des notes de frais et factures transmises au Pouvoir Organisateur Pluriel
+  - Table avec Date de transmission, Fournisseur, N° pièce, Nature comptable, Montant, Commentaire
+  - Barre de synthèse : total transmis au POP, nombre de lignes, compteur Non classé
+  - Formulaire modal d'ajout/édition
+  - Attribution de nature comptable inline (même NatureSelect que les autres onglets)
+  - Filtre par année et par mois
+  - Nouvelle table Supabase : `comptable_pop_lignes` avec RLS admin
+- **Paiements.jsx** : nouveau bouton "Depuis Économe" dans le header
+  - Modal `PendingEconomeModal` : affiche toutes les transactions `comptable_transactions` (compte=eleves, statut_paiement=pending)
+  - Matching automatique des élèves par communication/libellé (normalisation accents + ponctuation)
+  - Dropdown de correction manuelle de l'association élève
+  - Import en lot avec marquage `statut_paiement='imported'` après succès
+  - Pré-sélection intelligente : cases cochées si élève trouvé automatiquement, décochées sinon
+  - Les lignes déjà importées s'affichent en grisé avec badge "Importé"
