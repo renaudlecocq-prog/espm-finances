@@ -7,6 +7,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 import * as XLSX from 'xlsx'
 import PageHeader from '../components/ui/PageHeader'
 import MasterFilter from '../components/ui/MasterFilter'
@@ -582,7 +583,8 @@ export default function Compositions() {
   // ── Sauvegarde ────────────────────────────────────────────────────────────
   const [savedList, setSavedList]   = useState([])
   const [dbLoading, setDbLoading]    = useState(true)
-  const [lastSaved, setLastSaved]   = useState(null)
+  const [lastSaved, setLastSaved]     = useState(null)
+  const [lastSavedBy, setLastSavedBy] = useState(null)  // null = moi-même
   const autoSaveTimer               = useRef(null)
 
   // ── Modals ────────────────────────────────────────────────────────────────
@@ -685,13 +687,15 @@ export default function Compositions() {
       }
       const pid = currentProjectId.current
       if (!pid) return // pas encore de projet créé
+      const myName = [profile?.prenom, profile?.nom].filter(Boolean).join(' ') || profile?.email || 'Moi'
       const { error } = await supabase.from('compositions_projets')
-        .update({ nom: compositionName, updated_at: now, data })
+        .update({ nom: compositionName, updated_at: now, data, updated_by: myName })
         .eq('id', pid)
       if (!error) {
         lastSaveTs.current = now
         setSavedList(prev => prev.map(p => p.id === pid ? { ...p, name: compositionName, date: now, data } : p))
         setLastSaved(now)
+        setLastSavedBy(null) // null = c'est moi
       }
     }
     if (immediate) { clearTimeout(autoSaveTimer.current); save() }
@@ -885,6 +889,7 @@ export default function Compositions() {
           if (payload.new.updated_at === lastSaveTs.current) return
           applyCompositionData(payload.new.data || {})
           setLastSaved(payload.new.updated_at)
+          setLastSavedBy(payload.new.updated_by || 'Quelqu\'un')
         })
       .subscribe()
     realtimeRef.current = ch
@@ -1139,7 +1144,11 @@ export default function Compositions() {
         <span className="text-xs text-gray-500">{filteredEleves.length} élèves · {groups.length} groupe{groups.length !== 1 ? 's' : ''}</span>
         {lastSaved && (
           <span className="text-xs text-green-500 flex items-center gap-1">
-            <Check size={11} /> Sauvegardé {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })}
+            <Check size={11} />
+            {lastSavedBy
+              ? <><span className="font-medium">{lastSavedBy}</span> a sauvegardé à {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>
+              : <>Sauvegardé {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>
+            }
           </span>
         )}
         {realtimeRef.current && (

@@ -1739,3 +1739,8 @@ git push origin main
 - Auto-save déclenché sur chaque modification (debounce 1,5 s) → propagation quasi-instantanée
 - Indicateur "En direct" (point animé) dans la barre du board quand le canal est actif
 - Désinscription propre du canal à la fermeture du projet ou au retour à la liste
+
+## v0.86b — Compositions : horodatage avec secondes + auteur dernière modif (2026-06-25)
+- "Sauvegardé 14:47" → "Sauvegardé 14:47:32" (secondes incluses)
+- Quand une autre personne modifie le projet en temps réel : "Renaud a sauvegardé à 14:47:32"
+- Colonne updated_by ajoutée sur compositions_projets
