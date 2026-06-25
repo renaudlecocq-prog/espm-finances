@@ -872,7 +872,7 @@ export default function Compositions() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
               <h3 className="text-sm font-bold text-gray-800">Configuration — {compositionName}</h3>
-              <div className="flex items-center gap-3">
+
                 <button onClick={exportJSON} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
                   <Download size={12} /> Exporter JSON
                 </button>
