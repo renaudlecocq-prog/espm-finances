@@ -7,6 +7,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 import * as XLSX from 'xlsx'
 import PageHeader from '../components/ui/PageHeader'
 import MasterFilter from '../components/ui/MasterFilter'
@@ -582,7 +583,8 @@ export default function Compositions() {
   // ── Sauvegarde ────────────────────────────────────────────────────────────
   const [savedList, setSavedList]   = useState([])
   const [dbLoading, setDbLoading]    = useState(true)
-  const [lastSaved, setLastSaved]   = useState(null)
+  const [lastSaved, setLastSaved]     = useState(null)
+  const [lastSavedBy, setLastSavedBy] = useState(null)  // null = moi-même
   const autoSaveTimer               = useRef(null)
 
   // ── Modals ────────────────────────────────────────────────────────────────
@@ -671,6 +673,8 @@ export default function Compositions() {
 
   // ── currentProjectId : UUID du projet en cours d'édition ────────────────
   const currentProjectId = useRef(null)
+  const lastSaveTs       = useRef(null)   // timestamp de notre dernier save (évite d'écraser avec notre propre update realtime)
+  const realtimeRef      = useRef(null)   // canal Supabase Realtime actif
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
   const doSave = useCallback((immediate = false) => {
@@ -683,12 +687,15 @@ export default function Compositions() {
       }
       const pid = currentProjectId.current
       if (!pid) return // pas encore de projet créé
+      const myName = [profile?.prenom, profile?.nom].filter(Boolean).join(' ') || profile?.email || 'Moi'
       const { error } = await supabase.from('compositions_projets')
-        .update({ nom: compositionName, updated_at: now, data })
+        .update({ nom: compositionName, updated_at: now, data, updated_by: myName })
         .eq('id', pid)
       if (!error) {
+        lastSaveTs.current = now
         setSavedList(prev => prev.map(p => p.id === pid ? { ...p, name: compositionName, date: now, data } : p))
         setLastSaved(now)
+        setLastSavedBy(null) // null = c'est moi
       }
     }
     if (immediate) { clearTimeout(autoSaveTimer.current); save() }
@@ -856,29 +863,52 @@ export default function Compositions() {
     reader.readAsBinaryString(file); e.target.value = ''
   }, [customFields])
 
+  // ── Realtime collaboration ────────────────────────────────────────────────
+  const applyCompositionData = useCallback((d) => {
+    if (d.name)         setCompositionName(d.name)
+    if (d.filters)      setFilters(d.filters)
+    if (d.excludedIds)  setExcludedIds(new Set(d.excludedIds))
+    if (d.includedIds)  setIncludedIds(new Set(d.includedIds))
+    if (d.fields)       setFields(prev => Object.fromEntries(
+      Object.entries(prev).map(([k,v]) => [k, { ...v, enabled: d.fields[k] ?? v.enabled }])
+    ))
+    if (d.customFields) setCustomFields(d.customFields)
+    if (d.groups)       setGroups(d.groups)
+    if (d.assignments)  setAssignments(d.assignments)
+    if (d.linkedSets)   setLinkedSets(d.linkedSets.map(s => new Set(s)))
+    if (d.cardMode)     setCardMode(d.cardMode)
+  }, [])
+
+  const subscribeToProject = useCallback((pid) => {
+    if (realtimeRef.current) { supabase.removeChannel(realtimeRef.current); realtimeRef.current = null }
+    if (!pid) return
+    const ch = supabase.channel(`comp_${pid}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'compositions_projets', filter: `id=eq.${pid}` },
+        (payload) => {
+          // Ignorer nos propres sauvegardes pour éviter une boucle
+          if (payload.new.updated_at === lastSaveTs.current) return
+          applyCompositionData(payload.new.data || {})
+          setLastSaved(payload.new.updated_at)
+          setLastSavedBy(payload.new.updated_by || 'Quelqu\'un')
+        })
+      .subscribe()
+    realtimeRef.current = ch
+  }, [applyCompositionData])
+
   // ── Désérialisation ───────────────────────────────────────────────────────
   const loadComposition = entry => {
     currentProjectId.current = entry.id
-    const d = entry.data
-    if (d.name)           setCompositionName(d.name)
-    if (d.filters)        setFilters(d.filters)
-    if (d.excludedIds)    setExcludedIds(new Set(d.excludedIds))
-    if (d.includedIds)    setIncludedIds(new Set(d.includedIds))
-    if (d.fields)         setFields(prev => Object.fromEntries(
-      Object.entries(prev).map(([k,v]) => [k, { ...v, enabled: d.fields[k] ?? v.enabled }])
-    ))
-    if (d.customFields)   setCustomFields(d.customFields)
-    if (d.groups)         setGroups(d.groups)
-    if (d.assignments)    setAssignments(d.assignments)
-    if (d.linkedSets)     setLinkedSets(d.linkedSets.map(s => new Set(s)))
-    if (d.cardMode)       setCardMode(d.cardMode)
+    applyCompositionData(entry.data)
+    subscribeToProject(entry.id)
+    setLastSaved(entry.date || null)
+    setLastSavedBy(null)
     setView('board')
   }
 
   const deleteComposition = async id => {
     await supabase.from('compositions_projets').delete().eq('id', id)
     setSavedList(prev => prev.filter(c => c.id !== id))
-    if (currentProjectId.current === id) { currentProjectId.current = null; setView('list') }
+    if (currentProjectId.current === id) { currentProjectId.current = null; subscribeToProject(null); setView('list') }
   }
 
   // ── Créer nouvelle composition ────────────────────────────────────────────
@@ -903,10 +933,12 @@ export default function Compositions() {
     if (error || !rows) { console.error('Erreur création projet:', error); return }
     const entry = { id: rows.id, name: rows.nom, date: rows.updated_at, data: rows.data }
     currentProjectId.current = rows.id
+    subscribeToProject(rows.id)
     setSavedList(prev => [entry, ...prev])
     setCompositionName(draftName); setFilters(draftFilters); setExcludedIds(draftExcludedIds); setIncludedIds(draftIncludedIds)
     setFields(draftFields); setCustomFields(draftCustomFields)
     setGroups([]); setAssignments({}); setLinkedSets([]); setSelectedIds(new Set())
+    setLastSaved(now); setLastSavedBy(null)
     setShowCreateModal(false)
     setView('board')
   }
@@ -1107,7 +1139,7 @@ export default function Compositions() {
 
       {/* Barre info */}
       <div className="px-4 py-2 bg-white border-b border-gray-100 flex items-center gap-3 shrink-0">
-        <button onClick={() => { doSave(true); setView('list') }}
+        <button onClick={() => { doSave(true); subscribeToProject(null); setView('list') }}
           className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 transition-colors">
           <ArrowLeft size={13} /> Mes projets
         </button>
@@ -1115,7 +1147,17 @@ export default function Compositions() {
         <span className="text-xs text-gray-500">{filteredEleves.length} élèves · {groups.length} groupe{groups.length !== 1 ? 's' : ''}</span>
         {lastSaved && (
           <span className="text-xs text-green-500 flex items-center gap-1">
-            <Check size={11} /> Sauvegardé {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })}
+            <Check size={11} />
+            {lastSavedBy
+              ? <><span className="font-medium">{lastSavedBy}</span> a sauvegardé à {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>
+              : <>Sauvegardé {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>
+            }
+          </span>
+        )}
+        {realtimeRef.current && (
+          <span className="flex items-center gap-1 text-xs text-indigo-500 font-medium">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+            En direct
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
