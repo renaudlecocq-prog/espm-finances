@@ -739,7 +739,18 @@ function CompteTab({ compte, natures }) {
       </div>
 
       {/* Summary */}
-      {!loading && <SummaryBar transactions={filtered} compte={compte} />}
+      {!loading && (
+        <SummaryBar
+          transactions={filtered}
+          compte={compte}
+          selected={selected}
+          bulkNature={bulkNature}
+          setBulkNature={setBulkNature}
+          applyBulk={applyBulk}
+          deselectAll={deselectAll}
+          natures={natures}
+        />
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
