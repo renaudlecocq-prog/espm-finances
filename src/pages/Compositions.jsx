@@ -520,50 +520,47 @@ export default function Compositions() {
         title="Compositions"
         subtitle="Outil de composition de classes"
         tabs={[
-          { key: 'config', label: 'Configuration', icon: <Settings size={14} /> },
-          { key: 'board',  label: 'Composition',   icon: <LayoutGrid size={14} /> },
+          { key: 'config', label: 'Configuration' },
+          { key: 'board',  label: 'Composition' },
         ]}
         activeTab={innerTab}
         onTabChange={setInnerTab}
-        actions={innerTab === 'board' ? [
-          selectedIds.size >= 2 && {
-            label: 'Lier',
-            icon: <Link size={14} />,
-            onClick: linkSelection,
-            className: 'bg-violet-600 text-white hover:bg-violet-700',
-          },
-          selectedIds.size >= 1 && {
-            label: 'Délier',
-            icon: <Unlink size={14} />,
-            onClick: unlinkSelection,
-            className: 'border border-gray-200 hover:bg-gray-50 text-gray-600',
-          },
-          selectedIds.size >= 1 && {
-            label: `${selectedIds.size} sélectionné${selectedIds.size > 1 ? 's' : ''}`,
-            icon: <X size={14} />,
-            onClick: clearSelection,
-            className: 'border border-indigo-200 text-indigo-600 hover:bg-indigo-50',
-          },
-          {
-            label: 'Export JSON',
-            icon: <Download size={14} />,
-            onClick: exportJSON,
-            className: 'border border-gray-200 hover:bg-gray-50 text-gray-600',
-          },
-        ].filter(Boolean) : [
-          {
-            label: 'Import JSON',
-            icon: <Upload size={14} />,
-            onClick: () => document.getElementById('import-json').click(),
-            className: 'border border-gray-200 hover:bg-gray-50 text-gray-600',
-          },
-          {
-            label: 'Export JSON',
-            icon: <Download size={14} />,
-            onClick: exportJSON,
-            className: 'border border-gray-200 hover:bg-gray-50 text-gray-600',
-          },
-        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            {innerTab === 'board' && selectedIds.size >= 2 && (
+              <button onClick={linkSelection}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors">
+                <Link size={13} /> Lier
+              </button>
+            )}
+            {innerTab === 'board' && selectedIds.size >= 1 && (
+              <button onClick={unlinkSelection}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+                <Unlink size={13} /> Délier
+              </button>
+            )}
+            {innerTab === 'board' && selectedIds.size >= 1 && (
+              <button onClick={clearSelection}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+                <X size={13} /> {selectedIds.size} sél.
+              </button>
+            )}
+            {innerTab === 'config' && (
+              <button onClick={() => document.getElementById('import-json').click()}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+                <Upload size={13} /> Import JSON
+              </button>
+            )}
+            <button onClick={exportJSON}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+              style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+              <Download size={13} /> Export JSON
+            </button>
+          </div>
+        }
       />
       <input id="import-json" type="file" accept=".json" className="hidden" onChange={importJSON} />
 
