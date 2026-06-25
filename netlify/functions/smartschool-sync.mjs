@@ -166,24 +166,11 @@ export default async function handler(req) {
             .filter(Boolean)
         : []
 
-      // Troubles attestés / Aménagements raisonnables — Smartschool stocke ceci dans :
-      // - groups préfixés "AR", "Trouble", "Dys", ou contenant "aménagement"
-      // - champs libres vrij1..vrij8 avec contenu non vide (tout est capturé)
-      // - champ leerstoornis / stoornis si présent dans la réponse API
-      const arGroups = Array.isArray(a.groups)
-        ? a.groups
-            .filter(g => /^AR\b|^trouble|^dys|aménagement|amenagement|raisonnable|attesté|atteste|difficulté/i.test(g.name || ''))
-            .map(g => g.name.trim())
-        : []
-      // Capturer tous les champs vrij non vides (y compris Troubles attestés selon config école)
-      const freeFields = [a.vrij1, a.vrij2, a.vrij3, a.vrij4, a.vrij5, a.vrij6, a.vrij7, a.vrij8]
-        .filter(v => v && String(v).trim())
-        .map(v => String(v).trim())
-      // Champ spécifique Smartschool pour troubles d'apprentissage (noms API possibles)
-      const leerstoornis = [a.leerstoornis, a.stoornis, a.leerstoornis_attested, a.troubles_attestes]
-        .filter(v => v && String(v).trim())
-        .map(v => String(v).trim())
-      const amenagements_raisonnables = [...arGroups, ...freeFields, ...leerstoornis].join(', ') || null
+      // Troubles attestés — champs profil directs (noms français, découverts via getUserDetails)
+      const t1 = String(a['Troubles attestés']               || '').trim()
+      const t2 = String(a['Aménagements raisonnables']       || '').trim()
+      const t3 = String(a['Difficultés sans troubles attestés'] || '').trim()
+      const amenagements_raisonnables = [t1, t2, t3].filter(Boolean).join(' — ') || null
 
       if (isEleve) {
         elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, groupes_ss, amenagements_raisonnables, actif: true })

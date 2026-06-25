@@ -1602,3 +1602,12 @@ git push origin main
 - **"Accéder à la composition"** (ex "Ouvrir le board") : sauvegarde immédiate avant de basculer vers le board
 - **Bouton "Sauvegarder" supprimé** : remplacé par l'auto-save + indicateur "✓ Sauvegardé HH:MM" dans la barre du board
 - **"Ouvrir"** : toujours disponible pour charger une composition sauvegardée précédemment
+
+## [Develop] 2026-06-25 — Fix sync troubles attestés + debug endpoint
+
+### Fix critique — smartschool-sync.mjs
+- **Troubles attestés** : remplacement de l'ancienne détection heuristique (vrij1-8, groupes AR/dys, leerstoornis) par la lecture directe des champs profil Smartschool découverts via `getUserDetails` : `"Troubles attestés"`, `"Aménagements raisonnables"`, `"Difficultés sans troubles attestés"`. Ces champs ont des noms français avec espaces et accents — non capturés par l'ancienne logique.
+- Après la prochaine synchronisation, `amenagements_raisonnables` sera correctement peuplé pour tous les élèves concernés.
+
+### Debug
+- `smartschool-debug.mjs` : endpoint temporaire de diagnostic (à supprimer après usage)
