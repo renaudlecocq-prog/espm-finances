@@ -1622,3 +1622,6 @@ git push origin main
 - **Vue board** : barre d'info avec retour vers la liste (← Mes projets), indicateur de sauvegarde, toggle compact/étendu, bouton "Nouveau groupe"
 - **Suppression** d'un projet depuis la vue liste (icône poubelle au survol)
 - **Import JSON** : depuis la vue liste (bouton "Importer JSON")
+## [Develop] 2026-06-25 — Fix filtres Compositions (OR entre dimensions)
+
+- Filtres année + classe maintenant combinés en **OR** : sélectionner '2e' + 'AC Shinigamis' retourne les élèves de 2e OU les élèves d'AC Shinigamis (au lieu de l'intersection vide)
