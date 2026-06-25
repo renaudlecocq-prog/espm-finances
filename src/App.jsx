@@ -57,7 +57,7 @@ function Layout({ children }) {
           {children}
         </main>
         <footer className="px-6 py-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400 shrink-0">
-          <span>© 2026 École Secondaire Plurielle Maritime</span>
+          <span>© 2026 École Secondaire Plurielle Maritime · v{__APP_VERSION__}</span>
           <Link to="/mentions-legales" className="hover:text-primary transition-colors">
             Mentions légales
           </Link>
