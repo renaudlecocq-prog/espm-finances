@@ -1711,3 +1711,9 @@ git push origin main
 - Compositions : suppression du clic pour uploader une photo directement sur la carte
 - L'upload de photos passe désormais exclusivement par Admin → Photos élèves (import en masse)
 - Nettoyage complet de la prop `onPhotoUpload` dans `EleveCard`, `SortableEleveCard` et `GroupColumn`
+
+## [v0.84] — 2026-06-25 — Footer : numéro de version
+### Added
+- Footer : affichage de la version (`v0.83j`) après le copyright, injectée depuis `package.json` via Vite `define`
+- `vite.config.js` : injection de `__APP_VERSION__` au build
+- `package.json` : version alignée sur le versioning ESPM+ (`0.83j`)
