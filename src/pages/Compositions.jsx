@@ -7,12 +7,14 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../lib/supabase'
+import * as XLSX from 'xlsx'
 import PageHeader from '../components/ui/PageHeader'
 import MasterFilter from '../components/ui/MasterFilter'
 import {
   LayoutGrid, Plus, Trash2, Download, Upload, X, AlertTriangle,
   RefreshCw, Users, Link, Unlink, Check, FolderOpen, Settings,
   Maximize2, Minimize2, Search, ArrowLeft, Calendar, ChevronRight,
+  FileDown, FileUp, Table2,
 } from 'lucide-react'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -263,6 +265,59 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
     setNewCFLabel('')
   }
 
+  // ── Export XLSX ────────────────────────────────────────────────────────────
+  const exportXLSX = () => {
+    const cfLabels = customFields.map(cf => cf.label)
+    const headers  = ['__id__', 'Nom', 'Prénom', 'Classe', 'Sexe', 'Groupe', ...cfLabels]
+    const rows = allEleves.filter(e => {
+      const hasAnnee = filters.annee?.length > 0
+      const hasClasse = filters.classe?.length > 0
+      if (!hasAnnee && !hasClasse) return !excludedIds.has(e.id)
+      const matchA = hasAnnee && (() => { const a = e.classe?.match(/^(\d)/)?.[1]; return a && filters.annee.includes(a + 'e') })()
+      const matchC = hasClasse && filters.classe.includes(e.classe)
+      return (matchA || matchC) && !excludedIds.has(e.id)
+    })
+    const wsData = [headers, ...rows.map(e => [
+      e.id, e.nom, e.prenom, e.classe || '', e.sexe || '',
+      '(à compléter)',
+      ...customFields.map(cf => cf.values?.[e.id] || '')
+    ])]
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.aoa_to_sheet(wsData)
+    ws['!cols'] = [{ wch: 5 }, { wch: 20 }, { wch: 18 }, { wch: 14 }, { wch: 6 }, { wch: 25 }, ...customFields.map(() => ({ wch: 22 }))]
+    XLSX.utils.book_append_sheet(wb, ws, 'Composition')
+    XLSX.writeFile(wb, `composition_${compositionName.replace(/\s+/g, '_')}.xlsx`)
+  }
+
+  const importXLSX = (e) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const wb   = XLSX.read(ev.target.result, { type: 'binary' })
+        const ws   = wb.Sheets[wb.SheetNames[0]]
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 })
+        if (data.length < 2) return
+        const headers = data[0].map(String)
+        const idIdx   = headers.indexOf('__id__')
+        if (idIdx === -1) { alert('Format invalide — colonne __id__ manquante'); return }
+        const updated = customFields.map(cf => {
+          const colIdx = headers.indexOf(cf.label)
+          if (colIdx === -1) return cf
+          const newValues = { ...cf.values }
+          for (let i = 1; i < data.length; i++) {
+            const row = data[i]; const id = String(row[idIdx] || '').trim()
+            if (id && row[colIdx] !== undefined && row[colIdx] !== null)
+              newValues[id] = String(row[colIdx])
+          }
+          return { ...cf, values: newValues }
+        })
+        setCustomFields(updated)
+      } catch { alert('Erreur de lecture du fichier Excel') }
+    }
+    reader.readAsBinaryString(file); e.target.value = ''
+  }
+
   return (
     <div className="space-y-4">
       {/* Nom */}
@@ -357,6 +412,18 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
           </div>
         )}
         {customFields.length === 0 && <p className="text-xs text-gray-400">Aucun champ personnalisé.</p>}
+
+        {/* Export / Import Excel */}
+        <div className="flex gap-2 pt-1 border-t border-gray-100 mt-2">
+          <button onClick={exportXLSX}
+            className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1.5 rounded-lg transition-colors flex-1 justify-center">
+            <FileDown size={12} /> Exporter vers Excel
+          </button>
+          <label className="flex items-center gap-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1.5 rounded-lg transition-colors flex-1 justify-center cursor-pointer">
+            <FileUp size={12} /> Importer depuis Excel
+            <input type="file" accept=".xlsx,.xls" className="hidden" onChange={importXLSX} />
+          </label>
+        </div>
       </div>
     </div>
   )
