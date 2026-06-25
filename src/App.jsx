@@ -20,13 +20,18 @@ import Compositions from './pages/Compositions'
 import HelpdeskDetail from './pages/HelpdeskDetail'
 import MentionsLegales from './pages/MentionsLegales'
 
-function RequireAuth({ children, require = 'user' }) {
-  const { user, loading, role, effectiveRole } = useAuth()
+function RequireAuth({ children, require = 'user', feature = null }) {
+  const { user, loading, role, effectiveRole, can, viewAsRole } = useAuth()
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
   if (!user) return <Navigate to="/login" replace />
   if (require === 'admin'     && role !== 'admin')                                    return <Navigate to="/" replace />
   if (require === 'financier' && !['admin','financier'].includes(effectiveRole))       return <Navigate to="/" replace />
   if (require === 'mdp'       && !['admin','financier','mdp'].includes(effectiveRole)) return <Navigate to="/" replace />
+  // Vérification par feature — s'applique aux non-admins ET aux admins en mode aperçu
+  if (feature && (role !== 'admin' || viewAsRole)) {
+    const features = Array.isArray(feature) ? feature : [feature]
+    if (!features.some(f => can(f))) return <Navigate to="/" replace />
+  }
   return children
 }
 
@@ -121,21 +126,21 @@ function AppRoutes() {
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/mentions-legales" element={<MentionsLegales />} />
       <Route path="/" element={<RequireAuth><Layout><Home /></Layout></RequireAuth>} />
-      <Route path="/eleves" element={<RequireAuth require="mdp"><Layout><Eleves /></Layout></RequireAuth>} />
-      <Route path="/groupes" element={<RequireAuth require="mdp"><Layout><Groupes /></Layout></RequireAuth>} />
-      <Route path="/paiements" element={<RequireAuth require="financier"><Layout><Paiements /></Layout></RequireAuth>} />
-      <Route path="/factures" element={<RequireAuth require="financier"><Layout><Factures /></Layout></RequireAuth>} />
-      <Route path="/activites" element={<RequireAuth require="mdp"><Layout><Activites /></Layout></RequireAuth>} />
-      <Route path="/articles" element={<RequireAuth require="financier"><Layout><Articles /></Layout></RequireAuth>} />
-      <Route path="/assistant-social" element={<RequireAuth require="financier"><Layout><AssistantSocial /></Layout></RequireAuth>} />
+      <Route path="/eleves" element={<RequireAuth require="mdp" feature="eleves"><Layout><Eleves /></Layout></RequireAuth>} />
+      <Route path="/groupes" element={<RequireAuth require="mdp" feature="eleves"><Layout><Groupes /></Layout></RequireAuth>} />
+      <Route path="/paiements" element={<RequireAuth require="financier" feature="paiements"><Layout><Paiements /></Layout></RequireAuth>} />
+      <Route path="/factures" element={<RequireAuth require="financier" feature="factures"><Layout><Factures /></Layout></RequireAuth>} />
+      <Route path="/activites" element={<RequireAuth require="mdp" feature={['activites_full','activites_own']}><Layout><Activites /></Layout></RequireAuth>} />
+      <Route path="/articles" element={<RequireAuth require="financier" feature="articles"><Layout><Articles /></Layout></RequireAuth>} />
+      <Route path="/assistant-social" element={<RequireAuth require="financier" feature="suivi_social"><Layout><AssistantSocial /></Layout></RequireAuth>} />
       <Route path="/echelonnements" element={<Navigate to="/assistant-social" replace />} />
       <Route path="/organismes" element={<Navigate to="/assistant-social" replace />} />
       <Route path="/admin" element={<RequireAuth require="admin"><Layout><Admin /></Layout></RequireAuth>} />
-      <Route path="/helpdesk" element={<RequireAuth require="mdp"><Layout><Helpdesk /></Layout></RequireAuth>} />
-      <Route path="/helpdesk/:id" element={<RequireAuth require="mdp"><Layout><HelpdeskDetail /></Layout></RequireAuth>} />
-      <Route path="/salle-des-profs" element={<RequireAuth require="mdp"><Layout><SalleDProfs /></Layout></RequireAuth>} />
-      <Route path="/econome" element={<RequireAuth require="admin"><Layout><Econome /></Layout></RequireAuth>} />
-      <Route path="/compositions" element={<RequireAuth require="mdp"><Layout><Compositions /></Layout></RequireAuth>} />
+      <Route path="/helpdesk" element={<RequireAuth require="mdp" feature={['helpdesk','helpdesk_admin']}><Layout><Helpdesk /></Layout></RequireAuth>} />
+      <Route path="/helpdesk/:id" element={<RequireAuth require="mdp" feature={['helpdesk','helpdesk_admin']}><Layout><HelpdeskDetail /></Layout></RequireAuth>} />
+      <Route path="/salle-des-profs" element={<RequireAuth require="mdp" feature="salle_profs"><Layout><SalleDProfs /></Layout></RequireAuth>} />
+      <Route path="/econome" element={<RequireAuth require="admin" feature="econome"><Layout><Econome /></Layout></RequireAuth>} />
+      <Route path="/compositions" element={<RequireAuth require="mdp" feature="compositions"><Layout><Compositions /></Layout></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

@@ -142,17 +142,17 @@ export default function Sidebar() {
 
   const links = [
     { to: '/',                 label: 'Accueil',         icon: 'home',         show: true },
-    { to: '/activites',        label: 'Activités',       icon: 'activites',    show: isMdp },
-    { to: '/articles',         label: 'Articles',        icon: 'articles',     show: isFinancier },
-    { to: '/compositions',     label: 'Compositions',    icon: 'compositions', show: isMdp },
+    { to: '/activites',        label: 'Activités',       icon: 'activites',    show: can('activites_full') || can('activites_own') },
+    { to: '/articles',         label: 'Articles',        icon: 'articles',     show: can('articles') },
+    { to: '/compositions',     label: 'Compositions',    icon: 'compositions', show: can('compositions') },
     { to: '/econome',          label: 'Économe',         icon: 'econome',      show: can('econome') || isAdmin },
-    { to: '/groupes',          label: 'Élèves',          icon: 'groupes',      show: isMdp },
-    { to: '/factures',         label: 'Factures',        icon: 'factures',     show: isFinancier },
-    { to: '/helpdesk',         label: 'Helpdesk',        icon: 'helpdesk',     show: isMdp },
-    { to: '/paiements',        label: 'Paiements',       icon: 'paiements',    show: isFinancier },
-    { to: '/salle-des-profs',  label: 'Salle des profs', icon: 'salle',        show: isMdp },
-    { to: '/eleves',           label: 'Soldes',          icon: 'soldes',       show: isFinancier },
-    { to: '/assistant-social', label: 'Suivi social',    icon: 'social',       show: isFinancier },
+    { to: '/groupes',          label: 'Élèves',          icon: 'groupes',      show: can('eleves') },
+    { to: '/factures',         label: 'Factures',        icon: 'factures',     show: can('factures') },
+    { to: '/helpdesk',         label: 'Helpdesk',        icon: 'helpdesk',     show: can('helpdesk') || can('helpdesk_admin') },
+    { to: '/paiements',        label: 'Paiements',       icon: 'paiements',    show: can('paiements') },
+    { to: '/salle-des-profs',  label: 'Salle des profs', icon: 'salle',        show: can('salle_profs') },
+    { to: '/eleves',           label: 'Soldes',          icon: 'soldes',       show: can('soldes') },
+    { to: '/assistant-social', label: 'Suivi social',    icon: 'social',       show: can('suivi_social') },
   ]
 
   const logout = async () => { await supabase.auth.signOut(); navigate('/login') }

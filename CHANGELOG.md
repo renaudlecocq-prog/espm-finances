@@ -1673,3 +1673,41 @@ git push origin main
 ## [v0.83d] — 2026-06-25 — Sidebar ordre alphabétique
 ### Changed
 - Sidebar : menus réordonnés alphabétiquement (Activités → Articles → Compositions → Économe → Élèves → Factures → Helpdesk → Paiements → Salle des profs → Soldes → Suivi social)
+
+## [v0.83e] — 2026-06-25 — FIX Sidebar : droits par feature
+### Fixed
+- Sidebar : tous les items utilisent désormais `can('feature')` au lieu du check de rôle (`isMdp`, `isFinancier`)
+- Désactiver une feature dans Admin → Droits retire maintenant correctement l'entrée du menu pour ce rôle
+- Corrige : Salle des profs restait visible en aperçu MdP même après désactivation
+
+## [v0.83f] — 2026-06-25 — FIX Aperçu : can() charge les permissions du rôle simulé
+### Fixed
+- `AuthContext` : en mode aperçu, `can()` retournait `false` pour toutes les features → sidebar vide
+- Ajout de `previewPermissions` : chargement des `role_permissions` du rôle aperçu depuis la DB dès activation
+- `can()` utilise désormais `previewPermissions` en mode aperçu au lieu de retourner `false` hardcodé
+- L'aperçu reflète fidèlement les droits configurés dans Admin → Droits pour le rôle simulé
+
+## [v0.83g] — 2026-06-25 — FIX routes : garde feature sur chaque route
+### Fixed
+- `RequireAuth` : ajout prop `feature` (string ou array) — vérifie `can()` en plus du check de rôle
+- Routes protégées par feature : `/eleves`, `/groupes`, `/paiements`, `/factures`, `/activites`, `/articles`, `/assistant-social`, `/helpdesk`, `/salle-des-profs`, `/econome`, `/compositions`
+- Accès direct par URL (bypass sidebar) désormais bloqué si la feature est désactivée pour le rôle
+- Admin toujours autorisé (pas de `can()` check pour `role === 'admin'`)
+
+## [v0.83h] — 2026-06-25 — FIX RequireAuth : bloque aussi l'admin en aperçu
+### Fixed
+- `RequireAuth` : en mode aperçu, l'admin pouvait accéder à toute URL directement car `role === 'admin'` court-circuitait la vérification de feature
+- La garde s'applique désormais si `viewAsRole` est actif, même pour l'admin
+- URL directes bloquées en aperçu si la feature est désactivée pour le rôle simulé
+
+## [v0.83i] — 2026-06-25 — UX Compositions : cercle de sélection déplacé
+### Changed
+- Compositions : le cercle de sélection n'est plus positionné en absolu sur la photo
+- Cercle maintenant inline dans la rangée flex (avant la photo), taille `w-4 h-4`
+- État non sélectionné plus visible : `border-gray-400` + légère ombre intérieure au lieu de `border-gray-200`
+
+## [v0.83j] — 2026-06-25 — Compositions : suppression upload photo individuel
+### Changed
+- Compositions : suppression du clic pour uploader une photo directement sur la carte
+- L'upload de photos passe désormais exclusivement par Admin → Photos élèves (import en masse)
+- Nettoyage complet de la prop `onPhotoUpload` dans `EleveCard`, `SortableEleveCard` et `GroupColumn`

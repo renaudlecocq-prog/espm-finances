@@ -10,7 +10,8 @@ export function AuthProvider({ children }) {
   const [role,        setRole]        = useState(null)
   const [loading,     setLoading]     = useState(true)
   const [viewAsRole,  setViewAsRole]  = useState(null)
-  const [permissions, setPermissions] = useState({})   // { feature: boolean }
+  const [permissions,        setPermissions]        = useState({})   // { feature: boolean }
+  const [previewPermissions, setPreviewPermissions] = useState({})   // permissions du rôle aperçu
   const channelRef = useRef(null)
 
   // ── Charger les permissions depuis la DB ──────────────────────────────────
@@ -37,6 +38,21 @@ export function AuthProvider({ children }) {
     ;(userPerms || []).forEach(p => { perms[p.feature] = p.enabled })
 
     setPermissions(perms)
+  }, [])
+
+  // ── Charger les permissions du rôle aperçu ────────────────────────────────
+  const fetchPreviewPermissions = useCallback(async (previewRole) => {
+    if (!previewRole) { setPreviewPermissions({}); return }
+    if (previewRole === 'admin') {
+      const adminPerms = {}
+      FEATURE_KEYS.forEach(k => { adminPerms[k] = true })
+      setPreviewPermissions(adminPerms)
+      return
+    }
+    const { data } = await supabase.from('role_permissions').select('feature, enabled').eq('role', previewRole)
+    const perms = {}
+    ;(data || []).forEach(p => { perms[p.feature] = p.enabled })
+    setPreviewPermissions(perms)
   }, [])
 
   // ── Subscription realtime ─────────────────────────────────────────────────
@@ -99,22 +115,24 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, []) // eslint-disable-line
 
+  // ── Charger previewPermissions quand viewAsRole change ───────────────────
+  useEffect(() => {
+    fetchPreviewPermissions(viewAsRole)
+  }, [viewAsRole, fetchPreviewPermissions])
+
   // ── can(feature) : vérifie les droits ────────────────────────────────────
   // Utilise le rôle effectif (aperçu inclus)
   const effectiveRole = viewAsRole || role
 
   const can = useCallback((feature) => {
-    // Admin = tout
+    // Admin réel = tout (sauf si on simule un autre rôle)
     if (role === 'admin' && !viewAsRole) return true
-    // En mode aperçu : simuler les permissions du rôle aperçu (sans override user)
+    // En mode aperçu : utiliser les permissions chargées pour le rôle simulé
     if (viewAsRole) {
-      // Pour l'aperçu on ne dispose que des role_permissions chargées pour notre rôle réel.
-      // On retourne false pour les features non accordées au rôle aperçu — la page d'aperçu
-      // utilise effectiveRole pour les guards visuels ; can() est surtout utile hors aperçu.
-      return false // aperçu = vue restrictive par défaut
+      return previewPermissions[feature] ?? false
     }
     return permissions[feature] ?? false
-  }, [role, viewAsRole, permissions])
+  }, [role, viewAsRole, permissions, previewPermissions])
 
   // ── Backward compat ───────────────────────────────────────────────────────
   const isAdmin     = effectiveRole === 'admin'
