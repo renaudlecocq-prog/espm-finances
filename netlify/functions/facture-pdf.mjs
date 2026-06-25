@@ -75,21 +75,23 @@ export default async function handler(req) {
   if (!facture) return new Response('Facture introuvable', { status: 404 })
 
   const eleve = facture.eleve
-  const [{ data: echs }, { data: orgs }] = await Promise.all([
+  const [{ data: echs }, { data: orgs }] = eleve ? await Promise.all([
     supa.from('echelonnements').select('*').eq('eleve_id', eleve.id).eq('statut', 'en_cours')
       .order('created_at', { ascending: false }).limit(1),
     supa.from('organismes_tiers').select('*').eq('eleve_id', eleve.id).in('statut', ['en_cours', 'valide'])
       .order('created_at', { ascending: false }).limit(1),
-  ])
+  ]) : [{ data: [] }, { data: [] }]
   const ech = echs?.[0]
   const org = orgs?.[0]
 
-  const nomResp = [eleve.prenom_responsable_1, eleve.nom_responsable_1].filter(Boolean).join(' ')
-    || [eleve.prenom_coaccount1, eleve.nom_coaccount1].filter(Boolean).join(' ')
-    || `Famille ${eleve.nom}`
+  const nomResp = eleve
+    ? ([eleve.prenom_responsable_1, eleve.nom_responsable_1].filter(Boolean).join(' ')
+       || [eleve.prenom_coaccount1, eleve.nom_coaccount1].filter(Boolean).join(' ')
+       || `Famille ${eleve.nom}`)
+    : '—'
 
-  const adresseLigne1 = eleve.rue || ''
-  const adresseLigne2 = [eleve.code_postal, eleve.commune].filter(Boolean).join(' ')
+  const adresseLigne1 = eleve?.rue || ''
+  const adresseLigne2 = eleve ? [eleve.code_postal, eleve.commune].filter(Boolean).join(' ') : ''
   const dateLimite    = addDays(facture.date, 30)
   const soldeAv       = Number(facture.solde_avant || 0)
   const resteApayer   = Math.max(0, Number(facture.montant) - soldeAv - Number(facture.paye || 0))
@@ -97,7 +99,7 @@ export default async function handler(req) {
   const activites     = (lignes || []).filter(l => l.type === 'activite')
 
   // Communication structurée : Nom Prénom Classe
-  const comm = [eleve.nom, eleve.prenom, eleve.classe].filter(Boolean).join(' ')
+  const comm = eleve ? [eleve.nom, eleve.prenom, eleve.classe].filter(Boolean).join(' ') : facture.batch?.nom || facture.numero
 
   const _defaultLogoUrl = (process.env.URL || 'https://espmaritime.netlify.app') + '/logo-ecole.png'
   const logoUrl = ss.school_logo_url || _defaultLogoUrl
@@ -108,7 +110,7 @@ export default async function handler(req) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Facture ${esc(facture.numero)} — ${esc(eleve.prenom)} ${esc(eleve.nom)}</title>
+<title>Facture ${esc(facture.numero)}${eleve ? ' — ' + esc(eleve.prenom) + ' ' + esc(eleve.nom) : ''}</title>
 <style>
 @page { size: A4; margin: 0; }
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
@@ -219,8 +221,8 @@ table.totaux .final td { border-top:2.5px solid #2D1B2E; font-size:11pt; font-we
       <h1>FACTURE</h1>
       <p class="ref">N°&nbsp;${esc(facture.numero || '—')}&nbsp;·&nbsp;${esc(facture.batch?.nom || facture.batch?.numero || '')}</p>
       <div class="meta">
-        <div><span class="lbl">Élève&nbsp;: </span><span class="val">${esc(eleve.prenom)} ${esc(eleve.nom)}</span></div>
-        <div><span class="lbl">Classe&nbsp;: </span><span class="val">${esc(eleve.classe || '—')}</span></div>
+        <div><span class="lbl">Élève&nbsp;: </span><span class="val">${eleve ? esc(eleve.prenom) + ' ' + esc(eleve.nom) : '—'}</span></div>
+        <div><span class="lbl">Classe&nbsp;: </span><span class="val">${esc(eleve?.classe || '—')}</span></div>
         <div><span class="lbl">Date de facturation&nbsp;: </span><span class="val">${fmtDate(facture.date)}</span></div>
         <div><span class="lbl">Date limite&nbsp;: </span><span class="val-orange">${fmtDate(dateLimite)}</span></div>
       </div>

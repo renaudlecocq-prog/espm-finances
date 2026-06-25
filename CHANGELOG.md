@@ -1883,3 +1883,10 @@ git push origin main
 - FIX facture-pdf.mjs, factures-batch-pdf.mjs, econome-bilan-pdf.mjs, econome-projet-pdf.mjs :
   le client Supabase s'appelle `supa` dans ces fichiers (pas `supabase`) — le regex initial
   n'avait pas injecté `const ss = await getSchoolSettings(supa)`, provoquant un crash TypeError
+
+## [v0.96c] — FIX facture-pdf.mjs : crash sur factures sans élève (acomptes voyage)
+
+- FIX TypeError "Cannot read properties of null (reading 'id')" sur les factures de type
+  acompte voyage (eleve_id null) : toutes les références à `eleve.xxx` sont désormais
+  sécurisées avec des gardes null (opérateur ternaire + optional chaining)
+- Les factures sans élève génèrent maintenant un PDF avec "—" à la place du nom/classe
