@@ -693,7 +693,8 @@ export default function Compositions() {
         customFields, groups, assignments, linkedSets: linkedSets.map(s => [...s]), cardMode,
       }
       const pid = currentProjectId.current
-      if (!pid) return // pas encore de projet créé
+      if (!pid) { pendingSave.current = false; return } // pas encore de projet créé
+      setHasPending(true)  // seulement ici — dans l'async, pas de boucle de re-render
       const nonce = Math.random().toString(36).slice(2)
       lastNonces.current.add(nonce)
       if (lastNonces.current.size > 20) {
@@ -710,13 +711,19 @@ export default function Compositions() {
         setSavedList(prev => prev.map(p => p.id === pid ? { ...p, name: compositionName, date: now, data: dataWithNonce } : p))
         setLastSaved(now)
         setLastSavedBy(null) // null = c'est moi
+      } else {
+        // toujours remettre à false même en cas d'erreur — évite le spinner bloqué
+        pendingSave.current = false
+        setHasPending(false)
+        console.error('[Compositions] Save error:', error)
       }
     }
     if (immediate) { clearTimeout(autoSaveTimer.current); save() }
     else {
       clearTimeout(autoSaveTimer.current)
       pendingSave.current = true
-      setHasPending(true)
+      // NE PAS appeler setHasPending(true) ici — causerait un re-render synchrone
+      // qui peut déclencher à nouveau l'effet auto-save avant le timer
       autoSaveTimer.current = setTimeout(save, 500)
     }
   }, [compositionName, filters, excludedIds, includedIds, fields, customFields, groups, assignments, linkedSets, cardMode])

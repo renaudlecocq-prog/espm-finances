@@ -1768,3 +1768,9 @@ git push origin main
 - FIX ROOT CAUSE : l'effet sync assignments créait toujours un nouvel objet `{ ...prev }` même quand aucun élève n'était ajouté
 - Ce nouvel objet (référence différente) déclenchait l'effet auto-save → "Enregistrement…" en boucle au chargement
 - Fix : `return prev` (même référence) quand `toAdd.length === 0` → React bail out, pas de re-render, pas de save inutile
+
+## [v0.88c] — FIX spinner bloqué (setHasPending déplacé dans async save)
+
+- FIX : `setHasPending(true)` déplacé DANS la fonction async `save()` — supprime le re-render synchrone avant le timer qui pouvait déclencher la boucle
+- FIX : `setHasPending(false)` appelé AUSSI en cas d'erreur Supabase — le spinner ne peut plus rester bloqué indéfiniment
+- Résultat : "Enregistrement…" n'apparaît plus au chargement, et disparaît toujours après la save (succès ou erreur)
