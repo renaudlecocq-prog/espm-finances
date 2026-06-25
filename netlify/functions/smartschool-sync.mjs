@@ -158,8 +158,26 @@ export default async function handler(req) {
         : null
       const classe = klasGroup?.name?.trim() || null
 
+      // Groupes non-klas (pour Compositions) : tous les groupes sauf la klas officielle
+      const groupes_ss = Array.isArray(a.groups)
+        ? a.groups
+            .filter(g => !(g.isKlas === true && g.isOfficial === true))
+            .map(g => g.name?.trim())
+            .filter(Boolean)
+        : []
+
+      // Aménagements raisonnables — chercher dans les champs libres Smartschool
+      // Les champs possibles : basisroltekst, vrij1..vrij8, ou un groupe préfixé "AR"
+      const arGroups = Array.isArray(a.groups)
+        ? a.groups.filter(g => /^AR\b|aménagement|amenagement|raisonnable/i.test(g.name || '')).map(g => g.name.trim())
+        : []
+      const arFreeField = [a.vrij1, a.vrij2, a.vrij3, a.vrij4, a.vrij5, a.vrij6, a.vrij7, a.vrij8]
+        .filter(v => v && /aménagement|amenagement|ar\b/i.test(String(v)))
+        .map(v => String(v).trim())
+      const amenagements_raisonnables = [...arGroups, ...arFreeField].join(', ') || null
+
       if (isEleve) {
-        elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, actif: true })
+        elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, groupes_ss, amenagements_raisonnables, actif: true })
       } else {
         personnelRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, actif: true })
       }

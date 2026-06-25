@@ -1502,3 +1502,38 @@ git push origin main
 - **Sauts de page** : `page-break-before: always` entre les deux sections, `page-break-inside: avoid` sur les en-têtes de catégories
 - Rendu paysage A4 optimisé (12mm marges, 297mm width)
 
+
+
+## [Develop] 2026-06-25 — Module Compositions : outil de composition de classes
+
+### Nouvelles fonctionnalités
+- **Page Compositions** (`/compositions`) — outil entièrement numérique de composition de classes (prévu pour projection sur tableau interactif)
+
+#### Migration DB
+- Colonne `groupes_ss jsonb DEFAULT '[]'` sur la table `eleves` — groupes Smartschool non-klas
+- Colonne `amenagements_raisonnables text` sur la table `eleves` — aménagements raisonnables
+
+#### Synchronisation Smartschool (`smartschool-sync.mjs`)
+- Extraction des groupes non-klas dans `groupes_ss` (tous les groupes Smartschool sauf la classe officielle)
+- Détection des aménagements raisonnables : groupes préfixés "AR" + champs libres (`vrij1`…`vrij8`) contenant "aménagement/AR"
+
+#### Compositions.jsx — deux onglets
+**Configuration :**
+- Nom de la composition
+- Filtre élèves par année (1e–6e) ou par classe précise
+- Toggles champs vignette (Photo / Classe / Groupes SS / Aménagements raisonnables)
+- Gestion des groupes cibles (ajout, renommage, suppression)
+- Import / Export JSON (persistance de la composition)
+
+**Board (Kanban DnD) :**
+- Colonne "Pool" (élèves non encore placés) + colonnes groupes
+- Vignettes élèves avec photo Smartschool, nom/prénom, classe, groupes, badge AR
+- Drag-and-drop (`@dnd-kit`) avec déplacement multi-sélection
+- Liaison de cartes (`Link`) : déplacer plusieurs élèves liés d'un seul geste
+- DragOverlay avec compteur "+N autres" quand multi-sélection
+- Scroll horizontal sur le board, scroll vertical par colonne
+
+#### Permissions & navigation
+- Feature `compositions` ajoutée dans `permissions.js`
+- Entrée sidebar (visible `isMdp`) avec icône dédiée
+- Route `/compositions` dans App.jsx (RequireAuth `mdp`)
