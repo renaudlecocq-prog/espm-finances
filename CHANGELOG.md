@@ -1756,3 +1756,9 @@ git push origin main
 - Table compositions_projets ajoutée à la publication supabase_realtime (fix collaboration temps réel)
 - FIX : subscribeToProject wrappé dans try/catch (évite blocage navigation si erreur realtime)
 - FIX : setView('board') avant subscribeToProject (navigation garantie même si realtime échoue)
+
+## [v0.88] — FIX boucle "Enregistrement…" infinie
+
+- FIX : `lastNonce` (valeur unique) remplacé par `lastNonces` (Set) — plusieurs saves en vol ne causent plus de faux positifs realtime
+- FIX : `justLoaded` ref — skip du premier auto-save inutile après ouverture d'une composition (données déjà en DB)
+- Résultat : "Enregistrement…" n'apparaît plus au simple chargement d'une composition, et les changements utilisateur restent sauvegardés correctement

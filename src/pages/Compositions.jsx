@@ -674,9 +674,10 @@ export default function Compositions() {
 
   // ── currentProjectId : UUID du projet en cours d'édition ────────────────
   const currentProjectId = useRef(null)
-  const lastNonce        = useRef(null)   // nonce unique par save — évite que notre propre update realtime écrase l'état courant
-  const realtimeRef      = useRef(null)   // canal Supabase Realtime actif
-  const pendingSave      = useRef(false)  // true = changements non encore sauvegardés
+  const lastNonces       = useRef(new Set()) // nonces de nos propres saves — évite que le realtime nous écrase
+  const realtimeRef      = useRef(null)      // canal Supabase Realtime actif
+  const pendingSave      = useRef(false)     // true = changements non encore sauvegardés
+  const justLoaded       = useRef(false)     // true juste après loadComposition — skip le premier auto-save inutile
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
   const doSave = useCallback((immediate = false) => {
@@ -690,7 +691,10 @@ export default function Compositions() {
       const pid = currentProjectId.current
       if (!pid) return // pas encore de projet créé
       const nonce = Math.random().toString(36).slice(2)
-      lastNonce.current = nonce
+      lastNonces.current.add(nonce)
+      if (lastNonces.current.size > 20) {
+        const arr = [...lastNonces.current]; lastNonces.current = new Set(arr.slice(-20))
+      }
       const dataWithNonce = { ...data, _nonce: nonce }
       const myName = [profile?.prenom, profile?.nom].filter(Boolean).join(' ') || profile?.email || 'Moi'
       const { error } = await supabase.from('compositions_projets')
@@ -714,6 +718,7 @@ export default function Compositions() {
   }, [compositionName, filters, excludedIds, includedIds, fields, customFields, groups, assignments, linkedSets, cardMode])
 
   useEffect(() => {
+    if (justLoaded.current) { justLoaded.current = false; return } // skip le save inutile après chargement
     if (view === 'board') doSave()
     return () => clearTimeout(autoSaveTimer.current)
   }, [compositionName, filters, excludedIds, fields, customFields, groups, assignments, linkedSets, cardMode]) // eslint-disable-line
@@ -911,6 +916,7 @@ export default function Compositions() {
   const loadComposition = entry => {
     currentProjectId.current = entry.id
     pendingSave.current = false   // rien à sauvegarder au chargement
+    justLoaded.current = true        // skip le premier auto-save (données déjà en DB)
     setHasPending(false)
     applyCompositionData(entry.data)
     setLastSaved(entry.date || null)
@@ -947,6 +953,7 @@ export default function Compositions() {
     if (error || !rows) { console.error('Erreur création projet:', error); return }
     const entry = { id: rows.id, name: rows.nom, date: rows.updated_at, data: rows.data }
     currentProjectId.current = rows.id
+    justLoaded.current = false
     subscribeToProject(rows.id)
     setSavedList(prev => [entry, ...prev])
     setCompositionName(draftName); setFilters(draftFilters); setExcludedIds(draftExcludedIds); setIncludedIds(draftIncludedIds)
