@@ -683,7 +683,8 @@ export default function Compositions() {
   const lastNonces       = useRef(new Set()) // nonces de nos propres saves — évite que le realtime nous écrase
   const realtimeRef      = useRef(null)      // canal Supabase Realtime actif
   const pendingSave      = useRef(false)     // true = changements non encore sauvegardés
-  const justLoaded       = useRef(false)     // true juste après loadComposition — skip le premier auto-save inutile
+  const justLoaded          = useRef(false)     // true juste après loadComposition — skip le premier auto-save inutile
+  const justAppliedRemote   = useRef(false)     // true juste après apply realtime distant — évite la boucle de save
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
   const doSave = useCallback((immediate = false) => {
@@ -730,6 +731,7 @@ export default function Compositions() {
 
   useEffect(() => {
     if (justLoaded.current) { justLoaded.current = false; return } // skip le save inutile après chargement
+    if (justAppliedRemote.current) { justAppliedRemote.current = false; return } // skip le save inutile après update distant
     if (view === 'board') doSave()
     return () => clearTimeout(autoSaveTimer.current)
   }, [compositionName, filters, excludedIds, fields, customFields, groups, assignments, linkedSets, cardMode]) // eslint-disable-line
@@ -913,6 +915,7 @@ export default function Compositions() {
             // Ignorer nos propres sauvegardes (nonce) pour éviter une boucle
             const nonce = payload.new.data?._nonce
             if (nonce && lastNonces.current.has(nonce)) return
+            justAppliedRemote.current = true
             applyCompositionData(payload.new.data || {})
             setLastSaved(payload.new.updated_at)
             setLastSavedBy(payload.new.updated_by || 'Quelqu\'un d\'autre')

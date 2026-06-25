@@ -1781,3 +1781,8 @@ git push origin main
 - FIX 1 : Remplacement de `lastSaveTs.current` par le système de nonces déjà en place — `if (nonce && lastNonces.current.has(nonce)) return` — filtre correctement nos propres saves sans crasher
 - FIX 2 : `loadComposition` devient `async` et fait un fetch fresh depuis Supabase au moment du clic — évite que l'utilisateur charge une version stale de `savedList` si une autre personne a sauvegardé après le chargement de la liste
 - Résultat : deux utilisateurs qui ouvrent la même composition voient maintenant les DnD de l'autre en temps réel
+
+## [v0.92] — FIX boucle de save en collaboration (ping-pong realtime)
+
+- BUG : quand l'utilisateur B recevait un update realtime de A, `applyCompositionData` changeait ses `assignments` → l'auto-save effect se déclenchait → B sauvegardait → A recevait l'update de B → boucle à ~500ms, les élèves allaient et venaient entre le pool et les classes
+- FIX : ajout du ref `justAppliedRemote` — mis à `true` juste avant `applyCompositionData` dans la callback realtime, vérifié dans l'auto-save effect pour sauter la sauvegarde inutile après réception d'un update distant
