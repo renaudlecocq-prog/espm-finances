@@ -1935,3 +1935,7 @@ git push origin main
 - Filtre de classes repositionné dans la barre du PageHeader (avec search et statut realtime)
 - Panneau gauche simplifié (compteur seul, plus de filtre redondant)
 ## [v1.03] — Fix filtre classes dans PageHeader (props search/filters/actions)
+## [v1.04] — Fix perte de données au changement de période
+- loadEncodings merge au lieu de remplacer (setEncodings prev => merge)
+- Flush immédiat du save en attente avant de changer de période (handlePeriodChange)
+- pendingSaveRef pour tracker le dernier enc non encore sauvé

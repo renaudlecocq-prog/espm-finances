@@ -177,8 +177,9 @@ export default function ConseilsDeGuidance() {
   const [online,     setOnline]     = useState(true)
   const [lastUpdBy,  setLastUpdBy]  = useState(null)
 
-  const realtimeRef = useRef(null)
-  const saveTimer   = useRef(null)
+  const realtimeRef    = useRef(null)
+  const saveTimer      = useRef(null)
+  const pendingSaveRef = useRef(null) // { enc } — pour flush avant changement de période
 
   // ── Chargement config ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -213,7 +214,7 @@ export default function ConseilsDeGuidance() {
       .select('*').eq('period', p).in('eleve_id', eleveIds)
     const map = {}
     ;(data || []).forEach(enc => { map[enc.eleve_id + '_' + p] = enc })
-    setEncodings(map)
+    setEncodings(prev => ({ ...prev, ...map }))
   }, [eleves])
 
   useEffect(() => {
@@ -282,8 +283,23 @@ export default function ConseilsDeGuidance() {
   const scheduleAutoSave = useCallback((enc) => {
     setEncodings(prev => ({ ...prev, [selectedId + '_' + period]: enc }))
     clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => saveEncoding(enc), 1500)
+    pendingSaveRef.current = enc
+    saveTimer.current = setTimeout(() => {
+      pendingSaveRef.current = null
+      saveEncoding(enc)
+    }, 1500)
   }, [saveEncoding, selectedId, period])
+
+  // ── Changement de période : flush le save en attente avant de switcher ────────
+  const handlePeriodChange = useCallback(async (newPeriod) => {
+    if (pendingSaveRef.current) {
+      clearTimeout(saveTimer.current)
+      const enc = pendingSaveRef.current
+      pendingSaveRef.current = null
+      await saveEncoding(enc)
+    }
+    setPeriod(newPeriod)
+  }, [saveEncoding])
 
   // ── Helpers de modification ──────────────────────────────────────────────────
   const enc = currentEnc || { cas: 1, subject_status: {}, competencies: {}, ta_force: false, ta_faiblesse: false, freins: '', forces: '', conseils: '', suivi_necessaire: false, suivi_raisons: '', resource_person_1_id: null, resource_person_2_id: null, status_id: null, generated_comment: '', period }
@@ -349,7 +365,7 @@ export default function ConseilsDeGuidance() {
           { key: 'P3', label: 'Période 3' },
         ]}
         activeTab={period}
-        onTabChange={setPeriod}
+        onTabChange={handlePeriodChange}
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Rechercher un élève…"
