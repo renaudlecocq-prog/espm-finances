@@ -83,9 +83,11 @@ function ElevePhoto({ username, internalNumber, photoUrl = null, eleveId = null,
         img.src = URL.createObjectURL(file)
       })
       const path = `${eleveId}.jpg`
+      // Supprimer l'ancien fichier pour forcer le bust de cache CDN
+      await supabase.storage.from('eleve-photos').remove([path])
       const { error: upErr } = await supabase.storage
         .from('eleve-photos')
-        .upload(path, resized, { upsert: true, contentType: 'image/jpeg' })
+        .upload(path, resized, { contentType: 'image/jpeg' })
       if (upErr) throw upErr
       const { data: { publicUrl } } = supabase.storage.from('eleve-photos').getPublicUrl(path)
       const urlWithTs = `${publicUrl}?t=${Date.now()}`

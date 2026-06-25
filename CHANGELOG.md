@@ -1793,3 +1793,9 @@ git push origin main
 - FIX : `cardMode` stocké en `localStorage` (`espm_cardMode`) par utilisateur, initialisé depuis localStorage au montage
 - FIX : `cardMode` retiré du payload `doSave`, de `applyCompositionData`, des dépendances useCallback/useEffect, et du data JSON export
 - Résultat : chaque utilisateur garde sa propre préférence Compact/Étendu, persistée entre sessions, sans affecter les autres
+
+## [v0.94] — Photos élèves : outil de recadrage + écrasement propre
+
+- ADD Admin → Photos élèves : grille de toutes les photos importées avec barre de recherche par nom
+- ADD CropModal : outil de recadrage circulaire — glisser pour repositionner, slider pour zoomer, enregistrement 300×300 JPEG
+- FIX upload individuel (ElevePhoto dans Compositions) : `remove` + `upload` au lieu de `upsert: true` pour forcer le bust de cache CDN et garantir l'écrasement de l'ancien fichier

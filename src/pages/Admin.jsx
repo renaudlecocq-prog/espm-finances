@@ -1299,6 +1299,130 @@ function NatureModal({ item, categories, saving, onSave, onClose }) {
   )
 }
 
+
+// ══════════════════════════════════════════════════════════
+//  CropModal — recadrage circulaire d'une photo
+// ══════════════════════════════════════════════════════════
+function CropModal({ eleve, onClose, onSaved }) {
+  const DISPLAY = 260
+  const OUTPUT  = 300
+  const [offset, setOffset]   = useState({ x: 0, y: 0 })
+  const [zoom, setZoom]       = useState(1)
+  const [natSize, setNatSize] = useState(null)
+  const [saving, setSaving]   = useState(false)
+  const [cropError, setCropError] = useState(null)
+  const dragRef = useRef(null)
+
+  const minZoom = natSize ? Math.max(DISPLAY / natSize.w, DISPLAY / natSize.h) : 1
+
+  const handleLoad = (e) => {
+    const w = e.target.naturalWidth, h = e.target.naturalHeight
+    setNatSize({ w, h })
+    setZoom(Math.max(DISPLAY / w, DISPLAY / h))
+    setOffset({ x: 0, y: 0 })
+  }
+
+  const onMouseDown = (e) => {
+    dragRef.current = { sx: e.clientX - offset.x, sy: e.clientY - offset.y }
+    e.preventDefault()
+  }
+  const onMouseMove = (e) => {
+    if (!dragRef.current) return
+    setOffset({ x: e.clientX - dragRef.current.sx, y: e.clientY - dragRef.current.sy })
+  }
+  const stopDrag = () => { dragRef.current = null }
+
+  const handleSave = async () => {
+    if (!natSize) return
+    setSaving(true); setCropError(null)
+    try {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      const baseUrl = eleve.photo_url.split('?')[0]
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = baseUrl + '?t=' + Date.now() })
+
+      const canvas = document.createElement('canvas')
+      canvas.width = OUTPUT; canvas.height = OUTPUT
+      const ctx = canvas.getContext('2d')
+      const s = OUTPUT / DISPLAY
+      const scaledW = natSize.w * zoom * s
+      const scaledH = natSize.h * zoom * s
+      const dx = (OUTPUT - scaledW) / 2 + offset.x * s
+      const dy = (OUTPUT - scaledH) / 2 + offset.y * s
+      ctx.drawImage(img, dx, dy, scaledW, scaledH)
+
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.88))
+      const path = `${eleve.id}.jpg`
+      await supabase.storage.from('eleve-photos').remove([path])
+      const { error: upErr } = await supabase.storage.from('eleve-photos').upload(path, blob, { contentType: 'image/jpeg' })
+      if (upErr) throw upErr
+      const { data: { publicUrl } } = supabase.storage.from('eleve-photos').getPublicUrl(path)
+      const urlWithTs = `${publicUrl}?t=${Date.now()}`
+      await supabase.from('eleves').update({ photo_url: urlWithTs }).eq('id', eleve.id)
+      onSaved(eleve.id, urlWithTs)
+      onClose()
+    } catch (e) {
+      setCropError(e.message || 'Erreur')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl p-6 w-[360px]" onClick={e => e.stopPropagation()}>
+        <h3 className="font-semibold text-gray-800 mb-0.5">{eleve.prenom} {eleve.nom}</h3>
+        <p className="text-xs text-gray-400 mb-4">Glisse pour recadrer · Curseur pour zoomer</p>
+
+        <div className="flex justify-center mb-4">
+          <div
+            className="relative cursor-grab active:cursor-grabbing select-none"
+            style={{ width: DISPLAY, height: DISPLAY, borderRadius: '50%', overflow: 'hidden', border: '2px solid #818CF8', background: '#f3f4f6' }}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={stopDrag}
+            onMouseLeave={stopDrag}
+          >
+            <img
+              src={eleve.photo_url}
+              alt=""
+              onLoad={handleLoad}
+              draggable={false}
+              style={{
+                position: 'absolute', left: '50%', top: '50%',
+                transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${zoom})`,
+                transformOrigin: 'center center',
+                maxWidth: 'none', userSelect: 'none', pointerEvents: 'none',
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 mb-5">
+          <span className="text-xs text-gray-400">−</span>
+          <input
+            type="range" min={minZoom} max={minZoom * 3} step={0.01} value={zoom}
+            onChange={e => setZoom(parseFloat(e.target.value))}
+            className="flex-1 accent-indigo-500"
+          />
+          <span className="text-xs text-gray-400">+</span>
+        </div>
+
+        {cropError && <p className="text-xs text-red-500 mb-3">{cropError}</p>}
+
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+            Annuler
+          </button>
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-2 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50">
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ══════════════════════════════════════════════════════════
 //  Photos Admin — import en masse
 // ══════════════════════════════════════════════════════════
@@ -1309,12 +1433,14 @@ function PhotosAdmin() {
   const [results, setResults]     = useState(null)   // { ok: [], ko: [] }
   const [progress, setProgress]   = useState(null)   // { done, total }
   const inputRef                  = useRef(null)
+  const [cropEleve, setCropEleve] = useState(null)
+  const [gridSearch, setGridSearch] = useState('')
 
   // Charger tous les élèves (id, username, internal_number)
   useEffect(() => {
     supabase
       .from('eleves')
-      .select('id, nom, prenom, smartschool_username, smartschool_internal_number')
+      .select('id, nom, prenom, smartschool_username, smartschool_internal_number, photo_url')
       .eq('actif', true)
       .then(({ data }) => { setEleves(data || []); setLoading(false) })
   }, [])
@@ -1371,6 +1497,8 @@ function PhotosAdmin() {
         const urlWithTs = `${publicUrl}?t=${Date.now()}`
         await supabase.from('eleves').update({ photo_url: urlWithTs }).eq('id', eleve.id)
         ok.push({ filename: file.name, name: `${eleve.prenom} ${eleve.nom}` })
+        // Mettre à jour photo_url dans le state local pour la grille
+        setEleves(prev => prev.map(el => el.id === eleve.id ? { ...el, photo_url: urlWithTs } : el))
       } catch (e) {
         ko.push({ filename: file.name, reason: e.message || 'Erreur upload' })
       }
@@ -1465,6 +1593,50 @@ function PhotosAdmin() {
             Effacer les résultats
           </button>
         </div>
+      )}
+
+      {/* Grille des photos existantes */}
+      {(() => {
+        const withPhotos = eleves.filter(e => e.photo_url)
+        const filtered = gridSearch.trim()
+          ? withPhotos.filter(e => `${e.prenom} ${e.nom}`.toLowerCase().includes(gridSearch.toLowerCase()))
+          : withPhotos
+        if (!withPhotos.length) return null
+        return (
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold text-gray-700 text-sm">{withPhotos.length} photos importées</h4>
+              <input
+                type="text" placeholder="Rechercher…" value={gridSearch}
+                onChange={e => setGridSearch(e.target.value)}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-44 outline-none focus:border-indigo-300"
+              />
+            </div>
+            <div className="grid grid-cols-6 gap-3">
+              {filtered.map(e => (
+                <div key={e.id} className="flex flex-col items-center gap-1 group cursor-pointer" onClick={() => setCropEleve(e)}>
+                  <div className="relative">
+                    <img src={e.photo_url} alt="" className="w-14 h-14 rounded-full object-cover border border-gray-200" />
+                    <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0H3m4 0l-4 4M17 8v12m0 0h4m-4 0l4-4" />
+                      </svg>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-gray-500 text-center leading-tight">{e.prenom}<br/>{e.nom}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
+      {cropEleve && (
+        <CropModal
+          eleve={cropEleve}
+          onClose={() => setCropEleve(null)}
+          onSaved={(id, url) => setEleves(prev => prev.map(el => el.id === id ? { ...el, photo_url: url } : el))}
+        />
       )}
     </div>
   )
