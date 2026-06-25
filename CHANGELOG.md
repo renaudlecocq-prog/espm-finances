@@ -1300,7 +1300,7 @@ git push origin main
 ### Changed
 - **SalleDProfs.jsx** — cards racine plus compactes : bandeau 160→145px, grille `minmax(270px→220px,1fr)` (4 colonnes sur écrans larges)
 
-## [Develop] 2026-06-24 — Système Trello intégré
+## [v0.80] — 2026-06-24 — Système Trello intégré
 
 ### Nouveautés
 - **TrelloBoardView** : composant kanban complet (782 lignes)
@@ -1320,7 +1320,7 @@ git push origin main
 - DB : migration `create_trello_tables` appliquée (trello_boards/lists/cards/checklist_items/activity + RLS)
 - Packages : @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities installés
 
-## [Develop] 2026-06-24 — Drag & drop réorganisation grille + dossiers
+## [v0.80b] — 2026-06-24 — Drag & drop réorganisation grille + dossiers
 
 ### Nouveautés
 - **Grille racine réorganisable** : dossiers et tableaux glissables pour changer leur ordre (position persistée en DB)
@@ -1333,7 +1333,7 @@ git push origin main
 - `SortableItemCard` : wrapper @dnd-kit/sortable autour de `ItemCard`
 - `handleRootDragEnd` + `handleItemDragEnd` : réordonnement optimiste + mise à jour DB en parallèle
 
-## [Develop] 2026-06-24 — Page Économe v1 (Phase 1)
+## [v0.80c] — 2026-06-24 — Page Économe v1 (Phase 1)
 
 ### Nouveautés
 - **Page Économe** : nouvelle page comptable avec 5 onglets (Fonctionnement, Élèves, POP, Bilan, Projets)
@@ -1355,7 +1355,7 @@ git push origin main
 - `src/App.jsx` : route `/econome` ajoutée (RequireAuth admin)
 - `src/pages/Admin.jsx` : onglet "Natures comptables" + composants NaturesAdmin + NatureModal
 
-## [Develop] 2026-06-24 — Économe : sélection multiple + bulk assign nature
+## [v0.80d] — 2026-06-24 — Économe : sélection multiple + bulk assign nature
 
 ### Amélioration
 - **Cases à cocher** : chaque ligne de transaction est sélectionnable (clic sur la ligne ou sur la case)
@@ -1364,7 +1364,7 @@ git push origin main
 - Mise à jour en base par lots de 100 (`.in()`)
 - Clic sur ligne = toggle sélection ; clic NatureSelect ou bouton Supprimer = stop propagation
 
-## [Develop] 2026-06-25 — Économe : onglet Élèves identique à Fonctionnement
+## [v0.80e] — 2026-06-25 — Économe : onglet Élèves identique à Fonctionnement
 
 ### Correction
 - **Onglet Élèves** : affiche désormais toutes les transactions (entrées ET sorties), comme l'onglet Fonctionnement
@@ -1372,20 +1372,20 @@ git push origin main
 - Colonnes Sortie + Solde visibles dans les deux onglets
 - `statut_paiement: 'pending'` uniquement sur les lignes avec `montant_entree` (pas sur les virements vers POP)
 
-## [Develop] 2026-06-25 — Économe : bulk action inline dans la barre de synthèse
+## [v0.80f] — 2026-06-25 — Économe : bulk action inline dans la barre de synthèse
 
 ### UX
 - Les contrôles de sélection multiple (nb sélectionnées + NatureSelect + Appliquer + ✕) apparaissent
   maintenant directement dans la barre ENTRÉES/SORTIES/SOLDE/TRANSACTIONS/NON CLASSÉ,
   séparés par un diviseur vertical — plus de barre collante séparée au-dessus du tableau
 
-## [Develop] 2026-06-25 — FIX Économe : sélection se décochait immédiatement
+## [v0.80g] — 2026-06-25 — FIX Économe : sélection se décochait immédiatement
 
 ### Correction
 - `filtered` mémoïsé avec `useMemo` dans `CompteTab` — sans ça, chaque `setSelected` déclenchait un nouveau render → nouveau tableau `filtered` → l'`useEffect` dans `TransactionTable` réinitialisait la sélection en boucle
 - `useEffect` de reset supprimé de `TransactionTable` (le reset se fait maintenant uniquement après un bulk apply)
 
-## [Develop] 2026-06-25 — Phase 2 Économe : onglet POP + import depuis Économe
+## [v0.80h] — 2026-06-25 — Phase 2 Économe : onglet POP + import depuis Économe
 
 ### Nouvelles fonctionnalités
 - **Onglet POP** (Econome.jsx) : encodage manuel des notes de frais et factures transmises au Pouvoir Organisateur Pluriel
@@ -1403,7 +1403,7 @@ git push origin main
   - Pré-sélection intelligente : cases cochées si élève trouvé automatiquement, décochées sinon
   - Les lignes déjà importées s'affichent en grisé avec badge "Importé"
 
-## [Develop] 2026-06-25 — Phase 3 Économe : onglet Bilan mensuel
+## [v0.80i] — 2026-06-25 — Phase 3 Économe : onglet Bilan mensuel
 
 ### Nouvelles fonctionnalités
 - **Onglet Bilan** (Econome.jsx) : tableau croisé Produits / Charges par mois
@@ -1416,14 +1416,14 @@ git push origin main
   - Ligne **SOLDE** avec indicateur dynamique : ✓ Sur couverture (vert) / ⚠ Sous couverture (rouge)
   - Avertissement si des transactions sans nature ne sont pas comptabilisées
 
-## [Develop] 2026-06-25 — FIX Paiements : UX boutons + fermeture modal
+## [v0.81] — 2026-06-25 — FIX Paiements : UX boutons + fermeture modal
 
 ### Corrections
 - Modal "Depuis Économe" se ferme automatiquement après l'import réussi
 - Bouton "Import CSV" supprimé du header Paiements (remplacé par le flux Économe)
 - Bouton "+ Paiement" adopte le même style ghost que "Depuis Économe"
 
-## [Develop] 2026-06-25 — Bilan v2 : vue Couverture élèves + Admin in_couverture
+## [v0.81b] — 2026-06-25 — Bilan v2 : vue Couverture élèves + Admin in_couverture
 
 ### Nouvelles fonctionnalités
 - **Bilan — Vue Couverture élèves** (onglet par défaut) :
@@ -1434,7 +1434,7 @@ git push origin main
 - **Migration DB** : colonne `in_couverture boolean` sur `comptable_natures` (28 natures marquées au seed)
 - **Admin — Natures comptables** : nouveau toggle "Couverture élèves" dans le formulaire d'édition
 
-## [Develop] 2026-06-25 — Phase 4 Économe : onglet Projets
+## [v0.81c] — 2026-06-25 — Phase 4 Économe : onglet Projets
 
 ### Nouvelles fonctionnalités
 - **Onglet Projets** (Econome.jsx) : modèle universel pour les petits projets (Pâtes, Fancy Fair, Rhétos…)
@@ -1448,13 +1448,13 @@ git push origin main
   - Saisie d'une ligne : si Entrée remplie → Sortie se vide automatiquement (et vice versa)
   - Deux nouvelles tables Supabase : `comptable_projets` + `comptable_projet_lignes` avec RLS admin
 
-## [Develop] 2026-06-25 — FIX Projets : schema DB + gestion erreurs
+## [v0.81d] — 2026-06-25 — FIX Projets : schema DB + gestion erreurs
 
 ### Corrections
 - Migration DB : ajout colonnes `description` et `cloture` sur `comptable_projets` (table créée dans une session antérieure avec des colonnes manquantes)
 - `saveProjet` et `saveLigne` : ajout try/catch avec message d'erreur visible — les erreurs Supabase étaient silencieuses
 
-## [Develop] 2026-06-25 — FIX Projets : colonnes date_ligne/note/commentaire
+## [v0.81e] — 2026-06-25 — FIX Projets : colonnes date_ligne/note/commentaire
 
 ### Corrections
 - `comptable_projet_lignes` : table ancienne avec `date_ligne` au lieu de `date` et `note` au lieu de `commentaire`
@@ -1462,7 +1462,7 @@ git push origin main
 - Code : payload envoie maintenant les deux noms (`date`+`date_ligne`, `commentaire`+`note`) pour compat
 - Affichage date et commentaire dans l'édition : fallback sur l'ancienne colonne
 
-## [Develop] 2026-06-25 — Phase 5 Économe : Exports Excel, Graphiques Bilan, PDF
+## [v0.81f] — 2026-06-25 — Phase 5 Économe : Exports Excel, Graphiques Bilan, PDF
 
 ### Nouvelles fonctionnalités
 - **Export Excel** (SheetJS) :
@@ -1491,7 +1491,7 @@ git push origin main
 - `recharts` — graphiques dans le Bilan
 
 
-## [Develop] 2026-06-25 — FIX PDF Bilan v2 : données correctes + header/footer + mise en page
+## [v0.81g] — 2026-06-25 — FIX PDF Bilan v2 : données correctes + header/footer + mise en page
 
 ### Corrections
 - **Bug données vides** : la fonction utilisait `.gte('date', ...)` alors que la table `comptable_transactions` utilise `date_operation`. Fix : `.gte('date_operation', ...)` + `.lte('date_operation', ...)`. Ajout des données POP (`comptable_pop_lignes`) manquantes dans l'agrégation (même logique que BilanTab).
@@ -1504,7 +1504,7 @@ git push origin main
 
 
 
-## [Develop] 2026-06-25 — Module Compositions : outil de composition de classes
+## [v0.81h] — 2026-06-25 — Module Compositions : outil de composition de classes
 
 ### Nouvelles fonctionnalités
 - **Page Compositions** (`/compositions`) — outil entièrement numérique de composition de classes (prévu pour projection sur tableau interactif)
@@ -1539,7 +1539,7 @@ git push origin main
 - Route `/compositions` dans App.jsx (RequireAuth `mdp`)
 
 
-## [Develop] 2026-06-25 — Compositions v2 : fixes + nouvelles fonctionnalités
+## [v0.81i] — 2026-06-25 — Compositions v2 : fixes + nouvelles fonctionnalités
 
 ### Corrections
 - **Photos** : `ElevePhoto` réécrit en `fetch POST` vers `smartschool-photo.mjs` (l'ancienne version faisait un GET invalide). Utilise `smartschool_username` au lieu de `internalNumber`. Cache en `sessionStorage` par username.
@@ -1558,7 +1558,7 @@ git push origin main
 - Détection "Troubles attestés" élargie : groupes préfixés "AR", "trouble", "dys", champs libres `vrij1`–`vrij8` non vides, et champs API `leerstoornis`/`stoornis` si présents
 - Requête Supabase enrichie : `smartschool_username`, `philosophie`, `groupe_choix_philo` ajoutés au SELECT
 
-## [Develop] 2026-06-25 — Compositions v3 : refonte UI + persistance localStorage
+## [v0.82] — 2026-06-25 — Compositions v3 : refonte UI + persistance localStorage
 
 ### Général
 - **Ordre onglets inversé** : "Composition" devient le premier onglet (tab par défaut), "Configuration" en second
@@ -1578,7 +1578,7 @@ git push origin main
   - Bouton "Ouvrir (N)" dans le header → liste des compositions avec date, charger ou supprimer
   - Import/export JSON disponibles dans la modal "Ouvrir"
 
-## [Develop] 2026-06-25 — Compositions v3.1 : Source refonte avec MasterFilter
+## [v0.82b] — 2026-06-25 — Compositions v3.1 : Source refonte avec MasterFilter
 
 ### Configuration — Source
 - **Filtres** : remplacement des pills "Par année / Par classe" par le composant `MasterFilter` (identique à la page Élèves) — dropdown avec colonnes Année et Classe, compteur de filtres actifs
@@ -1586,7 +1586,7 @@ git push origin main
 - **Exclusion individuelle** : les résultats de recherche apparaissent uniquement quand un terme est tapé (plus de grille de 670 pills affichée en permanence) — cliquer sur un résultat exclut/réintègre l'élève
 - **Compteur d'exclus** : affiché à droite de la ligne filtres/recherche quand ≥1 élève exclu, avec bouton "✕ N exclus" pour tout réintégrer
 
-## [Develop] 2026-06-25 — Compositions v3.2 : photos, étendu, auto-save
+## [v0.82c] — 2026-06-25 — Compositions v3.2 : photos, étendu, auto-save
 
 ### Fix photos
 - **`smartschool-photo.mjs`** : accepte maintenant `internalNumber` comme `$userIdentifier` (prioritaire sur `username`). Cohérent avec `smartschool-notify.mjs` qui utilise déjà le numéro interne — le champ unique API de la plateforme est "numéro interne", pas l'identifiant web.
@@ -1603,7 +1603,7 @@ git push origin main
 - **Bouton "Sauvegarder" supprimé** : remplacé par l'auto-save + indicateur "✓ Sauvegardé HH:MM" dans la barre du board
 - **"Ouvrir"** : toujours disponible pour charger une composition sauvegardée précédemment
 
-## [Develop] 2026-06-25 — Fix sync troubles attestés + debug endpoint
+## [v0.82d] — 2026-06-25 — Fix sync troubles attestés + debug endpoint
 
 ### Fix critique — smartschool-sync.mjs
 - **Troubles attestés** : remplacement de l'ancienne détection heuristique (vrij1-8, groupes AR/dys, leerstoornis) par la lecture directe des champs profil Smartschool découverts via `getUserDetails` : `"Troubles attestés"`, `"Aménagements raisonnables"`, `"Difficultés sans troubles attestés"`. Ces champs ont des noms français avec espaces et accents — non capturés par l'ancienne logique.
@@ -1612,7 +1612,7 @@ git push origin main
 ### Debug
 - `smartschool-debug.mjs` : endpoint temporaire de diagnostic (à supprimer après usage)
 
-## [Develop] 2026-06-25 — Compositions v4 : liste projets + modals
+## [v0.82e] — 2026-06-25 — Compositions v4 : liste projets + modals
 
 ### Refonte UX complète (v4)
 - **Suppression des deux onglets** (Config / Composition) remplacée par une architecture page unique
@@ -1622,11 +1622,11 @@ git push origin main
 - **Vue board** : barre d'info avec retour vers la liste (← Mes projets), indicateur de sauvegarde, toggle compact/étendu, bouton "Nouveau groupe"
 - **Suppression** d'un projet depuis la vue liste (icône poubelle au survol)
 - **Import JSON** : depuis la vue liste (bouton "Importer JSON")
-## [Develop] 2026-06-25 — Fix filtres Compositions (OR entre dimensions)
+## [v0.82f] — 2026-06-25 — Fix filtres Compositions (OR entre dimensions)
 
 - Filtres année + classe maintenant combinés en **OR** : sélectionner '2e' + 'AC Shinigamis' retourne les élèves de 2e OU les élèves d'AC Shinigamis (au lieu de l'intersection vide)
 
-## [Develop] 2026-06-25 — Compositions v4 — Fix export Excel + sync sexe féminin
+## [v0.82g] — 2026-06-25 — Compositions v4 — Fix export Excel + sync sexe féminin
 
 **Export Excel refactorisé :**
 - `exportXLSX` déplacé dans le composant parent (accès à `assignments`, `groups`, `filteredEleves`)
@@ -1638,7 +1638,7 @@ git push origin main
 **Sync sexe féminin :**
 - `smartschool-sync.mjs` : ajout de `geslacht === 'f'` comme alias pour féminin (en plus de `'v'`) — corrige les 350 filles sans sexe en DB
 
-## [Develop] 2026-06-25 — Compositions — Exclusion/inclusion individuelle d'élèves
+## [v0.82h] — 2026-06-25 — Compositions — Exclusion/inclusion individuelle d'élèves
 
 **Nouvelle UI dans la section "Source — Élèves" de la configuration :**
 - **Exclure un élève** (rouge) : champ de recherche → clic pour exclure → chip rouge avec ✕ pour retirer. Un élève exclu est retiré de la sélection filtrée même s'il correspondrait aux filtres.
@@ -1646,26 +1646,30 @@ git push origin main
 - Compteur mis à jour : "+N ajouté(s)" en vert / "−N exclus" en rouge à côté du total
 - `includedIds` et `excludedIds` persistés dans localStorage et dans l'export JSON
 
-## [Develop] 2026-06-25 — Compositions — Toast import Excel + normalisation Unicode
+## [v0.82i] — 2026-06-25 — Compositions — Toast import Excel + normalisation Unicode
 
 - **Toast de confirmation** après import Excel : message vert "N valeurs importées sur X champs" (4 sec) ou rouge avec explication en cas d'erreur
 - **Normalisation Unicode NFC** sur les noms de colonnes avant comparaison — corrige les cas où `è` encodé différemment (Excel vs JS) empêchait le matching silencieusement
 - Recherche de colonne par `findIndex` + `normalize` au lieu de `indexOf` strict
 
-## [Unreleased]
+## [v0.83] — 2026-06-25
 ### Debug
 - sync: logger les champs disponibles dans getAllAccountsExtended pour trouver le champ photo des élèves importés en masse
 
-## [Unreleased — photos ESPM+]
+## [v0.83b] — 2026-06-25 — photos ESPM+
 ### Added
 - Migration Supabase : colonne `photo_url` sur `eleves` + bucket public `eleve-photos` (512 KB max, JPEG/PNG/WebP)
 - `ElevePhoto` : priorité absolue à `photo_url` stockée en DB (zéro appel Smartschool si photo présente)
 - Upload photo par clic : cliquer sur la photo (ou le "?") dans Compositions ouvre un file picker → resize client-side 300×300 → upload Supabase Storage → sauvegarde en DB
 - Suppression du debug sync (champs `_debug_sample_keys` / `_debug_photo_keys`)
 
-## [Unreleased — admin photos]
+## [v0.83c] — 2026-06-25 — admin photos
 ### Added
 - Admin → onglet "Photos élèves" : import en masse par glisser-déposer
   - Matching par nom de fichier = numéro interne (ex: `4849.jpg`) ou username Smartschool (ex: `elif.kaplaner.jpg`)
   - Resize automatique 300×300, upload Supabase Storage, sauvegarde `photo_url` en DB
   - Barre de progression + rapport OK/KO détaillé
+
+## [v0.83d] — 2026-06-25 — Sidebar ordre alphabétique
+### Changed
+- Sidebar : menus réordonnés alphabétiquement (Activités → Articles → Compositions → Économe → Élèves → Factures → Helpdesk → Paiements → Salle des profs → Soldes → Suivi social)
