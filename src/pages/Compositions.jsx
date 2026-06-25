@@ -95,7 +95,7 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
               <span className="text-[10px] text-blue-500 font-medium">{eleve.classe}</span>
             )}
             {compact && fields.sexe && eleve.sexe && (
-              <span className={`text-[10px] font-bold ml-0.5 ${eleve.sexe === 'M' ? 'text-blue-400' : eleve.sexe === 'F' ? 'text-pink-400' : 'text-gray-400'}`}>{eleve.sexe}</span>
+              <span className={`text-[10px] font-bold ml-0.5 ${eleve.sexe === 'M' ? 'text-green-500' : eleve.sexe === 'F' ? 'text-red-400' : 'text-gray-400'}`}>{eleve.sexe}</span>
             )}
           </div>
         </div>
@@ -106,7 +106,7 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
                 <span className="text-[10px] font-semibold bg-blue-50 text-blue-600 rounded px-1.5 py-0.5">{eleve.classe}</span>
               )}
               {fields.sexe && eleve.sexe && (
-                <span className={`text-[10px] font-semibold rounded px-1.5 py-0.5 ${eleve.sexe === 'M' ? 'bg-blue-50 text-blue-500' : eleve.sexe === 'F' ? 'bg-pink-50 text-pink-500' : 'bg-gray-100 text-gray-500'}`}>{eleve.sexe === 'M' ? 'Garçon' : eleve.sexe === 'F' ? 'Fille' : eleve.sexe}</span>
+                <span className={`text-[10px] font-semibold rounded px-1.5 py-0.5 ${eleve.sexe === 'M' ? 'bg-green-50 text-green-600' : eleve.sexe === 'F' ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-500'}`}>{eleve.sexe === 'M' ? 'G' : eleve.sexe === 'F' ? 'F' : eleve.sexe}</span>
               )}
               {fields.troubles && hasAR && (
                 <span className="text-[10px] font-semibold bg-orange-50 text-orange-600 rounded px-1.5 py-0.5 flex items-center gap-0.5">
@@ -159,7 +159,9 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
   const [name, setName]       = useState(group.name)
   const inputRef              = useRef(null)
   useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
-  const arCount  = eleves.filter(e => e.amenagements_raisonnables?.trim()).length
+  const arCount     = eleves.filter(e => e.amenagements_raisonnables?.trim()).length
+  const garconCount = eleves.filter(e => e.sexe === 'M').length
+  const filleCount  = eleves.filter(e => e.sexe === 'F').length
   const isLinked = id => linkedSets.some(s => s.has(id))
   const colW     = cardMode === 'compact' ? 170 : 240
 
@@ -184,6 +186,12 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${isPool ? 'bg-gray-200 text-gray-600' : 'bg-indigo-100 text-indigo-600'}`}>
           {eleves.length}
         </span>
+        {!isPool && garconCount > 0 && (
+          <span className="text-[10px] font-semibold bg-green-100 text-green-600 px-1.5 py-0.5 rounded-full">{garconCount}G</span>
+        )}
+        {!isPool && filleCount > 0 && (
+          <span className="text-[10px] font-semibold bg-red-100 text-red-500 px-1.5 py-0.5 rounded-full">{filleCount}F</span>
+        )}
         {arCount > 0 && (
           <span className="text-[10px] font-semibold bg-orange-100 text-orange-600 px-1 py-0.5 rounded-full">{arCount}AR</span>
         )}
