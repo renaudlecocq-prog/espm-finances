@@ -87,7 +87,7 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
           <Link size={10} className="text-violet-500" />
         </div>
       )}
-      <div className={`p-2.5 pt-2 ${compact ? '' : 'pb-3'}`}>
+      <div className={`p-2.5 pt-2 w-full min-w-0 ${compact ? '' : 'pb-3'}`}>
         <div className="flex items-center gap-2">
           {fields.photo && <ElevePhoto username={eleve.smartschool_username} internalNumber={eleve.smartschool_internal_number} size={compact ? 32 : 40} />}
           <div className="min-w-0 flex-1">
@@ -126,7 +126,7 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
             )}
             {customFields?.map(cf => (
               <div key={cf.id} className="mt-1" onPointerDown={e => e.stopPropagation()}>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 w-full min-w-0 overflow-hidden">
                   <span className="text-[10px] text-gray-400 shrink-0 truncate max-w-[70px]">{cf.label}:</span>
                   <input value={cf.values?.[eleve.id] || ''} onChange={e => onCFChange?.(cf.id, eleve.id, e.target.value)}
                     onClick={e => e.stopPropagation()} placeholder="—"
