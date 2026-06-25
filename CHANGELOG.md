@@ -1804,3 +1804,7 @@ git push origin main
 
 - ADD filtre "Classe" via MasterFilter dans la grille de photos (onglet Photos élèves)
 - La grille affiche maintenant les classes disponibles dans le menu filtre, comme la page Élèves
+
+## [v0.94b] — FIX filtre classe photos (prop filterDefs)
+
+- FIX : prop `defs` → `filterDefs` dans l'appel MasterFilter → crash "Cannot read reduce of undefined" corrigé

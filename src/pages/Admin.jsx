@@ -1611,7 +1611,7 @@ function PhotosAdmin() {
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-semibold text-gray-700 text-sm">{withPhotos.length} photos importées</h4>
               <div className="flex items-center gap-2">
-                <MasterFilter defs={filterDefs} filters={gridFilters} onChange={setGridFilters} />
+                <MasterFilter filterDefs={filterDefs} filters={gridFilters} onChange={setGridFilters} />
                 <input
                   type="text" placeholder="Rechercher…" value={gridSearch}
                   onChange={e => setGridSearch(e.target.value)}
