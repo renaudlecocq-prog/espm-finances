@@ -484,6 +484,7 @@ export default function Compositions() {
   const [filters, setFilters]                 = useState({})
   const [excludedIds, setExcludedIds]         = useState(new Set())
   const [includedIds, setIncludedIds]         = useState(new Set())
+  const [importToast, setImportToast]         = useState(null) // { ok, msg }
   const [fields, setFields]                   = useState(DEFAULT_FIELDS)
   const [customFields, setCustomFields]       = useState([])
 
@@ -687,24 +688,47 @@ export default function Compositions() {
         const wb   = XLSX.read(ev.target.result, { type: 'binary' })
         const ws   = wb.Sheets[wb.SheetNames[0]]
         const data = XLSX.utils.sheet_to_json(ws, { header: 1 })
-        if (data.length < 2) return
-        const headers = data[0].map(String)
+        if (data.length < 2) {
+          setImportToast({ ok: false, msg: 'Fichier vide ou invalide' })
+          setTimeout(() => setImportToast(null), 4000)
+          return
+        }
+        // Normaliser pour éviter les divergences d'encodage Unicode (è vs e + combining)
+        const norm = s => String(s || '').normalize('NFC').trim()
+        const headers = data[0].map(norm)
         const idIdx   = headers.findIndex(h => h.includes('id (ne pas') || h === '__id__')
-        if (idIdx === -1) { alert('Format invalide — colonne id introuvable'); return }
+        if (idIdx === -1) {
+          setImportToast({ ok: false, msg: 'Colonne id introuvable — assurez-vous de ne pas avoir renommé la dernière colonne' })
+          setTimeout(() => setImportToast(null), 5000)
+          return
+        }
+        let totalUpdated = 0
+        let fieldsUpdated = 0
         const updated = customFields.map(cf => {
-          const colIdx = headers.indexOf(cf.label)
+          const colIdx = headers.findIndex(h => norm(h) === norm(cf.label))
           if (colIdx === -1) return cf
           const newValues = { ...cf.values }
+          let count = 0
           for (let i = 1; i < data.length; i++) {
             const row = data[i]
-            const id  = String(row[idIdx] || '').trim()
-            if (id && row[colIdx] !== undefined && row[colIdx] !== null && String(row[colIdx]).trim() !== '')
-              newValues[id] = String(row[colIdx])
+            const id  = norm(row[idIdx])
+            const val = row[colIdx] !== undefined && row[colIdx] !== null ? norm(row[colIdx]) : ''
+            if (id && val) { newValues[id] = val; count++ }
           }
+          if (count > 0) { totalUpdated += count; fieldsUpdated++ }
           return { ...cf, values: newValues }
         })
         setCustomFields(updated)
-      } catch (err) { alert('Erreur de lecture du fichier Excel : ' + err.message) }
+        if (totalUpdated === 0) {
+          setImportToast({ ok: false, msg: 'Aucune valeur importée — les colonnes de champs personnalisés ne correspondent pas ou sont vides' })
+        } else {
+          setImportToast({ ok: true, msg: `${totalUpdated} valeur${totalUpdated > 1 ? 's' : ''} importée${totalUpdated > 1 ? 's' : ''} sur ${fieldsUpdated} champ${fieldsUpdated > 1 ? 's' : ''}` })
+        }
+        setTimeout(() => setImportToast(null), 4000)
+      } catch (err) {
+        setImportToast({ ok: false, msg: 'Erreur : ' + err.message })
+        setTimeout(() => setImportToast(null), 5000)
+      }
     }
     reader.readAsBinaryString(file); e.target.value = ''
   }, [customFields])
@@ -986,6 +1010,15 @@ export default function Compositions() {
           </DragOverlay>
         </DndContext>
       </div>
+
+      {/* Toast import */}
+      {importToast && (
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-all
+          ${importToast.ok ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
+          {importToast.ok ? <Check size={16} /> : <AlertTriangle size={16} />}
+          {importToast.msg}
+        </div>
+      )}
 
       {/* ── Modal Configuration ──────────────────────────────────────── */}
       {showConfigModal && (

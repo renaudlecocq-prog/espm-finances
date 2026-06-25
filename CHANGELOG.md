@@ -1645,3 +1645,9 @@ git push origin main
 - **Ajouter un élève hors filtre** (vert) : champ de recherche → clic pour inclure → chip vert avec ✕ pour retirer. Un élève ajouté apparaît dans le board même s'il ne correspond pas aux filtres.
 - Compteur mis à jour : "+N ajouté(s)" en vert / "−N exclus" en rouge à côté du total
 - `includedIds` et `excludedIds` persistés dans localStorage et dans l'export JSON
+
+## [Develop] 2026-06-25 — Compositions — Toast import Excel + normalisation Unicode
+
+- **Toast de confirmation** après import Excel : message vert "N valeurs importées sur X champs" (4 sec) ou rouge avec explication en cas d'erreur
+- **Normalisation Unicode NFC** sur les noms de colonnes avant comparaison — corrige les cas où `è` encodé différemment (Excel vs JS) empêchait le matching silencieusement
+- Recherche de colonne par `findIndex` + `normalize` au lieu de `indexOf` strict
