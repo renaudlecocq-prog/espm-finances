@@ -1747,3 +1747,12 @@ git push origin main
 
 ## v0.86c — Compositions : fix "Sauvegardé" absent à l'ouverture (2026-06-25)
 - lastSaved initialisé depuis la date DB dès l'ouverture d'une composition (ne nécessite plus de modification pour apparaître)
+
+## v0.87 — Compositions : fix realtime écrasait les assignments + debounce 500ms (2026-06-25)
+- FIX CRITIQUE : comparaison timestamp échouait (format Z vs +00) → nos propres saves revenaient en realtime et réinitialisaient les assignments après chaque DnD
+- Solution : nonce unique par save stocké dans data._nonce, comparé dans le handler realtime
+- Debounce réduit de 1500ms → 500ms (save plus réactif)
+- Indicateur "Enregistrement…" (orange) pendant les changements en attente, "Sauvegardé HH:MM:SS" après save réussi
+- Table compositions_projets ajoutée à la publication supabase_realtime (fix collaboration temps réel)
+- FIX : subscribeToProject wrappé dans try/catch (évite blocage navigation si erreur realtime)
+- FIX : setView('board') avant subscribeToProject (navigation garantie même si realtime échoue)

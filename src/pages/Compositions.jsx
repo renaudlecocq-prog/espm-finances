@@ -583,8 +583,9 @@ export default function Compositions() {
   // ── Sauvegarde ────────────────────────────────────────────────────────────
   const [savedList, setSavedList]   = useState([])
   const [dbLoading, setDbLoading]    = useState(true)
-  const [lastSaved, setLastSaved]     = useState(null)
-  const [lastSavedBy, setLastSavedBy] = useState(null)  // null = moi-même
+  const [lastSaved, setLastSaved]         = useState(null)
+  const [lastSavedBy, setLastSavedBy]     = useState(null)  // null = moi-même
+  const [hasPendingChanges, setHasPending] = useState(false)
   const autoSaveTimer               = useRef(null)
 
   // ── Modals ────────────────────────────────────────────────────────────────
@@ -673,8 +674,9 @@ export default function Compositions() {
 
   // ── currentProjectId : UUID du projet en cours d'édition ────────────────
   const currentProjectId = useRef(null)
-  const lastSaveTs       = useRef(null)   // timestamp de notre dernier save (évite d'écraser avec notre propre update realtime)
+  const lastNonce        = useRef(null)   // nonce unique par save — évite que notre propre update realtime écrase l'état courant
   const realtimeRef      = useRef(null)   // canal Supabase Realtime actif
+  const pendingSave      = useRef(false)  // true = changements non encore sauvegardés
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
   const doSave = useCallback((immediate = false) => {
@@ -687,13 +689,17 @@ export default function Compositions() {
       }
       const pid = currentProjectId.current
       if (!pid) return // pas encore de projet créé
+      const nonce = Math.random().toString(36).slice(2)
+      lastNonce.current = nonce
+      const dataWithNonce = { ...data, _nonce: nonce }
       const myName = [profile?.prenom, profile?.nom].filter(Boolean).join(' ') || profile?.email || 'Moi'
       const { error } = await supabase.from('compositions_projets')
-        .update({ nom: compositionName, updated_at: now, data, updated_by: myName })
+        .update({ nom: compositionName, updated_at: now, data: dataWithNonce, updated_by: myName })
         .eq('id', pid)
       if (!error) {
-        lastSaveTs.current = now
-        setSavedList(prev => prev.map(p => p.id === pid ? { ...p, name: compositionName, date: now, data } : p))
+        pendingSave.current = false
+        setHasPending(false)
+        setSavedList(prev => prev.map(p => p.id === pid ? { ...p, name: compositionName, date: now, data: dataWithNonce } : p))
         setLastSaved(now)
         setLastSavedBy(null) // null = c'est moi
       }
@@ -701,7 +707,9 @@ export default function Compositions() {
     if (immediate) { clearTimeout(autoSaveTimer.current); save() }
     else {
       clearTimeout(autoSaveTimer.current)
-      autoSaveTimer.current = setTimeout(save, 1500)
+      pendingSave.current = true
+      setHasPending(true)
+      autoSaveTimer.current = setTimeout(save, 500)
     }
   }, [compositionName, filters, excludedIds, includedIds, fields, customFields, groups, assignments, linkedSets, cardMode])
 
@@ -880,29 +888,35 @@ export default function Compositions() {
   }, [])
 
   const subscribeToProject = useCallback((pid) => {
-    if (realtimeRef.current) { supabase.removeChannel(realtimeRef.current); realtimeRef.current = null }
-    if (!pid) return
-    const ch = supabase.channel(`comp_${pid}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'compositions_projets', filter: `id=eq.${pid}` },
-        (payload) => {
-          // Ignorer nos propres sauvegardes pour éviter une boucle
-          if (payload.new.updated_at === lastSaveTs.current) return
-          applyCompositionData(payload.new.data || {})
-          setLastSaved(payload.new.updated_at)
-          setLastSavedBy(payload.new.updated_by || 'Quelqu\'un')
-        })
-      .subscribe()
-    realtimeRef.current = ch
+    try {
+      if (realtimeRef.current) { supabase.removeChannel(realtimeRef.current); realtimeRef.current = null }
+      if (!pid) return
+      const ch = supabase.channel(`comp_${pid}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'compositions_projets', filter: `id=eq.${pid}` },
+          (payload) => {
+            // Ignorer nos propres sauvegardes pour éviter une boucle
+            if (payload.new.updated_at === lastSaveTs.current) return
+            applyCompositionData(payload.new.data || {})
+            setLastSaved(payload.new.updated_at)
+            setLastSavedBy(payload.new.updated_by || 'Quelqu\'un')
+          })
+        .subscribe()
+      realtimeRef.current = ch
+    } catch(e) {
+      console.warn('Realtime subscribe error:', e)
+    }
   }, [applyCompositionData])
 
   // ── Désérialisation ───────────────────────────────────────────────────────
   const loadComposition = entry => {
     currentProjectId.current = entry.id
+    pendingSave.current = false   // rien à sauvegarder au chargement
+    setHasPending(false)
     applyCompositionData(entry.data)
-    subscribeToProject(entry.id)
     setLastSaved(entry.date || null)
     setLastSavedBy(null)
-    setView('board')
+    setView('board')          // navigate first — realtime is best-effort
+    subscribeToProject(entry.id)
   }
 
   const deleteComposition = async id => {
@@ -1145,15 +1159,21 @@ export default function Compositions() {
         </button>
         <span className="text-gray-300">|</span>
         <span className="text-xs text-gray-500">{filteredEleves.length} élèves · {groups.length} groupe{groups.length !== 1 ? 's' : ''}</span>
-        {lastSaved && (
-          <span className="text-xs text-green-500 flex items-center gap-1">
-            <Check size={11} />
-            {lastSavedBy
-              ? <><span className="font-medium">{lastSavedBy}</span> a sauvegardé à {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>
-              : <>Sauvegardé {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>
-            }
-          </span>
-        )}
+        {hasPendingChanges
+          ? <span className="text-xs text-amber-500 flex items-center gap-1">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              Enregistrement…
+            </span>
+          : lastSaved && (
+              <span className="text-xs text-green-500 flex items-center gap-1">
+                <Check size={11} />
+                {lastSavedBy
+                  ? <><span className="font-medium">{lastSavedBy}</span> a sauvegardé à {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>
+                  : <>Sauvegardé {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>
+                }
+              </span>
+            )
+        }
         {realtimeRef.current && (
           <span className="flex items-center gap-1 text-xs text-indigo-500 font-medium">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
