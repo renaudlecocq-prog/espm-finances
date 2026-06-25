@@ -580,7 +580,10 @@ export default function Compositions() {
   const [linkedSets, setLinkedSets]   = useState([])
   const [activeId, setActiveId]       = useState(null)
   const [dragging, setDragging]       = useState(null)
-  const [cardMode, setCardMode]       = useState('etendu')
+  // cardMode : préférence locale uniquement (localStorage), pas sauvegardé/synchro Supabase
+  const [cardMode, setCardMode] = useState(() => {
+    try { return localStorage.getItem('espm_cardMode') || 'etendu' } catch { return 'etendu' }
+  })
 
   // ── Sauvegarde ────────────────────────────────────────────────────────────
   const [savedList, setSavedList]   = useState([])
@@ -693,7 +696,7 @@ export default function Compositions() {
       const data = {
         name: compositionName, date: now, filters, excludedIds: [...excludedIds], includedIds: [...includedIds],
         fields: Object.fromEntries(Object.entries(fields).map(([k,v]) => [k,v.enabled])),
-        customFields, groups, assignments, linkedSets: linkedSets.map(s => [...s]), cardMode,
+        customFields, groups, assignments, linkedSets: linkedSets.map(s => [...s]),
       }
       const pid = currentProjectId.current
       if (!pid) { pendingSave.current = false; setHasPending(false); return } // pas encore de projet créé
@@ -727,14 +730,14 @@ export default function Compositions() {
       setHasPending(true)  // indicateur immédiat — OK car sync assignments retourne `prev` (pas de boucle)
       autoSaveTimer.current = setTimeout(save, 500)
     }
-  }, [compositionName, filters, excludedIds, includedIds, fields, customFields, groups, assignments, linkedSets, cardMode])
+  }, [compositionName, filters, excludedIds, includedIds, fields, customFields, groups, assignments, linkedSets])
 
   useEffect(() => {
     if (justLoaded.current) { justLoaded.current = false; return } // skip le save inutile après chargement
     if (justAppliedRemote.current) { justAppliedRemote.current = false; return } // skip le save inutile après update distant
     if (view === 'board') doSave()
     return () => clearTimeout(autoSaveTimer.current)
-  }, [compositionName, filters, excludedIds, fields, customFields, groups, assignments, linkedSets, cardMode]) // eslint-disable-line
+  }, [compositionName, filters, excludedIds, fields, customFields, groups, assignments, linkedSets]) // eslint-disable-line
 
   // ── DnD ───────────────────────────────────────────────────────────────────
   const sensors = useSensors(
@@ -902,7 +905,7 @@ export default function Compositions() {
     if (d.groups)       setGroups(d.groups)
     if (d.assignments)  setAssignments(d.assignments)
     if (d.linkedSets)   setLinkedSets(d.linkedSets.map(s => new Set(s)))
-    if (d.cardMode)     setCardMode(d.cardMode)
+    // cardMode intentionnellement exclu — préférence locale uniquement
   }, [])
 
   const subscribeToProject = useCallback((pid) => {
@@ -963,7 +966,7 @@ export default function Compositions() {
       name: draftName, date: now, filters: draftFilters,
       excludedIds: [...draftExcludedIds], includedIds: [...draftIncludedIds],
       fields: Object.fromEntries(Object.entries(draftFields).map(([k,v]) => [k,v.enabled])),
-      customFields: draftCustomFields, groups: [], assignments: {}, linkedSets: [], cardMode: 'etendu',
+      customFields: draftCustomFields, groups: [], assignments: {}, linkedSets: [],
     }
     const { data: rows, error } = await supabase.from('compositions_projets')
       .insert({ nom: draftName, updated_at: now, data })
@@ -988,7 +991,7 @@ export default function Compositions() {
     const date = new Date().toISOString()
     const data = { name: compositionName, date, filters, excludedIds: [...excludedIds], includedIds: [...includedIds],
       fields: Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,v.enabled])),
-      customFields, groups, assignments, linkedSets: linkedSets.map(s=>[...s]), cardMode }
+      customFields, groups, assignments, linkedSets: linkedSets.map(s=>[...s]) }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
     a.download = `composition_${compositionName.replace(/\s+/g,'_')}_${date.split('T')[0]}.json`
@@ -1207,7 +1210,11 @@ export default function Compositions() {
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <button onClick={() => setCardMode(m => m === 'compact' ? 'etendu' : 'compact')}
+          <button onClick={() => setCardMode(m => {
+            const next = m === 'compact' ? 'etendu' : 'compact'
+            try { localStorage.setItem('espm_cardMode', next) } catch {}
+            return next
+          })}
             className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 border border-gray-200 px-2.5 py-1.5 rounded-lg hover:border-indigo-300 transition-colors">
             {cardMode === 'compact' ? <Maximize2 size={13} /> : <Minimize2 size={13} />}
             {cardMode === 'compact' ? 'Étendu' : 'Compact'}

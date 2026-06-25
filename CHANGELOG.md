@@ -1786,3 +1786,10 @@ git push origin main
 
 - BUG : quand l'utilisateur B recevait un update realtime de A, `applyCompositionData` changeait ses `assignments` → l'auto-save effect se déclenchait → B sauvegardait → A recevait l'update de B → boucle à ~500ms, les élèves allaient et venaient entre le pool et les classes
 - FIX : ajout du ref `justAppliedRemote` — mis à `true` juste avant `applyCompositionData` dans la callback realtime, vérifié dans l'auto-save effect pour sauter la sauvegarde inutile après réception d'un update distant
+
+## [v0.93] — Compact mode local uniquement (ne se propage plus aux autres utilisateurs)
+
+- FIX : `cardMode` (Compact/Étendu) était inclus dans les données sauvegardées sur Supabase et propagé via realtime — tous les utilisateurs basculaient en même temps
+- FIX : `cardMode` stocké en `localStorage` (`espm_cardMode`) par utilisateur, initialisé depuis localStorage au montage
+- FIX : `cardMode` retiré du payload `doSave`, de `applyCompositionData`, des dépendances useCallback/useEffect, et du data JSON export
+- Résultat : chaque utilisateur garde sa propre préférence Compact/Étendu, persistée entre sessions, sans affecter les autres
