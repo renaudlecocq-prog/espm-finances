@@ -1934,3 +1934,4 @@ git push origin main
 - P1/P2/P3 sont maintenant les 3 onglets principaux du PageHeader (même layout, données par période)
 - Filtre de classes repositionné dans la barre du PageHeader (avec search et statut realtime)
 - Panneau gauche simplifié (compteur seul, plus de filtre redondant)
+## [v1.03] — Fix filtre classes dans PageHeader (props search/filters/actions)

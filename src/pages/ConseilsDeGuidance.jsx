@@ -343,7 +343,6 @@ export default function ConseilsDeGuidance() {
     <div className="flex flex-col h-full">
       <PageHeader
         title="Conseils de guidance"
-        icon={<BookOpen size={20} />}
         tabs={[
           { key: 'P1', label: 'Période 1' },
           { key: 'P2', label: 'Période 2' },
@@ -351,26 +350,25 @@ export default function ConseilsDeGuidance() {
         ]}
         activeTab={period}
         onTabChange={setPeriod}
-      >
-        {/* Filtre classe */}
-        <select value={classeFilter} onChange={e => setClasseFilter(e.target.value)}
-          className="input text-sm py-1.5 w-36">
-          <option value="">Toutes les classes</option>
-          {classes.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-
-        {/* Search */}
-        <input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
-          className="input text-sm py-1.5 w-40" />
-
-        {/* Statut realtime */}
-        <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
-          online ? 'text-green-600 bg-green-50' : 'text-gray-400 bg-gray-100'
-        }`}>
-          {online ? <Wifi size={12} /> : <WifiOff size={12} />}
-          {online ? 'En direct' : 'Hors ligne'}
-        </div>
-      </PageHeader>
+        search={search}
+        onSearch={setSearch}
+        searchPlaceholder="Rechercher un élève…"
+        filters={
+          <select value={classeFilter} onChange={e => setClasseFilter(e.target.value)}
+            style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'white', fontSize: '12px', padding: '5px 8px', borderRadius: '8px', outline: 'none' }}>
+            <option value="" style={{ color: '#1f2937', backgroundColor: 'white' }}>Toutes les classes</option>
+            {classes.map(c => <option key={c} value={c} style={{ color: '#1f2937', backgroundColor: 'white' }}>{c}</option>)}
+          </select>
+        }
+        actions={
+          <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
+            online ? 'bg-green-600/20 text-green-300' : 'bg-white/10 text-white/40'
+          }`}>
+            {online ? <Wifi size={12} /> : <WifiOff size={12} />}
+            {online ? 'En direct' : 'Hors ligne'}
+          </div>
+        }
+      />
 
       {/* Notification realtime distant */}
       {lastUpdBy && (
