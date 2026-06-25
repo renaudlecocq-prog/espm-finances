@@ -1470,18 +1470,18 @@ function PhotosGrid({ eleves, search, filters, onCrop }) {
             : `${withPhotos.length} photos importées`}
         </h4>
       </div>
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-5 gap-4">
         {filtered.map(e => (
           <div key={e.id} className="flex flex-col items-center gap-1 group cursor-pointer" onClick={() => onCrop(e)}>
             <div className="relative">
-              <img src={e.photo_url} alt="" className="w-14 h-14 rounded-full object-cover border border-gray-200" />
+              <img src={e.photo_url} alt="" className="w-20 h-20 rounded-full object-cover border border-gray-200" />
               <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                 <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0H3m4 0l-4 4M17 8v12m0 0h4m-4 0l4-4" />
                 </svg>
               </div>
             </div>
-            <span className="text-[10px] text-gray-500 text-center leading-tight">{e.prenom}<br/>{e.nom}</span>
+            <span className="text-xs text-gray-500 text-center leading-tight">{e.prenom}<br/>{e.nom}</span>
           </div>
         ))}
       </div>

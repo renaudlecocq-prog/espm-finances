@@ -1825,3 +1825,9 @@ git push origin main
 - États `search` et `filters` remontés au niveau Admin, passés en props à PhotosAdmin puis PhotosGrid
 - Callback `onClassesReady` pour synchroniser les classes disponibles vers Admin dès le chargement
 - PhotosGrid simplifié : ne gère plus sa propre toolbar
+
+## [v0.94f] — Photos élèves : photos plus grandes dans la grille
+
+- Photos agrandies : 56px → 80px
+- Grille 6 colonnes → 5 colonnes (plus d'espace)
+- Nom de l'élève en text-xs au lieu de text-[10px]
