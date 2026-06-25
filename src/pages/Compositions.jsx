@@ -555,6 +555,8 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
 //  Page principale
 // ══════════════════════════════════════════════════════════════════════════════
 export default function Compositions() {
+  const { profile } = useAuth()
+
   // ── Navigation ────────────────────────────────────────────────────────────
   const [view, setView] = useState('list') // 'list' | 'board'
 
@@ -693,8 +695,7 @@ export default function Compositions() {
         customFields, groups, assignments, linkedSets: linkedSets.map(s => [...s]), cardMode,
       }
       const pid = currentProjectId.current
-      if (!pid) { pendingSave.current = false; return } // pas encore de projet créé
-      setHasPending(true)  // seulement ici — dans l'async, pas de boucle de re-render
+      if (!pid) { pendingSave.current = false; setHasPending(false); return } // pas encore de projet créé
       const nonce = Math.random().toString(36).slice(2)
       lastNonces.current.add(nonce)
       if (lastNonces.current.size > 20) {
@@ -722,8 +723,7 @@ export default function Compositions() {
     else {
       clearTimeout(autoSaveTimer.current)
       pendingSave.current = true
-      // NE PAS appeler setHasPending(true) ici — causerait un re-render synchrone
-      // qui peut déclencher à nouveau l'effet auto-save avant le timer
+      setHasPending(true)  // indicateur immédiat — OK car sync assignments retourne `prev` (pas de boucle)
       autoSaveTimer.current = setTimeout(save, 500)
     }
   }, [compositionName, filters, excludedIds, includedIds, fields, customFields, groups, assignments, linkedSets, cardMode])
