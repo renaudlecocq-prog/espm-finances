@@ -1084,17 +1084,33 @@ function LigneRow({ ligne, onRemove, isFinancier }) {
 
 function DetailFacture({ factureId, onBack }) {
   const { isFinancier } = useAuth()
+  const { s } = useSettings()
   const [facture, setFacture] = useState(null)
   const [lignes, setLignes]   = useState([])
+  const [ech, setEch]         = useState(null)
+  const [org, setOrg]         = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving]   = useState(false)
 
   const load = async () => {
     const [{ data: f }, { data: l }] = await Promise.all([
-      supabase.from('factures').select('*, eleve:eleve_id(nom,prenom,classe,rue,code_postal,commune)').eq('id', factureId).single(),
+      supabase.from('factures').select('*, eleve:eleve_id(nom,prenom,classe,rue,code_postal,commune,prenom_responsable_1,nom_responsable_1)').eq('id', factureId).single(),
       supabase.from('facture_lignes').select('*').eq('facture_id', factureId).order('type').order('categorie'),
     ])
-    setFacture(f); setLignes(l || []); setLoading(false)
+    setFacture(f); setLignes(l || [])
+    if (f?.eleve_id) {
+      const [{ data: echs }, { data: orgs }] = await Promise.all([
+        supabase.from('echelonnements').select('*').eq('eleve_id', f.eleve_id).eq('statut', 'en_cours')
+          .order('created_at', { ascending: false }).limit(1),
+        supabase.from('organismes_tiers').select('*').eq('eleve_id', f.eleve_id).in('statut', ['en_cours', 'valide'])
+          .order('created_at', { ascending: false }).limit(1),
+      ])
+      setEch(echs?.[0] || null)
+      setOrg(orgs?.[0] || null)
+    } else {
+      setEch(null); setOrg(null)
+    }
+    setLoading(false)
   }
 
   useEffect(() => { load() }, [factureId])
@@ -1235,24 +1251,45 @@ function DetailFacture({ factureId, onBack }) {
         </span>
       </div>
 
-      {['facture', 'rappel', 'mise_en_demeure'].includes(facture.statut) && (<>
-        <div className="card p-5 mt-4 border-l-4 border-orange-400">
-          <h2 className="text-xs font-semibold text-orange-600 uppercase tracking-wide mb-3">Informations de paiement</h2>
-          <div className="space-y-2 text-sm">
-            <p><span className="text-gray-400">Bénéficiaire :</span> <span className="font-semibold text-gray-800">{s('school_beneficiaire')}</span></p>
-            <p><span className="text-gray-400">IBAN :</span> <span className="font-mono font-bold tracking-wider text-gray-900">{s('school_iban')}</span></p>
-            <p><span className="text-gray-400">Communication :</span> <span className="font-bold text-gray-900">{facture.eleve?.nom} {facture.eleve?.prenom} {facture.eleve?.classe}</span></p>
-            <p><span className="text-gray-400">Date limite :</span> <span className="font-bold text-orange-600">{addDays(facture.date, 30)}</span> <span className="text-gray-400 text-xs">(30 jours à dater de la facturation)</span></p>
-          </div>
+      {/* ── Blocs informations : toujours affichés quand la facture est chargée ── */}
+      <div className="card p-5 mt-4 border-l-4 border-orange-400">
+        <h2 className="text-xs font-semibold text-orange-600 uppercase tracking-wide mb-3">Informations de paiement</h2>
+        <div className="space-y-2 text-sm">
+          <p><span className="text-gray-400">Bénéficiaire :</span> <span className="font-semibold text-gray-800">{s('school_beneficiaire')}</span></p>
+          <p><span className="text-gray-400">IBAN :</span> <span className="font-mono font-bold tracking-wider text-gray-900">{s('school_iban')}</span></p>
+          {facture.eleve && (
+            <p><span className="text-gray-400">Communication :</span> <span className="font-bold text-gray-900">{facture.eleve.nom} {facture.eleve.prenom} {facture.eleve.classe}</span></p>
+          )}
+          <p><span className="text-gray-400">Date limite :</span> <span className="font-bold text-orange-600">{addDays(facture.date, 30)}</span> <span className="text-gray-400 text-xs">(30 jours à dater de la facturation)</span></p>
         </div>
-        <div className="card p-5 mt-2 border-l-4 border-slate-300">
-          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Contacts</h2>
-          <div className="space-y-2 text-sm text-gray-600">
-            <p>Les responsables légaux peuvent contacter l'<strong>assistant social, M. Mignolet</strong>, par Smartschool ou au <strong>{s('school_tel_as')}</strong>.</p>
-            <p>Pour toute précision sur cette facture, contactez l'<strong>économe, M. Lecocq</strong>, par Smartschool ou au <strong>{s('school_tel_eco')}</strong>.</p>
-          </div>
+      </div>
+
+      {ech && (
+        <div className="card p-5 mt-2 border-l-4 border-blue-400">
+          <h2 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">Plan d'échelonnement en cours</h2>
+          <p className="text-sm text-gray-600">
+            Un plan de paiement échelonné est actuellement en cours pour cet élève.
+            Mensualité : <strong>{fmtEur(ech.montant_mensuel)}</strong> — à partir du <strong>{fmtDate(ech.date_debut)}</strong>.
+          </p>
         </div>
-      </>)}
+      )}
+
+      {org && (
+        <div className="card p-5 mt-2 border-l-4 border-purple-400">
+          <h2 className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-2">Prise en charge par organisme tiers</h2>
+          <p className="text-sm text-gray-600">
+            Un organisme tiers est impliqué dans le suivi financier de cet élève : <strong>{org.nom}</strong> — Statut : <strong>{org.statut === 'en_cours' ? 'En cours' : 'Validé'}</strong>.
+          </p>
+        </div>
+      )}
+
+      <div className="card p-5 mt-2 border-l-4 border-slate-300">
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Nous contacter</h2>
+        <div className="space-y-2 text-sm text-gray-600">
+          <p>Les responsables légaux peuvent à tout moment contacter l'<strong>assistant social de l'école, {s('school_nom_as')}</strong>, par Smartschool ou au <strong>{s('school_tel_as')}</strong> pour prendre un rendez-vous.</p>
+          <p>Pour toute précision concernant cette facture, prenez contact avec l'<strong>économe de l'école, {s('school_nom_eco')}</strong>, par Smartschool ou au <strong>{s('school_tel_eco')}</strong>.</p>
+        </div>
+      </div>
     </div>
   )
 }

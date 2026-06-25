@@ -1897,3 +1897,11 @@ git push origin main
   utilisait e.id et e.matricule — donc eleve_id était undefined → null en DB
 - FIX : ajout de id, matricule, nom, prenom, classe dans les objets participantEleves
 - Les futures générations d'acomptes et de solde voyage auront l'élève correctement lié
+
+## [v0.98] — DetailFacture : infos paiement + échelonnement + organisme tiers
+
+- Informations de paiement affichées sur toutes les factures (plus seulement PDF)
+- Bloc "Plan d'échelonnement en cours" si échelonnement actif pour l'élève
+- Bloc "Prise en charge par organisme tiers" si OT actif pour l'élève
+- Bloc "Nous contacter" avec noms/tél depuis les paramètres école (plus hardcodés)
+- FIX : useSettings() manquait dans DetailFacture (s() était undefined → crash sur factures validées)
