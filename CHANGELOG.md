@@ -1747,3 +1747,30 @@ git push origin main
 
 ## v0.86c — Compositions : fix "Sauvegardé" absent à l'ouverture (2026-06-25)
 - lastSaved initialisé depuis la date DB dès l'ouverture d'une composition (ne nécessite plus de modification pour apparaître)
+
+## v0.87 — Compositions : fix realtime écrasait les assignments + debounce 500ms (2026-06-25)
+- FIX CRITIQUE : comparaison timestamp échouait (format Z vs +00) → nos propres saves revenaient en realtime et réinitialisaient les assignments après chaque DnD
+- Solution : nonce unique par save stocké dans data._nonce, comparé dans le handler realtime
+- Debounce réduit de 1500ms → 500ms (save plus réactif)
+- Indicateur "Enregistrement…" (orange) pendant les changements en attente, "Sauvegardé HH:MM:SS" après save réussi
+- Table compositions_projets ajoutée à la publication supabase_realtime (fix collaboration temps réel)
+- FIX : subscribeToProject wrappé dans try/catch (évite blocage navigation si erreur realtime)
+- FIX : setView('board') avant subscribeToProject (navigation garantie même si realtime échoue)
+
+## [v0.88] — FIX boucle "Enregistrement…" infinie
+
+- FIX : `lastNonce` (valeur unique) remplacé par `lastNonces` (Set) — plusieurs saves en vol ne causent plus de faux positifs realtime
+- FIX : `justLoaded` ref — skip du premier auto-save inutile après ouverture d'une composition (données déjà en DB)
+- Résultat : "Enregistrement…" n'apparaît plus au simple chargement d'une composition, et les changements utilisateur restent sauvegardés correctement
+
+## [v0.88b] — FIX boucle Enregistrement (sync assignments bail out)
+
+- FIX ROOT CAUSE : l'effet sync assignments créait toujours un nouvel objet `{ ...prev }` même quand aucun élève n'était ajouté
+- Ce nouvel objet (référence différente) déclenchait l'effet auto-save → "Enregistrement…" en boucle au chargement
+- Fix : `return prev` (même référence) quand `toAdd.length === 0` → React bail out, pas de re-render, pas de save inutile
+
+## [v0.88c] — FIX spinner bloqué (setHasPending déplacé dans async save)
+
+- FIX : `setHasPending(true)` déplacé DANS la fonction async `save()` — supprime le re-render synchrone avant le timer qui pouvait déclencher la boucle
+- FIX : `setHasPending(false)` appelé AUSSI en cas d'erreur Supabase — le spinner ne peut plus rester bloqué indéfiniment
+- Résultat : "Enregistrement…" n'apparaît plus au chargement, et disparaît toujours après la save (succès ou erreur)
