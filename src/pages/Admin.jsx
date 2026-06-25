@@ -1424,6 +1424,60 @@ function CropModal({ eleve, onClose, onSaved }) {
   )
 }
 
+
+// ══════════════════════════════════════════════════════════
+//  PhotosGrid — grille filtrée des photos importées
+// ══════════════════════════════════════════════════════════
+function PhotosGrid({ eleves, search, onSearchChange, filters, onFiltersChange, onCrop }) {
+  const withPhotos = useMemo(() => eleves.filter(e => e.photo_url), [eleves])
+  const classes    = useMemo(() => [...new Set(withPhotos.map(e => e.classe).filter(Boolean))].sort(), [withPhotos])
+  const filterDefs = useMemo(() => [{ key: 'classe', label: 'Classe', options: classes }], [classes])
+
+  const filtered = useMemo(() => {
+    let d = withPhotos
+    if (search.trim()) d = d.filter(e => `${e.prenom} ${e.nom}`.toLowerCase().includes(search.toLowerCase()))
+    if (filters.classe?.length) d = d.filter(e => filters.classe.includes(e.classe))
+    return d
+  }, [withPhotos, search, filters])
+
+  if (!withPhotos.length) return null
+
+  return (
+    <div className="mt-8">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="font-semibold text-gray-700 text-sm">
+          {filtered.length !== withPhotos.length
+            ? `${filtered.length} / ${withPhotos.length} photos`
+            : `${withPhotos.length} photos importées`}
+        </h4>
+        <div className="flex items-center gap-2">
+          <MasterFilter filterDefs={filterDefs} filters={filters} onChange={onFiltersChange} />
+          <input
+            type="text" placeholder="Rechercher…" value={search}
+            onChange={e => onSearchChange(e.target.value)}
+            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-44 outline-none focus:border-indigo-300"
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-6 gap-3">
+        {filtered.map(e => (
+          <div key={e.id} className="flex flex-col items-center gap-1 group cursor-pointer" onClick={() => onCrop(e)}>
+            <div className="relative">
+              <img src={e.photo_url} alt="" className="w-14 h-14 rounded-full object-cover border border-gray-200" />
+              <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0H3m4 0l-4 4M17 8v12m0 0h4m-4 0l4-4" />
+                </svg>
+              </div>
+            </div>
+            <span className="text-[10px] text-gray-500 text-center leading-tight">{e.prenom}<br/>{e.nom}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ══════════════════════════════════════════════════════════
 //  Photos Admin — import en masse
 // ══════════════════════════════════════════════════════════
@@ -1598,45 +1652,14 @@ function PhotosAdmin() {
       )}
 
       {/* Grille des photos existantes */}
-      {(() => {
-        const withPhotos = eleves.filter(e => e.photo_url)
-        const classes = [...new Set(withPhotos.map(e => e.classe).filter(Boolean))].sort()
-        const filterDefs = [{ key: 'classe', label: 'Classe', options: classes }]
-        let filtered = withPhotos
-        if (gridSearch.trim()) filtered = filtered.filter(e => `${e.prenom} ${e.nom}`.toLowerCase().includes(gridSearch.toLowerCase()))
-        if (gridFilters.classe?.length) filtered = filtered.filter(e => gridFilters.classe.includes(e.classe))
-        if (!withPhotos.length) return null
-        return (
-          <div className="mt-8">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-gray-700 text-sm">{withPhotos.length} photos importées</h4>
-              <div className="flex items-center gap-2">
-                <MasterFilter filterDefs={filterDefs} filters={gridFilters} onChange={setGridFilters} />
-                <input
-                  type="text" placeholder="Rechercher…" value={gridSearch}
-                  onChange={e => setGridSearch(e.target.value)}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-44 outline-none focus:border-indigo-300"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-6 gap-3">
-              {filtered.map(e => (
-                <div key={e.id} className="flex flex-col items-center gap-1 group cursor-pointer" onClick={() => setCropEleve(e)}>
-                  <div className="relative">
-                    <img src={e.photo_url} alt="" className="w-14 h-14 rounded-full object-cover border border-gray-200" />
-                    <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0H3m4 0l-4 4M17 8v12m0 0h4m-4 0l4-4" />
-                      </svg>
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-gray-500 text-center leading-tight">{e.prenom}<br/>{e.nom}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      })()}
+      <PhotosGrid
+        eleves={eleves}
+        search={gridSearch}
+        onSearchChange={setGridSearch}
+        filters={gridFilters}
+        onFiltersChange={setGridFilters}
+        onCrop={setCropEleve}
+      />
 
       {cropEleve && (
         <CropModal

@@ -1808,3 +1808,8 @@ git push origin main
 ## [v0.94b] — FIX filtre classe photos (prop filterDefs)
 
 - FIX : prop `defs` → `filterDefs` dans l'appel MasterFilter → crash "Cannot read reduce of undefined" corrigé
+
+## [v0.94c] — FIX filtre classe photos — refacto IIFE → composant PropersGrid
+
+- FIX : grille extraite dans composant `PhotosGrid` avec `useMemo` — le filtre Classe fonctionne maintenant
+- ADD : compteur "X / Y photos" quand un filtre est actif
