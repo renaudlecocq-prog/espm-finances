@@ -18,6 +18,7 @@ import Helpdesk from './pages/Helpdesk'
 import SalleDProfs from './pages/SalleDProfs'
 import Econome from './pages/Econome'
 import Compositions from './pages/Compositions'
+import ConseilsDeGuidance from './pages/ConseilsDeGuidance'
 import HelpdeskDetail from './pages/HelpdeskDetail'
 import MentionsLegales from './pages/MentionsLegales'
 
@@ -143,6 +144,7 @@ function AppRoutes() {
       <Route path="/salle-des-profs" element={<RequireAuth require="mdp" feature="salle_profs"><Layout><SalleDProfs /></Layout></RequireAuth>} />
       <Route path="/econome" element={<RequireAuth require="admin" feature="econome"><Layout><Econome /></Layout></RequireAuth>} />
       <Route path="/compositions" element={<RequireAuth require="mdp" feature="compositions"><Layout><Compositions /></Layout></RequireAuth>} />
+      <Route path="/conseils-de-guidance" element={<RequireAuth require="mdp" feature="guidance"><Layout><ConseilsDeGuidance /></Layout></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

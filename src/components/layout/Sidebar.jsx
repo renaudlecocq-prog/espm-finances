@@ -65,6 +65,10 @@ const ICONS = {
   compositions: (<>
     <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 0-2-2V9m0 0h18" strokeLinecap="round" strokeLinejoin="round"/>
   </>),
+  guidance: (<>
+    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+  </>),
   admin: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
   logout: (<>
     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
@@ -146,6 +150,7 @@ export default function Sidebar() {
     { to: '/activites',        label: 'Activités',       icon: 'activites',    show: can('activites_full') || can('activites_own') },
     { to: '/articles',         label: 'Articles',        icon: 'articles',     show: can('articles') },
     { to: '/compositions',     label: 'Compositions',    icon: 'compositions', show: can('compositions') },
+    { to: '/conseils-de-guidance', label: 'Conseils de guidance', icon: 'guidance', show: can('guidance') },
     { to: '/econome',          label: 'Économe',         icon: 'econome',      show: can('econome') || isAdmin },
     { to: '/groupes',          label: 'Élèves',          icon: 'groupes',      show: can('eleves') },
     { to: '/factures',         label: 'Factures',        icon: 'factures',     show: can('factures') },

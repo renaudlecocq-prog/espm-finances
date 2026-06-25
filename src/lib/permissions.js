@@ -19,6 +19,7 @@ export const FEATURES = [
   { key: 'salle_profs',     label: 'Salle des profs',           group: 'Collaboration', desc: 'Accès à la salle des profs et au casier personnel' },
   { key: 'econome',         label: 'Économe — comptabilité',     group: 'Système',    desc: 'Suivi comptable (Fonctionnement, Élèves, POP, Bilan, Projets)' },
   { key: 'compositions',    label: 'Compositions de classes',    group: 'Pédagogie',  desc: 'Outil de composition de classes avec drag-and-drop' },
+  { key: 'guidance',         label: 'Conseils de guidance',        group: 'Pédagogie',  desc: 'Encodage collaboratif pendant les conseils de classe, génération de commentaires' },
   { key: 'administration',  label: 'Administration',             group: 'Système',    desc: 'Panneau admin — utilisateurs, droits, synchronisation Smartschool' },
 ]
 

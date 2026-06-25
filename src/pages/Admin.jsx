@@ -185,6 +185,7 @@ export default function Admin() {
         { key: 'natures', label: 'Natures comptables' },
         { key: 'photos',  label: 'Photos élèves' },
         { key: 'parametres', label: 'Paramètres école' },
+        { key: 'guidance',    label: 'Conseils de guidance' },
       ]}
       activeTab={tab}
       onTabChange={t => { setTab(t); setUserSearch('') }}
@@ -707,6 +708,9 @@ export default function Admin() {
 
       {/* ── PARAMÈTRES ÉCOLE ─────────────────────────── */}
       {tab === 'parametres' && <ParametresEcole />}
+
+      {/* ── CONSEILS DE GUIDANCE ─────────────────────── */}
+      {tab === 'guidance' && <GuidanceAdmin />}
     </div>
     </>
   )
@@ -2049,6 +2053,367 @@ function ParametresEcole() {
           {saving ? 'Sauvegarde…' : saved ? '✓ Sauvegardé' : 'Sauvegarder'}
         </button>
       </div>
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════
+// GuidanceAdmin — Configuration du module Conseils de guidance
+// ══════════════════════════════════════════════════════════
+function GuidanceAdmin() {
+  const [subTab, setSubTab] = useState('matieres')
+  const DEGREES = ['D1','D2','D3']
+  const DEGREE_LABELS = { D1: '1er degré (1ère-2ème)', D2: '2ème degré (3ème-4ème)', D3: '3ème degré (5ème-6ème)' }
+  const PERIODS = ['P1','P2','P3']
+  const CAS_LABELS = { 1: 'Cas 1 — Bonne situation', 2: 'Cas 2 — Difficultés', 3: 'Cas 3 — Préoccupant' }
+
+  const TEMPLATE_VARS = [
+    { key: '{{prenom}}',             desc: 'Prénom de l\'élève' },
+    { key: '{{il_elle}}',            desc: 'il / elle (genre)' },
+    { key: '{{Il_Elle}}',            desc: 'Il / Elle (début de phrase)' },
+    { key: '{{son_sa}}',             desc: 'son / sa' },
+    { key: '{{le_la}}',              desc: 'le / la' },
+    { key: '{{matiere_echec}}',      desc: 'Matières en échec (liste)' },
+    { key: '{{matiere_difficulte}}', desc: 'Matières en difficulté (liste)' },
+    { key: '{{matiere_ne}}',         desc: 'Matières non évaluées (liste)' },
+    { key: '{{competences}}',        desc: 'Compétences problématiques (liste)' },
+    { key: '{{ta_forces}}',          desc: 'TA : force (texte)' },
+    { key: '{{ta_faiblesses}}',      desc: 'TA : faiblesse (texte)' },
+    { key: '{{freins}}',             desc: 'Champ libre : freins' },
+    { key: '{{forces}}',             desc: 'Champ libre : forces' },
+    { key: '{{conseils}}',           desc: 'Champ libre : conseils' },
+    { key: '{{#if clé}}...{{/if}}',  desc: 'Bloc conditionnel (affiché si clé non vide)' },
+    { key: '{{suivi_necessaire}}',   desc: 'Non vide si suivi nécessaire' },
+  ]
+
+  // ── Matières ──────────────────────────────────────────────────────────────
+  const [subjects, setSubjects] = useState([])
+  const [newSubjectDegree, setNewSubjectDegree] = useState('D1')
+  const [newSubjectName, setNewSubjectName] = useState('')
+
+  useEffect(() => {
+    supabase.from('guidance_subjects').select('*').order('degree').order('position')
+      .then(({ data }) => setSubjects(data || []))
+  }, [])
+
+  const addSubject = async () => {
+    if (!newSubjectName.trim()) return
+    const { data } = await supabase.from('guidance_subjects')
+      .insert({ degree: newSubjectDegree, name: newSubjectName.trim(), position: subjects.filter(s => s.degree === newSubjectDegree).length })
+      .select().single()
+    if (data) { setSubjects(prev => [...prev, data]); setNewSubjectName('') }
+  }
+
+  const deleteSubject = async (id) => {
+    await supabase.from('guidance_subjects').delete().eq('id', id)
+    setSubjects(prev => prev.filter(s => s.id !== id))
+  }
+
+  // ── Compétences ───────────────────────────────────────────────────────────
+  const [comps, setComps] = useState([])
+  const [newCompDegree, setNewCompDegree] = useState('D1')
+  const [newCompName, setNewCompName] = useState('')
+
+  useEffect(() => {
+    supabase.from('guidance_competencies').select('*').order('degree').order('position')
+      .then(({ data }) => setComps(data || []))
+  }, [])
+
+  const addComp = async () => {
+    if (!newCompName.trim()) return
+    const { data } = await supabase.from('guidance_competencies')
+      .insert({ degree: newCompDegree, name: newCompName.trim(), position: comps.filter(c => c.degree === newCompDegree).length })
+      .select().single()
+    if (data) { setComps(prev => [...prev, data]); setNewCompName('') }
+  }
+
+  const deleteComp = async (id) => {
+    await supabase.from('guidance_competencies').delete().eq('id', id)
+    setComps(prev => prev.filter(c => c.id !== id))
+  }
+
+  // ── Personnes ressource ───────────────────────────────────────────────────
+  const [persons, setPersons] = useState([])
+  const [newPersonName, setNewPersonName] = useState('')
+
+  useEffect(() => {
+    supabase.from('guidance_resource_persons').select('*').order('position')
+      .then(({ data }) => setPersons(data || []))
+  }, [])
+
+  const addPerson = async () => {
+    if (!newPersonName.trim()) return
+    const { data } = await supabase.from('guidance_resource_persons')
+      .insert({ name: newPersonName.trim(), position: persons.length })
+      .select().single()
+    if (data) { setPersons(prev => [...prev, data]); setNewPersonName('') }
+  }
+
+  const deletePerson = async (id) => {
+    await supabase.from('guidance_resource_persons').delete().eq('id', id)
+    setPersons(prev => prev.filter(p => p.id !== id))
+  }
+
+  // ── Statuts ───────────────────────────────────────────────────────────────
+  const [statuses, setStatuses] = useState([])
+  const [newStatusLabel, setNewStatusLabel] = useState('')
+  const [newStatusColor, setNewStatusColor] = useState('#6B7280')
+
+  useEffect(() => {
+    supabase.from('guidance_task_statuses').select('*').order('position')
+      .then(({ data }) => setStatuses(data || []))
+  }, [])
+
+  const addStatus = async () => {
+    if (!newStatusLabel.trim()) return
+    const { data } = await supabase.from('guidance_task_statuses')
+      .insert({ label: newStatusLabel.trim(), color: newStatusColor, position: statuses.length })
+      .select().single()
+    if (data) { setStatuses(prev => [...prev, data]); setNewStatusLabel('') }
+  }
+
+  const deleteStatus = async (id) => {
+    await supabase.from('guidance_task_statuses').delete().eq('id', id)
+    setStatuses(prev => prev.filter(s => s.id !== id))
+  }
+
+  // ── Templates ─────────────────────────────────────────────────────────────
+  const [templates, setTemplates] = useState([])
+  const [tplDegree, setTplDegree] = useState('D1')
+  const [tplPeriod, setTplPeriod] = useState('P1')
+  const [tplCas, setTplCas] = useState(1)
+  const [tplBody, setTplBody] = useState('')
+  const [tplSaving, setTplSaving] = useState(false)
+  const [tplSaved, setTplSaved] = useState(false)
+
+  useEffect(() => {
+    supabase.from('guidance_templates').select('*')
+      .then(({ data }) => setTemplates(data || []))
+  }, [])
+
+  useEffect(() => {
+    const tpl = templates.find(t => t.cas === tplCas && t.degree === tplDegree && t.period === tplPeriod)
+    setTplBody(tpl?.body || '')
+  }, [templates, tplCas, tplDegree, tplPeriod])
+
+  const saveTpl = async () => {
+    setTplSaving(true)
+    const existing = templates.find(t => t.cas === tplCas && t.degree === tplDegree && t.period === tplPeriod)
+    if (existing) {
+      await supabase.from('guidance_templates').update({ body: tplBody }).eq('id', existing.id)
+      setTemplates(prev => prev.map(t => t.id === existing.id ? { ...t, body: tplBody } : t))
+    } else {
+      const { data } = await supabase.from('guidance_templates')
+        .insert({ cas: tplCas, degree: tplDegree, period: tplPeriod, body: tplBody })
+        .select().single()
+      if (data) setTemplates(prev => [...prev, data])
+    }
+    setTplSaving(false)
+    setTplSaved(true)
+    setTimeout(() => setTplSaved(false), 2000)
+  }
+
+  const subtabs = [
+    { key: 'matieres', label: 'Matières' },
+    { key: 'competences', label: 'Compétences' },
+    { key: 'personnes', label: 'Personnes ressource' },
+    { key: 'statuts', label: 'Statuts' },
+    { key: 'templates', label: 'Templates de commentaires' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {/* Sub-tabs */}
+      <div className="flex gap-1 border-b border-gray-200 pb-0">
+        {subtabs.map(st => (
+          <button key={st.key} onClick={() => setSubTab(st.key)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              subTab === st.key ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}>
+            {st.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── MATIÈRES ─────────────────────────────────────────────────────── */}
+      {subTab === 'matieres' && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">Les matières sont organisées par degré. Elles apparaissent dans le formulaire d'encodage selon la classe de l'élève.</p>
+          {DEGREES.map(deg => (
+            <div key={deg} className="card p-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">{DEGREE_LABELS[deg]}</h4>
+              <div className="space-y-1 mb-3">
+                {subjects.filter(s => s.degree === deg).map(s => (
+                  <div key={s.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 text-sm">
+                    <span>{s.name}</span>
+                    <button onClick={() => deleteSubject(s.id)} className="text-red-400 hover:text-red-600 text-xs">Supprimer</button>
+                  </div>
+                ))}
+              </div>
+              {newSubjectDegree === deg ? (
+                <div className="flex gap-2">
+                  <input value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addSubject()}
+                    placeholder="Nom de la matière…" className="input text-sm flex-1" autoFocus />
+                  <button onClick={addSubject} className="btn-primary text-sm px-3">Ajouter</button>
+                  <button onClick={() => { setNewSubjectDegree(''); setNewSubjectName('') }} className="btn-ghost text-sm px-3">✕</button>
+                </div>
+              ) : (
+                <button onClick={() => setNewSubjectDegree(deg)} className="text-xs text-primary hover:underline">+ Ajouter une matière</button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── COMPÉTENCES ──────────────────────────────────────────────────── */}
+      {subTab === 'competences' && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">Les compétences transversales sont organisées par degré. Elles peuvent différer selon le niveau.</p>
+          {DEGREES.map(deg => (
+            <div key={deg} className="card p-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">{DEGREE_LABELS[deg]}</h4>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {comps.filter(c => c.degree === deg).map(c => (
+                  <div key={c.id} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-700">
+                    <span>{c.name}</span>
+                    <button onClick={() => deleteComp(c.id)} className="text-red-400 hover:text-red-600 text-xs ml-1">✕</button>
+                  </div>
+                ))}
+              </div>
+              {newCompDegree === deg ? (
+                <div className="flex gap-2">
+                  <input value={newCompName} onChange={e => setNewCompName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addComp()}
+                    placeholder="Nom de la compétence…" className="input text-sm flex-1" autoFocus />
+                  <button onClick={addComp} className="btn-primary text-sm px-3">Ajouter</button>
+                  <button onClick={() => { setNewCompDegree(''); setNewCompName('') }} className="btn-ghost text-sm px-3">✕</button>
+                </div>
+              ) : (
+                <button onClick={() => setNewCompDegree(deg)} className="text-xs text-primary hover:underline">+ Ajouter une compétence</button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── PERSONNES RESSOURCE ──────────────────────────────────────────── */}
+      {subTab === 'personnes' && (
+        <div className="card p-4 space-y-3">
+          <p className="text-sm text-gray-500">Personnes ou services vers lesquels l'élève peut être orienté en cas de suivi nécessaire.</p>
+          <div className="space-y-1">
+            {persons.map(p => (
+              <div key={p.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 text-sm">
+                <span>{p.name}</span>
+                <button onClick={() => deletePerson(p.id)} className="text-red-400 hover:text-red-600 text-xs">Supprimer</button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 pt-2">
+            <input value={newPersonName} onChange={e => setNewPersonName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addPerson()}
+              placeholder="Nom de la personne ressource…" className="input text-sm flex-1" />
+            <button onClick={addPerson} className="btn-primary text-sm px-3">Ajouter</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STATUTS ──────────────────────────────────────────────────────── */}
+      {subTab === 'statuts' && (
+        <div className="card p-4 space-y-3">
+          <p className="text-sm text-gray-500">Statuts d'avancement de l'encodage pour chaque élève.</p>
+          <div className="space-y-1">
+            {statuses.map(s => (
+              <div key={s.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                  <span>{s.label}</span>
+                </div>
+                <button onClick={() => deleteStatus(s.id)} className="text-red-400 hover:text-red-600 text-xs">Supprimer</button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 pt-2">
+            <input value={newStatusLabel} onChange={e => setNewStatusLabel(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addStatus()}
+              placeholder="Libellé du statut…" className="input text-sm flex-1" />
+            <input type="color" value={newStatusColor} onChange={e => setNewStatusColor(e.target.value)}
+              className="w-10 h-10 rounded border border-gray-200 cursor-pointer p-0.5" />
+            <button onClick={addStatus} className="btn-primary text-sm px-3">Ajouter</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── TEMPLATES ────────────────────────────────────────────────────── */}
+      {subTab === 'templates' && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Un template par combinaison Cas × Degré × Période. Utilisez les variables ci-dessous entre doubles accolades.
+          </p>
+
+          {/* Sélecteurs */}
+          <div className="flex gap-3 flex-wrap">
+            <div>
+              <label className="label">Cas</label>
+              <select value={tplCas} onChange={e => setTplCas(Number(e.target.value))} className="input text-sm">
+                {[1,2,3].map(c => <option key={c} value={c}>{CAS_LABELS[c]}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Degré</label>
+              <select value={tplDegree} onChange={e => setTplDegree(e.target.value)} className="input text-sm">
+                {DEGREES.map(d => <option key={d} value={d}>{DEGREE_LABELS[d]}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Période</label>
+              <select value={tplPeriod} onChange={e => setTplPeriod(e.target.value)} className="input text-sm">
+                {PERIODS.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Éditeur */}
+          <div className="card p-4 space-y-3">
+            <label className="label">Corps du template</label>
+            <textarea value={tplBody} onChange={e => setTplBody(e.target.value)} rows={8}
+              className="input resize-y text-sm font-mono"
+              placeholder="Ex: {{prenom}} présente {{#if matiere_echec}}des échecs en {{matiere_echec}}.{{/if}}…" />
+            <button onClick={saveTpl} disabled={tplSaving}
+              className={`btn-primary text-sm ${tplSaved ? 'bg-green-500' : ''}`}>
+              {tplSaving ? 'Sauvegarde…' : tplSaved ? '✓ Sauvegardé' : 'Sauvegarder'}
+            </button>
+          </div>
+
+          {/* Variables disponibles */}
+          <div className="card p-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Variables disponibles</h4>
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                ['{{prenom}}',             'Prénom de l\'élève'],
+                ['{{il_elle}}',            'il / elle'],
+                ['{{Il_Elle}}',            'Il / Elle (début de phrase)'],
+                ['{{son_sa}}',             'son / sa'],
+                ['{{le_la}}',             'le / la'],
+                ['{{matiere_echec}}',      'Matières en échec (liste)'],
+                ['{{matiere_difficulte}}', 'Matières en difficulté (liste)'],
+                ['{{matiere_ne}}',         'Matières non évaluées (liste)'],
+                ['{{competences}}',        'Compétences problématiques (liste)'],
+                ['{{freins}}',             'Champ libre : freins'],
+                ['{{forces}}',             'Champ libre : forces'],
+                ['{{conseils}}',           'Recommandations du conseil'],
+                ['{{suivi_necessaire}}',   'Non vide si suivi nécessaire'],
+                ['{{#if clé}}…{{/if}}',    'Bloc affiché si clé non vide'],
+              ].map(([key, desc]) => (
+                <div key={key} className="flex items-start gap-2 text-xs py-1">
+                  <code className="bg-gray-100 px-1.5 py-0.5 rounded text-primary font-mono flex-shrink-0">{key}</code>
+                  <span className="text-gray-500">{desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

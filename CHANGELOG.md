@@ -1909,3 +1909,13 @@ git push origin main
 ## [v0.99] — Curseur drag & drop instantané
 - Remplacement du curseur `cursor: grab` natif (qui chargeait son ombre en différé sur Windows) par un curseur SVG embarqué (data URI) dans index.css — classe `.cursor-grab-custom` / `.cursor-grabbing-custom`
 - Appliqué sur les cards Trello (TrelloBoardView.jsx) et la grille SalleDProfs (SalleDProfs.jsx) et les vignettes élèves Compositions (Compositions.jsx)
+
+## [v1.00] — Module Conseils de guidance
+- Nouveau module "Conseils de guidance" accessible aux rôles admin, financier, mdp
+- Migration DB : 6 tables guidance_* (subjects, competencies, resource_persons, task_statuses, templates, encodings) + seed matières/compétences/statuts/personnes ressource/27 templates
+- ConseilsDeGuidance.jsx : encodage collaboratif en temps réel (Supabase Realtime), sélection période/classe/élève, formulaire matières (échec/difficulté/NE), compétences transversales, TA, champs libres, cas (1/2/3), suivi, personnes ressource, statut
+- Génération automatique du commentaire de bulletin depuis templates {{variable}} + blocs {{#if}}...{{/if}}
+- Prompt IA prêt à copier pour correction grammaticale
+- Admin.jsx : onglet "Conseils de guidance" — CRUD matières/compétences/personnes/statuts + éditeur de templates avec référence des variables
+- Sidebar + route /conseils-de-guidance
+- Installation : browser-image-compression (dépendance manquante Helpdesk)
