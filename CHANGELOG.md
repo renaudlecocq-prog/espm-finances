@@ -1378,3 +1378,9 @@ git push origin main
 - Les contrôles de sélection multiple (nb sélectionnées + NatureSelect + Appliquer + ✕) apparaissent
   maintenant directement dans la barre ENTRÉES/SORTIES/SOLDE/TRANSACTIONS/NON CLASSÉ,
   séparés par un diviseur vertical — plus de barre collante séparée au-dessus du tableau
+
+## [Develop] 2026-06-25 — FIX Économe : sélection se décochait immédiatement
+
+### Correction
+- `filtered` mémoïsé avec `useMemo` dans `CompteTab` — sans ça, chaque `setSelected` déclenchait un nouveau render → nouveau tableau `filtered` → l'`useEffect` dans `TransactionTable` réinitialisait la sélection en boucle
+- `useEffect` de reset supprimé de `TransactionTable` (le reset se fait maintenant uniquement après un bulk apply)

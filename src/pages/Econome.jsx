@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
@@ -367,9 +367,6 @@ function ImportModal({ compte, onClose, onImported }) {
 function TransactionTable({ transactions, natures, compte, onNatureChange, onDelete, selected, setSelected }) {
   const [sort, setSort] = useState({ col: 'date_operation', dir: 'desc' })
 
-  // Reset selection when transactions change (filter change)
-  useEffect(() => { setSelected(new Set()) }, [transactions])
-
   const allIds = transactions.map(t => t.id)
   const allSelected = allIds.length > 0 && allIds.every(id => selected.has(id))
   const someSelected = selected.size > 0 && !allSelected
@@ -667,14 +664,14 @@ function CompteTab({ compte, natures }) {
   const applyBulk = () => handleBulkNatureChange([...selected], bulkNature)
   const deselectAll = () => { setSelected(new Set()); setBulkNature(null) }
 
-  const filtered = transactions.filter(t => {
+  const filtered = useMemo(() => transactions.filter(t => {
     if (pendingOnly && t.statut_paiement !== 'pending') return false
     if (!search) return true
     const s = search.toLowerCase()
     return (t.libelle || '').toLowerCase().includes(s)
       || (t.communication || '').toLowerCase().includes(s)
       || (t.nature_libelle || '').toLowerCase().includes(s)
-  })
+  }), [transactions, pendingOnly, search])
 
   const anneOptions = []
   for (let y = 2024; y <= new Date().getFullYear() + 1; y++) anneOptions.push(y)
