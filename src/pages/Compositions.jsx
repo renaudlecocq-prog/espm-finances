@@ -1155,6 +1155,40 @@ export default function Compositions() {
       <PageHeader
         title={compositionName}
         subtitle="Composition de classes"
+        leftActions={
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button onClick={() => { doSave(true); subscribeToProject(null); setView('list') }}
+              className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors"
+              style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+              <ArrowLeft size={13} /> Mes projets
+            </button>
+            <span style={{ color: 'rgba(255,255,255,0.25)' }}>|</span>
+            <span className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              {filteredEleves.length} élèves · {groups.length} groupe{groups.length !== 1 ? 's' : ''}
+            </span>
+            {hasPendingChanges
+              ? <span className="flex items-center gap-1 text-xs" style={{ color: '#fbbf24' }}>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  Enregistrement…
+                </span>
+              : lastSaved && (
+                  <span className="flex items-center gap-1 text-xs" style={{ color: '#86efac' }}>
+                    <Check size={11} />
+                    {lastSavedBy
+                      ? <><span className="font-medium">{lastSavedBy}</span> — {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>
+                      : new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                    }
+                  </span>
+                )
+            }
+            {realtimeRef.current && (
+              <span className="flex items-center gap-1 text-xs font-medium" style={{ color: '#a5b4fc' }}>
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                En direct
+              </span>
+            )}
+          </div>
+        }
         actions={
           <div className="flex items-center gap-2">
             {selectedIds.size >= 2 && (
@@ -1174,6 +1208,20 @@ export default function Compositions() {
                 </button>
               </>
             )}
+            <button onClick={() => setCardMode(m => {
+              const next = m === 'compact' ? 'etendu' : 'compact'
+              try { localStorage.setItem('espm_cardMode', next) } catch {}
+              return next
+            })}
+              className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors"
+              style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+              {cardMode === 'compact' ? <Maximize2 size={13} /> : <Minimize2 size={13} />}
+              {cardMode === 'compact' ? 'Étendu' : 'Compact'}
+            </button>
+            <button onClick={addGroup}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors">
+              <Plus size={13} /> Nouveau groupe
+            </button>
             <button onClick={() => setShowConfigModal(true)} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
               style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
               <Settings size={13} /> Configuration
@@ -1181,52 +1229,6 @@ export default function Compositions() {
           </div>
         }
       />
-
-      {/* Barre info */}
-      <div className="px-4 py-2 bg-white border-b border-gray-100 flex items-center gap-3 shrink-0">
-        <button onClick={() => { doSave(true); subscribeToProject(null); setView('list') }}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 transition-colors">
-          <ArrowLeft size={13} /> Mes projets
-        </button>
-        <span className="text-gray-300">|</span>
-        <span className="text-xs text-gray-500">{filteredEleves.length} élèves · {groups.length} groupe{groups.length !== 1 ? 's' : ''}</span>
-        {hasPendingChanges
-          ? <span className="text-xs text-amber-500 flex items-center gap-1">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              Enregistrement…
-            </span>
-          : lastSaved && (
-              <span className="text-xs text-green-500 flex items-center gap-1">
-                <Check size={11} />
-                {lastSavedBy
-                  ? <><span className="font-medium">{lastSavedBy}</span> a sauvegardé à {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>
-                  : <>Sauvegardé {new Date(lastSaved).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>
-                }
-              </span>
-            )
-        }
-        {realtimeRef.current && (
-          <span className="flex items-center gap-1 text-xs text-indigo-500 font-medium">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-            En direct
-          </span>
-        )}
-        <div className="ml-auto flex items-center gap-2">
-          <button onClick={() => setCardMode(m => {
-            const next = m === 'compact' ? 'etendu' : 'compact'
-            try { localStorage.setItem('espm_cardMode', next) } catch {}
-            return next
-          })}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 border border-gray-200 px-2.5 py-1.5 rounded-lg hover:border-indigo-300 transition-colors">
-            {cardMode === 'compact' ? <Maximize2 size={13} /> : <Minimize2 size={13} />}
-            {cardMode === 'compact' ? 'Étendu' : 'Compact'}
-          </button>
-          <button onClick={addGroup}
-            className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 border border-indigo-200 hover:border-indigo-300 px-2.5 py-1.5 rounded-lg transition-colors">
-            <Plus size={13} /> Nouveau groupe
-          </button>
-        </div>
-      </div>
 
       {/* Board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">

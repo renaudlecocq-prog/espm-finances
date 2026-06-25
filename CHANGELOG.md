@@ -1855,3 +1855,9 @@ git push origin main
 - Utilisateurs triés par nom puis prénom (localeCompare fr)
 - FIX dernière connexion : trigger Supabase `on_auth_user_login` qui copie `auth.users.last_sign_in_at` → `profiles.last_connexion` à chaque login
 - Backfill appliqué sur les connexions existantes
+
+## [v0.95b] — Compositions : barre info déplacée dans le PageHeader
+
+- "← Mes projets", compteur élèves/groupes, statut sauvegarde, "En direct" → leftActions dans le header sombre
+- Compact/Étendu, "+ Nouveau groupe", Configuration → actions dans le header sombre
+- Suppression de la barre blanche séparée sous le header
