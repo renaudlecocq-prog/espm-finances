@@ -1744,3 +1744,6 @@ git push origin main
 - "Sauvegardé 14:47" → "Sauvegardé 14:47:32" (secondes incluses)
 - Quand une autre personne modifie le projet en temps réel : "Renaud a sauvegardé à 14:47:32"
 - Colonne updated_by ajoutée sur compositions_projets
+
+## v0.86c — Compositions : fix "Sauvegardé" absent à l'ouverture (2026-06-25)
+- lastSaved initialisé depuis la date DB dès l'ouverture d'une composition (ne nécessite plus de modification pour apparaître)

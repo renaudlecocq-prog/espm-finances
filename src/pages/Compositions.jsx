@@ -900,6 +900,8 @@ export default function Compositions() {
     currentProjectId.current = entry.id
     applyCompositionData(entry.data)
     subscribeToProject(entry.id)
+    setLastSaved(entry.date || null)
+    setLastSavedBy(null)
     setView('board')
   }
 
@@ -936,6 +938,7 @@ export default function Compositions() {
     setCompositionName(draftName); setFilters(draftFilters); setExcludedIds(draftExcludedIds); setIncludedIds(draftIncludedIds)
     setFields(draftFields); setCustomFields(draftCustomFields)
     setGroups([]); setAssignments({}); setLinkedSets([]); setSelectedIds(new Set())
+    setLastSaved(now); setLastSavedBy(null)
     setShowCreateModal(false)
     setView('board')
   }
