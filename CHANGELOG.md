@@ -1871,3 +1871,9 @@ git push origin main
 - 11 fonctions Netlify PDF refactorisées : lecture des settings depuis Supabase au lieu des env vars
 - Logo des PDFs : utilise `school_logo_url` si défini, sinon fallback sur `/logo-ecole.png`
 - Plus aucune valeur école n'est hardcodée dans le code
+
+## [v0.96a] — Fixes paramètres école
+
+- FIX Factures.jsx : import useSettings manquant (ReferenceError)
+- Bénéficiaire branché dans les PDF factures individuelles, batch et organismes tiers
+- Onglet Paramètres : carte d'impact collapsible ("Où ces variables sont-elles utilisées ?")

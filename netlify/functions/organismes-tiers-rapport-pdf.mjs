@@ -261,7 +261,7 @@ export const handler = async (event) => {
 
     <div class="sect orange">
       <h3>Informations de paiement</h3>
-      <p><strong>Bénéficiaire&nbsp;:</strong> Pouvoir Organisateur Pluriel</p>
+      <p><strong>Bénéficiaire&nbsp;:</strong> ${esc(ss.school_beneficiaire)}</p>
       <p><strong>IBAN&nbsp;:</strong> <span class="mono">${esc(ss.school_iban)}</span></p>
       <p><strong>Communication&nbsp;:</strong> <span class="comm">${esc(comm)}</span></p>
       <p><strong>Montant demandé&nbsp;:</strong> ${fmt(total)}</p>

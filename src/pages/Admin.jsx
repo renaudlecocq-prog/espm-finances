@@ -1845,8 +1845,8 @@ const SETTINGS_DEFS = [
 
 function ParametresEcole() {
   const { settings, reload } = useSettings()
-  const { supabase: sb } = { supabase } // utiliser l'import global
   const [values, setValues]   = useState({})
+  const [showMap, setShowMap] = useState(false)
   const [dirty, setDirty]     = useState({})
   const [saving, setSaving]   = useState(false)
   const [saved, setSaved]     = useState(false)
@@ -1916,6 +1916,68 @@ function ParametresEcole() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 pb-12">
+
+      {/* Carte d'impact */}
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <button onClick={() => setShowMap(v => !v)}
+          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors">
+          <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <span>🗺️</span> Où ces variables sont-elles utilisées ?
+          </span>
+          <span className="text-gray-400 text-xs">{showMap ? '▲ Réduire' : '▼ Afficher'}</span>
+        </button>
+        {showMap && (
+          <div className="px-6 pb-6 border-t border-gray-100">
+            <div className="flex gap-3 flex-wrap mt-4 mb-5">
+              {[['tag-site','bg-violet-100 text-violet-700','Site React'],['tag-pdf','bg-amber-100 text-amber-700','PDF généré'],['tag-hdr','bg-emerald-100 text-emerald-700','Header / Footer']].map(([,cls,lbl]) => (
+                <span key={lbl} className={`text-xs font-semibold px-2 py-0.5 rounded ${cls}`}>{lbl}</span>
+              ))}
+            </div>
+            {[
+              { cat:'🏫 Identité', rows:[
+                { key:"Nom de l'école",     tags:[['bg-emerald-100 text-emerald-700','Footer site'],['bg-emerald-100 text-emerald-700','Page connexion'],['bg-amber-100 text-amber-700','Tous les PDFs (header + footer)']] },
+                { key:'Adresse (rue · CP · ville)', tags:[['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Voyages PDF']] },
+                { key:'Numéro BCE / TVA',    tags:[['bg-amber-100 text-amber-700','Factures PDF (footer si renseigné)']] },
+                { key:'Logo',                tags:[['bg-emerald-100 text-emerald-700','Sidebar'],['bg-emerald-100 text-emerald-700','Header mobile'],['bg-amber-100 text-amber-700','Tous les PDFs (coin supérieur gauche)']] },
+              ]},
+              { cat:'📞 Contacts généraux', rows:[
+                { key:"E-mail général",      tags:[['bg-amber-100 text-amber-700','Activités PDF'],['bg-amber-100 text-amber-700','Articles PDF'],['bg-amber-100 text-amber-700','Voyages PDF']] },
+                { key:"Téléphone général",   tags:[['bg-amber-100 text-amber-700','Activités PDF'],['bg-amber-100 text-amber-700','Articles PDF'],['bg-amber-100 text-amber-700','Voyages PDF']] },
+              ]},
+              { cat:'💼 Économat', rows:[
+                { key:"Nom économe",         tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF']] },
+                { key:"E-mail économat",     tags:[['bg-amber-100 text-amber-700','Articles PDF'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Bilan économe PDF']] },
+                { key:"Téléphone économat",  tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Bilan économe PDF']] },
+              ]},
+              { cat:'🤝 Suivi social', rows:[
+                { key:"Nom assistant social",tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Échelonnements PDF'],['bg-amber-100 text-amber-700','Organismes tiers PDF']] },
+                { key:"E-mail AS",           tags:[['bg-amber-100 text-amber-700','Échelonnements PDF'],['bg-amber-100 text-amber-700','Organismes tiers PDF']] },
+                { key:"Téléphone AS",        tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Échelonnements PDF'],['bg-amber-100 text-amber-700','Organismes tiers PDF']] },
+              ]},
+              { cat:'🏦 Facturation', rows:[
+                { key:'IBAN',                tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Organismes tiers PDF']] },
+                { key:'Bénéficiaire',        tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Organismes tiers PDF']] },
+              ]},
+            ].map(section => (
+              <div key={section.cat} className="mb-4">
+                <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{section.cat}</div>
+                <div className="space-y-1.5">
+                  {section.rows.map(row => (
+                    <div key={row.key} className="flex items-start gap-2 text-xs">
+                      <span className="font-medium text-gray-700 w-44 shrink-0 pt-0.5">{row.key}</span>
+                      <div className="flex flex-wrap gap-1">
+                        {row.tags.map(([cls,lbl]) => (
+                          <span key={lbl} className={`px-2 py-0.5 rounded font-medium ${cls}`}>{lbl}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Logo */}
       <div className="bg-white rounded-xl border border-gray-100 p-6">

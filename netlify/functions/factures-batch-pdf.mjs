@@ -172,7 +172,7 @@ function genFacture(facture, lignes, ech, org, logoUrl) {
   <hr class="hr-thin">
   <div class="sect">
     <h3>Informations de paiement</h3>
-    <p><strong>Bénéficiaire&nbsp;:</strong> Pouvoir Organisateur Pluriel</p>
+    <p><strong>Bénéficiaire&nbsp;:</strong> ${esc(ss.school_beneficiaire)}</p>
     <p><strong>IBAN&nbsp;:</strong> <span class="mono">${esc(ss.school_iban)}</span></p>
     <p><strong>Communication&nbsp;:</strong> <span class="comm">${esc(comm)}</span></p>
     <p><strong>Date limite&nbsp;:</strong> ${fmtDate(dateLimite)} (30 jours à dater de la facturation)</p>

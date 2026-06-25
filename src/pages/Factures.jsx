@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import PageHeader from '../components/ui/PageHeader'
 import { useAuth } from '../context/AuthContext'
+import { useSettings } from '../contexts/SettingsContext'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
@@ -1238,7 +1239,7 @@ function DetailFacture({ factureId, onBack }) {
         <div className="card p-5 mt-4 border-l-4 border-orange-400">
           <h2 className="text-xs font-semibold text-orange-600 uppercase tracking-wide mb-3">Informations de paiement</h2>
           <div className="space-y-2 text-sm">
-            <p><span className="text-gray-400">Bénéficiaire :</span> <span className="font-semibold text-gray-800">Pouvoir Organisateur Pluriel</span></p>
+            <p><span className="text-gray-400">Bénéficiaire :</span> <span className="font-semibold text-gray-800">{s('school_beneficiaire')}</span></p>
             <p><span className="text-gray-400">IBAN :</span> <span className="font-mono font-bold tracking-wider text-gray-900">{s('school_iban')}</span></p>
             <p><span className="text-gray-400">Communication :</span> <span className="font-bold text-gray-900">{facture.eleve?.nom} {facture.eleve?.prenom} {facture.eleve?.classe}</span></p>
             <p><span className="text-gray-400">Date limite :</span> <span className="font-bold text-orange-600">{addDays(facture.date, 30)}</span> <span className="text-gray-400 text-xs">(30 jours à dater de la facturation)</span></p>
