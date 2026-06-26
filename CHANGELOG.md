@@ -1,4 +1,16 @@
 ## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
+
+## [v1.16.13] — EleveTableBlock UX
+
+- Dropdown classes/groupes : fermeture au clic en dehors (listener capture phase — fonctionne avec BlockNote stopPropagation)
+- Chevron toggle pour ouvrir/fermer le dropdown explicitement
+- Chips : max-height 24 + overflow-y-auto → le bloc ne s'élargit plus indéfiniment
+- En-tête du tableau : label tronqué (max 2 items + "+N autres") pour éviter les noms trop longs
+- Tri des colonnes A→Z / Z→A au clic sur les en-têtes (icônes asc/desc)
+- Colonnes libres : ajout de colonnes custom sans données (utile pour impression/annotations)
+- Erreurs console : isMounted ref + error handling sur fetchEleves
+- Double scrollbar corrigée : overflow:clip + overflow:hidden sur le dom container
+
 - Remplacement de createReactBlockSpec par createBlockSpec (@blocknote/core) + createRoot manuel
 - Corrige React error #130 causé par le chemin renderType='dom' de createReactBlockSpec en prod
 - Config compacte avec recherche+chips (classes et groupes), colonnes à cocher
