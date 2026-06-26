@@ -1,12 +1,15 @@
 import { Search, X } from 'lucide-react'
 
 /**
- * PageHeader — barre sticky, fond sidebar (#2D1B2E)
+ * PageHeader — 2 lignes fixes strictes, fond sidebar (#2D1B2E)
  *
- * Comportement responsive :
- *   - Ligne 1 : titre + séparateur + leftActions + tabs (ne wrappent jamais)
- *   - Ligne 2 (flex-wrap) : search + filters + info + actions
- *   Sur grands écrans tout tient sur une seule ligne.
+ * Ligne 1 (TOUJOURS 1 ligne, no-wrap) :
+ *   [titre + subtitle] ········ [actions]
+ *
+ * Ligne 2 (si contenu, TOUJOURS 1 ligne, scroll horizontal silencieux) :
+ *   [leftActions] [tabs] [search] [filters] [info]
+ *
+ * Jamais de 3e ligne.
  *
  * Props :
  *   title, subtitle
@@ -16,7 +19,7 @@ import { Search, X } from 'lucide-react'
  *   search, onSearch, searchPlaceholder
  *   filters       ReactNode
  *   info          string
- *   actions       ReactNode
+ *   actions       ReactNode  (ligne 1, tout à droite)
  */
 export default function PageHeader({
   title, subtitle,
@@ -40,57 +43,76 @@ export default function PageHeader({
     return { color: '#15803d' }
   }
 
-  const hasToolbar = leftActions || tabs || search !== undefined || filters || info || actions
+  const hasToolbar = leftActions || tabs || search !== undefined || filters || info
 
   return (
     <div
-      className="sticky top-0 z-40 px-4 py-2"
-      style={{ backgroundColor: '#2D1B2E', borderBottom: '1px solid rgba(255,255,255,0.06)', minHeight: '50px' }}
+      className="sticky top-0 z-40"
+      style={{ backgroundColor: '#2D1B2E', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
     >
-      {/* Ligne principale : titre + toolbar (flex-wrap) */}
-      <div className="flex items-center gap-2 flex-wrap">
-
-        {/* Titre + sous-titre */}
-        <div className="shrink-0 mr-1">
-          <h1 className="text-sm font-bold text-white leading-tight">{title}</h1>
+      {/* ── Ligne 1 : titre + actions — 1 ligne stricte ── */}
+      <div
+        className="flex items-center gap-3 px-4"
+        style={{
+          flexWrap: 'nowrap',
+          minHeight: hasToolbar ? '42px' : '50px',
+          paddingTop: hasToolbar ? '10px' : '12px',
+          paddingBottom: hasToolbar ? '4px' : '12px',
+        }}
+      >
+        <div className="min-w-0 flex-1">
+          <h1 className="text-sm font-bold text-white leading-tight truncate">{title}</h1>
           {subtitle && (
-            <p className="text-xs leading-tight" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <p className="text-xs leading-tight truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
               {subtitle}
             </p>
           )}
         </div>
 
-        {/* Séparateur vertical */}
-        {hasToolbar && (
-          <div className="shrink-0 self-stretch w-px mx-0.5 my-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.10)' }} />
-        )}
-
-        {leftActions && <div className="shrink-0">{leftActions}</div>}
-
-        {tabs && (
-          <div className="flex items-center p-0.5 rounded-lg shrink-0"
-            style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
-            {tabs.map(t => (
-              <button key={t.key} onClick={() => onTabChange?.(t.key)}
-                className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all ${tabColor(t, activeTab === t.key)}`}>
-                {t.label}
-                {t.count !== undefined && (
-                  <span className="text-xs font-semibold tabular-nums" style={countColor(t, activeTab === t.key)}>
-                    {t.count}
-                  </span>
-                )}
-              </button>
-            ))}
+        {actions && (
+          <div className="flex items-center gap-2 shrink-0">
+            {actions}
           </div>
         )}
+      </div>
 
-        {/* Zone droite : search + filters + info + actions */}
-        {/* Sur grand écran : ml-auto pousse tout à droite sur la même ligne */}
-        {/* Sur petit écran : flex-wrap passe en ligne 2 naturellement */}
-        <div className="flex items-center gap-2 flex-wrap ml-auto">
+      {/* ── Ligne 2 : toolbar — 1 ligne, scroll horizontal si besoin ── */}
+      {hasToolbar && (
+        <div
+          className="flex items-center gap-2 px-4 pb-2.5"
+          style={{
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
+            overflowY: 'visible',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+
+          {leftActions && (
+            <div className="shrink-0 flex items-center">{leftActions}</div>
+          )}
+
+          {tabs && (
+            <div className="flex items-center p-0.5 rounded-lg shrink-0"
+              style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
+              {tabs.map(t => (
+                <button key={t.key} onClick={() => onTabChange?.(t.key)}
+                  className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap ${tabColor(t, activeTab === t.key)}`}>
+                  {t.label}
+                  {t.count !== undefined && (
+                    <span className="text-xs font-semibold tabular-nums" style={countColor(t, activeTab === t.key)}>
+                      {t.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
 
           {search !== undefined && (
-            <div className="relative" style={{ minWidth: '140px', maxWidth: '260px', width: '100%' }}>
+            <div className="relative shrink-0" style={{ width: '200px' }}>
               <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
                 style={{ color: 'rgba(255,255,255,0.40)' }} />
               <input
@@ -118,18 +140,12 @@ export default function PageHeader({
 
           {info && (
             <span className="text-xs whitespace-nowrap shrink-0"
-              style={{ color: 'rgba(255,255,255,0.45)' }}>
+              style={{ color: 'rgba(255,255,255,0.45)', marginLeft: 'auto', paddingRight: '4px' }}>
               {info}
             </span>
           )}
-
-          {actions && (
-            <div className="flex items-center gap-2 shrink-0">
-              {actions}
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   )
 }

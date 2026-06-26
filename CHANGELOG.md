@@ -1978,3 +1978,7 @@ git push origin main
 - Sidebar : auto-expand du groupe de l'item actif ; état mémorisé dans localStorage
 - Sidebar : mode icon-only inchangé (icônes à plat avec séparateurs de groupe)
 - PageHeader : zone droite (search + filters + info + actions) en div dédiée avec ml-auto → wrap propre sur ligne 2 sur écrans intermédiaires
+
+## [v1.13b] — PageHeader 2 lignes fixes
+- Ligne 1 : titre + actions (strict no-wrap)
+- Ligne 2 : leftActions + tabs + search + filtres + info (scroll horizontal silencieux, jamais de 3e ligne)
