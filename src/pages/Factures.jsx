@@ -626,7 +626,7 @@ function ListeBatches({ onNew, onSelect }) {
                     </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{fmtDate(b.date)}</td>
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-200 font-medium">{s.nbTotal}</td>
-                    <td className="px-4 py-3 font-semibold text-primary">{fmtEur(s.total)}</td>
+                    <td className="px-4 py-3 font-semibold text-primary dark:text-accent">{fmtEur(s.total)}</td>
                     <td className="px-4 py-3">
                       {(impayesParBatch[b.id] || 0) > 0
                         ? <span className="font-semibold text-red-600 dark:text-red-400 tabular-nums">{fmtEur(impayesParBatch[b.id])}</span>
@@ -943,7 +943,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
                 onClick={() => onSelectFacture(f.id)}
                 className={`border-b border-gray-50 dark:border-gray-800 transition-colors cursor-pointer ${f.statut === 'ignore' ? 'opacity-40' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                 <td className="px-4 py-3">
-                  <span className="font-mono text-xs text-primary underline">
+                  <span className="font-mono text-xs text-primary dark:text-accent underline">
                     {f.numero || '—'}
                   </span>
                 </td>
@@ -954,7 +954,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
                 <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-100">{fmtEur(f.montant)}</td>
                 <td className="px-4 py-3">
                   <span className={`font-semibold tabular-nums
-                    ${Number(f.solde_apres) < 0 ? 'text-orange-500 dark:text-orange-400' : Number(f.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
+                    ${Number(f.solde_apres) < 0 ? 'text-orange-500 dark:text-orange-400' : Number(f.solde_apres) > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
                     {fmtEur(f.solde_apres)}
                   </span>
                 </td>

@@ -477,7 +477,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
                   ? <p className="text-sm text-primary">Upload en cours…</p>
                   : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400 dark:text-gray-500">
                       <Upload size={14} />
-                      <span className="text-sm">Glisser-déposer ou <span className="text-primary underline">parcourir</span></span>
+                      <span className="text-sm">Glisser-déposer ou <span className="text-primary dark:text-accent underline">parcourir</span></span>
                     </div>
                 }
               </div>
@@ -1174,7 +1174,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                 <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Articles à charge</h3>
-                    <span className="text-sm font-bold text-primary">{fmtEur(totalDemande)}</span>
+                    <span className="text-sm font-bold text-primary dark:text-accent">{fmtEur(totalDemande)}</span>
                   </div>
 
                   {/* Articles déjà ajoutés */}
@@ -1294,7 +1294,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                         ? <p className="text-sm text-primary">Upload en cours…</p>
                         : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400 dark:text-gray-500">
                             <Upload size={14} />
-                            <span className="text-sm">Glisser-déposer ou <span className="text-primary underline">parcourir</span></span>
+                            <span className="text-sm">Glisser-déposer ou <span className="text-primary dark:text-accent underline">parcourir</span></span>
                           </div>
                       }
                     </div>
@@ -1641,7 +1641,7 @@ function TabOrganismesTiers({ isAllowed, openEleveId, search, onSearch, filters,
                 <td className="px-3 py-2.5 text-gray-700 dark:text-gray-200">{r.eleve?.prenom}</td>
                 <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400 text-xs">{r.eleve?.classe}</td>
                 <td className="px-3 py-2.5">
-                  <span className="font-semibold text-primary">{(r.organisme || '').toUpperCase()}</span>
+                  <span className="font-semibold text-primary dark:text-accent">{(r.organisme || '').toUpperCase()}</span>
                 </td>
                 <td className="px-3 py-2.5 text-gray-700 dark:text-gray-200">
                   {r.montant_demande ? fmtEur(r.montant_demande) : '—'}

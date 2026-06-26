@@ -1,3 +1,12 @@
+## [v1.15.3] — Fix dark mode round 2 (onglets, tableaux, liens)
+- FicheEleve : onglets actifs (`text-primary`) invisibles → `dark:text-accent`
+- Articles : colonne NB ÉLÈVES `text-primary` → `dark:text-accent` ; lignes paires catalogue sans dark bg → `dark:bg-gray-900/60`
+- Factures : total batch + numéro facture `text-primary` → `dark:text-accent` ; solde positif `text-green-600` sans dark → `dark:text-green-400`
+- Économe Bilan : row SOLDE `text-green-600`/`text-red-500` sans dark → `dark:text-green-400`/`dark:text-red-400` ; solde `text-indigo-600` → `dark:text-indigo-400`
+- Suivi social : nom organisme + totalDemande `text-primary` → `dark:text-accent` ; "parcourir" upload → `dark:text-accent`
+- Admin : sous-onglet actif guidance `text-primary` → `dark:text-accent`
+- Activités : "parcourir" upload + radio PMR/TEC sans couleur → `text-gray-700 dark:text-gray-200`
+
 ## [v1.15.2] — Fix dark mode (visibilité texte + bulles + totaux)
 - Admin : lignes matières/personnes ressource/statuts sans couleur de texte → `text-gray-700 dark:text-gray-200`
 - Admin : badge `<code>` templates — `text-primary` invisible en dark → `dark:text-gray-200`

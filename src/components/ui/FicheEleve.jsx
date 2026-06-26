@@ -254,27 +254,27 @@ export default function FicheEleve({ eleveId, onClose }) {
             <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5 w-full">
               <button onClick={() => setActiveTab('info')}
                 className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
-                  activeTab === 'info' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+                  activeTab === 'info' ? 'bg-white dark:bg-gray-800 text-primary dark:text-accent shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                 Infos
               </button>
               {canSeeRestricted && (
                 <button onClick={() => setActiveTab('appels')}
                   className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
-                    activeTab === 'appels' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+                    activeTab === 'appels' ? 'bg-white dark:bg-gray-800 text-primary dark:text-accent shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                   Appels {appels.length > 0 && <span className="ml-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums">{appels.length}</span>}
                 </button>
               )}
               {canSeeRestricted && hasAS && (
                 <button onClick={() => setActiveTab('social')}
                   className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
-                    activeTab === 'social' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+                    activeTab === 'social' ? 'bg-white dark:bg-gray-800 text-primary dark:text-accent shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                   Social
                 </button>
               )}
               {canSeeRestricted && (
                 <button onClick={() => setActiveTab('financier')}
                   className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
-                    activeTab === 'financier' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+                    activeTab === 'financier' ? 'bg-white dark:bg-gray-800 text-primary dark:text-accent shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                   Financier
                 </button>
               )}

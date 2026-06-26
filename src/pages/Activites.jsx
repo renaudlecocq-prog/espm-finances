@@ -448,7 +448,7 @@ function FileStage({ label, files, setFiles }) {
         <input ref={ref} type="file" accept="application/pdf" multiple className="hidden"
           onChange={e => { addFiles(Array.from(e.target.files)); e.target.value = '' }} />
         {files.length === 0
-          ? <p className="text-xs text-gray-400 dark:text-gray-500">Glisser-déposer ou <span className="text-primary underline">parcourir</span></p>
+          ? <p className="text-xs text-gray-400 dark:text-gray-500">Glisser-déposer ou <span className="text-primary dark:text-accent underline">parcourir</span></p>
           : <div className="flex flex-wrap gap-1.5 justify-center" onClick={e => e.stopPropagation()}>
               {files.map(f => (
                 <span key={f.name} className="flex items-center gap-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full px-2.5 py-1">
@@ -1493,7 +1493,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                           {['oui', 'non'].map(v => (
                             <label key={v} className="flex items-center gap-1.5 cursor-pointer select-none">
                               <input type="radio" name="pmr" checked={form.pmr === v} onChange={() => f('pmr', v)} />
-                              <span className="text-sm capitalize">{v}</span>
+                              <span className="text-sm capitalize text-gray-700 dark:text-gray-200">{v}</span>
                             </label>
                           ))}
                         </div>
@@ -1988,7 +1988,7 @@ function DocsModal({ row, categorie, onClose, onDocsChanged }) {
           >
             {uploading
               ? <p className="text-sm text-primary">Upload en cours…</p>
-              : <p className="text-sm text-gray-400 dark:text-gray-500">Glisser-déposer ou <span className="text-primary underline">parcourir</span></p>
+              : <p className="text-sm text-gray-400 dark:text-gray-500">Glisser-déposer ou <span className="text-primary dark:text-accent underline">parcourir</span></p>
             }
           </div>
           {docs.length === 0 && <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">Aucun document</p>}

@@ -519,7 +519,7 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{r.article?.categorie || '—'}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[200px] truncate" title={getAttributionLabel(r)}>{getAttributionLabel(r)}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className="font-semibold text-primary">{r.nb_eleves ?? '—'}</span>
+                      <span className="font-semibold text-primary dark:text-accent">{r.nb_eleves ?? '—'}</span>
                     </td>
                     <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{r.quantite || 1}</td>
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-200">{fmt(prix)}</td>
@@ -642,7 +642,7 @@ function CatalogueTab({ isFinancier, search, onSearch, formOpen, onFormClose }) 
                     </td>
                   </tr>
                   {items.map((a, idx) => (
-                    <tr key={a.id} className={`border-b border-gray-200 dark:border-gray-600 transition-colors hover:bg-primary/5 ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/60'}`}>
+                    <tr key={a.id} className={`border-b border-gray-200 dark:border-gray-600 transition-colors hover:bg-primary/5 ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/60 dark:bg-gray-900/60'}`}>
                       <td className="px-4 py-2.5 font-medium text-gray-800 dark:text-gray-100 truncate">{a.nom}</td>
                       <td className="px-4 py-2.5 text-gray-400 dark:text-gray-500 text-xs truncate">{a.description || '—'}</td>
                       <td className="px-4 py-2.5 text-gray-700 dark:text-gray-200 font-mono">{fmt(a.prix_unitaire)}</td>

@@ -2327,7 +2327,7 @@ function GuidanceAdmin() {
         {subtabs.map(st => (
           <button key={st.key} onClick={() => setSubTab(st.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              subTab === st.key ? 'border-primary text-primary' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              subTab === st.key ? 'border-primary text-primary dark:text-accent' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}>
             {st.label}
           </button>

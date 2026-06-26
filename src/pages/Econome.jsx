@@ -1482,10 +1482,10 @@ function VueCouverture({ data, moisActifs, annee }) {
             ? 'bg-indigo-50 border-indigo-100 dark:border-indigo-900'
             : 'bg-amber-50 dark:bg-amber-950 border-amber-100'
         }`}>
-          <p className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600 dark:text-amber-400'}`}>
+          <p className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${soldeAnnee >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400'}`}>
             {soldeAnnee >= 0 ? '✓ Avance' : '⚠ Découvert'}
           </p>
-          <p className={`text-xl font-bold ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600 dark:text-amber-400'}`}>
+          <p className={`text-xl font-bold ${soldeAnnee >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400'}`}>
             {soldeAnnee >= 0 ? '+' : ''}{fmtEur(soldeAnnee)}
           </p>
           <p className={`text-[11px] mt-1 ${soldeAnnee >= 0 ? 'text-indigo-400' : 'text-amber-500 dark:text-amber-400'}`}>
@@ -1573,7 +1573,7 @@ function VueCouverture({ data, moisActifs, annee }) {
             <tr className="border-t-4 border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900">
               <td className="sticky left-0 bg-gray-50 dark:bg-gray-900 px-4 py-3 z-10">
                 <div className="text-xs font-bold text-gray-800 dark:text-gray-100">SOLDE COUVERTURE {annee}</div>
-                <div className={`text-[10px] font-semibold mt-0.5 ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600 dark:text-amber-400'}`}>
+                <div className={`text-[10px] font-semibold mt-0.5 ${soldeAnnee >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400'}`}>
                   {soldeAnnee >= 0 ? '✓ Avance' : '⚠ Découvert'}
                 </div>
               </td>
@@ -1587,7 +1587,7 @@ function VueCouverture({ data, moisActifs, annee }) {
                 )
               })}
               <td className={`px-2 py-3 text-right text-sm font-extrabold border-l border-gray-200 dark:border-gray-600 tabular-nums
-                ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600 dark:text-amber-400'}`}>
+                ${soldeAnnee >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400'}`}>
                 {soldeAnnee >= 0 ? '+' : '−'}{fmtEur(Math.abs(soldeAnnee))}
               </td>
             </tr>
@@ -1708,7 +1708,7 @@ function VueGenerale({ data, moisActifs, annee }) {
             {moisActifs.map(({ m }) => {
               const s = soldeMois(m)
               return (
-                <td key={m} className={`px-2 py-3 text-right text-xs font-bold tabular-nums whitespace-nowrap ${s > 0 ? 'text-green-600' : s < 0 ? 'text-red-500' : 'text-gray-200 dark:text-gray-700'}`}>
+                <td key={m} className={`px-2 py-3 text-right text-xs font-bold tabular-nums whitespace-nowrap ${s > 0 ? 'text-green-600 dark:text-green-400' : s < 0 ? 'text-red-500 dark:text-red-400' : 'text-gray-200 dark:text-gray-700'}`}>
                   {s !== 0 ? <>{s > 0 ? '+' : '−'}{fmtEur(Math.abs(s))}</> : '—'}
                 </td>
               )
