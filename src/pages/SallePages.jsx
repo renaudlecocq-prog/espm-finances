@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { BlockNoteView } from '@blocknote/mantine'
 import { useCreateBlockNote, useEditorChange } from '@blocknote/react'
+import { fr } from '@blocknote/core/locales'
 import { MantineProvider } from '@mantine/core'
 import '@mantine/core/styles.css'
 import '@blocknote/core/fonts/inter.css'
@@ -117,6 +118,7 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
         return undefined
       }
     })(),
+    dictionary: fr,
   })
 
   const save = useCallback(async (blocks) => {

@@ -1,3 +1,6 @@
+## [v1.16.7] — BlockNote : locale française (placeholder + menu slash)
+- dictionary: fr de @blocknote/core/locales
+
 ## [v1.16.6] — BlockNote : MantineProvider local + @mantine/core v7 + styles CSS
 - Réintégration @blocknote/mantine avec MantineProvider uniquement autour de léditeur
 - @mantine/core v7 (pas v9) + import CSS obligatoire pour Mantine v7+
