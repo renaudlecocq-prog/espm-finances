@@ -347,4 +347,4 @@ export const EleveTableBlock = createReactBlockSpec(
   {
     render: EleveTableBlockComponent,
   }
-)
+)()

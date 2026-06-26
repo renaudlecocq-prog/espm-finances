@@ -1,3 +1,7 @@
+## [v1.16.10] — Fix EleveTableBlock : invoquer la factory createReactBlockSpec
+- createReactBlockSpec() retourne une fonction factory → appel () nécessaire pour obtenir le BlockSpec
+- Corrige "Cannot read properties of undefined (reading 'node')" au chargement de la salle des profs
+
 ## [v1.16.9] — Tableau d'élèves dans l'éditeur de pages
 - Nouveau bloc custom BlockNote : "Tableau d'élèves"
 - Mode config : sélection de classes et/ou groupes + choix des colonnes (Nom, Prénom, Sexe, Classe, Groupes)
