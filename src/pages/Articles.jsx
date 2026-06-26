@@ -95,7 +95,7 @@ function MultiSearchSelect({ options, value, onChange, placeholder, single = fal
         {selectedOptions.length === 0 && <span className="text-gray-400 dark:text-gray-500 text-sm">{placeholder}</span>}
         {single && selectedOptions.length > 0 && <span className="text-gray-700 dark:text-gray-200 text-sm">{getLbl(selectedOptions[0])}</span>}
         {!single && selectedOptions.map(o => (
-          <span key={getVal(o)} className="flex items-center gap-1 bg-primary/10 text-primary text-xs rounded-full px-2 py-0.5">
+          <span key={getVal(o)} className="flex items-center gap-1 bg-primary/10 dark:bg-accent/20 text-primary dark:text-accent text-xs rounded-full px-2 py-0.5">
             {getLbl(o)}
             <button type="button" onClick={e => { e.stopPropagation(); toggle(getVal(o)) }} className="hover:text-red-500">×</button>
           </span>
@@ -118,7 +118,7 @@ function MultiSearchSelect({ options, value, onChange, placeholder, single = fal
               const v = getVal(o); const l = getLbl(o); const sel = isSelected(v)
               return (
                 <button key={v} type="button"
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 ${sel ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-200'}`}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 ${sel ? 'text-primary dark:text-accent font-medium' : 'text-gray-700 dark:text-gray-200'}`}
                   onClick={() => toggle(v)}>
                   {single
                     ? <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${sel ? 'border-primary' : 'border-gray-300 dark:border-gray-500'}`}>

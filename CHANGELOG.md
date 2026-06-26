@@ -1,3 +1,7 @@
+## [v1.15.6] — Fix dark mode : chips multi-select illisibles
+- Articles.jsx : chips valeurs sélectionnées (classes/groupes/élèves) → dark:bg-accent/20 dark:text-accent
+- Articles.jsx : items sélectionnés dans dropdown → dark:text-accent
+
 ## [v1.15.5] — Fix dark mode round 4 (btn-secondary, boutons primaires, sync)
 - index.css : définir .btn-secondary avec dark mode (bg-gray-700 + text-gray-100)
 - Activités : responsable dans les cards invisible (text-primary/80 → dark:text-accent/80)
