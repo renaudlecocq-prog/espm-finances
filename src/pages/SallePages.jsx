@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { BlockNoteView } from '@blocknote/mantine'
-import { useCreateBlockNote } from '@blocknote/react'
+import { useCreateBlockNote, useEditorChange } from '@blocknote/react'
 import '@blocknote/core/fonts/inter.css'
 import '@blocknote/mantine/style.css'
 import { supabase } from '../lib/supabase'
@@ -99,8 +99,9 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
   const saveTimer = useRef(null)
   const [saveStatus, setSaveStatus] = useState('saved')
   const [renamingModal, setRenamingModal] = useState(false)
-  const isFirstLoad = useRef(true)
+  const isFirstChange = useRef(true)
 
+  // Initialiser l'éditeur avec le contenu existant
   const editor = useCreateBlockNote({
     initialContent: (() => {
       try {
@@ -123,17 +124,23 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
     setSaveStatus(error ? 'unsaved' : 'saved')
   }, [page.id, user.id])
 
-  useEffect(() => {
-    if (!editor) return
-    const unsub = editor.onChange(() => {
-      if (isFirstLoad.current) { isFirstLoad.current = false; return }
-      setSaveStatus('unsaved')
-      if (saveTimer.current) clearTimeout(saveTimer.current)
-      saveTimer.current = setTimeout(() => save(editor.document), 1500)
-    })
-    return () => { unsub?.(); if (saveTimer.current) clearTimeout(saveTimer.current) }
-  }, [editor, save])
+  // ← API correcte pour BlockNote 0.51+ : useEditorChange (hook)
+  useEditorChange(editor, () => {
+    if (isFirstChange.current) {
+      isFirstChange.current = false
+      return
+    }
+    setSaveStatus('unsaved')
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => save(editor.document), 1500)
+  })
 
+  // Nettoyage du timer au démontage
+  useEffect(() => {
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
+  }, [])
+
+  // Realtime : recharger si quelqu'un d'autre a modifié
   useEffect(() => {
     const channel = supabase
       .channel(`page-${page.id}`)
@@ -145,8 +152,9 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
         try {
           const blocks = typeof payload.new.content === 'string'
             ? JSON.parse(payload.new.content) : payload.new.content
-          if (Array.isArray(blocks) && blocks.length > 0)
+          if (Array.isArray(blocks) && blocks.length > 0) {
             editor.replaceBlocks(editor.document, blocks)
+          }
         } catch {}
       })
       .subscribe()
