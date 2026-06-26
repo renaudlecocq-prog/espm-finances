@@ -1,23 +1,20 @@
 import { Search, X } from 'lucide-react'
 
 /**
- * PageHeader — lignes adaptatives
+ * PageHeader — ligne unique
  *
- * 1 ligne  : [titre + subtitle ···· actions] [toolbar]   quand tout rentre
- * 2 lignes : [titre + subtitle ···· actions]              quand le toolbar est trop large
- *            [toolbar ···················]
- *
- * Le toolbar scrolle horizontalement si nécessaire (jamais de 3e ligne).
+ * [Titre · subtitle] | [leftActions] [tabs] [search] [filters] [info] → → → [actions]
+ * └─── fixe ─────┘   └───────────── scrollable (centre) ──────────────┘   └─ fixe ──┘
  *
  * Props :
  *   title, subtitle
- *   leftActions   ReactNode
+ *   leftActions   ReactNode  — ex: bouton Retour, sélecteur de vue
  *   tabs          [{ key, label, count?, color? }]
  *   activeTab, onTabChange
  *   search, onSearch, searchPlaceholder
  *   filters       ReactNode
  *   info          string
- *   actions       ReactNode  (toujours avec le titre, à droite)
+ *   actions       ReactNode  — actions primaires de la page (toujours à droite)
  */
 export default function PageHeader({
   title, subtitle,
@@ -41,69 +38,58 @@ export default function PageHeader({
     return { color: '#15803d' }
   }
 
-  const hasToolbar = leftActions || tabs || search !== undefined || filters || info
+  const hasCenter = leftActions || tabs || search !== undefined || filters || info
 
   return (
     <div
       className="sticky top-0 z-40"
-      style={{ backgroundColor: '#2D1B2E', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      style={{
+        backgroundColor: '#2D1B2E',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+      }}
     >
       <div
-        className="px-4"
         style={{
           display: 'flex',
-          flexWrap: 'wrap',
           alignItems: 'center',
-          columnGap: '12px',
-          rowGap: '6px',
-          paddingTop: '8px',
-          paddingBottom: '8px',
+          gap: '0px',
+          height: '48px',
+          paddingLeft: '16px',
+          paddingRight: '12px',
+          overflow: 'hidden',
         }}
       >
-        {/* ── Titre + actions — toujours sur la même ligne ── */}
-        <div
-          style={{
-            flex: '1 1 200px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            minWidth: 0,
-          }}
-        >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 className="text-sm font-bold text-white leading-tight truncate">{title}</h1>
-            {subtitle && (
-              <p className="text-xs leading-tight truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                {subtitle}
-              </p>
-            )}
-          </div>
-
-          {actions && (
-            <div className="flex items-center gap-2 shrink-0">
-              {actions}
-            </div>
+        {/* ── Titre (fixe à gauche) ── */}
+        <div style={{ flexShrink: 0, minWidth: 0, maxWidth: '220px', marginRight: '12px' }}>
+          <h1 className="text-sm font-bold text-white leading-tight truncate">{title}</h1>
+          {subtitle && (
+            <p className="text-[10px] leading-tight truncate" style={{ color: 'rgba(255,255,255,0.42)' }}>
+              {subtitle}
+            </p>
           )}
         </div>
 
-        {/* ── Toolbar — se place à droite si ça rentre, sinon descend en 2e ligne ── */}
-        {hasToolbar && (
+        {/* ── Séparateur titre / centre ── */}
+        {hasCenter && (
+          <div style={{ width: '1px', height: '20px', backgroundColor: 'rgba(255,255,255,0.14)', flexShrink: 0, marginRight: '12px' }} />
+        )}
+
+        {/* ── Zone centrale scrollable : leftActions + tabs + search + filters + info ── */}
+        {hasCenter && (
           <div
             style={{
+              flex: '1 1 0',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              flexShrink: 0,
-              maxWidth: '100%',
               overflowX: 'auto',
               overflowY: 'visible',
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
+              minWidth: 0,
             }}
           >
-            {leftActions && (
-              <div style={{ flexShrink: 0 }}>{leftActions}</div>
-            )}
+            {leftActions && <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>{leftActions}</div>}
 
             {tabs && (
               <div
@@ -134,13 +120,11 @@ export default function PageHeader({
             )}
 
             {search !== undefined && (
-              <div style={{ position: 'relative', width: '200px', flexShrink: 0 }}>
+              <div style={{ position: 'relative', width: '190px', flexShrink: 0 }}>
                 <Search
                   size={12}
                   style={{
-                    position: 'absolute',
-                    left: '10px',
-                    top: '50%',
+                    position: 'absolute', left: '9px', top: '50%',
                     transform: 'translateY(-50%)',
                     color: 'rgba(255,255,255,0.40)',
                     pointerEvents: 'none',
@@ -153,14 +137,12 @@ export default function PageHeader({
                   onChange={e => onSearch?.(e.target.value)}
                   style={{
                     width: '100%',
-                    paddingLeft: '28px',
-                    paddingRight: '24px',
-                    paddingTop: '6px',
-                    paddingBottom: '6px',
+                    paddingLeft: '27px', paddingRight: '24px',
+                    paddingTop: '5px', paddingBottom: '5px',
                     fontSize: '12px',
                     borderRadius: '8px',
-                    backgroundColor: 'rgba(255,255,255,0.10)',
-                    border: '1px solid rgba(255,255,255,0.12)',
+                    backgroundColor: 'rgba(255,255,255,0.09)',
+                    border: '1px solid rgba(255,255,255,0.11)',
                     color: 'white',
                     outline: 'none',
                   }}
@@ -168,7 +150,7 @@ export default function PageHeader({
                 {search && (
                   <button
                     onClick={() => onSearch?.('')}
-                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.6 }}
+                    style={{ position: 'absolute', right: '7px', top: '50%', transform: 'translateY(-50%)', opacity: 0.55 }}
                   >
                     <X size={11} style={{ color: 'white' }} />
                   </button>
@@ -181,9 +163,9 @@ export default function PageHeader({
             {info && (
               <span
                 style={{
-                  fontSize: '12px',
+                  fontSize: '11px',
                   whiteSpace: 'nowrap',
-                  color: 'rgba(255,255,255,0.45)',
+                  color: 'rgba(255,255,255,0.40)',
                   flexShrink: 0,
                 }}
               >
@@ -191,6 +173,23 @@ export default function PageHeader({
               </span>
             )}
           </div>
+        )}
+
+        {/* ── Actions (fixe à droite) ── */}
+        {actions && (
+          <>
+            {hasCenter && (
+              <div style={{ width: '1px', height: '20px', backgroundColor: 'rgba(255,255,255,0.14)', flexShrink: 0, marginLeft: '12px' }} />
+            )}
+            <div
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                flexShrink: 0, marginLeft: hasCenter ? '10px' : 'auto',
+              }}
+            >
+              {actions}
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -1,3 +1,8 @@
+## [v1.13.4] — PageHeader : layout repensé, ligne unique
+- Gauche : Titre + (séparateur) + zone scrollable → onglets, leftActions, recherche, filtres, info
+- Droite : actions spécifiques de la page (toujours fixe)
+- Hauteur fixe 48px, jamais de 2e ligne — si la zone centrale déborde, elle scrolle silencieusement
+
 ## [v1.13.3] — Compositions : réordonner les groupes par glisser-déposer
 - Ajout d'une poignée de déplacement (icône grip) dans l'en-tête de chaque groupe
 - Glisser un groupe horizontalement pour changer son ordre dans le board
