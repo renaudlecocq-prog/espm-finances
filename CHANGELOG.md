@@ -1,3 +1,6 @@
+## [v1.15.9] — Fix dark mode : page Mentions légales illisible
+- MentionsLegales.jsx : text-primary → dark:text-accent, text-primary-lighter → dark:text-gray-300/400
+
 ## [v1.15.8] — Fix dark mode : MiniStat Home illisibles
 - Home.jsx : MiniStat color variants → dark:text-*-200 pour blue/red/green/orange/indigo/purple
 
