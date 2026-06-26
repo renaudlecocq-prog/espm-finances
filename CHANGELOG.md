@@ -1,5 +1,12 @@
 ## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
 
+## [v1.16.19] — Fix crash ligne vide + fix menu drag handle
+
+- Revert paddingLeft/paddingRight sur BlockNoteView (causait React error #130)
+- CSS global .bn-editor : padding-left 56px (espace pour drag handle)
+- z-index 50 sur .bn-side-menu et .mantine-Menu-dropdown (passe devant sidebar z-40)
+
+
 ## [v1.16.18] — Fix drag handle menu caché par la sidebar
 
 - paddingLeft 60px sur BlockNoteView : le drag handle et son menu ont de l'espace à gauche
