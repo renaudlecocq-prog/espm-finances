@@ -1,3 +1,6 @@
+## [v1.16.23] — Restaurer le menu latéral BlockNote (6 points)
+- Retrait de sideMenu={false} : le menu drag&drop et le "+" sont de retour
+- .bn-container background transparent : le fond de page s'affiche sous le menu latéral (plus de bande bleue)
 ## [v1.16.22] — Fix Backspace dans colonnes libres
 - EleveTableBlock : ajout d'un listener natif `keydown` sur le dom du bloc pour bloquer la propagation vers ProseMirror (Backspace/Delete fonctionnent maintenant dans les inputs)
 ## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
