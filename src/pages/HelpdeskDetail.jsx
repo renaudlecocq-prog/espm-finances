@@ -101,7 +101,7 @@ function MessageBubble({
           {!isOwn && `${msg.author_profile?.prenom} ${msg.author_profile?.nom} · `}{dateStr}
         </div>
         <div style={{
-          backgroundColor: isOwn ? '#2D1B2E' : '#F3F4F6', color: isOwn ? '#fff' : '#111',
+          backgroundColor: isOwn ? '#2D1B2E' : (dark ? '#374151' : '#F3F4F6'), color: isOwn ? '#fff' : (dark ? '#F9FAFB' : '#111'),
           borderRadius: isOwn ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
           padding: '10px 14px', fontSize: 13, whiteSpace: 'pre-wrap', lineHeight: 1.5,
         }}>
@@ -339,7 +339,7 @@ export default function HelpdeskDetail() {
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
         {/* Colonne gauche : fil de discussion */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, borderRight: '1px solid #E5E7EB' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, borderRight: `1px solid ${dark ? '#4B5563' : '#E5E7EB'}` }}>
           <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
             <FormDataSummary formFields={cat?.form_fields} formData={ticket.form_data} />
             {messages.length === 0 && (
@@ -364,14 +364,14 @@ export default function HelpdeskDetail() {
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                   <button type="button" onClick={() => setIsNote(false)}
                     style={{ padding: '5px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                      border: !isNote ? '2px solid #2D1B2E' : '2px solid #E5E7EB',
-                      backgroundColor: !isNote ? '#2D1B2E' : '#fff', color: !isNote ? '#fff' : '#374151' }}>
+                      border: !isNote ? '2px solid #2D1B2E' : `2px solid ${dark ? '#4B5563' : '#E5E7EB'}`,
+                      backgroundColor: !isNote ? '#2D1B2E' : (dark ? '#374151' : '#fff'), color: !isNote ? '#fff' : (dark ? '#D1D5DB' : '#374151') }}>
                     Répondre
                   </button>
                   <button type="button" onClick={() => setIsNote(true)}
                     style={{ padding: '5px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                      border: isNote ? '2px solid #D97706' : '2px solid #E5E7EB',
-                      backgroundColor: isNote ? '#FEF3C7' : '#fff', color: isNote ? '#92400E' : '#374151' }}>
+                      border: isNote ? '2px solid #D97706' : `2px solid ${dark ? '#4B5563' : '#E5E7EB'}`,
+                      backgroundColor: isNote ? '#FEF3C7' : (dark ? '#374151' : '#fff'), color: isNote ? '#92400E' : (dark ? '#D1D5DB' : '#374151') }}>
                     🔒 Note interne
                   </button>
                 </div>
@@ -381,13 +381,13 @@ export default function HelpdeskDetail() {
                   placeholder={isNote ? 'Note visible uniquement par les agents...' : 'Écrivez votre message...'}
                   rows={3}
                   style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 13,
-                    border: `1.5px solid ${isNote ? '#D97706' : '#E5E7EB'}`,
+                    border: `1.5px solid ${isNote ? '#D97706' : (dark ? '#4B5563' : '#E5E7EB')}`,
                     resize: 'vertical', outline: 'none', boxSizing: 'border-box',
-                    backgroundColor: isNote ? '#FFFBEB' : '#fff' }} />
+                    backgroundColor: isNote ? '#FFFBEB' : (dark ? '#1F2937' : '#fff'), color: dark ? '#F9FAFB' : '#111' }} />
                 {files.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {files.map((f, i) => (
-                      <span key={i} style={{ backgroundColor: '#F3F4F6', borderRadius: 6,
+                      <span key={i} style={{ backgroundColor: dark ? '#374151' : '#F3F4F6', borderRadius: 6,
                         padding: '4px 10px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                         📎 {f.name}
                         <button type="button" onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))}
@@ -443,7 +443,7 @@ export default function HelpdeskDetail() {
             <select value={ticket.statut} onChange={e => updateField('statut', e.target.value)}
               disabled={updating}
               style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 12,
-                border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`, backgroundColor: dark ? '#1F2937' : '#fff', cursor: 'pointer', marginBottom: 14 }}>
+                border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`, backgroundColor: dark ? '#1F2937' : '#fff', color: dark ? '#F9FAFB' : '#111', cursor: 'pointer', marginBottom: 14 }}>
               {Object.entries(STATUTS).map(([k, v]) => (
                 <option key={k} value={k}>{v.label}</option>
               ))}
@@ -454,7 +454,7 @@ export default function HelpdeskDetail() {
             <select value={ticket.priorite} onChange={e => updateField('priorite', e.target.value)}
               disabled={updating}
               style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 12,
-                border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`, backgroundColor: dark ? '#1F2937' : '#fff', cursor: 'pointer', marginBottom: 14 }}>
+                border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`, backgroundColor: dark ? '#1F2937' : '#fff', color: dark ? '#F9FAFB' : '#111', cursor: 'pointer', marginBottom: 14 }}>
               {Object.entries(PRIORITES).map(([k, v]) => (
                 <option key={k} value={k}>{v.icon} {v.label}</option>
               ))}
@@ -513,7 +513,7 @@ export default function HelpdeskDetail() {
                   <select defaultValue=""
                     onChange={e => { if (e.target.value) addParticipant(e.target.value) }}
                     style={{ width: '100%', padding: '6px 8px', borderRadius: 6, fontSize: 12,
-                      border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`, backgroundColor: dark ? '#1F2937' : '#fff', cursor: 'pointer' }}>
+                      border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`, backgroundColor: dark ? '#1F2937' : '#fff', color: dark ? '#F9FAFB' : '#111', cursor: 'pointer' }}>
                     <option value="">Choisir…</option>
                     {availableToAdd.map(p => (
                       <option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>

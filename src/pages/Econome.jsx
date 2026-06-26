@@ -1527,8 +1527,8 @@ function VueCouverture({ data, moisActifs, annee }) {
               <BilanSection key={cat} categorie={cat} lignes={lignes}
                 moisActifs={moisActifs} colorClass="text-red-500 dark:text-red-400" negative />
             ))}
-            <tr className="border-t-2 border-red-200 dark:border-red-800 bg-red-50/50">
-              <td className="sticky left-0 bg-red-50/50 px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 z-10">TOTAL DÉPENSES</td>
+            <tr className="border-t-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/50">
+              <td className="sticky left-0 bg-red-50/50 dark:bg-red-950/50 px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 z-10">TOTAL DÉPENSES</td>
               {moisActifs.map(({ m }) => (
                 <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-red-500 dark:text-red-400">
                   {totalDepMois(m) ? <>−{fmtEur(totalDepMois(m))}</> : <span className="text-gray-200 dark:text-gray-700">—</span>}
@@ -1557,8 +1557,8 @@ function VueCouverture({ data, moisActifs, annee }) {
                   moisActifs={moisActifs} colorClass="text-green-600 dark:text-green-400" />
               ))
             })()}
-            <tr className="border-t-2 border-green-200 dark:border-green-800 bg-green-50/50">
-              <td className="sticky left-0 bg-green-50/50 px-4 py-2.5 text-xs font-bold text-green-700 dark:text-green-300 z-10">TOTAL ENCAISSEMENTS</td>
+            <tr className="border-t-2 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/50">
+              <td className="sticky left-0 bg-green-50/50 dark:bg-green-950/50 px-4 py-2.5 text-xs font-bold text-green-700 dark:text-green-300 z-10">TOTAL ENCAISSEMENTS</td>
               {moisActifs.map(({ m }) => (
                 <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-green-600 dark:text-green-400">
                   {totalEncMois(m) ? fmtEur(totalEncMois(m)) : <span className="text-gray-200 dark:text-gray-700">—</span>}
@@ -1661,8 +1661,8 @@ function VueGenerale({ data, moisActifs, annee }) {
                 ))
               })()
           }
-          <tr className="border-t-2 border-green-200 dark:border-green-800 bg-green-50/50">
-            <td className="sticky left-0 bg-green-50/50 px-4 py-2.5 text-xs font-bold text-green-700 dark:text-green-300 z-10">TOTAL PRODUITS</td>
+          <tr className="border-t-2 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/50">
+            <td className="sticky left-0 bg-green-50/50 dark:bg-green-950/50 px-4 py-2.5 text-xs font-bold text-green-700 dark:text-green-300 z-10">TOTAL PRODUITS</td>
             {moisActifs.map(({ m }) => (
               <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-green-600 dark:text-green-400">
                 {totalProduitsMois(m) ? fmtEur(totalProduitsMois(m)) : <span className="text-gray-200 dark:text-gray-700">—</span>}
@@ -1687,8 +1687,8 @@ function VueGenerale({ data, moisActifs, annee }) {
                 ))
               })()
           }
-          <tr className="border-t-2 border-red-200 dark:border-red-800 bg-red-50/50">
-            <td className="sticky left-0 bg-red-50/50 px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 z-10">TOTAL CHARGES</td>
+          <tr className="border-t-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/50">
+            <td className="sticky left-0 bg-red-50/50 dark:bg-red-950/50 px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 z-10">TOTAL CHARGES</td>
             {moisActifs.map(({ m }) => (
               <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-red-500 dark:text-red-400">
                 {totalChargesMois(m) ? <>−{fmtEur(totalChargesMois(m))}</> : <span className="text-gray-200 dark:text-gray-700">—</span>}

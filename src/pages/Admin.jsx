@@ -2343,7 +2343,7 @@ function GuidanceAdmin() {
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">{DEGREE_LABELS[deg]}</h4>
               <div className="space-y-1 mb-3">
                 {subjects.filter(s => s.degree === deg).map(s => (
-                  <div key={s.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
+                  <div key={s.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200">
                     <span>{s.name}</span>
                     <button onClick={() => deleteSubject(s.id)} className="text-red-400 dark:text-red-300 hover:text-red-600 text-xs">Supprimer</button>
                   </div>
@@ -2402,7 +2402,7 @@ function GuidanceAdmin() {
           <p className="text-sm text-gray-500 dark:text-gray-400">Personnes ou services vers lesquels l'élève peut être orienté en cas de suivi nécessaire.</p>
           <div className="space-y-1">
             {persons.map(p => (
-              <div key={p.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
+              <div key={p.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200">
                 <span>{p.name}</span>
                 <button onClick={() => deletePerson(p.id)} className="text-red-400 dark:text-red-300 hover:text-red-600 text-xs">Supprimer</button>
               </div>
@@ -2423,7 +2423,7 @@ function GuidanceAdmin() {
           <p className="text-sm text-gray-500 dark:text-gray-400">Statuts d'avancement de l'encodage pour chaque élève.</p>
           <div className="space-y-1">
             {statuses.map(s => (
-              <div key={s.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
+              <div key={s.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
                   <span>{s.label}</span>
@@ -2505,7 +2505,7 @@ function GuidanceAdmin() {
                 ['{{#if clé}}…{{/if}}',    'Bloc affiché si clé non vide'],
               ].map(([key, desc]) => (
                 <div key={key} className="flex items-start gap-2 text-xs py-1">
-                  <code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-primary font-mono flex-shrink-0">{key}</code>
+                  <code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-primary dark:text-gray-200 font-mono flex-shrink-0">{key}</code>
                   <span className="text-gray-500 dark:text-gray-400">{desc}</span>
                 </div>
               ))}

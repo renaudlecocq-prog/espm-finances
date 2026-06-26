@@ -1,3 +1,14 @@
+## [v1.15.2] — Fix dark mode (visibilité texte + bulles + totaux)
+- Admin : lignes matières/personnes ressource/statuts sans couleur de texte → `text-gray-700 dark:text-gray-200`
+- Admin : badge `<code>` templates — `text-primary` invisible en dark → `dark:text-gray-200`
+- Activités : tags multiselect — `text-primary` invisible en dark → `dark:text-accent`
+- HelpdeskDetail : fond blanc hardcodé sur boutons Répondre/Note, textarea et chip fichiers → ternaires dark
+- HelpdeskDetail : selects Statut/Priorité/Participant sans couleur de texte → `color: dark ? '#F9FAFB' : '#111'`
+- HelpdeskDetail : bulle message non-own (`#F3F4F6`) invisible en dark → `dark ? '#374151'`
+- Économe : lignes TOTAL DÉPENSES/ENCAISSEMENTS/PRODUITS/CHARGES — pas de variante dark → `dark:bg-red-950/50` / `dark:bg-green-950/50`
+- Suivi social : stat box retard/avance sans variante dark → `dark:bg-red-950` / `dark:bg-green-950`
+
+
 ## [v1.15.1] — Fix dark mode (inline styles)
 - Helpdesk : cards tickets, modal nouveau ticket, champs dynamiques — fond blanc corrigé en dark
 - HelpdeskDetail : panneau admin, dropdowns statut/priorité, barre ticket fermé — corrigés en dark

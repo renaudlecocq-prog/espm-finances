@@ -283,7 +283,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
                 {fmtEur(totalPaid)}
               </div>
             </div>
-            <div className={`rounded-xl p-3 text-center ${retard > 0.01 ? 'bg-red-50' : avance > 0.01 ? 'bg-green-50' : 'bg-gray-50 dark:bg-gray-900'}`}>
+            <div className={`rounded-xl p-3 text-center ${retard > 0.01 ? 'bg-red-50 dark:bg-red-950' : avance > 0.01 ? 'bg-green-50 dark:bg-green-950' : 'bg-gray-50 dark:bg-gray-900'}`}>
               <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">{retard > 0.01 ? 'Retard' : avance > 0.01 ? 'Avance' : 'Situation'}</div>
               <div className={`font-bold text-sm ${retard > 0.01 ? 'text-red-600' : 'text-green-600 dark:text-green-400'}`}>
                 {retard > 0.01 ? `−${fmtEur(retard)}` : avance > 0.01 ? `+${fmtEur(avance)}` : '✓ À jour'}
