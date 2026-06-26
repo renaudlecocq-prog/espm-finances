@@ -1,3 +1,11 @@
+## [v1.15.5] — Fix dark mode round 4 (btn-secondary, boutons primaires, sync)
+- index.css : définir .btn-secondary avec dark mode (bg-gray-700 + text-gray-100)
+- Activités : responsable dans les cards invisible (text-primary/80 → dark:text-accent/80)
+- FicheEleve : bouton Appel + icône téléphone + liens Gérer invisibles (text-primary → dark:text-accent)
+- Articles : mode attribution sélectionné invisible (text-primary → dark:text-accent)
+- AssistantSocial : boutons Générer rapport + Fiche élève + Montant demandé + Ajouter article (text-primary → dark:text-accent)
+- Admin Sync : chiffres élèves/personnel sans couleur dark (dark:text-gray-100)
+
 ## [v1.15.4] — Fix dark mode round 3 (selects, onglets, icônes)
 - Activités : "Voir justificatif" invisible en dark (text-primary → dark:text-accent)
 - Économe : selects année/mois/projet sans couleur de texte dark (dark:text-gray-100)

@@ -2435,7 +2435,7 @@ export default function Activites() {
                   {(responsableLabel || accompagnateurLabels.length > 0) && (
                     <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs">
                       {responsableLabel && (
-                        <span className="text-primary/80">👤 {responsableLabel}</span>
+                        <span className="text-primary/80 dark:text-accent/80">👤 {responsableLabel}</span>
                       )}
                       {accompagnateurLabels.length > 0 && (
                         <span className="text-teal-600 dark:text-teal-400">🤝 {accompagnateurLabels.join(' · ')}</span>

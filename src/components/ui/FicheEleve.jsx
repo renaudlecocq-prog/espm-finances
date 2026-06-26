@@ -372,7 +372,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                             onClick={() => logAppel(r.idx, r.nom || `Responsable ${r.idx}`)}
                             disabled={callingIdx === r.idx}
                             title="Enregistrer un appel"
-                            className="flex items-center gap-1 text-xs text-primary border border-primary/30 hover:bg-primary/5 rounded-full px-2.5 py-0.5 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1 text-xs text-primary dark:text-accent border border-primary/30 dark:border-accent/30 hover:bg-primary/5 dark:hover:bg-accent/5 rounded-full px-2.5 py-0.5 transition-colors disabled:opacity-50"
                           >
                             {callingIdx === r.idx ? <Loader2 size={11} className="animate-spin" /> : <Phone size={11} />}
                             Appel
@@ -393,7 +393,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                       <div key={a.id} className="bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2.5">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <Phone size={12} className="text-primary shrink-0" />
+                            <Phone size={12} className="text-primary dark:text-accent shrink-0" />
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
                               {a.responsable_nom || `Responsable ${a.responsable_index}`}
                             </span>
@@ -450,7 +450,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Échelonnements</span>
                         <button onClick={() => { onClose(); navigate(`/assistant-social?tab=echelonnements&eleve=${eleveId}`) }}
-                          className="flex items-center gap-1 text-xs text-primary hover:underline">
+                          className="flex items-center gap-1 text-xs text-primary dark:text-accent hover:underline">
                           <ExternalLink size={11} /> Gérer
                         </button>
                       </div>
@@ -471,7 +471,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Organismes tiers</span>
                         <button onClick={() => { onClose(); navigate(`/assistant-social?tab=organismes&eleve=${eleveId}`) }}
-                          className="flex items-center gap-1 text-xs text-primary hover:underline">
+                          className="flex items-center gap-1 text-xs text-primary dark:text-accent hover:underline">
                           <ExternalLink size={11} /> Gérer
                         </button>
                       </div>

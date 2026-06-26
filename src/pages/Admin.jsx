@@ -666,8 +666,8 @@ export default function Admin() {
                         ? <span className="text-green-500 dark:text-green-400 text-base font-bold">✓</span>
                         : <span className="text-red-500 dark:text-red-400 text-base font-bold">✗</span>}
                     </td>
-                    <td className="px-4 py-2 font-medium">{l.eleves_upserted ?? l.nb_eleves ?? 0}</td>
-                    <td className="px-4 py-2 font-medium">{l.personnel_upserted ?? l.nb_personnel ?? 0}</td>
+                    <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">{l.eleves_upserted ?? l.nb_eleves ?? 0}</td>
+                    <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">{l.personnel_upserted ?? l.nb_personnel ?? 0}</td>
                     <td className="px-4 py-2 text-gray-400 dark:text-gray-500 text-xs max-w-xs truncate">{l.details ?? l.message ?? '—'}</td>
                   </tr>
                 ))}

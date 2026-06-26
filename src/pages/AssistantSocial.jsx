@@ -244,7 +244,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
           <div className="flex items-center gap-2 shrink-0 ml-2">
             {onFicheEleve && (
               <button onClick={onFicheEleve}
-                className="text-xs text-primary border border-primary/30 hover:bg-primary/5 rounded-lg px-2.5 py-1 transition-colors">
+                className="text-xs text-primary dark:text-accent border border-primary/30 dark:border-accent/30 hover:bg-primary/5 dark:hover:bg-accent/5 rounded-lg px-2.5 py-1 transition-colors">
                 Fiche élève
               </button>
             )}
@@ -459,7 +459,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
               {/* Bouton générer PDF — 1/4 */}
               {onPdf && (
                 <button onClick={onPdf} title="Générer le rapport PDF"
-                  className="w-1/4 shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors p-3 text-primary">
+                  className="w-1/4 shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-primary/30 dark:border-accent/30 bg-primary/5 dark:bg-accent/5 hover:bg-primary/10 dark:hover:bg-accent/10 transition-colors p-3 text-primary dark:text-accent">
                   <FileText size={18} />
                   <span className="text-xs font-medium leading-tight text-center">Générer<br/>le rapport</span>
                 </button>
@@ -1061,13 +1061,13 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                 <span className="text-xs text-gray-400 dark:text-gray-500">{eleve.classe}</span>
                 <Badge val={form.statut} map={STATUT_OT} />
                 {totalDemande > 0 && (
-                  <span className="text-xs font-semibold text-primary">{fmtEur(totalDemande)} demandé</span>
+                  <span className="text-xs font-semibold text-primary dark:text-accent">{fmtEur(totalDemande)} demandé</span>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => setFicheId(eleve.id)}
-                className="text-xs text-primary border border-primary/30 hover:bg-primary/5 rounded-lg px-2.5 py-1 transition-colors">
+                className="text-xs text-primary dark:text-accent border border-primary/30 dark:border-accent/30 hover:bg-primary/5 dark:hover:bg-accent/5 rounded-lg px-2.5 py-1 transition-colors">
                 Fiche élève
               </button>
               <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1">
@@ -1236,7 +1236,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                       {/* Article personnalisé */}
                       {customForm === null
                         ? <button onClick={() => setCustomForm({ titre: '', montant: '' })}
-                            className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/70 transition-colors mt-1">
+                            className="flex items-center gap-1.5 text-xs text-primary dark:text-accent hover:text-primary/70 dark:hover:text-accent/70 transition-colors mt-1">
                             <Plus size={13} /> Ajouter un article personnalisé
                           </button>
                         : <div className="flex gap-2 mt-2 items-end">
@@ -1278,7 +1278,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                     onChange={e => { uploadFile(e.target.files[0]); e.target.value = '' }} />
                   <div className="flex gap-2 mb-3">
                     <button onClick={handlePdfRapport} title="Générer le rapport PDF"
-                      className="w-1/3 shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors p-3 text-primary">
+                      className="w-1/3 shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-primary/30 dark:border-accent/30 bg-primary/5 dark:bg-accent/5 hover:bg-primary/10 dark:hover:bg-accent/10 transition-colors p-3 text-primary dark:text-accent">
                       <FileText size={18} />
                       <span className="text-xs font-medium leading-tight text-center">Générer<br/>le rapport</span>
                     </button>

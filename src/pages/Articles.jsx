@@ -355,7 +355,7 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
                 <button key={v} type="button"
                   onClick={() => f('type_attribution', v)}
                   className={`flex-1 rounded-xl border-2 py-2.5 text-sm font-medium transition-colors
-                    ${form.type_attribution === v ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300'}`}>
+                    ${form.type_attribution === v ? 'border-primary bg-primary/5 text-primary dark:text-accent dark:border-accent dark:bg-accent/5' : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300'}`}>
                   {l}
                 </button>
               ))}
