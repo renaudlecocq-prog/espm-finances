@@ -4,7 +4,7 @@ import {
   DndContext, DragOverlay, closestCorners, PointerSensor, TouchSensor,
   useSensor, useSensors, useDroppable,
 } from '@dnd-kit/core'
-import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { SortableContext, useSortable, verticalListSortingStrategy, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -16,7 +16,7 @@ import {
   RefreshCw, Users, Link, Unlink, Check, FolderOpen, Settings,
   Maximize2, Minimize2, Search, ArrowLeft, Calendar, ChevronRight,
   FileDown, FileUp, Table2, PlusCircle, MinusCircle, CheckCircle2,
-  Scissors, GitFork,
+  Scissors, GitFork, GripHorizontal,
 } from 'lucide-react'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -252,8 +252,22 @@ function SortableEleveCard({ eleve, fields, customFields, onCFChange, selected, 
   )
 }
 
+// ── SortableGroupColumn ───────────────────────────────────────────────────────
+function SortableGroupColumn(props) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.group.id,
+    data: { type: 'column', groupId: props.group.id },
+  })
+  return (
+    <div ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 10 : undefined }}>
+      <GroupColumn {...props} dragHandleProps={{ ...attributes, ...listeners }} />
+    </div>
+  )
+}
+
 // ── GroupColumn ────────────────────────────────────────────────────────────────
-function GroupColumn({ group, eleves, fields, customFields, onCFChange, selectedIds, onSelect, linkedSets, separatedSets, assignments, onRename, onDelete, cardMode, isPool }) {
+function GroupColumn({ group, eleves, fields, customFields, onCFChange, selectedIds, onSelect, linkedSets, separatedSets, assignments, onRename, onDelete, cardMode, isPool, dragHandleProps }) {
   const { setNodeRef, isOver } = useDroppable({ id: group.id, data: { type: 'column', groupId: group.id } })
   const [editing, setEditing] = useState(false)
   const [name, setName]       = useState(group.name)
@@ -282,6 +296,11 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
       ${isPool ? 'border-gray-200 bg-gray-50/80' : isOver ? 'border-indigo-300 bg-indigo-50/40' : 'border-gray-100 bg-white'}`}
       style={{ width: colW, minHeight: 300 }}>
       <div className={`px-3 py-2 border-b flex items-center gap-2 ${isPool ? 'border-gray-200' : 'border-gray-100'}`}>
+        {dragHandleProps && (
+          <span {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 shrink-0 touch-none" title="Déplacer le groupe">
+            <GripHorizontal size={13} />
+          </span>
+        )}
         <div className="flex-1 min-w-0">
           {editing ? (
             <input ref={inputRef} value={name} onChange={e => setName(e.target.value)}
@@ -794,10 +813,19 @@ export default function Compositions() {
   }
 
   // ── DnD handlers ─────────────────────────────────────────────────────────
-  const handleDragStart = ({ active }) => { setActiveId(active.id); setDragging(filteredEleves.find(e => e.id === active.id)) }
+  const handleDragStart = ({ active }) => { setActiveId(active.id); if (active.data?.current?.type !== 'column') setDragging(filteredEleves.find(e => e.id === active.id)) }
   const handleDragEnd   = ({ active, over }) => {
     setActiveId(null); setDragging(null)
     if (!over) return
+    // Réordonner les colonnes
+    if (active.data?.current?.type === 'column') {
+      const oldIdx = groups.findIndex(g => g.id === active.id)
+      const newIdx = groups.findIndex(g => g.id === over.id)
+      if (oldIdx !== -1 && newIdx !== -1 && oldIdx !== newIdx)
+        setGroups(prev => arrayMove(prev, oldIdx, newIdx))
+      return
+    }
+    // Déplacer une carte
     const targetGroupId = over.data?.current?.groupId ?? over.id
     if (!targetGroupId) return
     let ids = [active.id]
@@ -1300,13 +1328,21 @@ export default function Compositions() {
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="flex gap-3 p-4 h-full items-start" style={{ minWidth: 'max-content' }}>
+            <SortableContext items={groups.map(g => g.id)} strategy={horizontalListSortingStrategy}>
             {allColumns.map(col => (
-              <GroupColumn key={col.id} group={col} eleves={getGroupEleves(col.id)}
-                fields={enabledFields} customFields={customFields} onCFChange={handleCFChange}
-                selectedIds={selectedIds} onSelect={toggleSelect} linkedSets={linkedSets}
-                separatedSets={separatedSets} assignments={assignments}
-                onRename={renameGroup} onDelete={deleteGroup} cardMode={cardMode} isPool={col.id === POOL_ID} />
+              col.id === POOL_ID
+                ? <GroupColumn key={col.id} group={col} eleves={getGroupEleves(col.id)}
+                    fields={enabledFields} customFields={customFields} onCFChange={handleCFChange}
+                    selectedIds={selectedIds} onSelect={toggleSelect} linkedSets={linkedSets}
+                    separatedSets={separatedSets} assignments={assignments}
+                    onRename={renameGroup} onDelete={deleteGroup} cardMode={cardMode} isPool />
+                : <SortableGroupColumn key={col.id} group={col} eleves={getGroupEleves(col.id)}
+                    fields={enabledFields} customFields={customFields} onCFChange={handleCFChange}
+                    selectedIds={selectedIds} onSelect={toggleSelect} linkedSets={linkedSets}
+                    separatedSets={separatedSets} assignments={assignments}
+                    onRename={renameGroup} onDelete={deleteGroup} cardMode={cardMode} isPool={false} />
             ))}
+            </SortableContext>
             <button onClick={addGroup}
               className="shrink-0 w-[170px] h-20 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-indigo-300 hover:text-indigo-400 transition-colors flex flex-col items-center justify-center gap-1">
               <Plus size={18} /><span className="text-xs font-medium">Nouveau groupe</span>

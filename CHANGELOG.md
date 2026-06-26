@@ -1,3 +1,8 @@
+## [v1.13.3] — Compositions : réordonner les groupes par glisser-déposer
+- Ajout d'une poignée de déplacement (icône grip) dans l'en-tête de chaque groupe
+- Glisser un groupe horizontalement pour changer son ordre dans le board
+- Le pool "Élèves à placer" reste toujours en première position (non déplaçable)
+
 
 ## [v1.13.2] — Compositions : contrainte Séparer
 - Nouveau bouton « Séparer » (orange, icône ciseaux) : marque 2+ élèves comme devant être dans des groupes différents
