@@ -18,8 +18,8 @@ export function AuthProvider({ children }) {
   const fetchPermissions = useCallback(async (userId, userRole) => {
     if (!userId || !userRole) return
 
-    // Admin = tout accordé sans requête DB (source de vérité absolue)
-    if (userRole === 'admin') {
+    // Admin / Super Admin = tout accordé sans requête DB (source de vérité absolue)
+    if (userRole === 'admin' || userRole === 'super_admin') {
       const adminPerms = {}
       FEATURE_KEYS.forEach(k => { adminPerms[k] = true })
       setPermissions(adminPerms)
@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
   // ── Charger les permissions du rôle aperçu ────────────────────────────────
   const fetchPreviewPermissions = useCallback(async (previewRole) => {
     if (!previewRole) { setPreviewPermissions({}); return }
-    if (previewRole === 'admin') {
+    if (previewRole === 'admin' || previewRole === 'super_admin') {
       const adminPerms = {}
       FEATURE_KEYS.forEach(k => { adminPerms[k] = true })
       setPreviewPermissions(adminPerms)
@@ -125,8 +125,8 @@ export function AuthProvider({ children }) {
   const effectiveRole = viewAsRole || role
 
   const can = useCallback((feature) => {
-    // Admin réel = tout (sauf si on simule un autre rôle)
-    if (role === 'admin' && !viewAsRole) return true
+    // Admin / Super Admin réel = tout (sauf si on simule un autre rôle)
+    if ((role === 'admin' || role === 'super_admin') && !viewAsRole) return true
     // En mode aperçu : utiliser les permissions chargées pour le rôle simulé
     if (viewAsRole) {
       return previewPermissions[feature] ?? false
@@ -135,15 +135,16 @@ export function AuthProvider({ children }) {
   }, [role, viewAsRole, permissions, previewPermissions])
 
   // ── Backward compat ───────────────────────────────────────────────────────
-  const isAdmin     = effectiveRole === 'admin'
-  const isFinancier = ['admin', 'financier'].includes(effectiveRole)
-  const isMdp       = ['admin', 'financier', 'mdp'].includes(effectiveRole)
+  const isSuperAdmin = effectiveRole === 'super_admin'
+  const isAdmin     = ['admin', 'super_admin'].includes(effectiveRole)
+  const isFinancier = ['admin', 'super_admin', 'financier'].includes(effectiveRole)
+  const isMdp       = ['admin', 'super_admin', 'financier', 'mdp'].includes(effectiveRole)
   const isMdpOnly   = effectiveRole === 'mdp'
 
   return (
     <AuthContext.Provider value={{
       user, profile, role, loading, permissions,
-      isAdmin, isFinancier, isMdp, isMdpOnly,
+      isSuperAdmin, isAdmin, isFinancier, isMdp, isMdpOnly,
       can,
       viewAsRole, setViewAsRole, effectiveRole,
       previewRole: viewAsRole, setPreviewRole: setViewAsRole,

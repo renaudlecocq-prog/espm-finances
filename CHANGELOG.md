@@ -1942,3 +1942,12 @@ git push origin main
 ## [v1.05] — Mentions légales : ajout section Développement (Renaud Lecocq + Francesc Altes)
 ## [v1.06] — Mentions légales : Francesc Altes aussi bêta testeur
 ## [v1.07] — Mentions légales : distinction PI SchoolPlus / PO Pluriel + section Développement mise à jour
+
+## [v1.08] — Rôle super_admin
+- Nouveau rôle au-dessus d'admin : super_admin (violet), réservé à SchoolPlus
+- Super admin peut nommer d'autres admins et gérer tous les rôles y compris super_admin
+- Un admin normal ne peut pas modifier/voir le rôle d'un super_admin (dropdown désactivé)
+- Un admin normal ne peut pas promouvoir quelqu'un en super_admin
+- AuthContext : isSuperAdmin exposé, can() et isAdmin couvrent super_admin
+- permissions.js : ROLE_META.super_admin + super_admin dans ROLES
+- Migration DB : contrainte profiles_role_check étendue, Renaud Lecocq promu super_admin

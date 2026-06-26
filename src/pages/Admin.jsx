@@ -38,7 +38,7 @@ const fmtDate = d => d ? new Date(d).toLocaleString('fr-BE', {
 }).replace(',','') : '—'
 
 export default function Admin() {
-  const { user, isAdmin, role: myRole, previewRole, setPreviewRole } = useAuth()
+  const { user, isAdmin, isSuperAdmin, role: myRole, previewRole, setPreviewRole } = useAuth()
   const { demoMode, toggleDemo } = useDemo()
   const [searchParams] = useSearchParams()
   const [tab, setTab]             = useState(searchParams.get('onglet') || 'utilisateurs')
@@ -150,14 +150,20 @@ export default function Admin() {
   }
 
   const updateRole = async (id, newRole) => {
-    // Protection : empêcher de se retirer son propre rôle admin
-    if (id === user?.id && myRole === 'admin' && newRole !== 'admin') {
-      const otherAdmins = users.filter(u => u.role === 'admin' && u.id !== id)
-      if (otherAdmins.length === 0) {
+    const targetUser = users.find(u => u.id === id)
+    // Protections super_admin
+    if (!isSuperAdmin) {
+      if (targetUser?.role === 'super_admin') return // un admin normal ne peut pas toucher un super_admin
+      if (newRole === 'super_admin') return // un admin normal ne peut pas promouvoir en super_admin
+    }
+    // Protection : empêcher de se retirer son propre rang sans successeur
+    if (id === user?.id && ['admin', 'super_admin'].includes(myRole) && !['admin', 'super_admin'].includes(newRole)) {
+      const otherPrivileged = users.filter(u => ['admin', 'super_admin'].includes(u.role) && u.id !== id)
+      if (otherPrivileged.length === 0) {
         setProtectModal({ type: 'blocked', newRole, targetId: id })
         return
       }
-      setProtectModal({ type: 'confirm', newRole, targetId: id, otherEmail: otherAdmins[0].email })
+      setProtectModal({ type: 'confirm', newRole, targetId: id, otherEmail: otherPrivileged[0].email })
       return
     }
     await supabase.from('profiles').update({ role: newRole }).eq('id', id)
@@ -323,10 +329,16 @@ export default function Admin() {
                         {u.last_connexion ? new Date(u.last_connexion).toLocaleString('fr-BE', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'}
                       </td>
                       <td className="px-4 py-2">
-                        <select className="input text-xs max-w-[130px] py-1"
-                          value={u.role || ''} onChange={e => updateRole(u.id, e.target.value)}>
-                          {ROLES.map(r => <option key={r} value={r}>{ROLE_META[r].label}</option>)}
-                        </select>
+                        {(!isSuperAdmin && u.role === 'super_admin') ? (
+                          <span className="text-xs text-gray-400 italic">Non modifiable</span>
+                        ) : (
+                          <select className="input text-xs max-w-[140px] py-1"
+                            value={u.role || ''} onChange={e => updateRole(u.id, e.target.value)}>
+                            {ROLES
+                              .filter(r => isSuperAdmin || r !== 'super_admin')
+                              .map(r => <option key={r} value={r}>{ROLE_META[r].label}</option>)}
+                          </select>
+                        )}
                       </td>
                     </tr>
                   )
@@ -411,7 +423,7 @@ export default function Admin() {
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
                     <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase" style={{minWidth:260}}>Fonctionnalité</th>
-                    {ROLES.map(r => (
+                    {ROLES.filter(r => r !== 'admin' && r !== 'super_admin').map(r => (
                       <th key={r} className="px-4 py-3 text-center" style={{minWidth:100}}>
                         <div className="flex flex-col items-center gap-1">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${ROLE_META[r].color}`}>{ROLE_META[r].label}</span>
@@ -435,7 +447,7 @@ export default function Admin() {
                             <div className="font-medium text-gray-700 text-sm">{feat.label}</div>
                             <div className="text-xs text-gray-400 mt-0.5">{feat.desc}</div>
                           </td>
-                          {ROLES.map(r => {
+                          {ROLES.filter(r => r !== 'admin' && r !== 'super_admin').map(r => {
                             const isLocked = r === 'admin'
                             const val = isLocked ? true : getRolePerm(r, feat.key)
                             const saving = permSaving === `${r}:${feat.key}`
@@ -699,7 +711,7 @@ export default function Admin() {
               <div>
                 <label className="label">Rôle</label>
                 <select className="input" value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
-                  {ROLES.filter(r => r !== 'admin').map(r => (
+                  {ROLES.filter(r => r !== 'admin' && r !== 'super_admin').map(r => (
                     <option key={r} value={r}>{ROLE_META[r].label}</option>
                   ))}
                 </select>
