@@ -5,6 +5,7 @@ import '@blocknote/core/fonts/inter.css'
 import '@blocknote/react/style.css'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 
 const PAGE_EMOJIS = ['📄','📝','📋','📌','💡','🎯','📊','🔧','📚','🗒️',
                      '🏫','📢','🌟','🎉','🔔','📅','🎨','💼','🗂️','📦']
@@ -96,6 +97,7 @@ function PageFormModal({ initial, onSave, onCancel }) {
 // ── Éditeur BlockNote ────────────────────────────────────────────────────────
 function PageEditor({ page, onBack, onTitleChange, canEdit }) {
   const { user } = useAuth()
+  const { dark } = useTheme()
   const saveTimer = useRef(null)
   const [saveStatus, setSaveStatus] = useState('saved')
   const [renamingModal, setRenamingModal] = useState(false)
@@ -193,8 +195,8 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
         <span className={`ml-auto text-xs ${statusColor} transition-colors`}>{statusLabel}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <BlockNoteView editor={editor} editable={canEdit} theme="light" style={{ minHeight: '100%' }} />
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
+        <BlockNoteView editor={editor} editable={canEdit} theme={dark ? 'dark' : 'light'} style={{ minHeight: '100%' }} />
       </div>
 
       {renamingModal && (

@@ -1,3 +1,7 @@
+## [v1.16.4] — Éditeur BlockNote : thème dark/light dynamique
+- BlockNoteView reçoit theme=dark ou light selon les préférences
+- Conteneur éditeur adapté au dark mode
+
 ## [v1.16.3] — Fix useEditorChange : arguments dans le bon ordre (callback, editor)
 - Correction du crash à l'ouverture de l'éditeur BlockNote
 
