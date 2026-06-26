@@ -11,6 +11,7 @@ import imageCompression from 'browser-image-compression'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
+import SallePages from './SallePages'
 
 const COLORS = [
   '#6366F1','#8B5CF6','#EC4899','#EF4444','#F97316',
@@ -976,6 +977,7 @@ export default function SalleDProfs() {
   const tabs = [
     {key:'shared',   label:'Salle des profs'},
     {key:'personal', label:'Mon casier'},
+    {key:'pages',    label:'Pages'},
   ]
 
   // Titre PageHeader
@@ -983,7 +985,7 @@ export default function SalleDProfs() {
     ? openBoard.name
     : currentFolder
     ? currentFolder.name
-    : tab==='shared' ? 'Salle des profs' : 'Mon casier'
+    : tab==='pages' ? 'Pages' : tab==='shared' ? 'Salle des profs' : 'Mon casier'
 
   const headerSubtitle = openBoard
     ? 'Tableau Kanban'
@@ -992,7 +994,7 @@ export default function SalleDProfs() {
         const total = subFolders.length + items.length
         return `${total} élément${total!==1?'s':''}`
       })()
-    : `${folders.length} dossier${folders.length!==1?'s':''}`
+    : tab==='pages' ? 'Éditeur collaboratif' : `${folders.length} dossier${folders.length!==1?'s':''}`
 
   return (
     <>
@@ -1069,7 +1071,12 @@ export default function SalleDProfs() {
         }
       />
 
-      <div className="p-6">
+      {/* ── Vue pages ── */}
+      {tab === 'pages' && (
+        <SallePages pageType="shared" />
+      )}
+
+      <div className={tab === 'pages' ? 'hidden' : 'p-6'}>
         {/* ── Vue tableau Trello ouvert ── */}
         {openBoard && (
           <TrelloBoardView board={openBoard} onBack={() => setOpenBoard(null)}

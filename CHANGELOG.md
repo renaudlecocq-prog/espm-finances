@@ -1,3 +1,12 @@
+## [v1.16.0] — Salle des Profs : éditeur de pages collaboratif (BlockNote)
+- Nouvel onglet "Pages" dans la Salle des Profs
+- Éditeur bloc-par-bloc à la Notion (menu / pour titres, listes, tableaux, code, équations, images…)
+- Auto-save Supabase toutes les 1,5 secondes + indicateur "Sauvegardé ✓"
+- Synchronisation temps réel : les modifications d'un utilisateur apparaissent pour tous les autres
+- Pages épinglables, renommables, supprimables avec confirmation
+- Migration Supabase : table salle_pages (type shared/personal, content JSONB, RLS)
+- Dépendances ajoutées : @blocknote/react, @blocknote/core, @blocknote/mantine, @mantine/core, @mantine/hooks
+
 ## [v1.15.9] — Fix dark mode : page Mentions légales illisible
 - MentionsLegales.jsx : text-primary → dark:text-accent, text-primary-lighter → dark:text-gray-300/400
 
