@@ -1,21 +1,23 @@
 import { Search, X } from 'lucide-react'
 
 /**
- * PageHeader — barre single-row sticky, fond sidebar (#2D1B2E)
- * Layout : [titre+subtitle] [leftActions] [tabs] [search flex-1] [filters] [info] [actions]
+ * PageHeader — lignes adaptatives
  *
- * Props:
+ * 1 ligne  : [titre + subtitle ···· actions] [toolbar]   quand tout rentre
+ * 2 lignes : [titre + subtitle ···· actions]              quand le toolbar est trop large
+ *            [toolbar ···················]
+ *
+ * Le toolbar scrolle horizontalement si nécessaire (jamais de 3e ligne).
+ *
+ * Props :
  *   title, subtitle
  *   leftActions   ReactNode
- *   tabs          [{ key, label, count?, color? }]  color: 'orange'|'red'
- *   activeTab     string
- *   onTabChange   fn
- *   search        string     — contrôlé (undefined = pas d'input)
- *   onSearch      fn
- *   searchPlaceholder string
+ *   tabs          [{ key, label, count?, color? }]
+ *   activeTab, onTabChange
+ *   search, onSearch, searchPlaceholder
  *   filters       ReactNode
  *   info          string
- *   actions       ReactNode
+ *   actions       ReactNode  (toujours avec le titre, à droite)
  */
 export default function PageHeader({
   title, subtitle,
@@ -39,88 +41,158 @@ export default function PageHeader({
     return { color: '#15803d' }
   }
 
-  return (
-    <div className="sticky top-0 z-40 flex items-center px-6 py-2 gap-2.5 flex-wrap"
-      style={{ backgroundColor: '#2D1B2E', borderBottom: '1px solid rgba(255,255,255,0.06)', minHeight: '50px' }}>
+  const hasToolbar = leftActions || tabs || search !== undefined || filters || info
 
-      {/* Titre + sous-titre empilés à gauche */}
-      <div className="shrink-0 mr-1">
-        <h1 className="text-sm font-bold text-white leading-tight">{title}</h1>
-        {subtitle && (
-          <p className="text-xs leading-tight" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            {subtitle}
-          </p>
+  return (
+    <div
+      className="sticky top-0 z-40"
+      style={{ backgroundColor: '#2D1B2E', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+    >
+      <div
+        className="px-4"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          columnGap: '12px',
+          rowGap: '6px',
+          paddingTop: '8px',
+          paddingBottom: '8px',
+        }}
+      >
+        {/* ── Titre + actions — toujours sur la même ligne ── */}
+        <div
+          style={{
+            flex: '1 1 200px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            minWidth: 0,
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 className="text-sm font-bold text-white leading-tight truncate">{title}</h1>
+            {subtitle && (
+              <p className="text-xs leading-tight truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+
+          {actions && (
+            <div className="flex items-center gap-2 shrink-0">
+              {actions}
+            </div>
+          )}
+        </div>
+
+        {/* ── Toolbar — se place à droite si ça rentre, sinon descend en 2e ligne ── */}
+        {hasToolbar && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              flexShrink: 0,
+              maxWidth: '100%',
+              overflowX: 'auto',
+              overflowY: 'visible',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+          >
+            {leftActions && (
+              <div style={{ flexShrink: 0 }}>{leftActions}</div>
+            )}
+
+            {tabs && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '2px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(255,255,255,0.10)',
+                  flexShrink: 0,
+                }}
+              >
+                {tabs.map(t => (
+                  <button
+                    key={t.key}
+                    onClick={() => onTabChange?.(t.key)}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap ${tabColor(t, activeTab === t.key)}`}
+                  >
+                    {t.label}
+                    {t.count !== undefined && (
+                      <span className="text-xs font-semibold tabular-nums" style={countColor(t, activeTab === t.key)}>
+                        {t.count}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {search !== undefined && (
+              <div style={{ position: 'relative', width: '200px', flexShrink: 0 }}>
+                <Search
+                  size={12}
+                  style={{
+                    position: 'absolute',
+                    left: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'rgba(255,255,255,0.40)',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder={searchPlaceholder || 'Rechercher…'}
+                  value={search}
+                  onChange={e => onSearch?.(e.target.value)}
+                  style={{
+                    width: '100%',
+                    paddingLeft: '28px',
+                    paddingRight: '24px',
+                    paddingTop: '6px',
+                    paddingBottom: '6px',
+                    fontSize: '12px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(255,255,255,0.10)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: 'white',
+                    outline: 'none',
+                  }}
+                />
+                {search && (
+                  <button
+                    onClick={() => onSearch?.('')}
+                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.6 }}
+                  >
+                    <X size={11} style={{ color: 'white' }} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {filters && <div style={{ flexShrink: 0 }}>{filters}</div>}
+
+            {info && (
+              <span
+                style={{
+                  fontSize: '12px',
+                  whiteSpace: 'nowrap',
+                  color: 'rgba(255,255,255,0.45)',
+                  flexShrink: 0,
+                }}
+              >
+                {info}
+              </span>
+            )}
+          </div>
         )}
       </div>
-
-      {/* Séparateur visuel si toolbar présente */}
-      {(leftActions || tabs || search !== undefined || filters || info || actions) && (
-        <div className="shrink-0 self-stretch w-px mx-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.10)' }} />
-      )}
-
-      {leftActions && <div className="shrink-0">{leftActions}</div>}
-
-      {tabs && (
-        <div className="flex items-center p-0.5 rounded-lg shrink-0"
-          style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
-          {tabs.map(t => (
-            <button key={t.key} onClick={() => onTabChange?.(t.key)}
-              className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all ${tabColor(t, activeTab === t.key)}`}>
-              {t.label}
-              {t.count !== undefined && (
-                <span className="text-xs font-semibold tabular-nums" style={countColor(t, activeTab === t.key)}>
-                  {t.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {search !== undefined && (
-        <div className="relative flex-1" style={{ minWidth: '110px', maxWidth: '280px' }}>
-          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: 'rgba(255,255,255,0.40)' }} />
-          <input
-            type="text"
-            placeholder={searchPlaceholder || 'Rechercher…'}
-            value={search}
-            onChange={e => onSearch?.(e.target.value)}
-            className="w-full pl-7 pr-6 py-1.5 text-xs rounded-lg focus:outline-none transition-colors"
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.10)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: 'white',
-            }}
-          />
-          {search && (
-            <button onClick={() => onSearch?.('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100 transition-opacity">
-              <X size={11} className="text-white" />
-            </button>
-          )}
-        </div>
-      )}
-
-      {filters && <div className="shrink-0">{filters}</div>}
-
-      {info && !actions && (
-        <span className="ml-auto text-xs whitespace-nowrap shrink-0"
-          style={{ color: 'rgba(255,255,255,0.45)' }}>
-          {info}
-        </span>
-      )}
-
-      {actions && (
-        <div className="ml-auto flex items-center gap-2 shrink-0">
-          {info && (
-            <span className="text-xs whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              {info}
-            </span>
-          )}
-          {actions}
-        </div>
-      )}
     </div>
   )
 }

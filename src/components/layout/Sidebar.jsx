@@ -84,6 +84,18 @@ const ICONS = {
     <polyline points="13 17 18 12 13 7" />
     <polyline points="6 17 11 12 6 7" />
   </>),
+  chevronDown: <polyline points="6 9 12 15 18 9" />,
+  chevronRight: <polyline points="9 18 15 12 9 6" />,
+  // Icônes de groupe
+  school: (<>
+    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+    <path d="M9 22V12h6v10"/>
+  </>),
+  wallet: (<>
+    <rect x="1" y="4" width="22" height="16" rx="2"/>
+    <path d="M1 10h22"/>
+    <circle cx="17" cy="15" r="1.5" fill="currentColor" stroke="none"/>
+  </>),
 }
 
 function SvgIcon({ name, size = 18 }) {
@@ -104,34 +116,52 @@ function SvgIcon({ name, size = 18 }) {
   )
 }
 
-// ── Icône Smartschool : S dans un carré orange ────────────────────────────────
 function SmartschoolIcon({ size = 20 }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ flexShrink: 0 }}
-    >
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none"
+      xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
       <rect width="20" height="20" rx="4" fill="#E86C00" />
-      <text
-        x="10"
-        y="14.5"
-        textAnchor="middle"
-        fill="white"
-        fontSize="13"
-        fontWeight="800"
-        fontFamily="Arial, sans-serif"
-      >S</text>
+      <text x="10" y="14.5" textAnchor="middle" fill="white" fontSize="13"
+        fontWeight="800" fontFamily="Arial, sans-serif">S</text>
     </svg>
   )
 }
 
+// ── Groupes de navigation ─────────────────────────────────────────────────────
+function buildGroups(can, isAdmin) {
+  return [
+    {
+      key: 'school',
+      label: 'Vie de l\'école',
+      icon: 'school',
+      items: [
+        { to: '/activites',            label: 'Activités',           icon: 'activites',    show: can('activites_full') || can('activites_own') },
+        { to: '/compositions',         label: 'Compositions',        icon: 'compositions', show: can('compositions') },
+        { to: '/conseils-de-guidance', label: 'Conseils de guidance',icon: 'guidance',     show: can('guidance') },
+        { to: '/groupes',              label: 'Élèves',              icon: 'groupes',      show: can('eleves') },
+        { to: '/helpdesk',             label: 'Helpdesk',            icon: 'helpdesk',     show: can('helpdesk') || can('helpdesk_admin') },
+        { to: '/salle-des-profs',      label: 'Salle des profs',     icon: 'salle',        show: can('salle_profs') },
+      ],
+    },
+    {
+      key: 'financier',
+      label: 'Financier',
+      icon: 'wallet',
+      items: [
+        { to: '/articles',         label: 'Articles',     icon: 'articles',  show: can('articles') },
+        { to: '/econome',          label: 'Économe',      icon: 'econome',   show: can('econome') || isAdmin },
+        { to: '/factures',         label: 'Factures',     icon: 'factures',  show: can('factures') },
+        { to: '/paiements',        label: 'Paiements',    icon: 'paiements', show: can('paiements') },
+        { to: '/eleves',           label: 'Soldes',       icon: 'soldes',    show: can('soldes') },
+        { to: '/assistant-social', label: 'Suivi social', icon: 'social',    show: can('suivi_social') },
+      ],
+    },
+  ]
+}
+
 // ── Composant principal ───────────────────────────────────────────────────────
 export default function Sidebar() {
-  const { profile, role, effectiveRole, isAdmin, isFinancier, isMdp, can } = useAuth()
+  const { profile, role, effectiveRole, isAdmin, can } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -140,39 +170,65 @@ export default function Sidebar() {
     catch { return false }
   })
 
+  const groups = buildGroups(can, isAdmin)
+
+  // Déterminer quels groupes ont un sous-item actif
+  const activeGroup = (groupKey) =>
+    groups.find(g => g.key === groupKey)?.items.some(i => isActive(i.to)) ?? false
+
+  const [openGroups, setOpenGroups] = useState(() => {
+    // Initialiser depuis localStorage
+    try {
+      const saved = JSON.parse(localStorage.getItem('espm-sidebar-groups') || '{}')
+      return saved
+    } catch { return {} }
+  })
+
+  // Auto-ouvrir le groupe de l'item actif
   useEffect(() => {
-    try { localStorage.setItem('espm-sidebar-collapsed', String(collapsed)) }
-    catch {}
+    const updated = {}
+    groups.forEach(g => {
+      const hasActive = g.items.some(i => isActiveItem(i.to))
+      if (hasActive) updated[g.key] = true
+    })
+    if (Object.keys(updated).length > 0) {
+      setOpenGroups(prev => ({ ...prev, ...updated }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('espm-sidebar-collapsed', String(collapsed))
+    } catch {}
   }, [collapsed])
 
-  const links = [
-    { to: '/',                 label: 'Accueil',         icon: 'home',         show: true },
-    { to: '/activites',        label: 'Activités',       icon: 'activites',    show: can('activites_full') || can('activites_own') },
-    { to: '/articles',         label: 'Articles',        icon: 'articles',     show: can('articles') },
-    { to: '/compositions',     label: 'Compositions',    icon: 'compositions', show: can('compositions') },
-    { to: '/conseils-de-guidance', label: 'Conseils de guidance', icon: 'guidance', show: can('guidance') },
-    { to: '/econome',          label: 'Économe',         icon: 'econome',      show: can('econome') || isAdmin },
-    { to: '/groupes',          label: 'Élèves',          icon: 'groupes',      show: can('eleves') },
-    { to: '/factures',         label: 'Factures',        icon: 'factures',     show: can('factures') },
-    { to: '/helpdesk',         label: 'Helpdesk',        icon: 'helpdesk',     show: can('helpdesk') || can('helpdesk_admin') },
-    { to: '/paiements',        label: 'Paiements',       icon: 'paiements',    show: can('paiements') },
-    { to: '/salle-des-profs',  label: 'Salle des profs', icon: 'salle',        show: can('salle_profs') },
-    { to: '/eleves',           label: 'Soldes',          icon: 'soldes',       show: can('soldes') },
-    { to: '/assistant-social', label: 'Suivi social',    icon: 'social',       show: can('suivi_social') },
-  ]
+  useEffect(() => {
+    try {
+      localStorage.setItem('espm-sidebar-groups', JSON.stringify(openGroups))
+    } catch {}
+  }, [openGroups])
 
   const { s } = useSettings()
   const logout = async () => { await supabase.auth.signOut(); navigate('/login') }
 
   const roleLabel = {
+    super_admin: 'Super Admin',
     admin: 'Admin',
     direction: 'Direction',
     mdp: 'MdP',
     responsable: 'Responsable',
   }
 
-  const isActive = (to) =>
+  const isActiveItem = (to) =>
     location.pathname === to || (to !== '/' && location.pathname.startsWith(to))
+
+  // Pour les liens directs (Accueil)
+  const isActive = isActiveItem
+
+  const toggleGroup = (key) => {
+    setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }))
+  }
 
   const W = collapsed ? 64 : 224
 
@@ -192,11 +248,7 @@ export default function Sidebar() {
         style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
       >
         <Link to="/" className="flex items-center gap-2 flex-1 min-w-0">
-          <img
-            src="/logo-ecole.svg"
-            alt="ESPM"
-            style={{ height: 28, width: 28, flexShrink: 0 }}
-          />
+          <img src="/logo-ecole.svg" alt="ESPM" style={{ height: 28, width: 28, flexShrink: 0 }} />
           {!collapsed && (
             <span className="text-white font-bold text-base tracking-wide whitespace-nowrap">
               ESPM<span style={{ color: '#E86C00' }}>+</span>
@@ -213,32 +265,104 @@ export default function Sidebar() {
       </div>
 
       {/* ── Navigation ───────────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-        {links.filter(l => l.show).map(l => {
-          const active = isActive(l.to)
-          return (
-            <Link
-              key={l.to}
-              to={l.to}
-              title={collapsed ? l.label : undefined}
-              className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-colors ${
-                active
-                  ? 'bg-white/20 text-white'
-                  : 'text-white/65 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <SvgIcon name={l.icon} />
-              {!collapsed && (
-                <span className="text-sm font-medium whitespace-nowrap">{l.label}</span>
-              )}
-            </Link>
-          )
-        })}
+      <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
 
-        {/* Séparateur */}
+        {/* Accueil — toujours visible */}
+        <Link
+          to="/"
+          title={collapsed ? 'Accueil' : undefined}
+          className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-colors ${
+            isActive('/') && location.pathname === '/'
+              ? 'bg-white/20 text-white'
+              : 'text-white/65 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <SvgIcon name="home" />
+          {!collapsed && <span className="text-sm font-medium whitespace-nowrap">Accueil</span>}
+        </Link>
+
+        {collapsed ? (
+          /* ── Mode collapsed : tous les items à plat avec séparateurs ── */
+          <>
+            {groups.map((group, gi) => (
+              <div key={group.key}>
+                {gi > 0 && (
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', margin: '4px 4px' }} />
+                )}
+                {group.items.filter(i => i.show).map(item => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    title={item.label}
+                    className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-colors ${
+                      isActive(item.to)
+                        ? 'bg-white/20 text-white'
+                        : 'text-white/65 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <SvgIcon name={item.icon} />
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </>
+        ) : (
+          /* ── Mode étendu : groupes expandables ── */
+          <>
+            {groups.map(group => {
+              const visibleItems = group.items.filter(i => i.show)
+              if (visibleItems.length === 0) return null
+              const isOpen = openGroups[group.key] ?? activeGroup(group.key)
+              const hasActive = visibleItems.some(i => isActive(i.to))
+
+              return (
+                <div key={group.key} className="mt-1">
+                  {/* En-tête du groupe */}
+                  <button
+                    onClick={() => toggleGroup(group.key)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors ${
+                      hasActive && !isOpen
+                        ? 'text-white/80 hover:bg-white/10'
+                        : 'text-white/40 hover:text-white/70 hover:bg-white/05'
+                    }`}
+                  >
+                    <SvgIcon name={group.icon} size={14} />
+                    <span className="text-xs font-semibold uppercase tracking-wider flex-1 text-left whitespace-nowrap">
+                      {group.label}
+                    </span>
+                    <SvgIcon
+                      name={isOpen ? 'chevronDown' : 'chevronRight'}
+                      size={12}
+                    />
+                  </button>
+
+                  {/* Sous-items */}
+                  {isOpen && (
+                    <div className="mt-0.5 space-y-0.5 pl-2">
+                      {visibleItems.map(item => (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className={`flex items-center gap-3 px-2 py-2 rounded-lg transition-colors ${
+                            isActive(item.to)
+                              ? 'bg-white/20 text-white'
+                              : 'text-white/60 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          <SvgIcon name={item.icon} size={16} />
+                          <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </>
+        )}
+
+        {/* Séparateur + Smartschool */}
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', margin: '6px 4px' }} />
-
-        {/* Smartschool */}
         <a
           href="https://espmaritime.smartschool.be/"
           target="_blank"
@@ -248,17 +372,14 @@ export default function Sidebar() {
         >
           <SmartschoolIcon size={20} />
           {!collapsed && (
-            <span
-              className="text-sm font-medium whitespace-nowrap"
-              style={{ color: '#E86C00' }}
-            >
+            <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#E86C00' }}>
               Smartschool
             </span>
           )}
         </a>
       </nav>
 
-      {/* ── Pied : notifications, admin, profil, déconnexion ─────────── */}
+      {/* ── Pied ─────────────────────────────────────────────────────── */}
       <div
         className="shrink-0 px-2 pb-3 pt-3 space-y-0.5"
         style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
@@ -270,9 +391,7 @@ export default function Sidebar() {
         >
           <NotificationBell dropdownAlign="left" dropdownPosition="up" />
           {!collapsed && (
-            <span className="text-sm font-medium text-white/65 whitespace-nowrap">
-              Notifications
-            </span>
+            <span className="text-sm font-medium text-white/65 whitespace-nowrap">Notifications</span>
           )}
         </div>
 
@@ -288,13 +407,11 @@ export default function Sidebar() {
             }`}
           >
             <SvgIcon name="admin" />
-            {!collapsed && (
-              <span className="text-sm font-medium whitespace-nowrap">Administration</span>
-            )}
+            {!collapsed && <span className="text-sm font-medium whitespace-nowrap">Administration</span>}
           </Link>
         )}
 
-        {/* Profil utilisateur */}
+        {/* Profil */}
         {profile && !collapsed && (
           <div className="px-2 py-2">
             <div className="text-white text-sm font-semibold truncate">
@@ -316,9 +433,7 @@ export default function Sidebar() {
           className="w-full flex items-center gap-3 px-2 py-2.5 rounded-lg text-white/65 hover:text-white hover:bg-white/10 transition-colors"
         >
           <SvgIcon name="logout" />
-          {!collapsed && (
-            <span className="text-sm font-medium whitespace-nowrap">Déconnexion</span>
-          )}
+          {!collapsed && <span className="text-sm font-medium whitespace-nowrap">Déconnexion</span>}
         </button>
       </div>
     </aside>

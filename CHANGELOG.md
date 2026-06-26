@@ -1,3 +1,8 @@
+
+## [v1.13c] — PageHeader adaptatif (1 ligne quand ça rentre)
+- Suppression du 2 lignes forcé : le header s'affiche sur 1 ligne quand titre + toolbar rentrent
+- Le toolbar descend en 2e ligne uniquement si nécessaire (container trop étroit)
+- Le toolbar scrolle horizontalement si surcharge → jamais de 3e ligne
 # Changelog — ESPM+
 
 Format : `[Commit] — Description — Rollback`  
@@ -1972,3 +1977,13 @@ git push origin main
 - Fix RLS : policies profiles + role_permissions étendues à super_admin (toggle économe fonctionnel)
 - Fix colSpan dans la matrice Droits (alignement correct sur 3 colonnes filtrées)
 - Migration DB : contrainte CHECK mise à jour, données renommées dans profiles + role_permissions
+
+## [v1.13] — Sidebar groupes + PageHeader responsive
+- Sidebar : navigation regroupée en deux sections expandables "Vie de l'école" (Activités, Compositions, Conseils de guidance, Élèves, Helpdesk, Salle des profs) et "Financier" (Articles, Économe, Factures, Paiements, Soldes, Suivi social)
+- Sidebar : auto-expand du groupe de l'item actif ; état mémorisé dans localStorage
+- Sidebar : mode icon-only inchangé (icônes à plat avec séparateurs de groupe)
+- PageHeader : zone droite (search + filters + info + actions) en div dédiée avec ml-auto → wrap propre sur ligne 2 sur écrans intermédiaires
+
+## [v1.13b] — PageHeader 2 lignes fixes
+- Ligne 1 : titre + actions (strict no-wrap)
+- Ligne 2 : leftActions + tabs + search + filtres + info (scroll horizontal silencieux, jamais de 3e ligne)
