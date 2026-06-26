@@ -12,10 +12,10 @@ const STATUTS = {
   en_cours:   { label: 'En cours',    color: '#D97706', bg: '#FEF3C7' },
   en_attente: { label: 'En attente',  color: '#7C3AED', bg: '#EDE9FE' },
   resolu:     { label: 'Résolu',      color: '#059669', bg: '#D1FAE5' },
-  ferme:      { label: 'Fermé',       color: dark ? '#9CA3AF' : '#6B7280', bg: '#F3F4F6' },
+  ferme:      { label: 'Fermé',       color: '#6B7280', bg: '#F3F4F6' },
 }
 const PRIORITES = {
-  faible:   { label: 'Faible',   color: dark ? '#9CA3AF' : '#6B7280', icon: '↓' },
+  faible:   { label: 'Faible',   color: '#6B7280', icon: '↓' },
   normale:  { label: 'Normale',  color: '#2563EB', icon: '→' },
   haute:    { label: 'Haute',    color: '#D97706', icon: '↑' },
   urgente:  { label: 'Urgente',  color: '#DC2626', icon: '⚡' },
