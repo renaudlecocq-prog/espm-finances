@@ -1,3 +1,8 @@
+## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
+- Remplacement de createReactBlockSpec par createBlockSpec (@blocknote/core) + createRoot manuel
+- Corrige React error #130 causé par le chemin renderType='dom' de createReactBlockSpec en prod
+- Config compacte avec recherche+chips (classes et groupes), colonnes à cocher
+
 ## [v1.16.11] — EleveTableBlock : config compacte + renommage bouton
 - Sélection classes/groupes par recherche + chips (fini la liste de 100+ boutons)
 - Bouton d'insertion renommé "Tableau élèves"
