@@ -401,7 +401,7 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
           {/* Nb élèves calculé */}
           <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
             <span className="text-sm text-gray-500 dark:text-gray-400">Élèves concernés :</span>
-            <span className={`font-bold text-lg ${nbEleves > 0 ? 'text-primary' : 'text-gray-300 dark:text-gray-600'}`}>{nbEleves}</span>
+            <span className={`font-bold text-lg ${nbEleves > 0 ? 'text-primary dark:text-accent' : 'text-gray-300 dark:text-gray-600'}`}>{nbEleves}</span>
           </div>
 
           {/* Quantité + prix */}

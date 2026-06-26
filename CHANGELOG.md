@@ -1,3 +1,6 @@
+## [v1.15.7] — Fix dark mode : compteur élèves concernés illisible
+- Articles.jsx : nbEleves → text-primary dark:text-accent
+
 ## [v1.15.6] — Fix dark mode : chips multi-select illisibles
 - Articles.jsx : chips valeurs sélectionnées (classes/groupes/élèves) → dark:bg-accent/20 dark:text-accent
 - Articles.jsx : items sélectionnés dans dropdown → dark:text-accent
