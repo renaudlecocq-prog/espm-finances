@@ -1961,3 +1961,8 @@ git push origin main
 - Obligatoire : choisir un destinataire pour le grade avant de pouvoir se dégrader
 - Le transfert est atomique : le destinataire devient super_admin, puis le rôle actuel change
 - Impossible de fermer la modale sans sélectionner un destinataire (bouton désactivé)
+
+## [v1.11] — Home admin : 3 cards alignées sur les sections du panneau
+- "Personnes & accès" → onglet utilisateurs (Utilisateurs, droits, photos élèves)
+- "École" → onglet synchronisation (Smartschool, paramètres)
+- "Modules" → onglet helpdesk (Helpdesk, natures comptables, guidance)

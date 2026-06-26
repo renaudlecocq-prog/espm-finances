@@ -260,20 +260,20 @@ function HomeFinancier() {
         <section>
           <SectionTitle icon="⚙️" title="Administration" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link to="/admin" className="card p-5 hover:shadow-md transition-all bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+            <Link to="/admin?onglet=utilisateurs" className="card p-5 hover:shadow-md transition-all bg-gradient-to-br from-blue-500 to-blue-600 text-white">
               <div className="text-2xl mb-2">👥</div>
-              <div className="font-semibold">Gérer les utilisateurs</div>
-              <div className="text-sm opacity-80 mt-1">Rôles, invitations, accès</div>
+              <div className="font-semibold">Personnes &amp; accès</div>
+              <div className="text-sm opacity-80 mt-1">Utilisateurs, droits, photos élèves</div>
             </Link>
-            <Link to="/admin?onglet=droits" className="card p-5 hover:shadow-md transition-all bg-gradient-to-br from-amber-400 to-orange-500 text-white">
-              <div className="text-2xl mb-2">🔒</div>
-              <div className="font-semibold">Gérer les droits</div>
-              <div className="text-sm opacity-80 mt-1">Permissions par rôle</div>
+            <Link to="/admin?onglet=synchronisation" className="card p-5 hover:shadow-md transition-all bg-gradient-to-br from-amber-400 to-orange-500 text-white">
+              <div className="text-2xl mb-2">🏫</div>
+              <div className="font-semibold">École</div>
+              <div className="text-sm opacity-80 mt-1">Synchronisation Smartschool, paramètres</div>
             </Link>
-            <Link to="/admin?onglet=synchronisation" className="card p-5 hover:shadow-md transition-all bg-gradient-to-br from-orange-500 to-red-500 text-white">
-              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/20 font-bold text-xl mb-2">S</div>
-              <div className="font-semibold">Synchronisation Smartschool</div>
-              <div className="text-sm opacity-80 mt-1">Importer élèves et personnel</div>
+            <Link to="/admin?onglet=helpdesk" className="card p-5 hover:shadow-md transition-all bg-gradient-to-br from-orange-500 to-red-500 text-white">
+              <div className="text-2xl mb-2">🧩</div>
+              <div className="font-semibold">Modules</div>
+              <div className="text-sm opacity-80 mt-1">Helpdesk, natures comptables, guidance</div>
             </Link>
           </div>
         </section>
