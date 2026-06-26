@@ -1,3 +1,8 @@
+
+## [v1.13c] — PageHeader adaptatif (1 ligne quand ça rentre)
+- Suppression du 2 lignes forcé : le header s'affiche sur 1 ligne quand titre + toolbar rentrent
+- Le toolbar descend en 2e ligne uniquement si nécessaire (container trop étroit)
+- Le toolbar scrolle horizontalement si surcharge → jamais de 3e ligne
 # Changelog — ESPM+
 
 Format : `[Commit] — Description — Rollback`  
