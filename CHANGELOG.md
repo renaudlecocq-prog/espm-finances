@@ -1,3 +1,6 @@
+## [v1.16.5] — BlockNote : ajouter BlockNoteDefaultUI (slash menu, toolbar, side menu)
+- BlockNoteViewRaw nécessite BlockNoteDefaultUI pour le slash menu et la toolbar
+
 ## [v1.16.4] — Éditeur BlockNote : thème dark/light dynamique
 - BlockNoteView reçoit theme=dark ou light selon les préférences
 - Conteneur éditeur adapté au dark mode

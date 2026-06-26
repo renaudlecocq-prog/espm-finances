@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { BlockNoteViewRaw as BlockNoteView } from '@blocknote/react'
-import { useCreateBlockNote, useEditorChange } from '@blocknote/react'
+import { BlockNoteViewRaw as BlockNoteView, BlockNoteDefaultUI, useCreateBlockNote, useEditorChange } from '@blocknote/react'
 import '@blocknote/core/fonts/inter.css'
 import '@blocknote/react/style.css'
 import { supabase } from '../lib/supabase'
@@ -196,7 +195,9 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
       </div>
 
       <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
-        <BlockNoteView editor={editor} editable={canEdit} theme={dark ? 'dark' : 'light'} style={{ minHeight: '100%' }} />
+        <BlockNoteView editor={editor} editable={canEdit} theme={dark ? 'dark' : 'light'} style={{ minHeight: '100%' }}>
+          <BlockNoteDefaultUI />
+        </BlockNoteView>
       </div>
 
       {renamingModal && (
