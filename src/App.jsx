@@ -26,11 +26,11 @@ function RequireAuth({ children, require = 'user', feature = null }) {
   const { user, loading, role, effectiveRole, can, viewAsRole } = useAuth()
   if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
   if (!user) return <Navigate to="/login" replace />
-  if (require === 'admin'     && role !== 'admin')                                    return <Navigate to="/" replace />
-  if (require === 'financier' && !['admin','financier'].includes(effectiveRole))       return <Navigate to="/" replace />
-  if (require === 'mdp'       && !['admin','financier','mdp'].includes(effectiveRole)) return <Navigate to="/" replace />
+  if (require === 'admin'     && !['admin','super_admin'].includes(role))                                    return <Navigate to="/" replace />
+  if (require === 'financier' && !['admin','super_admin','financier'].includes(effectiveRole))               return <Navigate to="/" replace />
+  if (require === 'mdp'       && !['admin','super_admin','financier','mdp'].includes(effectiveRole))         return <Navigate to="/" replace />
   // Vérification par feature — s'applique aux non-admins ET aux admins en mode aperçu
-  if (feature && (role !== 'admin' || viewAsRole)) {
+  if (feature && (!['admin','super_admin'].includes(role) || viewAsRole)) {
     const features = Array.isArray(feature) ? feature : [feature]
     if (!features.some(f => can(f))) return <Navigate to="/" replace />
   }

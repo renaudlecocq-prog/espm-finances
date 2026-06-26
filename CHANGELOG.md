@@ -1951,3 +1951,7 @@ git push origin main
 - AuthContext : isSuperAdmin exposé, can() et isAdmin couvrent super_admin
 - permissions.js : ROLE_META.super_admin + super_admin dans ROLES
 - Migration DB : contrainte profiles_role_check étendue, Renaud Lecocq promu super_admin
+
+## [v1.09] — Fix accès Administration pour super_admin
+- RequireAuth : les checks require="admin" et feature acceptent désormais super_admin
+- Corrige la redirection vers / pour Renaud lors de l'accès au panneau Admin
