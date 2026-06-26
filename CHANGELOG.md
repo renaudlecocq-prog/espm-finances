@@ -1,5 +1,11 @@
 ## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
 
+## [v1.16.16] — Fix menus BlockNote en dark mode
+
+- MantineProvider : ajout forceColorScheme={dark ? dark : light}
+- Les menus drag handle et slash command suivent maintenant le thème de l'app
+
+
 ## [v1.16.15] — EleveTableBlock : retrait de colonnes au survol
 
 - Bouton × sur chaque en-tête de colonne (visible au survol, mode édition)

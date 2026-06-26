@@ -223,7 +223,7 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
       </div>
 
       <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
-        <MantineProvider>
+        <MantineProvider forceColorScheme={dark ? 'dark' : 'light'}>
           <BlockNoteView editor={editor} editable={canEdit} theme={dark ? 'dark' : 'light'} style={{ minHeight: '100%' }} />
         </MantineProvider>
       </div>
