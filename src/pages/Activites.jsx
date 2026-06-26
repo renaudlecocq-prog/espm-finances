@@ -977,7 +977,7 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
                             onChange={e => { const f = e.target.files[0]; e.target.value=''; if(f) uploadDepenseDoc(dep.id, f) }} />
                           {dep.document_path ? (
                             <button onClick={() => viewDepenseDoc(dep.document_path)}
-                              className="text-primary text-[11px] hover:underline">
+                              className="text-primary dark:text-accent text-[11px] hover:underline">
                               📎 Voir justificatif
                             </button>
                           ) : (

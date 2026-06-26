@@ -963,11 +963,11 @@ function PopTab({ natures }) {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <select value={annee} onChange={e => setAnnee(Number(e.target.value))}
-          className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400">
+          className="text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400">
           {anneOptions.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
         <select value={moisFilter} onChange={e => setMoisFilter(Number(e.target.value))}
-          className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400">
+          className="text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400">
           <option value={0}>Tous les mois</option>
           {MOIS_LABELS.slice(1).map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
         </select>
@@ -1312,7 +1312,7 @@ function BilanTab({ natures }) {
       {/* Toolbar */}
       <div className="flex items-center gap-3 mb-5">
         <select value={annee} onChange={e => setAnnee(Number(e.target.value))}
-          className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400">
+          className="text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400">
           {anneOptions.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
         <button onClick={load} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 dark:text-gray-500">
@@ -1927,7 +1927,7 @@ function ProjetsTab() {
       <div className="flex flex-wrap items-center gap-3 mb-5">
         {projets.length > 0 ? (
           <select value={projetId || ''} onChange={e => setProjetId(e.target.value)}
-            className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400 max-w-xs">
+            className="text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400 max-w-xs">
             {projets.map(p => (
               <option key={p.id} value={p.id}>
                 {p.nom} ({p.annee}){p.cloture ? ' ✓' : ''}
@@ -2121,7 +2121,7 @@ function ProjetCatSection({ categorie, lignes, catEntree, catSortie, catSolde, o
   return (
     <>
       {/* En-tête catégorie */}
-      <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 cursor-pointer select-none hover:bg-gray-100/60"
+      <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/80 cursor-pointer select-none hover:bg-gray-100/60 dark:hover:bg-gray-700/60"
         onClick={() => setOpen(o => !o)}>
         <td colSpan={3} className="px-3 py-1.5">
           <div className="flex items-center gap-1.5">

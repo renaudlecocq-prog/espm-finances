@@ -1,3 +1,11 @@
+## [v1.15.4] — Fix dark mode round 3 (selects, onglets, icônes)
+- Activités : "Voir justificatif" invisible en dark (text-primary → dark:text-accent)
+- Économe : selects année/mois/projet sans couleur de texte dark (dark:text-gray-100)
+- Économe Projets : ligne expand bg-gray-50/80 opaque → dark:bg-gray-800/80
+- Admin : sous-onglets actifs (Utilisateurs/Droits/Photos) text-primary → dark:text-accent
+- Suivi social : icône upload dans zone dashed trop sombre (dark:text-gray-300)
+- Suivi social : footer "Créé/Modifié le" trop sombre (dark:text-gray-400)
+
 ## [v1.15.3] — Fix dark mode round 2 (onglets, tableaux, liens)
 - FicheEleve : onglets actifs (`text-primary`) invisibles → `dark:text-accent`
 - Articles : colonne NB ÉLÈVES `text-primary` → `dark:text-accent` ; lignes paires catalogue sans dark bg → `dark:bg-gray-900/60`

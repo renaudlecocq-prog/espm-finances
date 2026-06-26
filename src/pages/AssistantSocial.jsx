@@ -475,7 +475,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
               >
                 {uploading
                   ? <p className="text-sm text-primary">Upload en cours…</p>
-                  : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400 dark:text-gray-500">
+                  : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400 dark:text-gray-300">
                       <Upload size={14} />
                       <span className="text-sm">Glisser-déposer ou <span className="text-primary dark:text-accent underline">parcourir</span></span>
                     </div>
@@ -1292,7 +1292,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                     >
                       {uploading
                         ? <p className="text-sm text-primary">Upload en cours…</p>
-                        : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400 dark:text-gray-500">
+                        : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400 dark:text-gray-300">
                             <Upload size={14} />
                             <span className="text-sm">Glisser-déposer ou <span className="text-primary dark:text-accent underline">parcourir</span></span>
                           </div>
@@ -1320,7 +1320,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                 </div>
 
                 {/* Dates */}
-                <div className="text-xs text-gray-400 dark:text-gray-500 space-y-0.5 border-t border-gray-100 dark:border-gray-700 pt-3">
+                <div className="text-xs text-gray-400 dark:text-gray-400 space-y-0.5 border-t border-gray-100 dark:border-gray-700 pt-3">
                   {row.created_at && <div>Créé le {fmtDate(row.created_at.slice(0,10))}</div>}
                   {row.updated_at && row.updated_at !== row.created_at &&
                     <div>Modifié le {fmtDate(row.updated_at.slice(0,10))}</div>}
