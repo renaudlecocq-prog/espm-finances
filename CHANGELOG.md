@@ -1,3 +1,11 @@
+## [v1.14.0] — Profil personnel
+- Clic sur le nom dans la sidebar → page /profile (rôle responsable exclu)
+- Onglet Sécurité : définir ou modifier son mot de passe (re-auth si MDP existant)
+- Onglet Notifications : plages silencieuses (heures + jours) — badge + temps réel coupés
+- Onglet Préférences : placeholders Thème et Page d'accueil (à venir)
+- Migration DB : colonnes notif_schedule (jsonb) + has_password (boolean) sur profiles
+- NotificationBell : icône 🔕 discrète + badge masqué si plage silencieuse active
+
 ## [v1.13.6] — PageHeader : fix toggle bouton ⋯
 - Reclique sur ⋯ ferme correctement le dropdown (exclusion du bouton du listener mousedown extérieur)
 

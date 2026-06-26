@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
-import { Bell, MessageCircle, CheckCheck, Trash2 } from 'lucide-react'
+import { Bell, MessageCircle, CheckCheck, Trash2, BellOff } from 'lucide-react'
+import { isMuted } from '../../pages/Profile'
 
 const ENTITY_ROUTES = {
   activite:        '/activites',
@@ -25,13 +26,15 @@ const fmtAgo = iso => {
 }
 
 export default function NotificationBell({ dropdownAlign = 'right', dropdownPosition = 'down' }) {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate  = useNavigate()
+  const muted = isMuted(profile?.notif_schedule)
   const [notifs, setNotifs]   = useState([])
   const [open, setOpen]       = useState(false)
   const ref = useRef(null)
 
-  const unread = notifs.filter(n => !n.lu).length
+  const unreadReal = notifs.filter(n => !n.lu).length
+  const unread = muted ? 0 : unreadReal
 
   // ── Chargement ─────────────────────────────────────────────────────────
   const load = async () => {
@@ -57,7 +60,7 @@ export default function NotificationBell({ dropdownAlign = 'right', dropdownPosi
         schema: 'public',
         table: 'notifications',
         filter: `destinataire_id=eq.${user.id}`,
-      }, () => load())
+      }, () => { if (!muted) load() })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [user]) // eslint-disable-line
@@ -106,6 +109,7 @@ export default function NotificationBell({ dropdownAlign = 'right', dropdownPosi
         className="relative text-white/60 hover:text-white transition-colors"
       >
         <Bell size={20} />
+        {muted && <BellOff size={14} style={{ position:'absolute', top:'-2px', right:'-2px', color:'rgba(255,255,255,0.4)', pointerEvents:'none' }} />}
         {unread > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5
             bg-red-500 text-white text-[10px] font-bold rounded-full
@@ -124,14 +128,16 @@ export default function NotificationBell({ dropdownAlign = 'right', dropdownPosi
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <span className="font-semibold text-gray-800 text-sm">
               Notifications
-              {unread > 0 && (
+              {muted && <BellOff size={14} style={{ position:'absolute', top:'-2px', right:'-2px', color:'rgba(255,255,255,0.4)', pointerEvents:'none' }} />}
+        {unread > 0 && (
                 <span className="ml-1.5 bg-red-100 text-red-600 text-xs rounded-full px-1.5 py-0.5 font-medium">
                   {unread} non lue{unread > 1 ? 's' : ''}
                 </span>
               )}
             </span>
             <div className="flex items-center gap-2">
-              {unread > 0 && (
+              {muted && <BellOff size={14} style={{ position:'absolute', top:'-2px', right:'-2px', color:'rgba(255,255,255,0.4)', pointerEvents:'none' }} />}
+        {unread > 0 && (
                 <button onClick={markAllRead}
                   className="flex items-center gap-1 text-xs text-primary hover:underline">
                   <CheckCheck size={12} /> Tout marquer lu

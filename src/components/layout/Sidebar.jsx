@@ -412,9 +412,9 @@ export default function Sidebar() {
         )}
 
         {/* Profil */}
-        {profile && !collapsed && (
-          <div className="px-2 py-2">
-            <div className="text-white text-sm font-semibold truncate">
+        {profile && !collapsed && effectiveRole !== 'responsable' && (
+          <Link to="/profile" className="px-2 py-2 rounded-lg hover:bg-white/10 transition-colors block group">
+            <div className="text-white text-sm font-semibold truncate group-hover:text-white/90">
               {profile.prenom} {profile.nom}
             </div>
             <div className="text-white/50 text-xs flex items-center gap-1">
@@ -423,6 +423,12 @@ export default function Sidebar() {
                 <span title={`Réel : ${roleLabel[role] || role}`} className="opacity-50">↩</span>
               )}
             </div>
+          </Link>
+        )}
+        {profile && !collapsed && effectiveRole === 'responsable' && (
+          <div className="px-2 py-2">
+            <div className="text-white text-sm font-semibold truncate">{profile.prenom} {profile.nom}</div>
+            <div className="text-white/50 text-xs">{roleLabel[effectiveRole] || effectiveRole}</div>
           </div>
         )}
 

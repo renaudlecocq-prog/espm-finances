@@ -21,6 +21,7 @@ import Compositions from './pages/Compositions'
 import ConseilsDeGuidance from './pages/ConseilsDeGuidance'
 import HelpdeskDetail from './pages/HelpdeskDetail'
 import MentionsLegales from './pages/MentionsLegales'
+import Profile from './pages/Profile'
 
 function RequireAuth({ children, require = 'user', feature = null }) {
   const { user, loading, role, effectiveRole, can, viewAsRole } = useAuth()
@@ -128,6 +129,7 @@ function AppRoutes() {
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/mentions-legales" element={<MentionsLegales />} />
+      <Route path="/profile" element={<RequireAuth require="mdp"><Layout><Profile /></Layout></RequireAuth>} />
       <Route path="/" element={<RequireAuth><Layout><Home /></Layout></RequireAuth>} />
       <Route path="/eleves" element={<RequireAuth require="mdp" feature="eleves"><Layout><Eleves /></Layout></RequireAuth>} />
       <Route path="/groupes" element={<RequireAuth require="mdp" feature="eleves"><Layout><Groupes /></Layout></RequireAuth>} />
