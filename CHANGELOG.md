@@ -1966,3 +1966,9 @@ git push origin main
 - "Personnes & accès" → onglet utilisateurs (Utilisateurs, droits, photos élèves)
 - "École" → onglet synchronisation (Smartschool, paramètres)
 - "Modules" → onglet helpdesk (Helpdesk, natures comptables, guidance)
+
+## [v1.12] — Renommage financier → direction + fix RLS + fix toggle droits
+- Rôle "Financier" renommé "Direction" (valeur DB : direction) dans toutes les tables et le frontend
+- Fix RLS : policies profiles + role_permissions étendues à super_admin (toggle économe fonctionnel)
+- Fix colSpan dans la matrice Droits (alignement correct sur 3 colonnes filtrées)
+- Migration DB : contrainte CHECK mise à jour, données renommées dans profiles + role_permissions

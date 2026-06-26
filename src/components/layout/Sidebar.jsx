@@ -166,7 +166,7 @@ export default function Sidebar() {
 
   const roleLabel = {
     admin: 'Admin',
-    financier: 'Financier',
+    direction: 'Direction',
     mdp: 'MdP',
     responsable: 'Responsable',
   }

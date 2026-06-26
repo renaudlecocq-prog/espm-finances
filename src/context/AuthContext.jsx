@@ -137,8 +137,8 @@ export function AuthProvider({ children }) {
   // ── Backward compat ───────────────────────────────────────────────────────
   const isSuperAdmin = effectiveRole === 'super_admin'
   const isAdmin     = ['admin', 'super_admin'].includes(effectiveRole)
-  const isFinancier = ['admin', 'super_admin', 'financier'].includes(effectiveRole)
-  const isMdp       = ['admin', 'super_admin', 'financier', 'mdp'].includes(effectiveRole)
+  const isFinancier = ['admin', 'super_admin', 'direction'].includes(effectiveRole)
+  const isMdp       = ['admin', 'super_admin', 'direction', 'mdp'].includes(effectiveRole)
   const isMdpOnly   = effectiveRole === 'mdp'
 
   return (

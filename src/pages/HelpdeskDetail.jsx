@@ -178,7 +178,7 @@ export default function HelpdeskDetail() {
   useEffect(() => {
     if (!isAdmin) return
     supabase.from('profiles').select('id, prenom, nom, role')
-      .in('role', ['admin','financier','mdp']).order('nom')
+      .in('role', ['admin','direction','mdp']).order('nom')
       .then(({ data }) => setProfiles(data || []))
   }, [isAdmin])
 

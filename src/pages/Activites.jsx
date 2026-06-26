@@ -2071,7 +2071,7 @@ export default function Activites() {
         'id, nom, prenom, classe, obs_d2, ac_d2, math_d3, sciences_d3, bio_physique_d3, obs1_d3, obs2_d3, ac_d3, philosophie, groupe_choix_philo'
       ).eq('actif', true),
       // Staff
-      supabase.from('profiles').select('id, nom, prenom, role').in('role', ['mdp', 'admin', 'financier']).order('nom'),
+      supabase.from('profiles').select('id, nom, prenom, role').in('role', ['mdp', 'admin', 'direction']).order('nom'),
     ]).then(([elevesRes, staffRes]) => {
       const eleves = (elevesRes.data || []).map(e => ({ ...e, rlmo: getRlmo(e) }))
       setAllEleves(eleves)

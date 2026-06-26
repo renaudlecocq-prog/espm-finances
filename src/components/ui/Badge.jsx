@@ -1,7 +1,7 @@
 const variants = {
   default:          'bg-accent-light text-primary',
   admin:            'bg-primary text-white',
-  financier:        'bg-primary-lighter text-white',
+  direction:        'bg-primary-lighter text-white',
   mdp:              'bg-accent-dark text-white',
   responsable:      'bg-accent-light text-primary',
   brouillon:        'bg-gray-100 text-gray-600',
@@ -24,7 +24,7 @@ const variants = {
 }
 
 const labels = {
-  admin: 'Admin', financier: 'Financier', mdp: 'MdP', responsable: 'Responsable',
+  admin: 'Admin', direction: 'Financier', mdp: 'MdP', responsable: 'Responsable',
   brouillon: 'Brouillon', facture: 'Facture', rappel: 'Rappel', mise_en_demeure: 'Mise en demeure',
   publie: 'Publié', archive: 'Archivé',
   respecte: 'Respecté', non_respecte: 'Non respecté', termine: 'Terminé',

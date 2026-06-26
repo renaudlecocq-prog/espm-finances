@@ -404,7 +404,7 @@ export default function Admin() {
               <span className="text-xs font-semibold text-orange-700 uppercase tracking-wide">Aperçu — Voir le site en tant que</span>
             </div>
             <div className="flex gap-2 flex-wrap items-center">
-              {['financier','mdp','responsable'].map(r => {
+              {['direction','mdp','responsable'].map(r => {
                 const m = ROLE_META[r]
                 return (
                   <button key={r} onClick={() => setPreviewRole(previewRole === r ? null : r)}
@@ -452,7 +452,7 @@ export default function Admin() {
                   {FEATURE_GROUPS.map(group => (
                     <>
                       <tr key={`grp-${group}`} className="bg-gray-50/70 border-y border-gray-100">
-                        <td colSpan={ROLES.length + 1} className="px-5 py-2">
+                        <td colSpan={ROLES.filter(r => r !== 'admin' && r !== 'super_admin').length + 1} className="px-5 py-2">
                           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{group}</span>
                         </td>
                       </tr>
@@ -892,7 +892,7 @@ export function HelpdeskAdmin() {
           <div style={{ fontSize: 12, color: '#6B7280' }}>Gérez les catégories de tickets et leurs formulaires</div>
         </div>
         <button onClick={() => setEditCat({ nom:'', description:'', icone:'ticket', couleur:'#6B4A73',
-          form_fields:[], rapporteur_roles:['admin','financier','mdp'], agent_roles:['admin'] })}
+          form_fields:[], rapporteur_roles:['admin','direction','mdp'], agent_roles:['admin'] })}
           style={{ padding: '9px 18px', borderRadius: 8, border: 'none', backgroundColor: '#2D1B2E',
             color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
           + Nouvelle catégorie
