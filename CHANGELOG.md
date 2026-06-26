@@ -1,5 +1,12 @@
 ## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
 
+## [v1.16.20] — Supprimer side menu BlockNote (drag handle)
+
+- sideMenu={false} sur BlockNoteView : supprime le drag handle inutile et son menu
+- Suppression du padding-left .bn-editor qui gaspillait de l'espace
+- Le / slash command reste disponible pour insérer des blocs
+
+
 ## [v1.16.19] — Fix crash ligne vide + fix menu drag handle
 
 - Revert paddingLeft/paddingRight sur BlockNoteView (causait React error #130)
