@@ -1,3 +1,9 @@
+## [v1.16.1] — Fix critique : supprimer @blocknote/mantine + MantineProvider (app blanche)
+- Suppression de @blocknote/mantine, @mantine/core, @mantine/hooks
+- Remplacement par BlockNoteViewRaw de @blocknote/react (sans dépendance Mantine)
+- Revert main.jsx : MantineProvider retiré (causait page blanche sur toute l'app)
+- L'éditeur BlockNote fonctionne désormais sans contexte Mantine
+
 ## [v1.16.0] — Salle des Profs : éditeur de pages collaboratif (BlockNote)
 - Nouvel onglet "Pages" dans la Salle des Profs
 - Éditeur bloc-par-bloc à la Notion (menu / pour titres, listes, tableaux, code, équations, images…)
