@@ -1,5 +1,11 @@
 ## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
 
+## [v1.16.21] — Bouton supprimer sur le bloc tableau
+
+- Icône poubelle dans la config (à côté du titre) et dans l'affichage (à côté de Modifier)
+- Appelle editor.removeBlocks([block]) pour supprimer le bloc de la page
+
+
 ## [v1.16.20] — Supprimer side menu BlockNote (drag handle)
 
 - sideMenu={false} sur BlockNoteView : supprime le drag handle inutile et son menu

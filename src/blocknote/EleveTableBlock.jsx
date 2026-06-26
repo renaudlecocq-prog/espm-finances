@@ -142,7 +142,7 @@ function FreeColumnsEditor({ freeCols, setFreeCols }) {
 }
 
 // ── Config ────────────────────────────────────────────────────────────────────
-function EleveTableConfig({ initialClasses, initialGroups, initialColumns, initialFree, allClasses, allGroups, onSave }) {
+function EleveTableConfig({ initialClasses, initialGroups, initialColumns, initialFree, allClasses, allGroups, onSave, onDelete, editable }) {
   const [selClasses, setSelClasses] = useState(initialClasses)
   const [selGroups,  setSelGroups]  = useState(initialGroups)
   const [selCols,    setSelCols]    = useState(initialColumns.length > 0 ? initialColumns : DEFAULT_COLUMNS)
@@ -159,6 +159,17 @@ function EleveTableConfig({ initialClasses, initialGroups, initialColumns, initi
       <div className="flex items-center gap-2 mb-4">
         <span className="text-xl">📋</span>
         <span className="text-sm font-semibold text-gray-800 dark:text-white">Tableau d'élèves — configuration</span>
+        {editable && onDelete && (
+          <button
+            onClick={onDelete}
+            title="Supprimer ce bloc"
+            className="ml-auto text-gray-400 hover:text-red-400 transition-colors text-lg leading-none"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        )}
       </div>
       <MultiSelect
         label="Classes"
@@ -233,7 +244,7 @@ function SortIcon({ active, dir }) {
     : <svg className="w-3 h-3 text-blue-500 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" /></svg>
 }
 
-function EleveTableDisplay({ classes, groups, columns, freeColumns, onEdit, onRemoveColumn, editable }) {
+function EleveTableDisplay({ classes, groups, columns, freeColumns, onEdit, onRemoveColumn, onDelete, editable }) {
   const [eleves,    setEleves]    = useState([])
   const [loading,   setLoading]   = useState(true)
   const [sortField, setSortField] = useState('classe')
@@ -380,6 +391,13 @@ function EleveTableDisplay({ classes, groups, columns, freeColumns, onEdit, onRe
               Modifier
             </button>
           )}
+          {editable && onDelete && (
+            <button onClick={onDelete} title="Supprimer ce bloc" className="text-gray-400 hover:text-red-400 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -478,6 +496,12 @@ function EleveTableBlockComponent({ block, editor }) {
     })
   }, [configMode])
 
+  const handleDelete = () => {
+    if (editor.isEditable) {
+      editor.removeBlocks([block])
+    }
+  }
+
   const handleRemoveColumn = (key) => {
     if (!editor.isEditable) return
     let newColumns = columns
@@ -523,6 +547,8 @@ function EleveTableBlockComponent({ block, editor }) {
         allClasses={allClasses}
         allGroups={allGroups}
         onSave={handleSave}
+        onDelete={handleDelete}
+        editable={editor.isEditable}
       />
     )
   }
@@ -536,6 +562,7 @@ function EleveTableBlockComponent({ block, editor }) {
       editable={editor.isEditable}
       onEdit={() => setConfigMode(true)}
       onRemoveColumn={handleRemoveColumn}
+      onDelete={handleDelete}
     />
   )
 }
