@@ -26,10 +26,10 @@ function isMajeur(dateNaissance) {
 function Section({ icon, title, children, action }) {
   return (
     <div className="mb-5">
-      <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-gray-100">
+      <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-2">
           <span>{icon}</span>
-          <h3 className="font-semibold text-gray-600 text-xs uppercase tracking-wide">{title}</h3>
+          <h3 className="font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide">{title}</h3>
         </div>
         {action}
       </div>
@@ -42,27 +42,27 @@ function Field({ label, value }) {
   if (value === null || value === undefined || value === '') return null
   return (
     <div className="flex gap-3 py-1 text-sm">
-      <span className="text-gray-400 w-36 shrink-0">{label}</span>
-      <span className="text-gray-800">{value}</span>
+      <span className="text-gray-400 dark:text-gray-500 w-36 shrink-0">{label}</span>
+      <span className="text-gray-800 dark:text-gray-100">{value}</span>
     </div>
   )
 }
 
 const STATUT_ECH = {
-  en_cours:     { label: 'En cours',     cls: 'bg-blue-100 text-blue-700' },
-  attente:      { label: 'En attente',   cls: 'bg-yellow-100 text-yellow-700' },
-  non_respecte: { label: 'Non respecté', cls: 'bg-red-100 text-red-700' },
-  termine:      { label: 'Terminé',      cls: 'bg-green-100 text-green-700' },
+  en_cours:     { label: 'En cours',     cls: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' },
+  attente:      { label: 'En attente',   cls: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300' },
+  non_respecte: { label: 'Non respecté', cls: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' },
+  termine:      { label: 'Terminé',      cls: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' },
 }
 const STATUT_OT = {
-  en_cours: { label: 'En cours', cls: 'bg-blue-100 text-blue-700' },
-  valide:   { label: 'Validé',   cls: 'bg-green-100 text-green-700' },
-  refuse:   { label: 'Refusé',   cls: 'bg-red-100 text-red-700' },
-  cloture:  { label: 'Clôturé',  cls: 'bg-gray-100 text-gray-600' },
+  en_cours: { label: 'En cours', cls: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' },
+  valide:   { label: 'Validé',   cls: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' },
+  refuse:   { label: 'Refusé',   cls: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' },
+  cloture:  { label: 'Clôturé',  cls: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' },
 }
 
 function StatusBadge({ val, map }) {
-  const m = map[val] || { label: val, cls: 'bg-gray-100 text-gray-600' }
+  const m = map[val] || { label: val, cls: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' }
   return (
     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${m.cls}`}>
       {m.label}
@@ -208,32 +208,32 @@ export default function FicheEleve({ eleveId, onClose }) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl h-[88vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl h-[88vh] flex flex-col">
 
         {/* ── Header ──────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
           {eleve ? (
             <div className="flex items-center gap-3">
               {photo ? (
-                <img src={photo} alt="" className="w-12 h-12 rounded-full object-cover shrink-0 border border-gray-100" />
+                <img src={photo} alt="" className="w-12 h-12 rounded-full object-cover shrink-0 border border-gray-100 dark:border-gray-700" />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center shrink-0 text-gray-400 text-lg font-bold">
+                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0 text-gray-400 dark:text-gray-500 text-lg font-bold">
                   {(eleve.prenom?.[0] || '') + (eleve.nom?.[0] || '')}
                 </div>
               )}
               <div>
-                <h2 className="text-lg font-bold text-gray-800">{eleve.prenom} {eleve.nom}</h2>
+                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">{eleve.prenom} {eleve.nom}</h2>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   {eleve.classe && (
-                    <span className="text-xs text-gray-500">{eleve.classe}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{eleve.classe}</span>
                   )}
                   {isMajeur(eleve.date_naissance) && (
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
                       Majeur·e
                     </span>
                   )}
                   {!eleve.actif && (
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                       Inactif
                     </span>
                   )}
@@ -241,40 +241,40 @@ export default function FicheEleve({ eleveId, onClose }) {
               </div>
             </div>
           ) : (
-            <h2 className="text-lg font-bold text-gray-800">Fiche élève</h2>
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">Fiche élève</h2>
           )}
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 ml-4">
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1 ml-4">
             <X size={20} />
           </button>
         </div>
 
         {/* ── Tabs (si droits) ────────────────────────────────────────── */}
         {!loading && eleve && (
-          <div className="px-5 pt-3 border-b border-gray-100 shrink-0">
-            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 w-full">
+          <div className="px-5 pt-3 border-b border-gray-100 dark:border-gray-700 shrink-0">
+            <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5 w-full">
               <button onClick={() => setActiveTab('info')}
                 className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
-                  activeTab === 'info' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  activeTab === 'info' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                 Infos
               </button>
               {canSeeRestricted && (
                 <button onClick={() => setActiveTab('appels')}
                   className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
-                    activeTab === 'appels' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                  Appels {appels.length > 0 && <span className="ml-1 text-xs text-gray-400 tabular-nums">{appels.length}</span>}
+                    activeTab === 'appels' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+                  Appels {appels.length > 0 && <span className="ml-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums">{appels.length}</span>}
                 </button>
               )}
               {canSeeRestricted && hasAS && (
                 <button onClick={() => setActiveTab('social')}
                   className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
-                    activeTab === 'social' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                    activeTab === 'social' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                   Social
                 </button>
               )}
               {canSeeRestricted && (
                 <button onClick={() => setActiveTab('financier')}
                   className={`flex-1 px-3 py-1 rounded-md text-sm font-medium transition-all ${
-                    activeTab === 'financier' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                    activeTab === 'financier' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                   Financier
                 </button>
               )}
@@ -285,11 +285,11 @@ export default function FicheEleve({ eleveId, onClose }) {
         {/* ── Body ────────────────────────────────────────────────────── */}
         <div className="overflow-y-auto p-5 flex-1">
           {loading ? (
-            <div className="flex items-center justify-center py-12 text-gray-400">
+            <div className="flex items-center justify-center py-12 text-gray-400 dark:text-gray-500">
               <Loader2 size={20} className="animate-spin mr-2" /> Chargement…
             </div>
           ) : !eleve ? (
-            <div className="py-12 text-center text-gray-400">Élève introuvable</div>
+            <div className="py-12 text-center text-gray-400 dark:text-gray-500">Élève introuvable</div>
           ) : (<>
 
             {/* ══ TAB 1 : Informations ══════════════════════════════════ */}
@@ -309,7 +309,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                 <Field label="Mobile"    value={eleve.mobile} />
                 <Field label="Matricule" value={eleve.matricule} />
                 {eleve.remarque && (
-                  <div className="mt-2.5 p-2.5 bg-amber-50 rounded-lg border border-amber-100">
+                  <div className="mt-2.5 p-2.5 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-100">
                     <p className="text-xs text-amber-800 whitespace-pre-wrap">{eleve.remarque}</p>
                   </div>
                 )}
@@ -344,11 +344,11 @@ export default function FicheEleve({ eleveId, onClose }) {
                 <Section icon="👪" title="Responsables légaux">
                   {responsables.map((r, i) => (
                     <div key={r.idx}
-                      className={`flex items-center gap-3 py-1.5 ${i > 0 ? 'border-t border-gray-50' : ''}`}>
-                      <span className="text-sm font-medium text-gray-800 flex-1">
+                      className={`flex items-center gap-3 py-1.5 ${i > 0 ? 'border-t border-gray-50 dark:border-gray-800' : ''}`}>
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-100 flex-1">
                         {r.nom || `Responsable ${r.idx}`}
                       </span>
-                      {r.tel && <span className="text-sm text-gray-500">{r.tel}</span>}
+                      {r.tel && <span className="text-sm text-gray-500 dark:text-gray-400">{r.tel}</span>}
                     </div>
                   ))}
                 </Section>
@@ -361,13 +361,13 @@ export default function FicheEleve({ eleveId, onClose }) {
                 <Section icon="👪" title="Responsables légaux">
                   {responsables.map((r, i) => (
                     <div key={r.idx}
-                      className={`flex items-center gap-3 py-1.5 ${i > 0 ? 'border-t border-gray-50' : ''}`}>
-                      <span className="text-sm font-medium text-gray-800">
+                      className={`flex items-center gap-3 py-1.5 ${i > 0 ? 'border-t border-gray-50 dark:border-gray-800' : ''}`}>
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-100">
                         {r.nom || `Responsable ${r.idx}`}
                       </span>
                       {r.tel && (
                         <div className="flex items-center gap-2 ml-auto shrink-0">
-                          <span className="text-sm text-gray-500">{r.tel}</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">{r.tel}</span>
                           <button
                             onClick={() => logAppel(r.idx, r.nom || `Responsable ${r.idx}`)}
                             disabled={callingIdx === r.idx}
@@ -386,25 +386,25 @@ export default function FicheEleve({ eleveId, onClose }) {
 
               <Section icon="📞" title="Historique des appels">
                 {appels.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic">Aucun appel enregistré.</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 italic">Aucun appel enregistré.</p>
                 ) : (
                   <div className="space-y-2">
                     {appels.map(a => (
-                      <div key={a.id} className="bg-gray-50 rounded-lg px-3 py-2.5">
+                      <div key={a.id} className="bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2.5">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-1.5 min-w-0">
                             <Phone size={12} className="text-primary shrink-0" />
-                            <span className="text-sm font-medium text-gray-700 truncate">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
                               {a.responsable_nom || `Responsable ${a.responsable_index}`}
                             </span>
                           </div>
-                          <span className="text-xs text-gray-400 shrink-0">{fmtDateTime(a.created_at)}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">{fmtDateTime(a.created_at)}</span>
                         </div>
-                        <p className="text-xs text-gray-400 mt-0.5 ml-[18px]">Par {a.auteur_nom || '—'}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 ml-[18px]">Par {a.auteur_nom || '—'}</p>
                         {editNoteId === a.id ? (
                           <div className="flex items-center gap-1.5 mt-1.5 ml-[18px]">
                             <input autoFocus
-                              className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 outline-none focus:border-primary"
+                              className="flex-1 text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1 outline-none focus:border-primary"
                               value={editNoteVal}
                               onChange={e => setEditNoteVal(e.target.value)}
                               onKeyDown={e => {
@@ -412,16 +412,16 @@ export default function FicheEleve({ eleveId, onClose }) {
                                 if (e.key === 'Escape') setEditNoteId(null)
                               }}
                             />
-                            <button onClick={() => saveNote(a.id)} className="text-green-600 hover:text-green-700"><Check size={14} /></button>
-                            <button onClick={() => setEditNoteId(null)} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
+                            <button onClick={() => saveNote(a.id)} className="text-green-600 dark:text-green-400 hover:text-green-700"><Check size={14} /></button>
+                            <button onClick={() => setEditNoteId(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={14} /></button>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 mt-1.5 ml-[18px] group">
-                            <span className="text-xs text-gray-500 italic flex-1">
-                              {a.note || <span className="text-gray-300">Aucune note</span>}
+                            <span className="text-xs text-gray-500 dark:text-gray-400 italic flex-1">
+                              {a.note || <span className="text-gray-300 dark:text-gray-600">Aucune note</span>}
                             </span>
                             <button onClick={() => { setEditNoteId(a.id); setEditNoteVal(a.note || '') }}
-                              className="text-gray-400 hover:text-primary transition-colors" title="Modifier la note">
+                              className="text-gray-400 dark:text-gray-500 hover:text-primary transition-colors" title="Modifier la note">
                               <Edit2 size={12} />
                             </button>
                             <button
@@ -429,7 +429,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                                 await supabase.from('appels_responsables').update({ note: 'Message vocal' }).eq('id', a.id)
                                 setAppels(prev => prev.map(x => x.id === a.id ? { ...x, note: 'Message vocal' } : x))
                               }}
-                              className="text-gray-400 hover:text-orange-500 transition-colors" title="Message vocal">
+                              className="text-gray-400 dark:text-gray-500 hover:text-orange-500 transition-colors" title="Message vocal">
                               <Voicemail size={12} />
                             </button>
                           </div>
@@ -448,7 +448,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                   {echs.length > 0 && (
                     <div className={orgs.length > 0 ? 'mb-4' : ''}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Échelonnements</span>
+                        <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Échelonnements</span>
                         <button onClick={() => { onClose(); navigate(`/assistant-social?tab=echelonnements&eleve=${eleveId}`) }}
                           className="flex items-center gap-1 text-xs text-primary hover:underline">
                           <ExternalLink size={11} /> Gérer
@@ -456,8 +456,8 @@ export default function FicheEleve({ eleveId, onClose }) {
                       </div>
                       <div className="space-y-1.5">
                         {echs.map(e => (
-                          <div key={e.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-1.5 text-sm gap-3">
-                            <span className="text-gray-700 truncate">
+                          <div key={e.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-1.5 text-sm gap-3">
+                            <span className="text-gray-700 dark:text-gray-200 truncate">
                               {fmtEur(e.montant)}{e.nombre_echeances ? ` — ${e.nombre_echeances} éch.` : ''}{e.mensualite ? ` de ${fmtEur(e.mensualite)}` : ''}
                             </span>
                             <StatusBadge val={e.statut} map={STATUT_ECH} />
@@ -469,7 +469,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                   {orgs.length > 0 && (
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Organismes tiers</span>
+                        <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Organismes tiers</span>
                         <button onClick={() => { onClose(); navigate(`/assistant-social?tab=organismes&eleve=${eleveId}`) }}
                           className="flex items-center gap-1 text-xs text-primary hover:underline">
                           <ExternalLink size={11} /> Gérer
@@ -477,8 +477,8 @@ export default function FicheEleve({ eleveId, onClose }) {
                       </div>
                       <div className="space-y-1.5">
                         {orgs.map(o => (
-                          <div key={o.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-1.5 text-sm gap-3">
-                            <span className="text-gray-700 capitalize truncate">
+                          <div key={o.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-1.5 text-sm gap-3">
+                            <span className="text-gray-700 dark:text-gray-200 capitalize truncate">
                               {o.organisme}{o.montant_accorde ? ` — ${fmtEur(o.montant_accorde)}` : ''}
                             </span>
                             <StatusBadge val={o.statut} map={STATUT_OT} />
@@ -489,7 +489,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                   )}
                 </Section>
               ) : (
-                <div className="py-10 text-center text-gray-400">
+                <div className="py-10 text-center text-gray-400 dark:text-gray-500">
                   <div className="text-3xl mb-2">🤝</div>
                   <p className="text-sm">Aucun suivi social pour cet élève.</p>
                 </div>
@@ -504,39 +504,39 @@ export default function FicheEleve({ eleveId, onClose }) {
               const totalPai = finData.paiements.reduce((s, p) => s + Number(p.montant || 0), 0)
               const solde = totalPai - totalFac
               const STATUT_FAC = {
-                facture:         { label: 'Facturé',         cls: 'bg-green-100 text-green-700' },
-                ignore:          { label: 'Ignoré',          cls: 'bg-gray-100 text-gray-500' },
-                rappel:          { label: 'Rappel',          cls: 'bg-orange-100 text-orange-700' },
-                mise_en_demeure: { label: 'Mise en demeure', cls: 'bg-red-100 text-red-700' },
+                facture:         { label: 'Facturé',         cls: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' },
+                ignore:          { label: 'Ignoré',          cls: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400' },
+                rappel:          { label: 'Rappel',          cls: 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300' },
+                mise_en_demeure: { label: 'Mise en demeure', cls: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' },
               }
               return (<>
                 <Section icon="💶" title="Financier">
                   <div className="flex items-center justify-between py-1 mb-3">
-                    <span className="text-sm text-gray-500 font-medium">Solde</span>
-                    <span className={`text-base font-bold ${solde < 0 ? 'text-red-600' : solde > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">Solde</span>
+                    <span className={`text-base font-bold ${solde < 0 ? 'text-red-600' : solde > 0 ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
                       {fmtEur(solde)}
                     </span>
                   </div>
 
                   {finData.factures.length > 0 && (
                     <div className="mb-4">
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Factures</span>
+                      <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Factures</span>
                       <div className="space-y-1.5 mt-2">
                         {finData.factures.map(f => {
-                          const st = STATUT_FAC[f.statut] || { label: f.statut, cls: 'bg-gray-100 text-gray-500' }
+                          const st = STATUT_FAC[f.statut] || { label: f.statut, cls: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400' }
                           return (
-                            <div key={f.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm gap-2">
+                            <div key={f.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 text-sm gap-2">
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium text-gray-700 truncate text-xs">{f.batch?.nom || f.batch?.numero || '—'}</p>
-                                <p className="text-gray-400 text-[11px] truncate">{f.numero} · {fmtDate(f.date)}</p>
+                                <p className="font-medium text-gray-700 dark:text-gray-200 truncate text-xs">{f.batch?.nom || f.batch?.numero || '—'}</p>
+                                <p className="text-gray-400 dark:text-gray-500 text-[11px] truncate">{f.numero} · {fmtDate(f.date)}</p>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
                                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
-                                <span className="font-semibold text-gray-700 tabular-nums text-xs">{fmtEur(f.montant)}</span>
+                                <span className="font-semibold text-gray-700 dark:text-gray-200 tabular-nums text-xs">{fmtEur(f.montant)}</span>
                                 <button
                                   onClick={e => { e.stopPropagation(); handlePDF(f.id) }}
                                   title="Imprimer / PDF"
-                                  className="text-gray-400 hover:text-primary transition-colors text-xs px-1.5 py-0.5 rounded hover:bg-primary/10"
+                                  className="text-gray-400 dark:text-gray-500 hover:text-primary transition-colors text-xs px-1.5 py-0.5 rounded hover:bg-primary/10"
                                 >🖨</button>
                               </div>
                             </div>
@@ -548,15 +548,15 @@ export default function FicheEleve({ eleveId, onClose }) {
 
                   {finData.paiements.length > 0 && (
                     <div>
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Paiements</span>
+                      <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Paiements</span>
                       <div className="space-y-1.5 mt-2">
                         {finData.paiements.map(p => (
-                          <div key={p.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm gap-2">
+                          <div key={p.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 text-sm gap-2">
                             <div className="min-w-0 flex-1">
-                              <p className="font-medium text-gray-700 text-xs">Payé par {PAYE_PAR_LABELS[p.paye_par] || p.paye_par || '—'}</p>
-                              <p className="text-gray-400 text-[11px]">{fmtDate(p.date)}{p.notes ? ` · ${p.notes}` : ''}</p>
+                              <p className="font-medium text-gray-700 dark:text-gray-200 text-xs">Payé par {PAYE_PAR_LABELS[p.paye_par] || p.paye_par || '—'}</p>
+                              <p className="text-gray-400 dark:text-gray-500 text-[11px]">{fmtDate(p.date)}{p.notes ? ` · ${p.notes}` : ''}</p>
                             </div>
-                            <span className="font-semibold text-green-600 tabular-nums shrink-0 text-xs">+{fmtEur(p.montant)}</span>
+                            <span className="font-semibold text-green-600 dark:text-green-400 tabular-nums shrink-0 text-xs">+{fmtEur(p.montant)}</span>
                           </div>
                         ))}
                       </div>
@@ -564,7 +564,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                   )}
 
                   {finData.factures.length === 0 && finData.paiements.length === 0 && (
-                    <p className="text-xs text-gray-400 italic">Aucun mouvement financier.</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 italic">Aucun mouvement financier.</p>
                   )}
                 </Section>
               </>)

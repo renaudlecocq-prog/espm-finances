@@ -42,35 +42,35 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
         className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 whitespace-nowrap transition-colors select-none ${
           dark
             ? 'rounded-lg ' + (totalActive > 0 ? 'text-white' : 'text-white/60 hover:text-white/90')
-            : 'rounded-full border ' + (totalActive > 0 ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-800')
+            : 'rounded-full border ' + (totalActive > 0 ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-gray-300 hover:text-gray-800 dark:hover:text-gray-100')
         }`}
         style={dark ? { backgroundColor: `rgba(255,255,255,${totalActive > 0 ? '0.18' : '0.10'})`, border: `1px solid rgba(255,255,255,${totalActive > 0 ? '0.25' : '0.12'})` } : {}}
       >
         <SlidersHorizontal size={12} />
         Filtres
         {totalActive > 0 && (
-          <span className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold leading-none ${dark ? 'bg-white text-primary' : 'bg-primary text-white'}`}>
+          <span className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold leading-none ${dark ? 'bg-white dark:bg-gray-800 text-primary' : 'bg-primary text-white'}`}>
             {totalActive}
           </span>
         )}
-        <ChevronDown size={11} className={`transition-transform duration-150 ${open ? 'rotate-180' : ''} ${totalActive > 0 ? 'text-primary' : 'text-gray-400'}`} />
+        <ChevronDown size={11} className={`transition-transform duration-150 ${open ? 'rotate-180' : ''} ${totalActive > 0 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`} />
       </button>
 
       {/* ── Panel ───────────────────────────────────────────────────── */}
       {open && (
         <div
-          className="absolute top-full left-0 mt-2 z-50 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden"
+          className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl shadow-xl overflow-hidden"
           style={{ width: panelW }}
         >
 
           {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-gray-200">
-            <span className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-              <SlidersHorizontal size={12} className="text-gray-400" /> Filtrer par colonne
+          <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-gray-200 dark:border-gray-600">
+            <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
+              <SlidersHorizontal size={12} className="text-gray-400 dark:text-gray-500" /> Filtrer par colonne
             </span>
             {totalActive > 0 && (
               <button onClick={() => { onClearAll(); setOpen(false) }}
-                className="text-xs text-red-400 hover:text-red-600 font-medium flex items-center gap-1 transition-colors">
+                className="text-xs text-red-400 dark:text-red-300 hover:text-red-600 font-medium flex items-center gap-1 transition-colors">
                 <X size={11} /> Tout effacer
               </button>
             )}
@@ -101,11 +101,11 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
 
                   {/* Options list — div+onClick, pas d'input natif */}
                   <div
-                    className="rounded-xl border border-gray-200 overflow-hidden"
+                    className="rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden"
                     style={{ maxHeight: opts.length > 7 ? 196 : 'none', overflowY: opts.length > 7 ? 'auto' : 'visible' }}
                   >
                     {opts.length === 0
-                      ? <p className="text-xs text-gray-400 px-3 py-2">—</p>
+                      ? <p className="text-xs text-gray-400 dark:text-gray-500 px-3 py-2">—</p>
                       : opts.map((o, i) => {
                           const val     = isObj(opts) ? o.value : o
                           const lbl     = isObj(opts) ? o.label  : o
@@ -115,8 +115,8 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
                               key={val}
                               onClick={() => onChange(def.key, val)}
                               className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer select-none transition-colors ${
-                                i > 0 ? 'border-t border-gray-100' : ''
-                              } ${checked ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'}`}
+                                i > 0 ? 'border-t border-gray-100 dark:border-gray-700' : ''
+                              } ${checked ? 'bg-primary/10 text-primary' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                             >
                               {/* Custom checkbox — aucun input HTML */}
                               <span
@@ -151,13 +151,13 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-            <span className="text-[11px] text-gray-400">
+          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-600 flex items-center justify-between">
+            <span className="text-[11px] text-gray-400 dark:text-gray-500">
               {totalActive === 0 ? 'Aucun filtre actif'
                 : `${totalActive} sélection${totalActive > 1 ? 's' : ''} active${totalActive > 1 ? 's' : ''}`}
             </span>
             <button onClick={() => setOpen(false)}
-              className="text-xs text-gray-500 hover:text-gray-800 font-medium transition-colors bg-white border border-gray-200 hover:border-gray-300 rounded-lg px-3 py-1">
+              className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 font-medium transition-colors bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 hover:border-gray-300 rounded-lg px-3 py-1">
               Fermer
             </button>
           </div>

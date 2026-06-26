@@ -88,7 +88,7 @@ const parseBelfiusCSV = (text, eleves) => {
 
 // ── Sort icon ──────────────────────────────────────────────────────────────
 function SortIcon({ col, sort }) {
-  if (sort.col !== col) return <ChevronsUpDown size={11} className="text-gray-300 ml-0.5" />
+  if (sort.col !== col) return <ChevronsUpDown size={11} className="text-gray-300 dark:text-gray-600 ml-0.5" />
   return sort.dir === 'asc'
     ? <ChevronUp size={11} className="text-primary ml-0.5" />
     : <ChevronDown size={11} className="text-primary ml-0.5" />
@@ -158,14 +158,14 @@ function ImportModal({ eleves, existingRefs, existingSignatures, onClose, onImpo
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            <h2 className="font-bold text-gray-800 text-lg">Import CSV Belfius</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Glissez votre extrait de compte Belfius (.csv)</p>
+            <h2 className="font-bold text-gray-800 dark:text-gray-100 text-lg">Import CSV Belfius</h2>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Glissez votre extrait de compte Belfius (.csv)</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={20} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -175,10 +175,10 @@ function ImportModal({ eleves, existingRefs, existingSignatures, onClose, onImpo
               onDragOver={e => { e.preventDefault(); setDragging(true) }}
               onDragLeave={() => setDragging(false)}
               onDrop={onDrop}
-              className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-primary/50'}`}>
+              className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600 hover:border-primary/50'}`}>
               <Upload size={32} className="mx-auto mb-3 text-gray-300" />
-              <p className="text-gray-500 font-medium mb-1">Glissez votre CSV ici</p>
-              <p className="text-xs text-gray-400 mb-4">ou</p>
+              <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Glissez votre CSV ici</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">ou</p>
               <label className="btn-primary cursor-pointer text-sm py-1.5 px-4">
                 Parcourir…
                 <input type="file" accept=".csv" className="hidden" onChange={onFileInput} />
@@ -188,35 +188,35 @@ function ImportModal({ eleves, existingRefs, existingSignatures, onClose, onImpo
             <>
               {/* Controls */}
               <div className="flex items-center gap-3 mb-4 flex-wrap">
-                <span className="text-sm text-gray-600 font-medium">{rows.length} ligne{rows.length > 1 ? 's' : ''} détectée{rows.length > 1 ? 's' : ''}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">{rows.length} ligne{rows.length > 1 ? 's' : ''} détectée{rows.length > 1 ? 's' : ''}</span>
                 {worldlineCount > 0 && (
                   <button onClick={() => setHideWorldline(h => !h)}
-                    className={`flex items-center gap-1.5 text-xs rounded-full border px-3 py-1 transition-colors ${hideWorldline ? 'bg-orange-500 border-orange-500 text-white' : 'border-orange-300 text-orange-600 hover:bg-orange-50'}`}>
+                    className={`flex items-center gap-1.5 text-xs rounded-full border px-3 py-1 transition-colors ${hideWorldline ? 'bg-orange-500 border-orange-500 text-white' : 'border-orange-300 text-orange-600 dark:text-orange-400 hover:bg-orange-50'}`}>
                     {hideWorldline ? '✓' : ''} Ignorer Worldline ({worldlineCount})
                   </button>
                 )}
                 {unmatched > 0 && (
-                  <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-3 py-1">
+                  <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border border-amber-200 rounded-full px-3 py-1">
                     <AlertTriangle size={11} /> {unmatched} élève{unmatched > 1 ? 's' : ''} non identifié{unmatched > 1 ? 's' : ''}
                   </span>
                 )}
                 {alreadyRows.length > 0 && (
-                  <span className="text-xs text-gray-400">{alreadyRows.length} déjà importé{alreadyRows.length > 1 ? 's' : ''}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">{alreadyRows.length} déjà importé{alreadyRows.length > 1 ? 's' : ''}</span>
                 )}
-                <button onClick={() => setRows([])} className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline">Changer de fichier</button>
+                <button onClick={() => setRows([])} className="ml-auto text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 underline">Changer de fichier</button>
               </div>
 
               {/* Preview table */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
+              <div className="border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
                 <table className="w-full text-xs">
-                  <thead className="bg-gray-50 border-b border-gray-100">
+                  <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
                     <tr>
-                      <th className="px-3 py-2 text-left text-gray-500 font-semibold uppercase whitespace-nowrap">Date</th>
-                      <th className="px-3 py-2 text-left text-gray-500 font-semibold uppercase">Payé par</th>
-                      <th className="px-3 py-2 text-left text-gray-500 font-semibold uppercase">Communication</th>
-                      <th className="px-3 py-2 text-right text-gray-500 font-semibold uppercase">Montant</th>
-                      <th className="px-3 py-2 text-left text-gray-500 font-semibold uppercase">Élève</th>
-                      <th className="px-3 py-2 text-left text-gray-500 font-semibold uppercase">Statut</th>
+                      <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400 font-semibold uppercase whitespace-nowrap">Date</th>
+                      <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400 font-semibold uppercase">Payé par</th>
+                      <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400 font-semibold uppercase">Communication</th>
+                      <th className="px-3 py-2 text-right text-gray-500 dark:text-gray-400 font-semibold uppercase">Montant</th>
+                      <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400 font-semibold uppercase">Élève</th>
+                      <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400 font-semibold uppercase">Statut</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -224,25 +224,25 @@ function ImportModal({ eleves, existingRefs, existingSignatures, onClose, onImpo
                       const already = existingRefs.has(r.reference_belfius)
                       const origIdx = rows.indexOf(r)
                       return (
-                        <tr key={i} className={`border-b border-gray-50 ${already ? 'opacity-40' : r.isWorldline && !hideWorldline ? 'bg-orange-50/50' : ''}`}>
-                          <td className="px-3 py-2 whitespace-nowrap text-gray-600">{fmtDate(r.date)}</td>
+                        <tr key={i} className={`border-b border-gray-50 dark:border-gray-800 ${already ? 'opacity-40' : r.isWorldline && !hideWorldline ? 'bg-orange-50/50' : ''}`}>
+                          <td className="px-3 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">{fmtDate(r.date)}</td>
                           <td className="px-3 py-2 min-w-[120px]">
-                            {already ? <span className="text-gray-400">{PAYE_PAR_LABELS[r.paye_par] || r.paye_par}</span> : (
-                              <select className="text-xs border border-gray-200 rounded-lg px-2 py-1 w-full bg-white outline-none focus:border-primary"
+                            {already ? <span className="text-gray-400 dark:text-gray-500">{PAYE_PAR_LABELS[r.paye_par] || r.paye_par}</span> : (
+                              <select className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 w-full bg-white dark:bg-gray-800 outline-none focus:border-primary"
                                 value={r.paye_par}
                                 onChange={e => setRows(prev => prev.map((row, i) => i === origIdx ? { ...row, paye_par: e.target.value } : row))}>
                                 {PAYE_PAR_OPTIONS.map(o => <option key={o} value={o}>{PAYE_PAR_LABELS[o]}</option>)}
                               </select>
                             )}
                           </td>
-                          <td className="px-3 py-2 text-gray-500 max-w-xs break-words whitespace-normal leading-snug">{r.communication}</td>
-                          <td className="px-3 py-2 text-right font-semibold text-green-600 whitespace-nowrap">{r.montant.toFixed(2)} €</td>
+                          <td className="px-3 py-2 text-gray-500 dark:text-gray-400 max-w-xs break-words whitespace-normal leading-snug">{r.communication}</td>
+                          <td className="px-3 py-2 text-right font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">{r.montant.toFixed(2)} €</td>
                           <td className="px-3 py-2 min-w-[160px]">
                             {already ? (
-                              <span className="text-gray-400">—</span>
+                              <span className="text-gray-400 dark:text-gray-500">—</span>
                             ) : (
                               <select
-                                className="text-xs border border-gray-200 rounded-lg px-2 py-1 w-full bg-white outline-none focus:border-primary"
+                                className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 w-full bg-white dark:bg-gray-800 outline-none focus:border-primary"
                                 value={r.eleve_id}
                                 onChange={e => updateEleve(origIdx, e.target.value)}>
                                 <option value="">— Non identifié —</option>
@@ -254,13 +254,13 @@ function ImportModal({ eleves, existingRefs, existingSignatures, onClose, onImpo
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {already ? (
-                              <span className="bg-gray-100 text-gray-500 text-xs rounded-full px-2 py-0.5">Déjà importé</span>
+                              <span className="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs rounded-full px-2 py-0.5">Déjà importé</span>
                             ) : r.isWorldline ? (
-                              <span className="bg-orange-100 text-orange-600 text-xs rounded-full px-2 py-0.5">Worldline</span>
+                              <span className="bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-400 text-xs rounded-full px-2 py-0.5">Worldline</span>
                             ) : r.eleve_id ? (
-                              <span className="bg-green-100 text-green-700 text-xs rounded-full px-2 py-0.5">✓ Identifié</span>
+                              <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs rounded-full px-2 py-0.5">✓ Identifié</span>
                             ) : (
-                              <span className="bg-amber-100 text-amber-700 text-xs rounded-full px-2 py-0.5">Non identifié</span>
+                              <span className="bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 text-xs rounded-full px-2 py-0.5">Non identifié</span>
                             )}
                           </td>
                         </tr>
@@ -275,14 +275,14 @@ function ImportModal({ eleves, existingRefs, existingSignatures, onClose, onImpo
 
         {/* Footer */}
         {rows.length > 0 && (
-          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-            <div className="text-sm text-gray-500">
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               {importError ? (
-                <span className="text-red-500 font-medium">Erreur : {importError}</span>
+                <span className="text-red-500 dark:text-red-400 font-medium">Erreur : {importError}</span>
               ) : (
                 <>
                   <span className="font-semibold text-primary">{importable}</span> paiement{importable > 1 ? 's' : ''} à importer
-                  {unmatched > 0 && <span className="text-amber-600 ml-2">({unmatched} sans élève — ignoré{unmatched > 1 ? 's' : ''})</span>}
+                  {unmatched > 0 && <span className="text-amber-600 dark:text-amber-400 ml-2">({unmatched} sans élève — ignoré{unmatched > 1 ? 's' : ''})</span>}
                 </>
               )}
             </div>
@@ -322,10 +322,10 @@ function EditModal({ paiement, eleves, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="font-bold text-gray-800">Modifier le paiement</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="font-bold text-gray-800 dark:text-gray-100">Modifier le paiement</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={20} /></button>
         </div>
         <div className="px-6 py-5 grid grid-cols-2 gap-4">
           <div className="col-span-2">
@@ -480,7 +480,7 @@ export default function Paiements() {
 
   const TH = ({ col, label, right }) => (
     <th onClick={() => toggleSort(col)}
-      className={`px-3 py-3 text-xs font-semibold text-gray-500 uppercase cursor-pointer select-none hover:text-primary whitespace-nowrap ${right ? 'text-right' : 'text-left'}`}>
+      className={`px-3 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase cursor-pointer select-none hover:text-primary whitespace-nowrap ${right ? 'text-right' : 'text-left'}`}>
       <span className={`flex items-center gap-0.5 ${right ? 'justify-end' : ''}`}>
         {label}<SortIcon col={col} sort={sort} />
       </span>
@@ -494,7 +494,7 @@ export default function Paiements() {
     { key: 'classe',   label: 'Classe',   options: [...new Set(data.map(r => r.eleve?.classe).filter(Boolean))].sort() },
   ], [data])
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   return (
     <div className="h-full flex flex-col">
@@ -536,8 +536,8 @@ export default function Paiements() {
 
       {/* Manual form */}
       {showForm && (
-        <div className="card p-5 mb-4 bg-gray-50 flex-shrink-0">
-          <h3 className="font-semibold text-gray-700 mb-3">Nouveau paiement</h3>
+        <div className="card p-5 mb-4 bg-gray-50 dark:bg-gray-900 flex-shrink-0">
+          <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">Nouveau paiement</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div className="col-span-2 md:col-span-1">
               <label className="label">Élève</label>
@@ -583,7 +583,7 @@ export default function Paiements() {
       {/* Table */}
       <div className="card p-0 flex-1 overflow-auto min-h-0">
         <table className="w-full text-sm">
-          <thead style={{ position: 'sticky', top: 0, zIndex: 20 }} className="bg-gray-50 border-b border-gray-100">
+          <thead style={{ position: 'sticky', top: 0, zIndex: 20 }} className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
             <tr>
               <TH col="date" label="Date" />
               <TH col="eleve" label="Élève" />
@@ -591,22 +591,22 @@ export default function Paiements() {
               <TH col="montant" label="Montant" right />
               <TH col="paye_par" label="Payé par" />
               <TH col="remarque" label="Remarque" />
-              <th className="px-3 py-3 text-xs font-semibold text-gray-500 uppercase text-center">Actions</th>
+              <th className="px-3 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Aucun paiement</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Aucun paiement</td></tr>
             ) : filtered.map(r => (
-              <tr key={r.id} onClick={() => setFicheId(r.eleve_id)} className="border-b border-gray-50 hover:bg-primary/5 cursor-pointer">
-                <td className="px-3 py-2.5 text-gray-500 text-xs whitespace-nowrap">{fmtDate(r.date)}</td>
-                <td className="px-3 py-2.5 font-semibold text-gray-800 whitespace-nowrap">{r.eleve?.nom} {r.eleve?.prenom}</td>
-                <td className="px-3 py-2.5 text-gray-500 text-xs">{r.eleve?.classe || '—'}</td>
+              <tr key={r.id} onClick={() => setFicheId(r.eleve_id)} className="border-b border-gray-50 dark:border-gray-800 hover:bg-primary/5 cursor-pointer">
+                <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">{fmtDate(r.date)}</td>
+                <td className="px-3 py-2.5 font-semibold text-gray-800 dark:text-gray-100 whitespace-nowrap">{r.eleve?.nom} {r.eleve?.prenom}</td>
+                <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400 text-xs">{r.eleve?.classe || '—'}</td>
                 {/* Montant — inline editable */}
-                <td className="px-3 py-2.5 text-right font-semibold text-green-600 whitespace-nowrap" onClick={e => isFinancier && startInline(e, r.id, 'montant', r.montant)}>
+                <td className="px-3 py-2.5 text-right font-semibold text-green-600 dark:text-green-400 whitespace-nowrap" onClick={e => isFinancier && startInline(e, r.id, 'montant', r.montant)}>
                   {isFinancier && inlineEdit[r.id]?.field === 'montant' ? (
                     <input autoFocus type="number" step="0.01"
-                      className="w-24 text-right border border-primary rounded px-1.5 py-0.5 text-xs font-semibold text-green-600 outline-none"
+                      className="w-24 text-right border border-primary rounded px-1.5 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400 outline-none"
                       value={inlineEdit[r.id].value}
                       onChange={e => setInlineEdit(prev => ({ ...prev, [r.id]: { ...prev[r.id], value: e.target.value } }))}
                       onBlur={() => patchField(r.id, 'montant', inlineEdit[r.id]?.value)}
@@ -617,10 +617,10 @@ export default function Paiements() {
                   )}
                 </td>
                 {/* Payé par — inline editable select */}
-                <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap" onClick={e => isFinancier && startInline(e, r.id, 'paye_par', r.paye_par || 'Responsable')}>
+                <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300 whitespace-nowrap" onClick={e => isFinancier && startInline(e, r.id, 'paye_par', r.paye_par || 'Responsable')}>
                   {isFinancier && inlineEdit[r.id]?.field === 'paye_par' ? (
                     <select autoFocus
-                      className="border border-primary rounded px-1.5 py-0.5 text-xs outline-none bg-white"
+                      className="border border-primary rounded px-1.5 py-0.5 text-xs outline-none bg-white dark:bg-gray-800"
                       value={inlineEdit[r.id].value}
                       onChange={e => patchField(r.id, 'paye_par', e.target.value)}
                       onBlur={() => setInlineEdit(p => { const n={...p}; delete n[r.id]; return n })}
@@ -631,12 +631,12 @@ export default function Paiements() {
                     <span className={`${isFinancier ? 'cursor-pointer hover:underline decoration-dotted' : ''}`}>{PAYE_PAR_LABELS[r.paye_par] || r.paye_par || '—'}</span>
                   )}
                 </td>
-                <td className="px-3 py-2.5 text-gray-400 text-xs max-w-[220px] truncate">{r.remarque || '—'}</td>
+                <td className="px-3 py-2.5 text-gray-400 dark:text-gray-500 text-xs max-w-[220px] truncate">{r.remarque || '—'}</td>
                 <td className="px-3 py-2.5">
                   <div className="flex gap-2 justify-center" onClick={e => e.stopPropagation()}>
                     {isFinancier && <>
-                      <button onClick={() => setEditPaiement(r)} className="text-gray-400 hover:text-primary"><Pencil size={14} /></button>
-                      <button onClick={() => del(r.id)} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
+                      <button onClick={() => setEditPaiement(r)} className="text-gray-400 dark:text-gray-500 hover:text-primary"><Pencil size={14} /></button>
+                      <button onClick={() => del(r.id)} className="text-gray-400 dark:text-gray-500 hover:text-red-500"><Trash2 size={14} /></button>
                     </>}
                   </div>
                 </td>
@@ -762,29 +762,29 @@ function PendingEconomeModal({ eleves, existingRefs, onClose, onImported }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            <h2 className="font-semibold text-gray-800">Récupérer depuis l'onglet Élèves (Économe)</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Transactions encodées dans Économe, non encore importées ici</p>
+            <h2 className="font-semibold text-gray-800 dark:text-gray-100">Récupérer depuis l'onglet Élèves (Économe)</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Transactions encodées dans Économe, non encore importées ici</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X size={18} className="text-gray-500" />
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+            <X size={18} className="text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-5">
           {loading ? (
-            <div className="text-center py-12 text-gray-400">Chargement…</div>
+            <div className="text-center py-12 text-gray-400 dark:text-gray-500">Chargement…</div>
           ) : rows.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
+            <div className="text-center py-12 text-gray-400 dark:text-gray-500">
               <p className="font-medium">Aucun encodage en attente</p>
               <p className="text-sm mt-1">Importez d'abord un CSV dans l'onglet Élèves de la page Économe.</p>
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-gray-100">
+                <tr className="border-b-2 border-gray-100 dark:border-gray-700">
                   <th className="w-8 px-2 py-2">
                     <input type="checkbox"
                       checked={rows.filter(r => !r.alreadyImported).every(r => selected.has(r.id))}
@@ -792,38 +792,38 @@ function PendingEconomeModal({ eleves, existingRefs, onClose, onImported }) {
                         const ids = rows.filter(r => !r.alreadyImported).map(r => r.id)
                         setSelected(e.target.checked ? new Set(ids) : new Set())
                       }}
-                      className="rounded border-gray-300 text-indigo-600" />
+                      className="rounded border-gray-300 dark:border-gray-500 text-indigo-600 dark:text-indigo-400" />
                   </th>
-                  <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Date</th>
-                  <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Libellé / Communication</th>
-                  <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Élève associé</th>
-                  <th className="text-right px-3 py-2 text-xs font-semibold text-gray-500">Montant</th>
-                  <th className="text-center px-3 py-2 text-xs font-semibold text-gray-500">Statut</th>
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Date</th>
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Libellé / Communication</th>
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Élève associé</th>
+                  <th className="text-right px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Montant</th>
+                  <th className="text-center px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Statut</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map(r => (
-                  <tr key={r.id} className={`border-b border-gray-50 ${r.alreadyImported ? 'opacity-40' : 'hover:bg-gray-50/60'}`}>
+                  <tr key={r.id} className={`border-b border-gray-50 dark:border-gray-800 ${r.alreadyImported ? 'opacity-40' : 'hover:bg-gray-50/60'}`}>
                     <td className="px-2 py-2">
                       <input type="checkbox"
                         checked={selected.has(r.id)}
                         disabled={r.alreadyImported}
                         onChange={() => toggleRow(r.id)}
-                        className="rounded border-gray-300 text-indigo-600" />
+                        className="rounded border-gray-300 dark:border-gray-500 text-indigo-600 dark:text-indigo-400" />
                     </td>
-                    <td className="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">{fmtDate(r.date_operation)}</td>
+                    <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{fmtDate(r.date_operation)}</td>
                     <td className="px-3 py-2 max-w-[220px]">
-                      <p className="text-xs font-medium text-gray-700 truncate">{r.libelle || '—'}</p>
-                      {r.communication && <p className="text-[11px] text-gray-400 truncate">{r.communication}</p>}
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">{r.libelle || '—'}</p>
+                      {r.communication && <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{r.communication}</p>}
                     </td>
                     <td className="px-3 py-2">
                       {r.alreadyImported ? (
-                        <span className="text-xs text-gray-400 italic">{r.matchedEleve ? `${r.matchedEleve.prenom} ${r.matchedEleve.nom}` : '—'}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">{r.matchedEleve ? `${r.matchedEleve.prenom} ${r.matchedEleve.nom}` : '—'}</span>
                       ) : (
                         <select
                           value={r.eleve_id || ''}
                           onChange={e => setEleveForRow(r.id, e.target.value)}
-                          className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[180px] focus:outline-none focus:border-indigo-400"
+                          className="text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1 max-w-[180px] focus:outline-none focus:border-indigo-400"
                         >
                           <option value="">— Non associé —</option>
                           {eleves.map(el => (
@@ -835,16 +835,16 @@ function PendingEconomeModal({ eleves, existingRefs, onClose, onImported }) {
                       )}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      <span className="text-xs font-semibold text-green-600">
+                      <span className="text-xs font-semibold text-green-600 dark:text-green-400">
                         {Number(r.montant_entree).toFixed(2)} €
                       </span>
                     </td>
                     <td className="px-3 py-2 text-center">
                       {r.alreadyImported
-                        ? <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Importé</span>
+                        ? <span className="text-[10px] bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full font-medium">Importé</span>
                         : !r.eleve_id
-                          ? <span className="text-[10px] bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full font-medium">Sans élève</span>
-                          : <span className="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-medium">Prêt</span>
+                          ? <span className="text-[10px] bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">Sans élève</span>
+                          : <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-medium">Prêt</span>
                       }
                     </td>
                   </tr>
@@ -854,17 +854,17 @@ function PendingEconomeModal({ eleves, existingRefs, onClose, onImported }) {
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between">
-          <p className="text-xs text-gray-400">
+        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             {importable} paiement{importable !== 1 ? 's' : ''} à importer
             {rows.filter(r => selected.has(r.id) && !r.eleve_id).length > 0 && (
-              <span className="text-amber-500 ml-2">
+              <span className="text-amber-500 dark:text-amber-400 ml-2">
                 ({rows.filter(r => selected.has(r.id) && !r.eleve_id).length} sans élève associé — seront ignorés)
               </span>
             )}
           </p>
           <div className="flex gap-3">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
               Annuler
             </button>
             <button

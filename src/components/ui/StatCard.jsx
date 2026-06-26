@@ -7,7 +7,7 @@ export default function StatCard({ icon: Icon, label, value, sub, color = 'prima
     blue:     'bg-blue-600 text-white',
     purple:   'bg-purple-600 text-white',
     orange:   'bg-orange-500 text-white',
-    gray:     'bg-gray-200 text-primary',
+    gray:     'bg-gray-200 dark:bg-gray-600 text-primary',
   }
   return (
     <div

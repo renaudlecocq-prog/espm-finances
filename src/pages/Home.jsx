@@ -73,22 +73,22 @@ function StatCard({ label, value, sub, to, color = 'primary', icon, chart, chart
 function SectionTitle({ icon, title, subtitle }) {
   return (
     <div className="mb-4">
-      <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+      <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
         <span>{icon}</span> {title}
       </h2>
-      {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+      {subtitle && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{subtitle}</p>}
     </div>
   )
 }
 function MiniStat({ label, value, to, color = 'gray' }) {
   const colors = {
-    gray: 'bg-gray-100 text-gray-700',
-    blue: 'bg-blue-100 text-blue-800',
+    gray: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200',
+    blue: 'bg-blue-100 dark:bg-blue-900 text-blue-800',
     red: 'bg-red-100 text-red-800',
-    green: 'bg-green-100 text-green-800',
+    green: 'bg-green-100 dark:bg-green-900 text-green-800',
     orange: 'bg-orange-100 text-orange-800',
-    indigo: 'bg-indigo-100 text-indigo-800',
-    purple: 'bg-purple-100 text-purple-800',
+    indigo: 'bg-indigo-100 dark:bg-indigo-900 text-indigo-800',
+    purple: 'bg-purple-100 dark:bg-purple-900 text-purple-800',
   }
   const inner = (
     <div className={`rounded-xl p-4 ${colors[color] || colors.gray}${to ? ' cursor-pointer hover:brightness-95 transition-all' : ''}`}>
@@ -107,7 +107,7 @@ function HomeMdp() {
       .eq('created_by', user?.id).neq('statut', 'archive').order('date_debut')
       .then(({ data }) => { setActivites(data || []); setLoading(false) })
   }, [user])
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement...</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement...</div>
   const nonLiees = activites.filter(a => a.statut === 'publie' && (!a.montant_total || a.montant_total == 0))
   return (
     <>
@@ -190,7 +190,7 @@ function HomeFinancier() {
     })
   }, [])
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement...</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement...</div>
   const totA = aFacturer.frais + aFacturer.materiel + aFacturer.activites + aFacturer.autres
   const totF = facture.frais + facture.materiel + facture.activites + facture.autres
   return (
@@ -213,7 +213,7 @@ function HomeFinancier() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <SectionTitle icon="📦" title="Éléments à facturer" subtitle="Articles et activités avec statut à facturer" />
-          <span className="text-lg font-bold text-yellow-700 bg-yellow-50 px-3 py-1 rounded-lg">{fmtShort(totA)}</span>
+          <span className="text-lg font-bold text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-950 px-3 py-1 rounded-lg">{fmtShort(totA)}</span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <MiniStat label="Frais obligatoires" value={fmtShort(aFacturer.frais)} to="/articles?onglet=attributions" color="blue" />
@@ -226,7 +226,7 @@ function HomeFinancier() {
         <SectionTitle icon="🤝" title="Suivi social" subtitle="Situations financières particulières en cours" />
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Échelonnements</h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Échelonnements</h3>
             <div className="grid grid-cols-3 gap-3">
               <MiniStat label="En cours" value={echStats.en_cours} to="/assistant-social" color="blue" />
               <MiniStat label="Non respecté" value={echStats.non_respecte} to="/assistant-social" color="red" />
@@ -234,7 +234,7 @@ function HomeFinancier() {
             </div>
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Organismes tiers (actifs)</h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Organismes tiers (actifs)</h3>
             <div className="grid grid-cols-4 gap-3">
               <MiniStat label="CPAS" value={orgStats.CPAS} to="/assistant-social" color="blue" />
               <MiniStat label="ULB" value={orgStats.ULB} to="/assistant-social" color="indigo" />
@@ -247,7 +247,7 @@ function HomeFinancier() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <SectionTitle icon="✔️" title="Éléments facturés" subtitle="Articles et activités déjà facturés cette année" />
-          <span className="text-lg font-bold text-green-700 bg-green-50 px-3 py-1 rounded-lg">{fmtShort(totF)}</span>
+          <span className="text-lg font-bold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950 px-3 py-1 rounded-lg">{fmtShort(totF)}</span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <MiniStat label="Frais obligatoires" value={fmtShort(facture.frais)} to="/articles?onglet=attributions" color="green" />
@@ -284,15 +284,15 @@ function HomeFinancier() {
 }
 export default function Home() {
   const { isFinancier, isMdp, role, effectiveRole, loading } = useAuth()
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement...</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement...</div>
   if (isFinancier) return <HomeFinancier />
   if (isMdp) return <HomeMdp />
   if (effectiveRole === 'responsable' || role === 'responsable') return <HomeResponsable />
   return (
     <div className="p-8 text-center">
       <div className="text-4xl mb-4">🏫</div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">ESPM+</h1>
-      <p className="text-gray-500">Bienvenue.</p>
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">ESPM+</h1>
+      <p className="text-gray-500 dark:text-gray-400">Bienvenue.</p>
     </div>
   )
 }
@@ -311,27 +311,27 @@ function isMajeurR(dateNaissance) {
 }
 
 const STATUT_ECH_R = {
-  en_cours:     { label: 'En cours',     cls: 'bg-blue-100 text-blue-700' },
-  attente:      { label: 'En attente',   cls: 'bg-yellow-100 text-yellow-700' },
-  non_respecte: { label: 'Non respecté', cls: 'bg-red-100 text-red-700' },
-  termine:      { label: 'Terminé',      cls: 'bg-green-100 text-green-700' },
+  en_cours:     { label: 'En cours',     cls: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' },
+  attente:      { label: 'En attente',   cls: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300' },
+  non_respecte: { label: 'Non respecté', cls: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' },
+  termine:      { label: 'Terminé',      cls: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' },
 }
 const STATUT_OT_R = {
-  en_cours: { label: 'En cours',  cls: 'bg-blue-100 text-blue-700' },
-  valide:   { label: 'Validé',    cls: 'bg-green-100 text-green-700' },
-  refuse:   { label: 'Refusé',    cls: 'bg-red-100 text-red-700' },
-  cloture:  { label: 'Clôturé',   cls: 'bg-gray-100 text-gray-600' },
+  en_cours: { label: 'En cours',  cls: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' },
+  valide:   { label: 'Validé',    cls: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' },
+  refuse:   { label: 'Refusé',    cls: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' },
+  cloture:  { label: 'Clôturé',   cls: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' },
 }
 
 function RBadge({ val, map }) {
-  const m = map[val] || { label: val, cls: 'bg-gray-100 text-gray-600' }
+  const m = map[val] || { label: val, cls: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' }
   return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${m.cls}`}>{m.label}</span>
 }
 
 function RSection({ icon, title, children }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5">
-      <h2 className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5">
+      <h2 className="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">
         <span>{icon}</span>{title}
       </h2>
       {children}
@@ -342,9 +342,9 @@ function RSection({ icon, title, children }) {
 function RField({ label, value }) {
   if (value === null || value === undefined || value === '') return null
   return (
-    <div className="flex gap-3 py-1.5 text-sm border-b border-gray-50 last:border-0">
-      <span className="text-gray-400 w-40 shrink-0">{label}</span>
-      <span className="text-gray-800">{value}</span>
+    <div className="flex gap-3 py-1.5 text-sm border-b border-gray-50 dark:border-gray-800 last:border-0">
+      <span className="text-gray-400 dark:text-gray-500 w-40 shrink-0">{label}</span>
+      <span className="text-gray-800 dark:text-gray-100">{value}</span>
     </div>
   )
 }
@@ -368,9 +368,9 @@ function generateEcheancier(ech) {
   })
 }
 const ECH_PAY = {
-  paye:      { label:'Payé',      cls:'bg-green-100 text-green-700', icon:'✓' },
-  en_retard: { label:'En retard', cls:'bg-red-100 text-red-700',     icon:'⚠' },
-  a_venir:   { label:'À venir',   cls:'bg-gray-100 text-gray-500',   icon:'◌' },
+  paye:      { label:'Payé',      cls:'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300', icon:'✓' },
+  en_retard: { label:'En retard', cls:'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',     icon:'⚠' },
+  a_venir:   { label:'À venir',   cls:'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',   icon:'◌' },
 }
 function HomeResponsable() {
   const { user } = useAuth()
@@ -448,13 +448,13 @@ function HomeResponsable() {
     })
   }, [activeId])
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   if (eleves.length === 0) return (
     <div className="p-8 text-center">
       <div className="text-4xl mb-4">🏫</div>
-      <h1 className="text-xl font-bold text-gray-700 mb-2">Bienvenue sur ESPM+</h1>
-      <p className="text-gray-500 text-sm">
+      <h1 className="text-xl font-bold text-gray-700 dark:text-gray-200 mb-2">Bienvenue sur ESPM+</h1>
+      <p className="text-gray-500 dark:text-gray-400 text-sm">
         Aucun élève lié à votre compte.<br />Contactez l'école si vous pensez que c'est une erreur.
       </p>
     </div>
@@ -492,7 +492,7 @@ function HomeResponsable() {
               className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                 activeId === e.id
                   ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               {e.prenom} {e.nom}
@@ -502,7 +502,7 @@ function HomeResponsable() {
       )}
 
       {loadingFiche ? (
-        <div className="flex items-center justify-center py-16 text-gray-400 gap-2">
+        <div className="flex items-center justify-center py-16 text-gray-400 dark:text-gray-500 gap-2">
           <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity=".25"/>
             <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
@@ -513,38 +513,38 @@ function HomeResponsable() {
         <div className="space-y-3">
 
           {/* ── Hero : identité principale ── */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 flex items-center gap-5">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 flex items-center gap-5">
             {photo ? (
-              <img src={photo} alt="" className="w-20 h-20 rounded-full object-cover shrink-0 border-2 border-gray-100 shadow-sm" />
+              <img src={photo} alt="" className="w-20 h-20 rounded-full object-cover shrink-0 border-2 border-gray-100 dark:border-gray-700 shadow-sm" />
             ) : (
               <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary text-2xl font-bold select-none">
                 {(eleve.prenom?.[0] || '') + (eleve.nom?.[0] || '')}
               </div>
             )}
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-gray-800 truncate">{eleve.prenom} {eleve.nom}</h1>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 truncate">{eleve.prenom} {eleve.nom}</h1>
               <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                {eleve.classe && <span className="text-sm text-gray-500 font-medium">{eleve.classe}</span>}
-                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${majeur ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                {eleve.classe && <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">{eleve.classe}</span>}
+                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${majeur ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'}`}>
                   {majeur ? 'Majeur·e' : 'Mineur·e'}
                 </span>
-                {!eleve.actif && <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500">Inactif</span>}
+                {!eleve.actif && <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Inactif</span>}
               </div>
             </div>
           </div>
 
           {/* ── Onglets ── */}
-          <div className="bg-gray-100 rounded-xl p-0.5 flex">
+          <div className="bg-gray-100 dark:bg-gray-700 rounded-xl p-0.5 flex">
             <button onClick={() => setActiveTabR('info')}
-              className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTabR === 'info' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTabR === 'info' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
               Informations
             </button>
             <button onClick={() => setActiveTabR('social')}
-              className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTabR === 'social' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTabR === 'social' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
               Suivi social {hasAS && <span className="ml-1 text-xs text-orange-400">●</span>}
             </button>
             <button onClick={() => setActiveTabR('financier')}
-              className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTabR === 'financier' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTabR === 'financier' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
               Financier
             </button>
           </div>
@@ -589,9 +589,9 @@ function HomeResponsable() {
             <RSection icon="👪" title="Responsables légaux">
               <div className="space-y-2">
                 {responsables.map((r, i) => (
-                  <div key={r.idx} className={`flex items-center justify-between py-1.5 text-sm ${i > 0 ? 'border-t border-gray-50' : ''}`}>
-                    <span className="font-medium text-gray-800">{r.nom || `Responsable ${r.idx}`}</span>
-                    {r.tel && <span className="text-gray-500">{r.tel}</span>}
+                  <div key={r.idx} className={`flex items-center justify-between py-1.5 text-sm ${i > 0 ? 'border-t border-gray-50 dark:border-gray-800' : ''}`}>
+                    <span className="font-medium text-gray-800 dark:text-gray-100">{r.nom || `Responsable ${r.idx}`}</span>
+                    {r.tel && <span className="text-gray-500 dark:text-gray-400">{r.tel}</span>}
                   </div>
                 ))}
               </div>
@@ -604,24 +604,24 @@ function HomeResponsable() {
             <RSection icon="🤝" title="Suivi social">
               {echs.length > 0 && (
                 <div className={orgs.length > 0 ? 'mb-4' : ''}>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Échelonnements</p>
+                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Échelonnements</p>
                   <div className="space-y-3">
                     {echs.map(e => {
                       const cal = generateEcheancier(e)
                       const nbPayes    = cal.filter(c => c.paiement === 'paye').length
                       const nbRetard   = cal.filter(c => c.paiement === 'en_retard').length
                       return (
-                        <div key={e.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                        <div key={e.id} className="border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
                           {/* En-tête échelonnement */}
-                          <div className="flex items-center justify-between bg-gray-50 px-3 py-2.5 gap-3">
-                            <span className="text-sm text-gray-700 font-medium">
+                          <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 px-3 py-2.5 gap-3">
+                            <span className="text-sm text-gray-700 dark:text-gray-200 font-medium">
                               {fmtEurR(e.montant)}
                               {e.nombre_echeances ? ` · ${e.nombre_echeances} mensualités` : ''}
                               {e.mensualite ? ` de ${fmtEurR(e.mensualite)}` : ''}
                             </span>
                             <div className="flex items-center gap-2">
                               {nbRetard > 0 && (
-                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300">
                                   {nbRetard} en retard
                                 </span>
                               )}
@@ -630,18 +630,18 @@ function HomeResponsable() {
                           </div>
                           {/* Calendrier mois par mois */}
                           {cal.length > 0 && (
-                            <div className="divide-y divide-gray-100">
+                            <div className="divide-y divide-gray-100 dark:divide-gray-700">
                               {cal.map(({ num, date, montant, paiement }) => {
                                 const p = ECH_PAY[paiement] || ECH_PAY.a_venir
                                 const dateStr = date.toLocaleDateString('fr-BE', { day:'2-digit', month:'2-digit', year:'numeric' })
                                 return (
                                   <div key={num} className="flex items-center justify-between px-3 py-2 text-sm">
                                     <div className="flex items-center gap-3">
-                                      <span className="w-5 text-center font-semibold text-gray-400 text-xs">{num}</span>
-                                      <span className="text-gray-600">{dateStr}</span>
+                                      <span className="w-5 text-center font-semibold text-gray-400 dark:text-gray-500 text-xs">{num}</span>
+                                      <span className="text-gray-600 dark:text-gray-300">{dateStr}</span>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                      <span className="text-gray-700 font-medium tabular-nums">{fmtEurR(montant)}</span>
+                                      <span className="text-gray-700 dark:text-gray-200 font-medium tabular-nums">{fmtEurR(montant)}</span>
                                       <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${p.cls}`}>
                                         <span>{p.icon}</span> {p.label}
                                       </span>
@@ -659,11 +659,11 @@ function HomeResponsable() {
               )}
               {orgs.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Organismes tiers</p>
+                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Organismes tiers</p>
                   <div className="space-y-1.5">
                     {orgs.map(o => (
-                      <div key={o.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 text-sm gap-3">
-                        <span className="text-gray-700 capitalize truncate">
+                      <div key={o.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-xl px-3 py-2 text-sm gap-3">
+                        <span className="text-gray-700 dark:text-gray-200 capitalize truncate">
                           {o.organisme}
                           {o.montant_accorde ? ` · ${fmtEurR(o.montant_accorde)} accordé·s` : ''}
                         </span>
@@ -675,7 +675,7 @@ function HomeResponsable() {
               )}
             </RSection>
           ) : (
-            <div className="py-10 text-center text-gray-400">
+            <div className="py-10 text-center text-gray-400 dark:text-gray-500">
               <div className="text-3xl mb-2">🤝</div>
               <p className="text-sm">Aucun suivi social pour cet élève.</p>
             </div>
@@ -684,20 +684,20 @@ function HomeResponsable() {
           {/* ══ TAB : Financier ══ */}
           {activeTabR === 'financier' && <RSection icon="💶" title="Financier">
             <div className="flex items-center justify-between py-1">
-              <span className="text-sm text-gray-500">Solde actuel</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Solde actuel</span>
               <span className={`text-xl font-bold ${
-                solde < 0 ? 'text-red-600' : solde > 0 ? 'text-green-600' : 'text-gray-400'
+                solde < 0 ? 'text-red-600' : solde > 0 ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'
               }`}>
                 {fmtEurR(solde)}
               </span>
             </div>
             {solde < 0 && (
-              <p className="text-xs text-red-500 mt-1.5">
+              <p className="text-xs text-red-500 dark:text-red-400 mt-1.5">
                 Un solde négatif indique un montant dû à l'école. Contactez-nous pour plus d'informations.
               </p>
             )}
             {solde > 0 && (
-              <p className="text-xs text-green-600 mt-1.5">
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1.5">
                 Un solde positif signifie qu'un crédit est disponible sur le compte de votre enfant.
               </p>
             )}

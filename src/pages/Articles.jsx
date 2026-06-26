@@ -92,39 +92,39 @@ function MultiSearchSelect({ options, value, onChange, placeholder, single = fal
     <div ref={ref} className="relative">
       <div className="input cursor-pointer flex flex-wrap gap-1 items-center min-h-[38px]"
         onClick={() => setOpen(o => !o)}>
-        {selectedOptions.length === 0 && <span className="text-gray-400 text-sm">{placeholder}</span>}
-        {single && selectedOptions.length > 0 && <span className="text-gray-700 text-sm">{getLbl(selectedOptions[0])}</span>}
+        {selectedOptions.length === 0 && <span className="text-gray-400 dark:text-gray-500 text-sm">{placeholder}</span>}
+        {single && selectedOptions.length > 0 && <span className="text-gray-700 dark:text-gray-200 text-sm">{getLbl(selectedOptions[0])}</span>}
         {!single && selectedOptions.map(o => (
           <span key={getVal(o)} className="flex items-center gap-1 bg-primary/10 text-primary text-xs rounded-full px-2 py-0.5">
             {getLbl(o)}
             <button type="button" onClick={e => { e.stopPropagation(); toggle(getVal(o)) }} className="hover:text-red-500">×</button>
           </span>
         ))}
-        <ChevronDown size={14} className="ml-auto text-gray-400 shrink-0" />
+        <ChevronDown size={14} className="ml-auto text-gray-400 dark:text-gray-500 shrink-0" />
       </div>
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 flex flex-col">
-          <div className="p-2 border-b border-gray-100">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg z-50 max-h-60 flex flex-col">
+          <div className="p-2 border-b border-gray-100 dark:border-gray-700">
             <div className="relative">
-              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input autoFocus className="w-full pl-6 pr-2 py-1 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary"
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+              <input autoFocus className="w-full pl-6 pr-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary"
                 placeholder="Rechercher…" value={q} onChange={e => setQ(e.target.value)}
                 onClick={e => e.stopPropagation()} />
             </div>
           </div>
           <div className="overflow-y-auto">
-            {filtered.length === 0 && <p className="text-xs text-gray-400 text-center py-3">Aucun résultat</p>}
+            {filtered.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">Aucun résultat</p>}
             {filtered.map(o => {
               const v = getVal(o); const l = getLbl(o); const sel = isSelected(v)
               return (
                 <button key={v} type="button"
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${sel ? 'text-primary font-medium' : 'text-gray-700'}`}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 ${sel ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-200'}`}
                   onClick={() => toggle(v)}>
                   {single
-                    ? <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${sel ? 'border-primary' : 'border-gray-300'}`}>
+                    ? <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${sel ? 'border-primary' : 'border-gray-300 dark:border-gray-500'}`}>
                         {sel && <span className="w-2 h-2 rounded-full bg-primary block" />}
                       </span>
-                    : <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${sel ? 'bg-primary border-primary' : 'border-gray-300'}`}>
+                    : <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${sel ? 'bg-primary border-primary' : 'border-gray-300 dark:border-gray-500'}`}>
                         {sel && <span className="text-white text-xs leading-none">✓</span>}
                       </span>
                   }
@@ -161,8 +161,8 @@ function SelectionEleves({ badge, classes, setClasses, groupes, setGroupes, allC
   }
 
   return (
-    <div className={`rounded-xl border-2 p-4 space-y-3 ${badge === 'add' ? 'border-green-200 bg-green-50/30' : 'border-red-200 bg-red-50/30'}`}>
-      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge === 'add' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+    <div className={`rounded-xl border-2 p-4 space-y-3 ${badge === 'add' ? 'border-green-200 dark:border-green-800 bg-green-50/30' : 'border-red-200 dark:border-red-800 bg-red-50/30'}`}>
+      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge === 'add' ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'}`}>
         {badge === 'add' ? '+ Ajouter élèves de' : '− Retirer élèves de'}
       </span>
       <div className="grid grid-cols-2 gap-3">
@@ -203,13 +203,13 @@ function ArticleModal({ editRow, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-8">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="font-bold text-gray-800 text-lg">{editRow ? 'Modifier' : 'Nouvel'} article</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg my-8">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="font-bold text-gray-800 dark:text-gray-100 text-lg">{editRow ? 'Modifier' : 'Nouvel'} article</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={20} /></button>
         </div>
         <div className="px-6 py-5 space-y-4">
-          {error && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{error}</div>}
+          {error && <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-300">{error}</div>}
           <div>
             <label className="label">Nom *</label>
             <input className="input" value={form.nom} onChange={e => f('nom', e.target.value)} autoFocus />
@@ -238,7 +238,7 @@ function ArticleModal({ editRow, onClose, onSaved }) {
             </select>
           </div>
         </div>
-        <div className="flex gap-2 px-6 py-4 border-t border-gray-100">
+        <div className="flex gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-700">
           <button onClick={save} disabled={saving} className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
             {saving && <Loader2 size={14} className="animate-spin" />}
             {saving ? 'Enregistrement…' : 'Enregistrer'}
@@ -330,14 +330,14 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
-          <h2 className="font-bold text-gray-800 text-lg">{editRow ? "Modifier l'attribution" : 'Nouvelle attribution'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl my-8">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 rounded-t-2xl z-10">
+          <h2 className="font-bold text-gray-800 dark:text-gray-100 text-lg">{editRow ? "Modifier l'attribution" : 'Nouvelle attribution'}</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={20} /></button>
         </div>
 
         <div className="px-6 py-5 space-y-5 overflow-y-auto">
-          {error && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{error}</div>}
+          {error && <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-300">{error}</div>}
 
           {/* Article */}
           <div>
@@ -355,7 +355,7 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
                 <button key={v} type="button"
                   onClick={() => f('type_attribution', v)}
                   className={`flex-1 rounded-xl border-2 py-2.5 text-sm font-medium transition-colors
-                    ${form.type_attribution === v ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                    ${form.type_attribution === v ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300'}`}>
                   {l}
                 </button>
               ))}
@@ -375,7 +375,7 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
                 allClasses={allClasses} groupOptions={groupOptions} />
               {/* Exclure des élèves spécifiques */}
               <div className="rounded-xl border-2 border-amber-200 bg-amber-50/30 p-4">
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300">
                   − Retirer spécifiquement
                 </span>
                 <div className="mt-3">
@@ -399,9 +399,9 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
           )}
 
           {/* Nb élèves calculé */}
-          <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl">
-            <span className="text-sm text-gray-500">Élèves concernés :</span>
-            <span className={`font-bold text-lg ${nbEleves > 0 ? 'text-primary' : 'text-gray-300'}`}>{nbEleves}</span>
+          <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Élèves concernés :</span>
+            <span className={`font-bold text-lg ${nbEleves > 0 ? 'text-primary' : 'text-gray-300 dark:text-gray-600'}`}>{nbEleves}</span>
           </div>
 
           {/* Quantité + prix */}
@@ -414,7 +414,7 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
             <div>
               <label className="label">
                 Prix appliqué (€)
-                {selectedArticle && <span className="ml-1 text-gray-400 font-normal">— article : {fmt(selectedArticle.prix_unitaire)}</span>}
+                {selectedArticle && <span className="ml-1 text-gray-400 dark:text-gray-500 font-normal">— article : {fmt(selectedArticle.prix_unitaire)}</span>}
               </label>
               <input className="input" type="number" step="0.01" value={form.prix_unitaire_applique}
                 placeholder={selectedArticle ? String(selectedArticle.prix_unitaire) : '0'}
@@ -422,7 +422,7 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
             </div>
             <div>
               <label className="label">Montant total estimé</label>
-              <div className="input bg-gray-50 text-gray-700 font-semibold">{nbEleves > 0 ? fmt(montantTotal) : '—'}</div>
+              <div className="input bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-semibold">{nbEleves > 0 ? fmt(montantTotal) : '—'}</div>
             </div>
           </div>
 
@@ -432,7 +432,7 @@ function AttributionModal({ articles, allEleves, allClasses, groupOptions, eleve
           </div>
         </div>
 
-        <div className="flex gap-2 px-6 py-4 border-t border-gray-100">
+        <div className="flex gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-700">
           <button onClick={save} disabled={saving} className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
             {saving && <Loader2 size={14} className="animate-spin" />}
             {saving ? 'Enregistrement…' : 'Enregistrer'}
@@ -491,7 +491,7 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
     return parts.join(' + ') || (r.classes?.join(', ') || '—')
   }
 
-  if (loading) return <div className="py-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="py-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   return (
     <div>
@@ -499,33 +499,33 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
       <div className="card p-0 overflow-hidden">
         <div style={{ height: 'calc(100vh - 260px)', overflowY: 'auto' }}>
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-10">
               <tr>
                 {['Article', 'Catégorie', 'Attribution', 'Nb élèves', 'Qté', 'Prix / élève', 'Total', 'Statut', ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-4 py-10 text-center text-gray-400">Aucune attribution</td></tr>
+                <tr><td colSpan={9} className="px-4 py-10 text-center text-gray-400 dark:text-gray-500">Aucune attribution</td></tr>
               )}
               {filtered.map(r => {
                 const prix = r.prix_unitaire_applique ?? r.article?.prix_unitaire ?? 0
                 const total = (r.nb_eleves || 0) * Number(prix) * (r.quantite || 1)
                 return (
-                  <tr key={r.id} className="border-b border-gray-200 odd:bg-white even:bg-gray-50/60 hover:bg-primary/5 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-800">{r.article?.nom || '—'}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{r.article?.categorie || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-[200px] truncate" title={getAttributionLabel(r)}>{getAttributionLabel(r)}</td>
+                  <tr key={r.id} className="border-b border-gray-200 dark:border-gray-600 odd:bg-white even:bg-gray-50/60 hover:bg-primary/5 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100">{r.article?.nom || '—'}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{r.article?.categorie || '—'}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[200px] truncate" title={getAttributionLabel(r)}>{getAttributionLabel(r)}</td>
                     <td className="px-4 py-3 text-center">
                       <span className="font-semibold text-primary">{r.nb_eleves ?? '—'}</span>
                     </td>
-                    <td className="px-4 py-3 text-center text-gray-600">{r.quantite || 1}</td>
-                    <td className="px-4 py-3 text-gray-700">{fmt(prix)}</td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{r.nb_eleves ? fmt(total) : '—'}</td>
+                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{r.quantite || 1}</td>
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-200">{fmt(prix)}</td>
+                    <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100">{r.nb_eleves ? fmt(total) : '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${r.statut_facturation === 'facture' ? 'bg-green-100 text-green-700' : r.statut_facturation === 'partiellement_facture' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${r.statut_facturation === 'facture' ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : r.statut_facturation === 'partiellement_facture' ? 'bg-blue-100 text-blue-700 dark:text-blue-300' : 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'}`}>
                         {r.statut_facturation === 'facture' ? 'Facturé' : r.statut_facturation === 'partiellement_facture' ? 'Partiel' : 'À facturer'}
                       </span>
                     </td>
@@ -534,14 +534,14 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
                         <div className="flex items-center justify-end gap-1">
                           <button onClick={() => openEdit(r)} disabled={r.statut_facturation === 'facture'}
                             title="Modifier"
-                            className="p-1.5 rounded-md text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                            className="p-1.5 rounded-md text-gray-400 dark:text-gray-500 hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
                           <button onClick={() => deleteAttribution(r)} disabled={r.statut_facturation === 'facture'}
                             title="Supprimer"
-                            className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                            className="p-1.5 rounded-md text-gray-400 dark:text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -607,13 +607,13 @@ function CatalogueTab({ isFinancier, search, onSearch, formOpen, onFormClose }) 
     reload()
   }
 
-  if (loading) return <div className="py-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="py-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   return (
     <div>
 
       {filtered.length === 0 && (
-        <div className="card p-8 text-center text-gray-400">Aucun article trouvé</div>
+        <div className="card p-8 text-center text-gray-400 dark:text-gray-500">Aucun article trouvé</div>
       )}
 
       {filtered.length > 0 && (
@@ -626,10 +626,10 @@ function CatalogueTab({ isFinancier, search, onSearch, formOpen, onFormClose }) 
               <col style={{width:'12%'}} />
               <col style={{width:'16%'}} />
             </colgroup>
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-600 sticky top-0 z-10">
               <tr>
                 {['Nom', 'Description', 'Prix unit.', 'Statut', ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -638,16 +638,16 @@ function CatalogueTab({ isFinancier, search, onSearch, formOpen, onFormClose }) 
                 <>
                   <tr key={`cat-${cat}`}>
                     <td colSpan={5} className="px-4 pt-4 pb-1.5">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{cat}</span>
+                      <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{cat}</span>
                     </td>
                   </tr>
                   {items.map((a, idx) => (
-                    <tr key={a.id} className={`border-b border-gray-200 transition-colors hover:bg-primary/5 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}`}>
-                      <td className="px-4 py-2.5 font-medium text-gray-800 truncate">{a.nom}</td>
-                      <td className="px-4 py-2.5 text-gray-400 text-xs truncate">{a.description || '—'}</td>
-                      <td className="px-4 py-2.5 text-gray-700 font-mono">{fmt(a.prix_unitaire)}</td>
+                    <tr key={a.id} className={`border-b border-gray-200 dark:border-gray-600 transition-colors hover:bg-primary/5 ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/60'}`}>
+                      <td className="px-4 py-2.5 font-medium text-gray-800 dark:text-gray-100 truncate">{a.nom}</td>
+                      <td className="px-4 py-2.5 text-gray-400 dark:text-gray-500 text-xs truncate">{a.description || '—'}</td>
+                      <td className="px-4 py-2.5 text-gray-700 dark:text-gray-200 font-mono">{fmt(a.prix_unitaire)}</td>
                       <td className="px-4 py-2.5">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${a.statut === 'actif' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${a.statut === 'actif' ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
                           {a.statut}
                         </span>
                       </td>
@@ -655,11 +655,11 @@ function CatalogueTab({ isFinancier, search, onSearch, formOpen, onFormClose }) 
                         {isFinancier && (
                           <div className="flex items-center justify-end gap-2">
                             <button onClick={() => openEdit(a)}
-                              className="text-xs text-gray-500 hover:text-primary border border-gray-200 hover:border-primary rounded-full px-3 py-1 transition-colors">
+                              className="text-xs text-gray-500 dark:text-gray-400 hover:text-primary border border-gray-200 dark:border-gray-600 hover:border-primary rounded-full px-3 py-1 transition-colors">
                               Modifier
                             </button>
                             <button onClick={() => deleteArticle(a)}
-                              className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-full px-3 py-1 transition-colors">
+                              className="text-xs text-red-400 dark:text-red-300 hover:text-red-600 border border-red-200 dark:border-red-800 hover:border-red-400 rounded-full px-3 py-1 transition-colors">
                               Supprimer
                             </button>
                           </div>

@@ -11,15 +11,15 @@ const addDays = (dateStr, days) => { const d = new Date(dateStr + 'T00:00:00'); 
 const CATEGORIES_ART = ['Frais obligatoires', 'Fournitures scolaires', 'Vêtements', 'Divers']
 
 const STATUTS = {
-  brouillon:       { label: 'En attente',      cls: 'bg-orange-100 text-orange-700' },
-  ignore:          { label: 'Ignoré',           cls: 'bg-gray-100 text-gray-400' },
-  facture:         { label: 'Validé',           cls: 'bg-green-100 text-green-700' },
+  brouillon:       { label: 'En attente',      cls: 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300' },
+  ignore:          { label: 'Ignoré',           cls: 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' },
+  facture:         { label: 'Validé',           cls: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' },
   rappel:          { label: 'Rappel',           cls: 'bg-orange-200 text-orange-800' },
-  mise_en_demeure: { label: 'Mise en demeure',  cls: 'bg-red-100 text-red-700' },
+  mise_en_demeure: { label: 'Mise en demeure',  cls: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' },
 }
 
 function Badge({ statut }) {
-  const s = STATUTS[statut] || { label: statut, cls: 'bg-gray-100 text-gray-600' }
+  const s = STATUTS[statut] || { label: statut, cls: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' }
   return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.cls}`}>{s.label}</span>
 }
 
@@ -95,7 +95,7 @@ function ClassFilterPill({ allClasses, excluded, onChange }) {
     <div ref={ref} className="relative">
       <button onClick={() => setOpen(o => !o)}
         className={`inline-flex items-center gap-1.5 rounded-full border text-xs font-medium px-3 py-1.5 whitespace-nowrap transition-colors select-none
-          ${count > 0 ? 'border-orange-300 bg-orange-50 text-orange-700' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-800'}`}>
+          ${count > 0 ? 'border-orange-300 bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-300' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-gray-300 hover:text-gray-800 dark:hover:text-gray-100'}`}>
         <span>{count > 0 ? `Ignorer ${count} classe${count > 1 ? 's' : ''}` : 'Ignorer des classes'}</span>
         {count > 0 && (
           <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-orange-500 text-white text-[10px] font-bold leading-none">
@@ -103,16 +103,16 @@ function ClassFilterPill({ allClasses, excluded, onChange }) {
           </span>
         )}
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-          className={`transition-transform duration-150 ${open ? 'rotate-180' : ''} ${count > 0 ? 'text-orange-500' : 'text-gray-400'}`}>
+          className={`transition-transform duration-150 ${open ? 'rotate-180' : ''} ${count > 0 ? 'text-orange-500' : 'text-gray-400 dark:text-gray-500'}`}>
           <path d="M6 9l6 6 6-6"/>
         </svg>
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1.5 z-50 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden w-52">
-          <div className="px-3.5 pt-3 pb-2 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Exclure de ce run</span>
+        <div className="absolute top-full left-0 mt-1.5 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl shadow-xl overflow-hidden w-52">
+          <div className="px-3.5 pt-3 pb-2 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Exclure de ce run</span>
             {count > 0 && (
-              <button onClick={() => onChange([])} className="text-[10px] text-red-400 hover:text-red-600 font-medium transition-colors">
+              <button onClick={() => onChange([])} className="text-[10px] text-red-400 dark:text-red-300 hover:text-red-600 font-medium transition-colors">
                 Effacer
               </button>
             )}
@@ -123,7 +123,7 @@ function ClassFilterPill({ allClasses, excluded, onChange }) {
               return (
                 <label key={cls}
                   className={`flex items-center gap-2.5 px-3.5 py-1.5 cursor-pointer transition-colors
-                    ${isExcluded ? 'bg-orange-50 text-orange-700' : 'text-gray-700 hover:bg-gray-50'}`}>
+                    ${isExcluded ? 'bg-orange-50 dark:bg-orange-950 text-orange-700' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                   <input type="checkbox" checked={isExcluded}
                     onChange={() => onChange(isExcluded ? excluded.filter(c => c !== cls) : [...excluded, cls])}
                     className="w-3.5 h-3.5 accent-orange-500 shrink-0" />
@@ -341,55 +341,55 @@ function FacturationModal({ onClose, onDone }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={(generating || done) ? undefined : onClose} />
-      <div className="relative z-10 bg-white w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl rounded-2xl overflow-hidden">
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between shrink-0">
-          <h2 className="text-lg font-bold text-gray-800">Facturer les éléments en attente</h2>
-          <button onClick={done ? () => onDone(done.batchId) : (generating ? undefined : onClose)} disabled={generating} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 text-lg disabled:opacity-30">✕</button>
+      <div className="relative z-10 bg-white dark:bg-gray-800 w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl rounded-2xl overflow-hidden">
+        <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0">
+          <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">Facturer les éléments en attente</h2>
+          <button onClick={done ? () => onDone(done.batchId) : (generating ? undefined : onClose)} disabled={generating} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-lg disabled:opacity-30">✕</button>
         </div>
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="p-12 text-center text-gray-400">Chargement…</div>
+            <div className="p-12 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
           ) : generating ? (
             <div className="p-12 text-center">
               <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-5" />
-              <p className="font-semibold text-gray-700 mb-1">{progress?.step || 'Génération en cours…'}</p>
+              <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">{progress?.step || 'Génération en cours…'}</p>
               {progress?.total > 0 && (
                 <div className="mt-3 max-w-xs mx-auto">
-                  <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                     <div className="h-1.5 bg-primary rounded-full transition-all duration-300"
                       style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }} />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1.5 tabular-nums">{progress.current} / {progress.total}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 tabular-nums">{progress.current} / {progress.total}</p>
                 </div>
               )}
-              <p className="text-xs text-gray-400 mt-5">⚠ Ne pas fermer ni recharger la page</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-5">⚠ Ne pas fermer ni recharger la page</p>
             </div>
           ) : done !== null ? (
             <div className="p-12 text-center">
               <div className="text-5xl mb-4">✅</div>
-              <p className="text-xl font-bold text-gray-800 mb-2">{done.count} facture{done.count !== 1 ? 's' : ''} générée{done.count !== 1 ? 's' : ''}</p>
-              <p className="text-gray-500 text-sm mb-6">Les éléments facturés ont été mis à jour (facturé ou partiellement facturé).</p>
+              <p className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">{done.count} facture{done.count !== 1 ? 's' : ''} générée{done.count !== 1 ? 's' : ''}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Les éléments facturés ont été mis à jour (facturé ou partiellement facturé).</p>
               <button onClick={() => onDone(done.batchId)} className="btn-primary">Voir les factures générées →</button>
             </div>
           ) : (
             <div className="p-5 space-y-6">
               {/* Nom du batch */}
               <div className="flex items-center gap-3">
-                <label className="text-xs text-gray-500 shrink-0 w-20">Nom :</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 shrink-0 w-20">Nom :</label>
                 <input
                   type="text"
                   placeholder="Ex : Photocopies 1H, Voyage scolaire 3A…"
                   value={nomBatch}
                   onChange={e => setNomBatch(e.target.value)}
-                  className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="flex-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               {allClasses.length > 0 && (
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500 shrink-0">Classes :</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">Classes :</span>
                   <ClassFilterPill allClasses={allClasses} excluded={classesIgnorees} onChange={setClassesIgnorees} />
                   {classesIgnorees.length > 0 && (
-                    <span className="text-xs text-orange-600 font-medium">
+                    <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
                       {classesIgnorees.join(', ')} ignorée{classesIgnorees.length > 1 ? 's' : ''} → items concernés seront marqués <em>Partiel</em>
                     </span>
                   )}
@@ -398,7 +398,7 @@ function FacturationModal({ onClose, onDone }) {
               {attrs.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Articles ({attrs.length})</p>
+                    <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Articles ({attrs.length})</p>
                     <button onClick={() => {
                       const allOn = attrs.every(a => selItems[`attr_${a.id}`])
                       setSelItems(s => { const n = {...s}; attrs.forEach(a => { n[`attr_${a.id}`] = !allOn }); return n })
@@ -416,16 +416,16 @@ function FacturationModal({ onClose, onDone }) {
                       const isPartial = a.statut_facturation === 'partiellement_facture'
                       const alreadyN  = (billedByAttr[a.id] || new Set()).size
                       return (
-                        <label key={a.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selItems[key] ? 'border-primary/30 bg-primary/5' : 'border-gray-100 hover:bg-gray-50'}`}>
+                        <label key={a.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selItems[key] ? 'border-primary/30 bg-primary/5' : 'border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                           <input type="checkbox" checked={!!selItems[key]} onChange={() => toggleItem(key)} className="mt-0.5 w-4 h-4 accent-primary shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-gray-800">{a.article?.nom}</p>
-                              {isPartial && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">PARTIEL — {alreadyN} déjà fact.</span>}
+                              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{a.article?.nom}</p>
+                              {isPartial && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">PARTIEL — {alreadyN} déjà fact.</span>}
                             </div>
-                            <p className="text-xs text-gray-400 mt-0.5">{a.article?.categorie} · {cible}{a.nb_eleves ? ` · ${a.nb_eleves} élèves` : ''}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{a.article?.categorie} · {cible}{a.nb_eleves ? ` · ${a.nb_eleves} élèves` : ''}</p>
                           </div>
-                          <span className="text-sm font-semibold text-gray-700 tabular-nums shrink-0">{fmtEur(prix)}<span className="text-gray-400 font-normal">/élève</span></span>
+                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 tabular-nums shrink-0">{fmtEur(prix)}<span className="text-gray-400 dark:text-gray-500 font-normal">/élève</span></span>
                         </label>
                       )
                     })}
@@ -435,7 +435,7 @@ function FacturationModal({ onClose, onDone }) {
               {activites.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Activités ({activites.length})</p>
+                    <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Activités ({activites.length})</p>
                     <button onClick={() => {
                       const allOn = activites.every(a => selItems[`activ_${a.id}`])
                       setSelItems(s => { const n = {...s}; activites.forEach(a => { n[`activ_${a.id}`] = !allOn }); return n })
@@ -452,16 +452,16 @@ function FacturationModal({ onClose, onDone }) {
                       const isPartial = a.statut_facturation === 'partiellement_facture'
                       const alreadyN  = (billedByActiv[a.id] || new Set()).size
                       return (
-                        <label key={a.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selItems[key] ? 'border-primary/30 bg-primary/5' : 'border-gray-100 hover:bg-gray-50'}`}>
+                        <label key={a.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selItems[key] ? 'border-primary/30 bg-primary/5' : 'border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                           <input type="checkbox" checked={!!selItems[key]} onChange={() => toggleItem(key)} className="mt-0.5 w-4 h-4 accent-primary shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-gray-800">{a.intitule}</p>
-                              {isPartial && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">PARTIEL — {alreadyN} déjà fact.</span>}
+                              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{a.intitule}</p>
+                              {isPartial && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">PARTIEL — {alreadyN} déjà fact.</span>}
                             </div>
-                            <p className="text-xs text-gray-400 mt-0.5">{cible}{a.nb_eleves ? ` · ${a.nb_eleves} élèves` : ''}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{cible}{a.nb_eleves ? ` · ${a.nb_eleves} élèves` : ''}</p>
                           </div>
-                          <span className="text-sm font-semibold text-gray-700 tabular-nums shrink-0">{fmtEur(prix)}<span className="text-gray-400 font-normal">/élève</span></span>
+                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 tabular-nums shrink-0">{fmtEur(prix)}<span className="text-gray-400 dark:text-gray-500 font-normal">/élève</span></span>
                         </label>
                       )
                     })}
@@ -469,7 +469,7 @@ function FacturationModal({ onClose, onDone }) {
                 </div>
               )}
               {attrs.length === 0 && activites.length === 0 && (
-                <div className="py-16 text-center text-gray-400">
+                <div className="py-16 text-center text-gray-400 dark:text-gray-500">
                   <div className="text-4xl mb-3">✅</div>
                   <p className="font-medium">Tout est à jour</p>
                   <p className="text-sm mt-1">Aucun article ou activité en attente de facturation.</p>
@@ -479,16 +479,16 @@ function FacturationModal({ onClose, onDone }) {
           )}
         </div>
         {!loading && !generating && done === null && (attrs.length > 0 || activites.length > 0) && (
-          <div className="p-5 border-t border-gray-100 bg-gray-50 shrink-0">
+          <div className="p-5 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 shrink-0">
             <div className="flex items-center justify-between mb-3 text-sm">
-              <span className="text-gray-500">
+              <span className="text-gray-500 dark:text-gray-400">
                 {classesIgnorees.length > 0 ? `Hors ${classesIgnorees.join(', ')}` : 'Toutes les classes'}&ensp;·&ensp;
-                <span className="font-medium text-gray-700">{nbEleves} élève{nbEleves !== 1 ? 's' : ''}</span>
+                <span className="font-medium text-gray-700 dark:text-gray-200">{nbEleves} élève{nbEleves !== 1 ? 's' : ''}</span>
               </span>
-              <span className="font-bold text-gray-800">{fmtEur(totalGlobal)}</span>
+              <span className="font-bold text-gray-800 dark:text-gray-100">{fmtEur(totalGlobal)}</span>
             </div>
             {classesIgnorees.length > 0 && (
-              <p className="text-xs text-orange-600 mb-3">
+              <p className="text-xs text-orange-600 dark:text-orange-400 mb-3">
                 ⚠ Les éléments qui ciblent des classes ignorées seront marqués <strong>Partiellement facturé</strong>.
               </p>
             )}
@@ -575,7 +575,7 @@ function ListeBatches({ onNew, onSelect }) {
     })
   })
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   return (
     <div className="h-full flex flex-col">
@@ -597,20 +597,20 @@ function ListeBatches({ onNew, onSelect }) {
     <div className="flex-1 min-h-0 p-6 max-w-screen-xl mx-auto w-full flex flex-col">
 
       {batches.length === 0 ? (
-        <div className="card p-12 text-center text-gray-400">
+        <div className="card p-12 text-center text-gray-400 dark:text-gray-500">
           <div className="text-4xl mb-3">🧾</div>
           <p className="font-medium">Aucune facturation</p>
           <p className="text-sm mt-1">Cliquez sur "+ Facturer" pour générer le premier batch.</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="card p-8 text-center text-gray-400 text-sm">Aucun résultat pour cette recherche.</div>
+        <div className="card p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Aucun résultat pour cette recherche.</div>
       ) : (
         <div className="card p-0 flex-1 overflow-auto min-h-0">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-10">
               <tr>
                 {['N° Facturation','Date','Élèves','Total','Impayés','Répartition','Statut'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -619,29 +619,29 @@ function ListeBatches({ onNew, onSelect }) {
                 const s = stats(b)
                 return (
                   <tr key={b.id} onClick={() => onSelect(b.id)}
-                    className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors">
+                    className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors">
                     <td className="px-4 py-3">
-                      <p className="text-sm font-semibold text-gray-800">{b.nom || b.numero}</p>
-                      {b.nom && <p className="font-mono text-xs text-gray-400 mt-0.5">{b.numero}</p>}
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{b.nom || b.numero}</p>
+                      {b.nom && <p className="font-mono text-xs text-gray-400 dark:text-gray-500 mt-0.5">{b.numero}</p>}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{fmtDate(b.date)}</td>
-                    <td className="px-4 py-3 text-gray-700 font-medium">{s.nbTotal}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{fmtDate(b.date)}</td>
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-200 font-medium">{s.nbTotal}</td>
                     <td className="px-4 py-3 font-semibold text-primary">{fmtEur(s.total)}</td>
                     <td className="px-4 py-3">
                       {(impayesParBatch[b.id] || 0) > 0
-                        ? <span className="font-semibold text-red-600 tabular-nums">{fmtEur(impayesParBatch[b.id])}</span>
-                        : <span className="text-gray-300">—</span>
+                        ? <span className="font-semibold text-red-600 dark:text-red-400 tabular-nums">{fmtEur(impayesParBatch[b.id])}</span>
+                        : <span className="text-gray-300 dark:text-gray-600">—</span>
                       }
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {s.nbValide > 0 && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300">
                             {s.nbValide} facturé{s.nbValide > 1 ? 's' : ''}
                           </span>
                         )}
                         {s.nbAttente > 0 && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300">
                             {s.nbAttente} en attente
                           </span>
                         )}
@@ -649,7 +649,7 @@ function ListeBatches({ onNew, onSelect }) {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full
-                        ${s.termine ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                        ${s.termine ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'}`}>
                         {s.termine ? 'Terminé' : 'En attente'}
                       </span>
                     </td>
@@ -874,7 +874,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
 
   const totalBatch = factures.reduce((s, f) => s + Number(f.montant || 0), 0)
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   const batchActions = (
     <>
@@ -925,43 +925,43 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
 
       <div className="card p-0 flex-1 overflow-auto min-h-0">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+          <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-10">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">N° Facture</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Élève</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Classe</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Montant</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Solde après</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-red-400 uppercase tracking-wide">Impayé</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
-              {isFinancier && (activeTab === 'attente') && <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>}
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">N° Facture</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Élève</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Classe</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Montant</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Solde après</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-red-400 dark:text-red-300 uppercase tracking-wide">Impayé</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Statut</th>
+              {isFinancier && (activeTab === 'attente') && <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</th>}
             </tr>
           </thead>
           <tbody>
             {filtered.map(f => (
               <tr key={f.id}
                 onClick={() => onSelectFacture(f.id)}
-                className={`border-b border-gray-50 transition-colors cursor-pointer ${f.statut === 'ignore' ? 'opacity-40' : 'hover:bg-gray-50'}`}>
+                className={`border-b border-gray-50 dark:border-gray-800 transition-colors cursor-pointer ${f.statut === 'ignore' ? 'opacity-40' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                 <td className="px-4 py-3">
                   <span className="font-mono text-xs text-primary underline">
                     {f.numero || '—'}
                   </span>
                 </td>
-                <td className="px-4 py-3 font-medium text-gray-800">
+                <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100">
                   {f.eleve?.prenom} {f.eleve?.nom}
                 </td>
-                <td className="px-4 py-3 text-gray-500">{f.eleve?.classe || '—'}</td>
-                <td className="px-4 py-3 font-semibold text-gray-800">{fmtEur(f.montant)}</td>
+                <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{f.eleve?.classe || '—'}</td>
+                <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-100">{fmtEur(f.montant)}</td>
                 <td className="px-4 py-3">
                   <span className={`font-semibold tabular-nums
-                    ${Number(f.solde_apres) < 0 ? 'text-orange-500' : Number(f.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                    ${Number(f.solde_apres) < 0 ? 'text-orange-500 dark:text-orange-400' : Number(f.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
                     {fmtEur(f.solde_apres)}
                   </span>
                 </td>
                 <td className="px-4 py-3">
                   {(impayes[f.id] || 0) > 0
-                    ? <span className="font-semibold text-red-600 tabular-nums">{fmtEur(impayes[f.id])}</span>
-                    : <span className="text-gray-300">—</span>
+                    ? <span className="font-semibold text-red-600 dark:text-red-400 tabular-nums">{fmtEur(impayes[f.id])}</span>
+                    : <span className="text-gray-300 dark:text-gray-600">—</span>
                   }
                 </td>
                 <td className="px-4 py-3"><Badge statut={f.statut} /></td>
@@ -970,7 +970,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
                     <div className="flex items-center gap-1">
                       {f.statut !== 'facture' && (
                         <button onClick={() => validerFacture(f)} disabled={busy}
-                          className="text-xs px-2 py-1 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 font-medium transition-colors disabled:opacity-40">
+                          className="text-xs px-2 py-1 rounded-lg bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 hover:bg-green-100 font-medium transition-colors disabled:opacity-40">
                           ✓ Valider
                         </button>
                       )}
@@ -978,13 +978,13 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
                         <button onClick={() => ignorerFacture(f)} disabled={busy}
                           className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors disabled:opacity-40
                             ${f.statut === 'ignore'
-                              ? 'bg-orange-50 text-orange-700 hover:bg-orange-100'
-                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                              ? 'bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-300 hover:bg-orange-100'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
                           {f.statut === 'ignore' ? '↩ Réactiver' : '⏭ Ignorer'}
                         </button>
                       )}
                       <button onClick={() => setConfirm({ facture: f })} disabled={busy}
-                        className="text-xs px-2 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-medium transition-colors disabled:opacity-40">
+                        className="text-xs px-2 py-1 rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-100 font-medium transition-colors disabled:opacity-40">
                         × Suppr.
                       </button>
                     </div>
@@ -995,34 +995,34 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <div className="p-8 text-center text-gray-400">
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500">
             {search ? 'Aucun élève trouvé.' : 'Aucune facture dans ce batch.'}
           </div>
         )}
       </div>
 
       {isFinancier && factures.length > 0 && (
-        <div className="mt-3 flex items-center gap-4 text-xs text-gray-400">
-          <span><strong className="text-gray-500">Valider</strong> = approuver la facture</span>
-          <span><strong className="text-gray-500">Ignorer</strong> = exclure du "Tout approuver"</span>
-          <span><strong className="text-gray-500">Suppr.</strong> = supprimer définitivement (items remis en "à facturer")</span>
+        <div className="mt-3 flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
+          <span><strong className="text-gray-500 dark:text-gray-400">Valider</strong> = approuver la facture</span>
+          <span><strong className="text-gray-500 dark:text-gray-400">Ignorer</strong> = exclure du "Tout approuver"</span>
+          <span><strong className="text-gray-500 dark:text-gray-400">Suppr.</strong> = supprimer définitivement (items remis en "à facturer")</span>
         </div>
       )}
 
       {confirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirm(null)} />
-          <div className="relative z-10 bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Supprimer cette facture ?</h3>
-            <p className="text-gray-600 text-sm mb-1">
+          <div className="relative z-10 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Supprimer cette facture ?</h3>
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-1">
               <strong>{confirm.facture.eleve?.prenom} {confirm.facture.eleve?.nom}</strong> — {fmtEur(confirm.facture.montant)}
             </p>
-            <p className="text-gray-400 text-xs mb-5">
+            <p className="text-gray-400 dark:text-gray-500 text-xs mb-5">
               Les articles et activités concernés seront remis en "à facturer".
             </p>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setConfirm(null)}
-                className="px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+                className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 Annuler
               </button>
               <button onClick={() => supprimerFacture(confirm.facture)} disabled={busy}
@@ -1043,15 +1043,15 @@ function LigneRow({ ligne, onRemove, isFinancier }) {
   const [confirming, setConfirming] = useState(null)
 
   if (confirming) return (
-    <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-amber-50 border border-amber-100 my-1 text-sm gap-3">
-      <span className="text-gray-600 text-xs leading-tight">
+    <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-100 my-1 text-sm gap-3">
+      <span className="text-gray-600 dark:text-gray-300 text-xs leading-tight">
         {confirming === 'reporter'
           ? 'Reporter cette ligne dans la prochaine facturation ?'
           : 'Supprimer définitivement cette ligne ?'}
       </span>
       <div className="flex gap-2 shrink-0">
         <button onClick={() => setConfirming(null)}
-          className="text-xs text-gray-400 hover:text-gray-600 font-medium">Annuler</button>
+          className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 font-medium">Annuler</button>
         <button onClick={() => { onRemove(ligne, confirming === 'reporter'); setConfirming(null) }}
           className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-0.5 rounded-lg font-medium transition-colors">
           Confirmer
@@ -1061,22 +1061,22 @@ function LigneRow({ ligne, onRemove, isFinancier }) {
   )
 
   return (
-    <div className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0 group">
-      <span className="text-sm text-gray-700">{ligne.libelle}</span>
+    <div className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0 group">
+      <span className="text-sm text-gray-700 dark:text-gray-200">{ligne.libelle}</span>
       <div className="flex items-center gap-2">
         {isFinancier && (
           <div className="hidden group-hover:flex items-center gap-1">
             <button onClick={() => setConfirming('reporter')}
-              className="text-xs px-2 py-0.5 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 font-medium transition-colors">
+              className="text-xs px-2 py-0.5 rounded-lg bg-orange-50 dark:bg-orange-950 text-orange-600 dark:text-orange-400 hover:bg-orange-100 font-medium transition-colors">
               ↩ Reporter
             </button>
             <button onClick={() => setConfirming('supprimer')}
-              className="text-xs px-2 py-0.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-medium transition-colors">
+              className="text-xs px-2 py-0.5 rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-100 font-medium transition-colors">
               × Suppr.
             </button>
           </div>
         )}
-        <span className="text-sm font-medium text-gray-800 tabular-nums">{fmtEur(ligne.montant)}</span>
+        <span className="text-sm font-medium text-gray-800 dark:text-gray-100 tabular-nums">{fmtEur(ligne.montant)}</span>
       </div>
     </div>
   )
@@ -1155,8 +1155,8 @@ function DetailFacture({ factureId, onBack }) {
     await load()
   }
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
-  if (!facture) return <div className="p-8 text-center text-gray-400">Facture introuvable.</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
+  if (!facture) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Facture introuvable.</div>
 
   const articles  = lignes.filter(l => l.type === 'article')
   const activites = lignes.filter(l => l.type === 'activite')
@@ -1170,54 +1170,54 @@ function DetailFacture({ factureId, onBack }) {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-6 flex items-center gap-1">
+      <button onClick={onBack} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 mb-6 flex items-center gap-1">
         ← Retour aux factures individuelles
       </button>
       <div className="card p-6 mb-4">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-xl font-bold text-gray-800">{facture.numero || 'Facture'}</h1>
+              <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">{facture.numero || 'Facture'}</h1>
               <Badge statut={facture.statut} />
             </div>
-            <p className="font-medium text-gray-700">{facture.eleve?.prenom} {facture.eleve?.nom}</p>
-            <p className="text-sm text-gray-400">{facture.eleve?.classe}</p>
+            <p className="font-medium text-gray-700 dark:text-gray-200">{facture.eleve?.prenom} {facture.eleve?.nom}</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">{facture.eleve?.classe}</p>
             {facture.eleve?.rue && (
-              <p className="text-sm text-gray-400 mt-1">{facture.eleve.rue}, {facture.eleve.code_postal} {facture.eleve.commune}</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{facture.eleve.rue}, {facture.eleve.code_postal} {facture.eleve.commune}</p>
             )}
           </div>
           <div className="text-right shrink-0 flex flex-col items-end gap-2">
             <div>
-              <p className="text-xs text-gray-400 uppercase">Date</p>
-              <p className="font-semibold text-gray-700">{fmtDate(facture.date)}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase">Date</p>
+              <p className="font-semibold text-gray-700 dark:text-gray-200">{fmtDate(facture.date)}</p>
             </div>
             <button onClick={handlePDF} className="btn-secondary text-sm py-1.5 flex items-center gap-1.5">🖨 PDF</button>
           </div>
         </div>
         {isFinancier && (facture.statut === 'brouillon' || facture.statut === 'ignore') && (
-          <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+          <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
             {facture.statut === 'brouillon' && <button onClick={() => setStatut('facture')} disabled={saving} className="btn-primary text-sm py-1.5">✓ Valider</button>}
             {facture.statut === 'ignore'    && <button onClick={() => setStatut('brouillon')} disabled={saving} className="btn-secondary text-sm py-1.5">↩ Réactiver</button>}
           </div>
         )}
       </div>
       <div className="card p-4 mb-4 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-600">Solde de départ</span>
-        <span className={`text-lg font-bold tabular-nums ${Number(facture.solde_avant) < 0 ? 'text-red-600' : Number(facture.solde_avant) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Solde de départ</span>
+        <span className={`text-lg font-bold tabular-nums ${Number(facture.solde_avant) < 0 ? 'text-red-600 dark:text-red-400' : Number(facture.solde_avant) > 0 ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
           {fmtEur(facture.solde_avant)}
         </span>
       </div>
       {Object.keys(artByCat).length > 0 && (
         <div className="card p-5 mb-4">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-4">
             Articles
-            {isFinancier && <span className="ml-2 text-gray-300 font-normal normal-case">— survolez une ligne pour Reporter ou Supprimer</span>}
+            {isFinancier && <span className="ml-2 text-gray-300 dark:text-gray-600 font-normal normal-case">— survolez une ligne pour Reporter ou Supprimer</span>}
           </h2>
           {Object.entries(artByCat).map(([cat, items]) => (
             <div key={cat} className="mb-4 last:mb-0">
-              <p className="text-xs font-semibold text-gray-400 mb-1.5">{cat}</p>
+              <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-1.5">{cat}</p>
               {items.map(l => <LigneRow key={l.id} ligne={l} onRemove={removeLigne} isFinancier={isFinancier} />)}
-              <div className="flex justify-between pt-1.5 text-xs text-gray-400">
+              <div className="flex justify-between pt-1.5 text-xs text-gray-400 dark:text-gray-500">
                 <span>Sous-total {cat.toLowerCase()}</span>
                 <span className="tabular-nums">{fmtEur(items.reduce((s, l) => s + Number(l.montant), 0))}</span>
               </div>
@@ -1228,12 +1228,12 @@ function DetailFacture({ factureId, onBack }) {
 
       {activites.length > 0 && (
         <div className="card p-5 mb-4">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-4">
             Activités
-            {isFinancier && <span className="ml-2 text-gray-300 font-normal normal-case">— survolez une ligne pour Reporter ou Supprimer</span>}
+            {isFinancier && <span className="ml-2 text-gray-300 dark:text-gray-600 font-normal normal-case">— survolez une ligne pour Reporter ou Supprimer</span>}
           </h2>
           {activites.map(l => <LigneRow key={l.id} ligne={l} onRemove={removeLigne} isFinancier={isFinancier} />)}
-          <div className="flex justify-between pt-1.5 text-xs text-gray-400">
+          <div className="flex justify-between pt-1.5 text-xs text-gray-400 dark:text-gray-500">
             <span>Sous-total activités</span>
             <span className="tabular-nums">{fmtEur(activites.reduce((s, l) => s + Number(l.montant), 0))}</span>
           </div>
@@ -1241,33 +1241,33 @@ function DetailFacture({ factureId, onBack }) {
       )}
 
       <div className="card p-4 flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-700">Total facture</span>
-        <span className="text-lg font-bold text-gray-800 tabular-nums">{fmtEur(facture.montant)}</span>
+        <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Total facture</span>
+        <span className="text-lg font-bold text-gray-800 dark:text-gray-100 tabular-nums">{fmtEur(facture.montant)}</span>
       </div>
       <div className="card p-4 mt-2 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-600">Solde après facturation</span>
-        <span className={`text-lg font-bold tabular-nums ${Number(facture.solde_apres) < 0 ? 'text-red-600' : Number(facture.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Solde après facturation</span>
+        <span className={`text-lg font-bold tabular-nums ${Number(facture.solde_apres) < 0 ? 'text-red-600 dark:text-red-400' : Number(facture.solde_apres) > 0 ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
           {fmtEur(facture.solde_apres)}
         </span>
       </div>
 
       {/* ── Blocs informations : toujours affichés quand la facture est chargée ── */}
       <div className="card p-5 mt-4 border-l-4 border-orange-400">
-        <h2 className="text-xs font-semibold text-orange-600 uppercase tracking-wide mb-3">Informations de paiement</h2>
+        <h2 className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wide mb-3">Informations de paiement</h2>
         <div className="space-y-2 text-sm">
-          <p><span className="text-gray-400">Bénéficiaire :</span> <span className="font-semibold text-gray-800">{s('school_beneficiaire')}</span></p>
-          <p><span className="text-gray-400">IBAN :</span> <span className="font-mono font-bold tracking-wider text-gray-900">{s('school_iban')}</span></p>
+          <p><span className="text-gray-400 dark:text-gray-500">Bénéficiaire :</span> <span className="font-semibold text-gray-800 dark:text-gray-100">{s('school_beneficiaire')}</span></p>
+          <p><span className="text-gray-400 dark:text-gray-500">IBAN :</span> <span className="font-mono font-bold tracking-wider text-gray-900 dark:text-gray-50">{s('school_iban')}</span></p>
           {facture.eleve && (
-            <p><span className="text-gray-400">Communication :</span> <span className="font-bold text-gray-900">{facture.eleve.nom} {facture.eleve.prenom} {facture.eleve.classe}</span></p>
+            <p><span className="text-gray-400 dark:text-gray-500">Communication :</span> <span className="font-bold text-gray-900 dark:text-gray-50">{facture.eleve.nom} {facture.eleve.prenom} {facture.eleve.classe}</span></p>
           )}
-          <p><span className="text-gray-400">Date limite :</span> <span className="font-bold text-orange-600">{addDays(facture.date, 30)}</span> <span className="text-gray-400 text-xs">(30 jours à dater de la facturation)</span></p>
+          <p><span className="text-gray-400 dark:text-gray-500">Date limite :</span> <span className="font-bold text-orange-600 dark:text-orange-400">{addDays(facture.date, 30)}</span> <span className="text-gray-400 dark:text-gray-500 text-xs">(30 jours à dater de la facturation)</span></p>
         </div>
       </div>
 
       {ech && (
         <div className="card p-5 mt-2 border-l-4 border-blue-400">
-          <h2 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">Plan d'échelonnement en cours</h2>
-          <p className="text-sm text-gray-600">
+          <h2 className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-2">Plan d'échelonnement en cours</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             Un plan de paiement échelonné est actuellement en cours pour cet élève.
             Mensualité : <strong>{fmtEur(ech.montant_mensuel)}</strong> — à partir du <strong>{fmtDate(ech.date_debut)}</strong>.
           </p>
@@ -1276,8 +1276,8 @@ function DetailFacture({ factureId, onBack }) {
 
       {org && (
         <div className="card p-5 mt-2 border-l-4 border-purple-400">
-          <h2 className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-2">Prise en charge par organisme tiers</h2>
-          <p className="text-sm text-gray-600">
+          <h2 className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wide mb-2">Prise en charge par organisme tiers</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             Un organisme tiers est impliqué dans le suivi financier de cet élève : <strong>{org.nom}</strong> — Statut : <strong>{org.statut === 'en_cours' ? 'En cours' : 'Validé'}</strong>.
           </p>
         </div>
@@ -1285,7 +1285,7 @@ function DetailFacture({ factureId, onBack }) {
 
       <div className="card p-5 mt-2 border-l-4 border-slate-300">
         <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Nous contacter</h2>
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
           <p>Les responsables légaux peuvent à tout moment contacter l'<strong>assistant social de l'école, {s('school_nom_as')}</strong>, par Smartschool ou au <strong>{s('school_tel_as')}</strong> pour prendre un rendez-vous.</p>
           <p>Pour toute précision concernant cette facture, prenez contact avec l'<strong>économe de l'école, {s('school_nom_eco')}</strong>, par Smartschool ou au <strong>{s('school_tel_eco')}</strong>.</p>
         </div>

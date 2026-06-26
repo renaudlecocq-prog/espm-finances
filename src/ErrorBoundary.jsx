@@ -17,13 +17,13 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-surface flex items-center justify-center p-8">
-          <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
+        <div className="min-h-screen bg-surface dark:bg-gray-950 flex items-center justify-center p-8">
+          <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
             <div className="text-4xl mb-4">⚠️</div>
-            <h1 className="text-xl font-semibold text-gray-800 mb-2">
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
               Une erreur est survenue
             </h1>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
               Recharge la page. Si le problème persiste, contacte l'administrateur.
             </p>
             <button
@@ -33,7 +33,7 @@ export default class ErrorBoundary extends Component {
               Recharger la page
             </button>
             {import.meta.env.DEV && (
-              <pre className="mt-6 text-left text-xs bg-gray-100 rounded p-3 overflow-auto text-red-600">
+              <pre className="mt-6 text-left text-xs bg-gray-100 dark:bg-gray-700 rounded p-3 overflow-auto text-red-600 dark:text-red-400">
                 {this.state.error?.toString()}
               </pre>
             )}

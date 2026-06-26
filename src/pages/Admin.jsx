@@ -206,8 +206,8 @@ export default function Admin() {
     else         setInviteMsg('❌ ' + (data.error || 'Erreur'))
   }
 
-  if (!isAdmin) return <div className="p-8 text-center text-gray-400">Accès réservé aux administrateurs.</div>
-  if (loading)  return <div className="p-8 text-center text-gray-400">Chargement…</div>
+  if (!isAdmin) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Accès réservé aux administrateurs.</div>
+  if (loading)  return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   const countByRole = r => users.filter(u => u.role === r).length
 
@@ -251,13 +251,13 @@ export default function Admin() {
     <div className="p-6 max-w-screen-xl mx-auto">
 
       {/* ── Sous-navigation ──────────────────────────── */}
-      <div className="flex gap-1 mb-6 border-b border-gray-100 pb-0">
+      <div className="flex gap-1 mb-6 border-b border-gray-100 dark:border-gray-700 pb-0">
         {SECTION_TABS[sectionOfTab].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
               tab === t.key
                 ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}>
             {t.label}
           </button>
@@ -281,7 +281,7 @@ export default function Admin() {
           <div className="flex flex-wrap gap-2 items-center">
             <button onClick={() => setRoleFilter(null)}
               className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
-                !roleFilter ? 'bg-gray-800 text-white border-gray-800' : 'border-gray-200 text-gray-500 hover:border-gray-400'
+                !roleFilter ? 'bg-gray-800 text-white border-gray-800' : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-400'
               }`}>
               Tous <span className="ml-1 opacity-70">{users.length}</span>
             </button>
@@ -292,11 +292,11 @@ export default function Admin() {
               return (
                 <button key={r} onClick={() => setRoleFilter(active ? null : r)}
                   className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors flex items-center gap-1.5 ${
-                    active ? 'bg-gray-800 text-white border-gray-800' : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                    active ? 'bg-gray-800 text-white border-gray-800' : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-400'
                   }`}>
-                  <span className={`w-2 h-2 rounded-full ${active ? 'bg-white' : m.dot}`} />
+                  <span className={`w-2 h-2 rounded-full ${active ? 'bg-white dark:bg-gray-800' : m.dot}`} />
                   {m.label}
-                  <span className={`${active ? 'opacity-70' : 'text-gray-400'}`}>{n}</span>
+                  <span className={`${active ? 'opacity-70' : 'text-gray-400 dark:text-gray-500'}`}>{n}</span>
                 </button>
               )
             })}
@@ -305,23 +305,23 @@ export default function Admin() {
           {/* Table dense */}
           <div className="card p-0 overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
+              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Utilisateur</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Rôle</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Dernière connexion</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Changer le rôle</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Utilisateur</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Rôle</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Dernière connexion</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Changer le rôle</th>
                 </tr>
               </thead>
               <tbody>
                 {displayed.length === 0 ? (
-                  <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">Aucun utilisateur</td></tr>
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Aucun utilisateur</td></tr>
                 ) : displayed.map(u => {
                   const m = ROLE_META[u.role] || ROLE_META.responsable
                   const nom = [u.prenom, u.nom].filter(Boolean).join(' ')
                   const initiales = [(u.prenom||'')[0], (u.nom||'')[0]].filter(Boolean).join('').toUpperCase() || '?'
                   return (
-                    <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                    <tr key={u.id} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50/60 transition-colors">
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white`}
@@ -329,23 +329,23 @@ export default function Admin() {
                             {initiales}
                           </div>
                           <div className="min-w-0">
-                            <div className="font-medium text-gray-800 truncate">
+                            <div className="font-medium text-gray-800 dark:text-gray-100 truncate">
                               {nom || '—'}
-                              {u.id === user?.id && <span className="ml-1.5 text-[10px] text-gray-400 font-normal">(vous)</span>}
+                              {u.id === user?.id && <span className="ml-1.5 text-[10px] text-gray-400 dark:text-gray-500 font-normal">(vous)</span>}
                             </div>
-                            <div className="text-xs text-gray-400 truncate">{u.email}</div>
+                            <div className="text-xs text-gray-400 dark:text-gray-500 truncate">{u.email}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-2">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${m.color}`}>{m.label}</span>
                       </td>
-                      <td className="px-4 py-2 text-gray-400 text-xs whitespace-nowrap">
+                      <td className="px-4 py-2 text-gray-400 dark:text-gray-500 text-xs whitespace-nowrap">
                         {u.last_connexion ? new Date(u.last_connexion).toLocaleString('fr-BE', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'}
                       </td>
                       <td className="px-4 py-2">
                         {(!isSuperAdmin && u.role === 'super_admin') ? (
-                          <span className="text-xs text-gray-400 italic">Non modifiable</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500 italic">Non modifiable</span>
                         ) : (
                           <select className="input text-xs max-w-[140px] py-1"
                             value={u.role || ''} onChange={e => updateRole(u.id, e.target.value)}>
@@ -361,7 +361,7 @@ export default function Admin() {
               </tbody>
             </table>
             {displayed.length > 0 && (
-              <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-50 bg-gray-50/50">
+              <div className="px-4 py-2 text-xs text-gray-400 dark:text-gray-500 border-t border-gray-50 dark:border-gray-800 bg-gray-50/50">
                 {displayed.length} utilisateur{displayed.length > 1 ? 's' : ''}
                 {(roleFilter || userSearch) ? ` sur ${users.length}` : ''}
               </div>
@@ -376,15 +376,15 @@ export default function Admin() {
         <div className="space-y-6">
 
           {/* Mode démo */}
-          <div className={`card p-4 border ${demoMode ? 'bg-orange-50 border-orange-300' : 'bg-gray-50 border-gray-200'}`}>
+          <div className={`card p-4 border ${demoMode ? 'bg-orange-50 border-orange-300' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-600'}`}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg">🎭</span>
-                  <span className="text-sm font-semibold text-gray-800">Mode démo</span>
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Mode démo</span>
                   {demoMode && <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{background:'#E86C00'}}>ACTIF</span>}
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {demoMode
                     ? "Les données fictives (Billie Eilish, Taylor Swift…) remplacent la base réelle. Aucune donnée réelle n'est affectée."
                     : "Active des données fictives pour présenter la plateforme à des tiers sans exposer les données réelles."}
@@ -398,10 +398,10 @@ export default function Admin() {
           </div>
 
           {/* Aperçu de rôle */}
-          <div className="card p-4 bg-orange-50 border border-orange-100">
+          <div className="card p-4 bg-orange-50 dark:bg-orange-950 border border-orange-100">
             <div className="flex items-center gap-2 mb-3">
               <span className="w-2 h-2 rounded-full bg-orange-500" />
-              <span className="text-xs font-semibold text-orange-700 uppercase tracking-wide">Aperçu — Voir le site en tant que</span>
+              <span className="text-xs font-semibold text-orange-700 dark:text-orange-300 uppercase tracking-wide">Aperçu — Voir le site en tant que</span>
             </div>
             <div className="flex gap-2 flex-wrap items-center">
               {['direction','mdp','responsable'].map(r => {
@@ -409,13 +409,13 @@ export default function Admin() {
                 return (
                   <button key={r} onClick={() => setPreviewRole(previewRole === r ? null : r)}
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors
-                      ${previewRole === r ? m.color : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                      ${previewRole === r ? m.color : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'}`}>
                     {m.label}
                   </button>
                 )
               })}
               {previewRole && (
-                <span className="text-xs text-orange-600 ml-2">
+                <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">
                   Mode aperçu actif — <button onClick={() => setPreviewRole(null)} className="underline">Quitter</button>
                 </span>
               )}
@@ -424,25 +424,25 @@ export default function Admin() {
 
           {/* Matrice interactive */}
           <div className="card p-0 overflow-hidden">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-gray-700 flex items-center gap-2">
+                <h2 className="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                   <Shield size={16} /> Droits par rôle
                 </h2>
-                <p className="text-xs text-gray-400 mt-0.5">Modifiez les droits — les utilisateurs concernés voient le changement en temps réel.</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Modifiez les droits — les utilisateurs concernés voient le changement en temps réel.</p>
               </div>
-              {droitsLoading && <RefreshCw size={14} className="animate-spin text-gray-400" />}
+              {droitsLoading && <RefreshCw size={14} className="animate-spin text-gray-400 dark:text-gray-500" />}
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-100">
+                <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
                   <tr>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase" style={{minWidth:260}}>Fonctionnalité</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase" style={{minWidth:260}}>Fonctionnalité</th>
                     {ROLES.filter(r => r !== 'admin' && r !== 'super_admin').map(r => (
                       <th key={r} className="px-4 py-3 text-center" style={{minWidth:100}}>
                         <div className="flex flex-col items-center gap-1">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${ROLE_META[r].color}`}>{ROLE_META[r].label}</span>
-                          {r === 'admin' && <Lock size={10} className="text-gray-400" />}
+                          {r === 'admin' && <Lock size={10} className="text-gray-400 dark:text-gray-500" />}
                         </div>
                       </th>
                     ))}
@@ -451,16 +451,16 @@ export default function Admin() {
                 <tbody>
                   {FEATURE_GROUPS.map(group => (
                     <>
-                      <tr key={`grp-${group}`} className="bg-gray-50/70 border-y border-gray-100">
+                      <tr key={`grp-${group}`} className="bg-gray-50/70 border-y border-gray-100 dark:border-gray-700">
                         <td colSpan={ROLES.filter(r => r !== 'admin' && r !== 'super_admin').length + 1} className="px-5 py-2">
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{group}</span>
+                          <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{group}</span>
                         </td>
                       </tr>
                       {FEATURES.filter(f => f.group === group).map(feat => (
-                        <tr key={feat.key} className="border-b border-gray-50 hover:bg-blue-50/20 transition-colors">
+                        <tr key={feat.key} className="border-b border-gray-50 dark:border-gray-800 hover:bg-blue-50/20 transition-colors">
                           <td className="px-5 py-3">
-                            <div className="font-medium text-gray-700 text-sm">{feat.label}</div>
-                            <div className="text-xs text-gray-400 mt-0.5">{feat.desc}</div>
+                            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm">{feat.label}</div>
+                            <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{feat.desc}</div>
                           </td>
                           {ROLES.filter(r => r !== 'admin' && r !== 'super_admin').map(r => {
                             const isLocked = r === 'admin'
@@ -482,19 +482,19 @@ export default function Admin() {
                 </tbody>
               </table>
             </div>
-            <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-400 flex items-center gap-2">
+            <div className="px-5 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 flex items-center gap-2">
               <Lock size={11} /> La colonne Admin est verrouillée — un administrateur dispose toujours de tous les droits.
             </div>
           </div>
 
           {/* Exceptions individuelles */}
           <div className="card p-0 overflow-hidden">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-gray-700 flex items-center gap-2">
+                <h2 className="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                   <UserPlus size={16} /> Exceptions individuelles
                 </h2>
-                <p className="text-xs text-gray-400 mt-0.5">Accordez ou révoquez un droit pour une personne, indépendamment de son rôle.</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Accordez ou révoquez un droit pour une personne, indépendamment de son rôle.</p>
               </div>
               <button onClick={() => { setOverrideModal(true); setOverrideUser(''); setOverrideFeature(''); setOverrideEnabled(true) }}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold"
@@ -503,15 +503,15 @@ export default function Admin() {
               </button>
             </div>
             {userOverrides.length === 0 ? (
-              <div className="px-5 py-8 text-center text-gray-400 text-sm">
+              <div className="px-5 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
                 Aucune exception — tous les utilisateurs suivent les droits de leur rôle.
               </div>
             ) : (
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-100">
+                <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
                   <tr>
                     {['Utilisateur','Rôle','Fonctionnalité','Override',''].map(h => (
-                      <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
+                      <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -520,18 +520,18 @@ export default function Admin() {
                     const feat = FEATURES.find(f => f.key === ov.feature)
                     const rm = ROLE_META[ov.profiles?.role] || ROLE_META.responsable
                     return (
-                      <tr key={`${ov.user_id}-${ov.feature}`} className="border-b border-gray-50 hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium text-gray-700">{ov.profiles?.prenom} {ov.profiles?.nom}</td>
+                      <tr key={`${ov.user_id}-${ov.feature}`} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 font-medium text-gray-700 dark:text-gray-200">{ov.profiles?.prenom} {ov.profiles?.nom}</td>
                         <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${rm.color}`}>{rm.label}</span></td>
-                        <td className="px-4 py-3 text-gray-600">{feat?.label ?? ov.feature}</td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{feat?.label ?? ov.feature}</td>
                         <td className="px-4 py-3">
                           {ov.enabled
-                            ? <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">✓ Accordé</span>
-                            : <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">✗ Révoqué</span>}
+                            ? <span className="text-xs font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 px-2 py-0.5 rounded-full">✓ Accordé</span>
+                            : <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 px-2 py-0.5 rounded-full">✗ Révoqué</span>}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button onClick={() => removeUserOverride(ov.user_id, ov.feature)}
-                            className="text-gray-400 hover:text-red-500 text-xs font-medium transition-colors">
+                            className="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xs font-medium transition-colors">
                             Supprimer
                           </button>
                         </td>
@@ -548,13 +548,13 @@ export default function Admin() {
       {/* Modal exception individuelle */}
       {overrideModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h3 className="font-bold text-gray-800 mb-4">Ajouter une exception</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 className="font-bold text-gray-800 dark:text-gray-100 mb-4">Ajouter une exception</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-2">Utilisateur</label>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">Utilisateur</label>
                 <select value={overrideUser} onChange={e => setOverrideUser(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none">
                   <option value="">— Sélectionner —</option>
                   {users.filter(u => u.role !== 'admin').map(u => (
                     <option key={u.id} value={u.id}>{u.prenom} {u.nom} ({ROLE_META[u.role]?.label ?? u.role})</option>
@@ -562,9 +562,9 @@ export default function Admin() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-2">Fonctionnalité</label>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">Fonctionnalité</label>
                 <select value={overrideFeature} onChange={e => setOverrideFeature(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none">
                   <option value="">— Sélectionner —</option>
                   {FEATURE_GROUPS.map(g => (
                     <optgroup key={g} label={g}>
@@ -576,7 +576,7 @@ export default function Admin() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-2">Type</label>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">Type</label>
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setOverrideEnabled(true)}
                     className="flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-colors"
@@ -589,7 +589,7 @@ export default function Admin() {
                     ✗ Révoquer
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                   {overrideEnabled
                     ? "Accès accordé même si son rôle ne l'y autorise pas."
                     : "Accès révoqué même si son rôle l'y autorise."}
@@ -598,7 +598,7 @@ export default function Admin() {
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={() => setOverrideModal(false)}
-                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600">Annuler</button>
+                className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-semibold text-gray-600 dark:text-gray-300">Annuler</button>
               <button onClick={addUserOverride} disabled={!overrideUser || !overrideFeature}
                 className="flex-1 py-2 rounded-lg text-sm font-semibold text-white"
                 style={{backgroundColor:'#2D1B2E', opacity:(!overrideUser||!overrideFeature)?0.5:1}}>
@@ -620,8 +620,8 @@ export default function Admin() {
                 S
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800">Synchronisation Smartschool</h3>
-                <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                <h3 className="font-semibold text-gray-800 dark:text-gray-100">Synchronisation Smartschool</h3>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 leading-relaxed">
                   Importe tous les élèves et membres du personnel depuis Smartschool via l'API Web Services V3.<br />
                   Les comptes existants sont mis à jour ; les nouveaux sont créés automatiquement.
                 </p>
@@ -636,37 +636,37 @@ export default function Admin() {
 
           {/* Sync history */}
           <div className="card p-0">
-            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="font-semibold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wide">
                 Historique des synchronisations
               </h2>
               <button onClick={loadSyncLogs}
-                className="text-xs text-gray-400 hover:text-primary flex items-center gap-1">
+                className="text-xs text-gray-400 dark:text-gray-500 hover:text-primary flex items-center gap-1">
                 <RefreshCw size={12} /> Rafraîchir
               </button>
             </div>
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
+              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
                 <tr>
                   {['Date','Statut','Élèves','Personnel','Message'].map(h => (
-                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
+                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {syncLogs.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">Aucune synchronisation enregistrée</td></tr>
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Aucune synchronisation enregistrée</td></tr>
                 ) : syncLogs.map(l => (
-                  <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="px-4 py-2 text-gray-500 text-xs whitespace-nowrap">{fmtDate(l.created_at)}</td>
+                  <tr key={l.id} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="px-4 py-2 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">{fmtDate(l.created_at)}</td>
                     <td className="px-4 py-2">
                       {(l.status === 'success' || l.success)
-                        ? <span className="text-green-500 text-base font-bold">✓</span>
-                        : <span className="text-red-500 text-base font-bold">✗</span>}
+                        ? <span className="text-green-500 dark:text-green-400 text-base font-bold">✓</span>
+                        : <span className="text-red-500 dark:text-red-400 text-base font-bold">✗</span>}
                     </td>
                     <td className="px-4 py-2 font-medium">{l.eleves_upserted ?? l.nb_eleves ?? 0}</td>
                     <td className="px-4 py-2 font-medium">{l.personnel_upserted ?? l.nb_personnel ?? 0}</td>
-                    <td className="px-4 py-2 text-gray-400 text-xs max-w-xs truncate">{l.details ?? l.message ?? '—'}</td>
+                    <td className="px-4 py-2 text-gray-400 dark:text-gray-500 text-xs max-w-xs truncate">{l.details ?? l.message ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -679,12 +679,12 @@ export default function Admin() {
       {/* ── MODAL PROTECTION ADMIN ─────────────────── */}
       {protectModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm p-6">
             {protectModal.type === 'blocked' ? (
               <>
                 <div className="text-3xl mb-3 text-center">🔒</div>
-                <h3 className="font-bold text-red-600 mb-2 text-center">Action impossible</h3>
-                <p className="text-sm text-gray-600 text-center mb-4">
+                <h3 className="font-bold text-red-600 dark:text-red-400 mb-2 text-center">Action impossible</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300 text-center mb-4">
                   Vous êtes le seul administrateur. Vous ne pouvez pas retirer votre propre rôle Admin tant qu'aucun autre admin n'existe.
                 </p>
                 <button onClick={() => setProtectModal(null)} className="btn-primary w-full py-2">Compris</button>
@@ -692,11 +692,11 @@ export default function Admin() {
             ) : (
               <>
                 <div className="text-3xl mb-3 text-center">⚠️</div>
-                <h3 className="font-bold text-orange-600 mb-2 text-center">Confirmer le changement</h3>
-                <p className="text-sm text-gray-600 mb-1 text-center">
+                <h3 className="font-bold text-orange-600 dark:text-orange-400 mb-2 text-center">Confirmer le changement</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-1 text-center">
                   Vous allez retirer votre propre rôle <strong>Admin</strong>.
                 </p>
-                <p className="text-xs text-gray-400 text-center mb-4">
+                <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-4">
                   Un autre admin existe ({protectModal.otherEmail}) — l'accès admin sera préservé.
                 </p>
                 <div className="flex gap-2">
@@ -716,13 +716,13 @@ export default function Admin() {
       {/* ── MODAL TRANSFERT SUPER ADMIN ─────────────── */}
       {transferModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm p-6">
             <div className="text-3xl mb-3 text-center">👑</div>
-            <h3 className="font-bold text-purple-700 mb-2 text-center">Transférer le grade Super Admin</h3>
-            <p className="text-sm text-gray-600 mb-1 text-center">
+            <h3 className="font-bold text-purple-700 dark:text-purple-300 mb-2 text-center">Transférer le grade Super Admin</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-1 text-center">
               Le grade <strong>Super Admin</strong> doit toujours être attribué à quelqu'un.
             </p>
-            <p className="text-sm text-gray-600 mb-4 text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 text-center">
               Choisissez à qui le transférer avant de changer votre propre rôle.
             </p>
             <div className="mb-4">
@@ -737,7 +737,7 @@ export default function Admin() {
                 ))}
               </select>
             </div>
-            <p className="text-xs text-gray-400 text-center mb-4">
+            <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-4">
               Votre rôle deviendra : <strong>{ROLE_META[transferModal.newRole]?.label ?? transferModal.newRole}</strong>
             </p>
             <div className="flex gap-2">
@@ -756,7 +756,7 @@ export default function Admin() {
 
       {inviteModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm p-6">
             <h3 className="font-bold text-primary mb-4 text-lg">Inviter un utilisateur</h3>
             <div className="space-y-3">
               <div>
@@ -773,7 +773,7 @@ export default function Admin() {
                 </select>
               </div>
               {inviteMsg && (
-                <p className={`text-sm px-3 py-2 rounded-lg ${inviteMsg.startsWith('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                <p className={`text-sm px-3 py-2 rounded-lg ${inviteMsg.startsWith('✅') ? 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300'}`}>
                   {inviteMsg}
                 </p>
               )}
@@ -1223,9 +1223,9 @@ export function NaturesAdmin() {
   }
 
   const TYPE_COLORS = {
-    produit: 'bg-green-100 text-green-700',
-    charge:  'bg-red-100 text-red-600',
-    neutre:  'bg-gray-100 text-gray-500',
+    produit: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+    charge:  'bg-red-100 text-red-600 dark:text-red-400',
+    neutre:  'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
   }
 
   return (
@@ -1233,8 +1233,8 @@ export function NaturesAdmin() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-semibold text-gray-700">Natures comptables</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{natures.length} natures · {natures.filter(n => !n.actif).length} désactivées</p>
+          <h2 className="font-semibold text-gray-700 dark:text-gray-200">Natures comptables</h2>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{natures.length} natures · {natures.filter(n => !n.actif).length} désactivées</p>
         </div>
         <button
           onClick={() => setEditItem({ libelle: '', categorie: '', sous_categorie: '', type_flux: 'charge', in_bilan: true, in_couverture: false, actif: true })}
@@ -1252,7 +1252,7 @@ export function NaturesAdmin() {
             className={`text-xs px-3 py-1 rounded-full border transition-colors ${
               filterCat === cat
                 ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
           >
             {cat}
@@ -1265,25 +1265,25 @@ export function NaturesAdmin() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Chargement…</div>
+        <div className="text-center py-12 text-gray-400 dark:text-gray-500">Chargement…</div>
       ) : (
         <div className="card p-0 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500">Libellé</th>
-                <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500">Type</th>
-                <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500">Bilan</th>
-                <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500">Actif</th>
+              <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Libellé</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Type</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Bilan</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Actif</th>
                 <th className="w-20 px-4 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(n => (
-                <tr key={n.id} className={`border-b border-gray-50 hover:bg-gray-50/60 ${!n.actif ? 'opacity-50' : ''}`}>
+                <tr key={n.id} className={`border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50/60 ${!n.actif ? 'opacity-50' : ''}`}>
                   <td className="px-4 py-2.5">
-                    <p className="font-medium text-gray-700">{n.libelle}</p>
-                    <p className="text-xs text-gray-400">{n.categorie} › {n.sous_categorie}</p>
+                    <p className="font-medium text-gray-700 dark:text-gray-200">{n.libelle}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{n.categorie} › {n.sous_categorie}</p>
                   </td>
                   <td className="px-4 py-2.5">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${TYPE_COLORS[n.type_flux]}`}>
@@ -1292,22 +1292,22 @@ export function NaturesAdmin() {
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     {n.in_bilan
-                      ? <span className="text-green-500 text-xs">✓</span>
-                      : <span className="text-gray-300 text-xs">—</span>}
+                      ? <span className="text-green-500 dark:text-green-400 text-xs">✓</span>
+                      : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>}
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     <button onClick={() => toggleActif(n)}
                       className={`relative inline-flex h-5 w-9 rounded-full transition-colors
-                        ${n.actif ? 'bg-green-400' : 'bg-gray-200'}`}
+                        ${n.actif ? 'bg-green-400' : 'bg-gray-200 dark:bg-gray-600'}`}
                     >
-                      <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform mt-0.5
+                      <span className={`inline-block h-4 w-4 rounded-full bg-white dark:bg-gray-800 shadow transform transition-transform mt-0.5
                         ${n.actif ? 'translate-x-4' : 'translate-x-0.5'}`} />
                     </button>
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2 justify-end">
                       <button onClick={() => setEditItem({ ...n })}
-                        className="p-1.5 hover:bg-indigo-50 rounded text-gray-400 hover:text-indigo-600 transition-colors"
+                        className="p-1.5 hover:bg-indigo-50 rounded text-gray-400 dark:text-gray-500 hover:text-indigo-600 transition-colors"
                         title="Modifier">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -1315,7 +1315,7 @@ export function NaturesAdmin() {
                         </svg>
                       </button>
                       <button onClick={() => deleteNature(n.id)}
-                        className="p-1.5 hover:bg-red-50 rounded text-gray-300 hover:text-red-400 transition-colors"
+                        className="p-1.5 hover:bg-red-50 rounded text-gray-300 dark:text-gray-600 hover:text-red-400 transition-colors"
                         title="Supprimer">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
@@ -1327,7 +1327,7 @@ export function NaturesAdmin() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-sm">
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
                     Aucune nature dans cette catégorie
                   </td>
                 </tr>
@@ -1357,10 +1357,10 @@ function NatureModal({ item, categories, saving, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800">{item.id ? 'Modifier' : 'Nouvelle'} nature comptable</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100">{item.id ? 'Modifier' : 'Nouvelle'} nature comptable</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -1369,12 +1369,12 @@ function NatureModal({ item, categories, saving, onSave, onClose }) {
 
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Catégorie</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Catégorie</label>
             <input
               value={form.categorie}
               onChange={e => set('categorie', e.target.value)}
               list="cat-list"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
+              className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
               placeholder="ex: Frais pédagogiques"
             />
             <datalist id="cat-list">
@@ -1382,7 +1382,7 @@ function NatureModal({ item, categories, saving, onSave, onClose }) {
             </datalist>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Sous-catégorie</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Sous-catégorie</label>
             <input
               value={form.sous_categorie}
               onChange={e => {
@@ -1390,25 +1390,25 @@ function NatureModal({ item, categories, saving, onSave, onClose }) {
                 set('sous_categorie', sc)
                 if (form.categorie) set('libelle', `${form.categorie} - ${sc}`)
               }}
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
+              className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
               placeholder="ex: Anglais"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Libellé complet</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Libellé complet</label>
             <input
               value={form.libelle}
               onChange={e => set('libelle', e.target.value)}
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
+              className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Type de flux</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Type de flux</label>
               <select
                 value={form.type_flux}
                 onChange={e => set('type_flux', e.target.value)}
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
               >
                 <option value="charge">Charge (sortie)</option>
                 <option value="produit">Produit (entrée)</option>
@@ -1416,17 +1416,17 @@ function NatureModal({ item, categories, saving, onSave, onClose }) {
               </select>
             </div>
             <div className="flex flex-col gap-2 pt-4">
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
                 <input type="checkbox" checked={form.in_bilan} onChange={e => set('in_bilan', e.target.checked)}
                   className="rounded" />
                 Inclus au bilan
               </label>
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
                 <input type="checkbox" checked={form.actif} onChange={e => set('actif', e.target.checked)}
                   className="rounded" />
                 Actif
               </label>
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer" title="Cette charge est compensée par les encaissements élèves (Extramuros, Voyages, Frais péda…)">
+              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer" title="Cette charge est compensée par les encaissements élèves (Extramuros, Voyages, Frais péda…)">
                 <input type="checkbox" checked={form.in_couverture ?? false} onChange={e => set('in_couverture', e.target.checked)}
                   className="rounded accent-indigo-500" />
                 <span>Couverture élèves</span>
@@ -1435,8 +1435,8 @@ function NatureModal({ item, categories, saving, onSave, onClose }) {
           </div>
         </div>
 
-        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
             Annuler
           </button>
           <button
@@ -1523,9 +1523,9 @@ function CropModal({ eleve, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-6 w-[360px]" onClick={e => e.stopPropagation()}>
-        <h3 className="font-semibold text-gray-800 mb-0.5">{eleve.prenom} {eleve.nom}</h3>
-        <p className="text-xs text-gray-400 mb-4">Glisse pour recadrer · Curseur pour zoomer</p>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-[360px]" onClick={e => e.stopPropagation()}>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-0.5">{eleve.prenom} {eleve.nom}</h3>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Glisse pour recadrer · Curseur pour zoomer</p>
 
         <div className="flex justify-center mb-4">
           <div
@@ -1552,19 +1552,19 @@ function CropModal({ eleve, onClose, onSaved }) {
         </div>
 
         <div className="flex items-center gap-2 mb-5">
-          <span className="text-xs text-gray-400">−</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">−</span>
           <input
             type="range" min={minZoom} max={minZoom * 3} step={0.01} value={zoom}
             onChange={e => setZoom(parseFloat(e.target.value))}
             className="flex-1 accent-indigo-500"
           />
-          <span className="text-xs text-gray-400">+</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">+</span>
         </div>
 
-        {cropError && <p className="text-xs text-red-500 mb-3">{cropError}</p>}
+        {cropError && <p className="text-xs text-red-500 dark:text-red-400 mb-3">{cropError}</p>}
 
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+          <button onClick={onClose} className="flex-1 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
             Annuler
           </button>
           <button onClick={handleSave} disabled={saving} className="flex-1 py-2 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50">
@@ -1617,7 +1617,7 @@ function PhotosGrid({ eleves, search, filters, onCrop, onUploadFor }) {
       <input ref={uploadRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       {/* Header compteur + filtre local */}
       <div className="flex items-center justify-between mb-3 gap-3">
-        <h4 className="font-semibold text-gray-700 text-sm shrink-0">
+        <h4 className="font-semibold text-gray-700 dark:text-gray-200 text-sm shrink-0">
           {nbAvec} / {eleves.length} élèves avec photo
           {filtered.length < eleves.length && ` — ${filtered.length} affichés`}
         </h4>
@@ -1627,7 +1627,7 @@ function PhotosGrid({ eleves, search, filters, onCrop, onUploadFor }) {
               className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                 photoFilter === val
                   ? 'bg-indigo-600 border-indigo-600 text-white'
-                  : 'border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600'
+                  : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-indigo-300 hover:text-indigo-600'
               }`}>
               {label}
             </button>
@@ -1642,7 +1642,7 @@ function PhotosGrid({ eleves, search, filters, onCrop, onUploadFor }) {
             <div className="relative">
               {e.photo_url ? (
                 <>
-                  <img src={e.photo_url} alt="" className="w-20 h-20 rounded-full object-cover border border-gray-200" />
+                  <img src={e.photo_url} alt="" className="w-20 h-20 rounded-full object-cover border border-gray-200 dark:border-gray-600" />
                   <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                     <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0H3m4 0l-4 4M17 8v12m0 0h4m-4 0l4-4" />
@@ -1651,18 +1651,18 @@ function PhotosGrid({ eleves, search, filters, onCrop, onUploadFor }) {
                 </>
               ) : (
                 <>
-                  <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                    <span className="text-gray-400 font-semibold text-lg">{initials(e)}</span>
+                  <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-500 flex items-center justify-center">
+                    <span className="text-gray-400 dark:text-gray-500 font-semibold text-lg">{initials(e)}</span>
                   </div>
                   <div className="absolute inset-0 rounded-full bg-indigo-500/10 border-2 border-indigo-300 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <svg className="w-6 h-6 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-6 h-6 text-indigo-500 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                   </div>
                 </>
               )}
             </div>
-            <span className={`text-xs text-center leading-tight ${e.photo_url ? 'text-gray-500' : 'text-gray-400'}`}>
+            <span className={`text-xs text-center leading-tight ${e.photo_url ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-500'}`}>
               {e.prenom}<br/>{e.nom}
             </span>
           </div>
@@ -1783,17 +1783,17 @@ function PhotosAdmin({ search, filters, onClassesReady }) {
     }
   }, [resizeImage])
 
-  if (loading) return <div className="p-6 text-gray-400 text-sm">Chargement des élèves…</div>
+  if (loading) return <div className="p-6 text-gray-400 dark:text-gray-500 text-sm">Chargement des élèves…</div>
 
   const pct = progress ? Math.round((progress.done / progress.total) * 100) : 0
 
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <h3 className="font-semibold text-gray-800 mb-1">Import de photos en masse</h3>
-        <p className="text-sm text-gray-500">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-1">Import de photos en masse</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           Dépose des images dont le nom correspond au <strong>numéro interne</strong> ou au <strong>nom d'utilisateur Smartschool</strong> de l'élève.<br />
-          Exemples : <code className="bg-gray-100 px-1 rounded text-xs">4849.jpg</code> ou <code className="bg-gray-100 px-1 rounded text-xs">elif.kaplaner.jpg</code>
+          Exemples : <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">4849.jpg</code> ou <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">elif.kaplaner.jpg</code>
         </p>
       </div>
 
@@ -1804,16 +1804,16 @@ function PhotosAdmin({ search, filters, onClassesReady }) {
         onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
         className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors
-          ${dragging ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}>
-        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-          <svg className="w-6 h-6 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          ${dragging ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950' : 'border-gray-200 dark:border-gray-600 hover:border-indigo-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
+        <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+          <svg className="w-6 h-6 text-indigo-500 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
-        <p className="text-sm font-medium text-gray-700">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
           {dragging ? 'Dépose ici' : 'Glisse-dépose des photos ou clique pour sélectionner'}
         </p>
-        <p className="text-xs text-gray-400">JPEG, PNG, WebP — redimensionnés automatiquement à 300×300</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">JPEG, PNG, WebP — redimensionnés automatiquement à 300×300</p>
         <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
           onChange={e => { processFiles(e.target.files); e.target.value = '' }} />
       </div>
@@ -1821,11 +1821,11 @@ function PhotosAdmin({ search, filters, onClassesReady }) {
       {/* Progress */}
       {progress && (
         <div className="mt-4">
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
+          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
             <span>Import en cours…</span>
             <span>{progress.done} / {progress.total}</span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-2">
+          <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
             <div className="bg-indigo-500 h-2 rounded-full transition-all" style={{ width: pct + '%' }} />
           </div>
         </div>
@@ -1835,11 +1835,11 @@ function PhotosAdmin({ search, filters, onClassesReady }) {
       {results && (
         <div className="mt-6 space-y-4">
           {results.ok.length > 0 && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-              <p className="text-sm font-semibold text-emerald-700 mb-2">
+            <div className="bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mb-2">
                 ✓ {results.ok.length} photo{results.ok.length > 1 ? 's' : ''} importée{results.ok.length > 1 ? 's' : ''}
               </p>
-              <div className="text-xs text-emerald-600 space-y-0.5 max-h-40 overflow-y-auto">
+              <div className="text-xs text-emerald-600 dark:text-emerald-400 space-y-0.5 max-h-40 overflow-y-auto">
                 {results.ok.map((r, i) => (
                   <div key={i}><span className="font-medium">{r.name}</span> <span className="text-emerald-400">({r.filename})</span></div>
                 ))}
@@ -1847,11 +1847,11 @@ function PhotosAdmin({ search, filters, onClassesReady }) {
             </div>
           )}
           {results.ko.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-              <p className="text-sm font-semibold text-red-700 mb-2">
+            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-4">
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300 mb-2">
                 ✗ {results.ko.length} fichier{results.ko.length > 1 ? 's' : ''} non importé{results.ko.length > 1 ? 's' : ''}
               </p>
-              <div className="text-xs text-red-500 space-y-0.5 max-h-40 overflow-y-auto">
+              <div className="text-xs text-red-500 dark:text-red-400 space-y-0.5 max-h-40 overflow-y-auto">
                 {results.ko.map((r, i) => (
                   <div key={i}><span className="font-medium">{r.filename}</span> — {r.reason}</div>
                 ))}
@@ -1859,7 +1859,7 @@ function PhotosAdmin({ search, filters, onClassesReady }) {
             </div>
           )}
           <button onClick={() => setResults(null)}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+            className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
             Effacer les résultats
           </button>
         </div>
@@ -2017,53 +2017,53 @@ function ParametresEcole() {
     <div className="max-w-2xl mx-auto space-y-8 pb-12">
 
       {/* Carte d'impact */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
         <button onClick={() => setShowMap(v => !v)}
-          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors">
-          <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-50 flex items-center gap-2">
             <span>🗺️</span> Où ces variables sont-elles utilisées ?
           </span>
-          <span className="text-gray-400 text-xs">{showMap ? '▲ Réduire' : '▼ Afficher'}</span>
+          <span className="text-gray-400 dark:text-gray-500 text-xs">{showMap ? '▲ Réduire' : '▼ Afficher'}</span>
         </button>
         {showMap && (
-          <div className="px-6 pb-6 border-t border-gray-100">
+          <div className="px-6 pb-6 border-t border-gray-100 dark:border-gray-700">
             <div className="flex gap-3 flex-wrap mt-4 mb-5">
-              {[['tag-site','bg-violet-100 text-violet-700','Site React'],['tag-pdf','bg-amber-100 text-amber-700','PDF généré'],['tag-hdr','bg-emerald-100 text-emerald-700','Header / Footer']].map(([,cls,lbl]) => (
+              {[['tag-site','bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300','Site React'],['tag-pdf','bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','PDF généré'],['tag-hdr','bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300','Header / Footer']].map(([,cls,lbl]) => (
                 <span key={lbl} className={`text-xs font-semibold px-2 py-0.5 rounded ${cls}`}>{lbl}</span>
               ))}
             </div>
             {[
               { cat:'🏫 Identité', rows:[
-                { key:"Nom de l'école",     tags:[['bg-emerald-100 text-emerald-700','Footer site'],['bg-emerald-100 text-emerald-700','Page connexion'],['bg-amber-100 text-amber-700','Tous les PDFs (header + footer)']] },
-                { key:'Adresse (rue · CP · ville)', tags:[['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Voyages PDF']] },
-                { key:'Numéro BCE / TVA',    tags:[['bg-amber-100 text-amber-700','Factures PDF (footer si renseigné)']] },
-                { key:'Logo',                tags:[['bg-emerald-100 text-emerald-700','Sidebar'],['bg-emerald-100 text-emerald-700','Header mobile'],['bg-amber-100 text-amber-700','Tous les PDFs (coin supérieur gauche)']] },
+                { key:"Nom de l'école",     tags:[['bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300','Footer site'],['bg-emerald-100 text-emerald-700 dark:text-emerald-300','Page connexion'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Tous les PDFs (header + footer)']] },
+                { key:'Adresse (rue · CP · ville)', tags:[['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Factures PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Voyages PDF']] },
+                { key:'Numéro BCE / TVA',    tags:[['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Factures PDF (footer si renseigné)']] },
+                { key:'Logo',                tags:[['bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300','Sidebar'],['bg-emerald-100 text-emerald-700 dark:text-emerald-300','Header mobile'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Tous les PDFs (coin supérieur gauche)']] },
               ]},
               { cat:'📞 Contacts généraux', rows:[
-                { key:"E-mail général",      tags:[['bg-amber-100 text-amber-700','Activités PDF'],['bg-amber-100 text-amber-700','Articles PDF'],['bg-amber-100 text-amber-700','Voyages PDF']] },
-                { key:"Téléphone général",   tags:[['bg-amber-100 text-amber-700','Activités PDF'],['bg-amber-100 text-amber-700','Articles PDF'],['bg-amber-100 text-amber-700','Voyages PDF']] },
+                { key:"E-mail général",      tags:[['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Activités PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Articles PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Voyages PDF']] },
+                { key:"Téléphone général",   tags:[['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Activités PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Articles PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Voyages PDF']] },
               ]},
               { cat:'💼 Économat', rows:[
-                { key:"Nom économe",         tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF']] },
-                { key:"E-mail économat",     tags:[['bg-amber-100 text-amber-700','Articles PDF'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Bilan économe PDF']] },
-                { key:"Téléphone économat",  tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Bilan économe PDF']] },
+                { key:"Nom économe",         tags:[['bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300','Factures (bloc paiement)'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Factures PDF']] },
+                { key:"E-mail économat",     tags:[['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Articles PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Factures PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Bilan économe PDF']] },
+                { key:"Téléphone économat",  tags:[['bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300','Factures (bloc paiement)'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Factures PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Bilan économe PDF']] },
               ]},
               { cat:'🤝 Suivi social', rows:[
-                { key:"Nom assistant social",tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Échelonnements PDF'],['bg-amber-100 text-amber-700','Organismes tiers PDF']] },
-                { key:"E-mail AS",           tags:[['bg-amber-100 text-amber-700','Échelonnements PDF'],['bg-amber-100 text-amber-700','Organismes tiers PDF']] },
-                { key:"Téléphone AS",        tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Échelonnements PDF'],['bg-amber-100 text-amber-700','Organismes tiers PDF']] },
+                { key:"Nom assistant social",tags:[['bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300','Factures (bloc paiement)'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Factures PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Échelonnements PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Organismes tiers PDF']] },
+                { key:"E-mail AS",           tags:[['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Échelonnements PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Organismes tiers PDF']] },
+                { key:"Téléphone AS",        tags:[['bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300','Factures (bloc paiement)'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Factures PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Échelonnements PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Organismes tiers PDF']] },
               ]},
               { cat:'🏦 Facturation', rows:[
-                { key:'IBAN',                tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Organismes tiers PDF']] },
-                { key:'Bénéficiaire',        tags:[['bg-violet-100 text-violet-700','Factures (bloc paiement)'],['bg-amber-100 text-amber-700','Factures PDF'],['bg-amber-100 text-amber-700','Organismes tiers PDF']] },
+                { key:'IBAN',                tags:[['bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300','Factures (bloc paiement)'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Factures PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Organismes tiers PDF']] },
+                { key:'Bénéficiaire',        tags:[['bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300','Factures (bloc paiement)'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Factures PDF'],['bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300','Organismes tiers PDF']] },
               ]},
             ].map(section => (
               <div key={section.cat} className="mb-4">
-                <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{section.cat}</div>
+                <div className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">{section.cat}</div>
                 <div className="space-y-1.5">
                   {section.rows.map(row => (
                     <div key={row.key} className="flex items-start gap-2 text-xs">
-                      <span className="font-medium text-gray-700 w-44 shrink-0 pt-0.5">{row.key}</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-200 w-44 shrink-0 pt-0.5">{row.key}</span>
                       <div className="flex flex-wrap gap-1">
                         {row.tags.map(([cls,lbl]) => (
                           <span key={lbl} className={`px-2 py-0.5 rounded font-medium ${cls}`}>{lbl}</span>
@@ -2079,21 +2079,21 @@ function ParametresEcole() {
       </div>
 
       {/* Logo */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50 mb-4 flex items-center gap-2">
           <span>🖼️</span> Logo de l'école
         </h3>
         <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden bg-gray-50">
+          <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-900">
             {logoPreview
               ? <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-1" />
-              : <span className="text-gray-300 text-xs text-center">Aucun logo</span>
+              : <span className="text-gray-300 dark:text-gray-600 text-xs text-center">Aucun logo</span>
             }
           </div>
           <div className="flex flex-col gap-2">
             <input ref={logoRef} type="file" accept="image/svg+xml,image/png,image/jpeg" className="hidden" onChange={handleLogoSelect} />
             <button onClick={() => logoRef.current.click()}
-              className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:border-gray-400 text-gray-700 transition-colors">
+              className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-gray-400 text-gray-700 dark:text-gray-200 transition-colors">
               Choisir un fichier…
             </button>
             {logoFile && (
@@ -2104,32 +2104,32 @@ function ParametresEcole() {
             )}
             {values.school_logo_url && (
               <button onClick={() => { handleChange('school_logo_url', ''); setLogoPreview('') }}
-                className="text-xs text-red-500 hover:text-red-700 transition-colors">
+                className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 transition-colors">
                 Supprimer (revenir au logo par défaut)
               </button>
             )}
           </div>
         </div>
-        <p className="text-xs text-gray-400 mt-3">Format recommandé : SVG ou PNG transparent. Si vide, le fichier /logo-ecole.svg est utilisé.</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">Format recommandé : SVG ou PNG transparent. Si vide, le fichier /logo-ecole.svg est utilisé.</p>
       </div>
 
       {/* Sections par catégorie */}
       {SETTINGS_DEFS.map(cat => (
-        <div key={cat.category} className="bg-white rounded-xl border border-gray-100 p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div key={cat.category} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-6">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50 mb-4 flex items-center gap-2">
             <span>{cat.icon}</span> {cat.label}
           </h3>
           <div className="grid grid-cols-2 gap-4">
             {cat.fields.map(field => (
               <div key={field.key} className={field.half ? 'col-span-1' : 'col-span-2'}>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{field.label}</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{field.label}</label>
                 <input
                   type={field.type || 'text'}
                   value={values[field.key] ?? ''}
                   onChange={e => handleChange(field.key, e.target.value)}
                   placeholder={field.placeholder}
                   className={`w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors ${
-                    dirty[field.key] ? 'border-primary/50 bg-primary/5' : 'border-gray-200'
+                    dirty[field.key] ? 'border-primary/50 bg-primary/5' : 'border-gray-200 dark:border-gray-600'
                   }`}
                 />
               </div>
@@ -2140,10 +2140,10 @@ function ParametresEcole() {
 
       {/* Bouton de sauvegarde */}
       <div className="flex items-center justify-between pt-2">
-        <p className="text-xs text-gray-400">Les modifications s'appliquent immédiatement sur le site et dans les prochains PDFs générés.</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">Les modifications s'appliquent immédiatement sur le site et dans les prochains PDFs générés.</p>
         <button onClick={handleSave} disabled={!hasDirty || saving}
           className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            saved ? 'bg-green-500 text-white' : hasDirty ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            saved ? 'bg-green-500 text-white' : hasDirty ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
           }`}>
           {saving ? 'Sauvegarde…' : saved ? '✓ Sauvegardé' : 'Sauvegarder'}
         </button>
@@ -2319,11 +2319,11 @@ function GuidanceAdmin() {
   return (
     <div className="space-y-4">
       {/* Sub-tabs */}
-      <div className="flex gap-1 border-b border-gray-200 pb-0">
+      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-600 pb-0">
         {subtabs.map(st => (
           <button key={st.key} onClick={() => setSubTab(st.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              subTab === st.key ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
+              subTab === st.key ? 'border-primary text-primary' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}>
             {st.label}
           </button>
@@ -2333,15 +2333,15 @@ function GuidanceAdmin() {
       {/* ── MATIÈRES ─────────────────────────────────────────────────────── */}
       {subTab === 'matieres' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">Les matières sont organisées par degré. Elles apparaissent dans le formulaire d'encodage selon la classe de l'élève.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Les matières sont organisées par degré. Elles apparaissent dans le formulaire d'encodage selon la classe de l'élève.</p>
           {DEGREES.map(deg => (
             <div key={deg} className="card p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">{DEGREE_LABELS[deg]}</h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">{DEGREE_LABELS[deg]}</h4>
               <div className="space-y-1 mb-3">
                 {subjects.filter(s => s.degree === deg).map(s => (
-                  <div key={s.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 text-sm">
+                  <div key={s.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
                     <span>{s.name}</span>
-                    <button onClick={() => deleteSubject(s.id)} className="text-red-400 hover:text-red-600 text-xs">Supprimer</button>
+                    <button onClick={() => deleteSubject(s.id)} className="text-red-400 dark:text-red-300 hover:text-red-600 text-xs">Supprimer</button>
                   </div>
                 ))}
               </div>
@@ -2364,15 +2364,15 @@ function GuidanceAdmin() {
       {/* ── COMPÉTENCES ──────────────────────────────────────────────────── */}
       {subTab === 'competences' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">Les compétences transversales sont organisées par degré. Elles peuvent différer selon le niveau.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Les compétences transversales sont organisées par degré. Elles peuvent différer selon le niveau.</p>
           {DEGREES.map(deg => (
             <div key={deg} className="card p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">{DEGREE_LABELS[deg]}</h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">{DEGREE_LABELS[deg]}</h4>
               <div className="flex flex-wrap gap-2 mb-3">
                 {comps.filter(c => c.degree === deg).map(c => (
-                  <div key={c.id} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-700">
+                  <div key={c.id} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200">
                     <span>{c.name}</span>
-                    <button onClick={() => deleteComp(c.id)} className="text-red-400 hover:text-red-600 text-xs ml-1">✕</button>
+                    <button onClick={() => deleteComp(c.id)} className="text-red-400 dark:text-red-300 hover:text-red-600 text-xs ml-1">✕</button>
                   </div>
                 ))}
               </div>
@@ -2395,12 +2395,12 @@ function GuidanceAdmin() {
       {/* ── PERSONNES RESSOURCE ──────────────────────────────────────────── */}
       {subTab === 'personnes' && (
         <div className="card p-4 space-y-3">
-          <p className="text-sm text-gray-500">Personnes ou services vers lesquels l'élève peut être orienté en cas de suivi nécessaire.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Personnes ou services vers lesquels l'élève peut être orienté en cas de suivi nécessaire.</p>
           <div className="space-y-1">
             {persons.map(p => (
-              <div key={p.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 text-sm">
+              <div key={p.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
                 <span>{p.name}</span>
-                <button onClick={() => deletePerson(p.id)} className="text-red-400 hover:text-red-600 text-xs">Supprimer</button>
+                <button onClick={() => deletePerson(p.id)} className="text-red-400 dark:text-red-300 hover:text-red-600 text-xs">Supprimer</button>
               </div>
             ))}
           </div>
@@ -2416,15 +2416,15 @@ function GuidanceAdmin() {
       {/* ── STATUTS ──────────────────────────────────────────────────────── */}
       {subTab === 'statuts' && (
         <div className="card p-4 space-y-3">
-          <p className="text-sm text-gray-500">Statuts d'avancement de l'encodage pour chaque élève.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Statuts d'avancement de l'encodage pour chaque élève.</p>
           <div className="space-y-1">
             {statuses.map(s => (
-              <div key={s.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 text-sm">
+              <div key={s.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
                   <span>{s.label}</span>
                 </div>
-                <button onClick={() => deleteStatus(s.id)} className="text-red-400 hover:text-red-600 text-xs">Supprimer</button>
+                <button onClick={() => deleteStatus(s.id)} className="text-red-400 dark:text-red-300 hover:text-red-600 text-xs">Supprimer</button>
               </div>
             ))}
           </div>
@@ -2433,7 +2433,7 @@ function GuidanceAdmin() {
               onKeyDown={e => e.key === 'Enter' && addStatus()}
               placeholder="Libellé du statut…" className="input text-sm flex-1" />
             <input type="color" value={newStatusColor} onChange={e => setNewStatusColor(e.target.value)}
-              className="w-10 h-10 rounded border border-gray-200 cursor-pointer p-0.5" />
+              className="w-10 h-10 rounded border border-gray-200 dark:border-gray-600 cursor-pointer p-0.5" />
             <button onClick={addStatus} className="btn-primary text-sm px-3">Ajouter</button>
           </div>
         </div>
@@ -2442,7 +2442,7 @@ function GuidanceAdmin() {
       {/* ── TEMPLATES ────────────────────────────────────────────────────── */}
       {subTab === 'templates' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Un template par combinaison Cas × Degré × Période. Utilisez les variables ci-dessous entre doubles accolades.
           </p>
 
@@ -2482,7 +2482,7 @@ function GuidanceAdmin() {
 
           {/* Variables disponibles */}
           <div className="card p-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Variables disponibles</h4>
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">Variables disponibles</h4>
             <div className="grid grid-cols-2 gap-1.5">
               {[
                 ['{{prenom}}',             'Prénom de l\'élève'],
@@ -2501,8 +2501,8 @@ function GuidanceAdmin() {
                 ['{{#if clé}}…{{/if}}',    'Bloc affiché si clé non vide'],
               ].map(([key, desc]) => (
                 <div key={key} className="flex items-start gap-2 text-xs py-1">
-                  <code className="bg-gray-100 px-1.5 py-0.5 rounded text-primary font-mono flex-shrink-0">{key}</code>
-                  <span className="text-gray-500">{desc}</span>
+                  <code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-primary font-mono flex-shrink-0">{key}</code>
+                  <span className="text-gray-500 dark:text-gray-400">{desc}</span>
                 </div>
               ))}
             </div>

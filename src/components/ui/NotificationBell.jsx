@@ -121,16 +121,16 @@ export default function NotificationBell({ dropdownAlign = 'right', dropdownPosi
 
       {/* Dropdown */}
       {open && (
-        <div className={`absolute ${dropdownAlign === 'left' ? 'left-0' : 'right-0'} ${dropdownPosition === 'up' ? 'bottom-10' : 'top-8'} w-80 bg-white rounded-2xl shadow-2xl border border-gray-100
+        <div className={`absolute ${dropdownAlign === 'left' ? 'left-0' : 'right-0'} ${dropdownPosition === 'up' ? 'bottom-10' : 'top-8'} w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700
           overflow-hidden z-[100]`}>
 
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span className="font-semibold text-gray-800 text-sm">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+            <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
               Notifications
               {muted && <BellOff size={14} style={{ position:'absolute', top:'-2px', right:'-2px', color:'rgba(255,255,255,0.4)', pointerEvents:'none' }} />}
         {unread > 0 && (
-                <span className="ml-1.5 bg-red-100 text-red-600 text-xs rounded-full px-1.5 py-0.5 font-medium">
+                <span className="ml-1.5 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 text-xs rounded-full px-1.5 py-0.5 font-medium">
                   {unread} non lue{unread > 1 ? 's' : ''}
                 </span>
               )}
@@ -145,7 +145,7 @@ export default function NotificationBell({ dropdownAlign = 'right', dropdownPosi
               )}
               {notifs.length > 0 && (
                 <button onClick={deleteAll}
-                  className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 hover:underline">
+                  className="flex items-center gap-1 text-xs text-red-400 dark:text-red-300 hover:text-red-600 hover:underline">
                   <Trash2 size={11} /> Vider
                 </button>
               )}
@@ -155,13 +155,13 @@ export default function NotificationBell({ dropdownAlign = 'right', dropdownPosi
           {/* Liste */}
           <div className="overflow-y-auto" style={{ maxHeight: 360 }}>
             {notifs.length === 0 ? (
-              <div className="py-10 text-center text-gray-400 text-sm">
+              <div className="py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
                 <Bell size={24} className="mx-auto mb-2 opacity-30" />
                 Aucune notification
               </div>
             ) : notifs.map(n => (
               <button key={n.id} onClick={() => clickNotif(n)}
-                className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50
+                className={`w-full text-left px-4 py-3 border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800
                   transition-colors flex gap-3 items-start
                   ${!n.lu ? 'bg-primary/5' : ''}`}>
 
@@ -176,25 +176,25 @@ export default function NotificationBell({ dropdownAlign = 'right', dropdownPosi
                 <div className="flex-1 min-w-0">
                   {/* Type + entité */}
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <MessageCircle size={11} className="text-gray-400 shrink-0" />
-                    <span className="text-xs text-gray-500 font-medium">
+                    <MessageCircle size={11} className="text-gray-400 dark:text-gray-500 shrink-0" />
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                       {ENTITY_LABELS[n.entity_type]}
                     </span>
                     {n.entity_label && (
-                      <span className="text-xs text-gray-400 truncate">— {n.entity_label}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 truncate">— {n.entity_label}</span>
                     )}
                   </div>
 
                   {/* Message */}
                   {n.commentaire?.message && (
-                    <p className="text-sm text-gray-700 truncate leading-snug">
+                    <p className="text-sm text-gray-700 dark:text-gray-200 truncate leading-snug">
                       <span className="font-medium">{n.commentaire.auteur_nom}</span>
                       {' : '}{n.commentaire.message}
                     </p>
                   )}
 
                   {/* Date */}
-                  <span className="text-[10px] text-gray-400 mt-0.5 block">
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 block">
                     {fmtAgo(n.created_at)}
                   </span>
                 </div>
@@ -204,8 +204,8 @@ export default function NotificationBell({ dropdownAlign = 'right', dropdownPosi
 
           {/* Footer */}
           {notifs.length > 0 && (
-            <div className="px-4 py-2.5 border-t border-gray-100 text-center">
-              <span className="text-xs text-gray-400">
+            <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-700 text-center">
+              <span className="text-xs text-gray-400 dark:text-gray-500">
                 {notifs.length} notification{notifs.length > 1 ? 's' : ''} affichée{notifs.length > 1 ? 's' : ''}
               </span>
             </div>

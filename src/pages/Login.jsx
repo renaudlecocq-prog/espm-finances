@@ -30,7 +30,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
+    <div className="min-h-screen bg-surface dark:bg-gray-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <img src="/logo-espm.png" alt="ESPM" className="h-14 mx-auto mb-4" />
@@ -54,7 +54,7 @@ export default function Login() {
           {/* Toggle connexion e-mail */}
           <button
             onClick={() => { setShowEmail(!showEmail); setError('') }}
-            className="flex items-center justify-center gap-3 w-full py-2.5 px-4 rounded-xl border-2 border-gray-200 text-primary-lighter font-medium hover:border-accent hover:text-primary transition-colors"
+            className="flex items-center justify-center gap-3 w-full py-2.5 px-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 text-primary-lighter font-medium hover:border-accent hover:text-primary transition-colors"
           >
             <Mail size={18} />
             Connexion par e-mail
@@ -80,7 +80,7 @@ export default function Login() {
                   </button>
                 </div>
               </div>
-              {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 px-3 py-2 rounded-lg">{error}</p>}
               <button type="submit" disabled={loading} className="btn-primary w-full justify-center flex items-center gap-2 py-2.5">
                 {loading ? 'Connexion…' : 'Se connecter'}
               </button>

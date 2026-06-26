@@ -10,16 +10,16 @@ const fmt = n => Number(n || 0).toFixed(2) + ' €'
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
 
 const STATUT_COLORS = {
-  brouillon: 'bg-gray-100 text-gray-600',
-  publie:    'bg-blue-100 text-blue-700',
-  archive:   'bg-orange-100 text-orange-700',
+  brouillon: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+  publie:    'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+  archive:   'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300',
 }
 const FACT_COLORS = {
-  en_attente: 'bg-orange-100 text-orange-700',
-  a_facturer: 'bg-yellow-100 text-yellow-700',
-  facture:              'bg-green-100 text-green-700',
-  partiellement_facture: 'bg-blue-100 text-blue-700',
-  non_payant:           'bg-gray-100 text-gray-500',
+  en_attente: 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300',
+  a_facturer: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+  facture:              'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+  partiellement_facture: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+  non_payant:           'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
 }
 const FACT_LABELS = {
   en_attente: 'En attente',
@@ -162,42 +162,42 @@ function MultiSearchSelect({ options, value, onChange, placeholder, single = fal
     <div ref={ref} className="relative w-full min-w-0">
       <div className="input cursor-pointer flex flex-wrap gap-1 items-center min-h-[38px]"
         onClick={() => setOpen(o => !o)}>
-        {selectedOptions.length === 0 && <span className="text-gray-400 text-sm">{placeholder}</span>}
-        {single && selectedOptions.length > 0 && <span className="text-gray-700 text-sm">{getLbl(selectedOptions[0])}</span>}
+        {selectedOptions.length === 0 && <span className="text-gray-400 dark:text-gray-500 text-sm">{placeholder}</span>}
+        {single && selectedOptions.length > 0 && <span className="text-gray-700 dark:text-gray-200 text-sm">{getLbl(selectedOptions[0])}</span>}
         {!single && selectedOptions.map(o => (
           <span key={getVal(o)} className="flex items-center gap-1 bg-primary/10 text-primary text-xs rounded-full px-2 py-0.5">
             {getLbl(o)}
             <button type="button" onClick={e => { e.stopPropagation(); toggle(getVal(o)) }} className="hover:text-red-500">×</button>
           </span>
         ))}
-        <ChevronDown size={14} className="ml-auto text-gray-400 shrink-0" />
+        <ChevronDown size={14} className="ml-auto text-gray-400 dark:text-gray-500 shrink-0" />
       </div>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 flex flex-col">
-          <div className="p-2 border-b border-gray-100">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg z-50 max-h-60 flex flex-col">
+          <div className="p-2 border-b border-gray-100 dark:border-gray-700">
             <div className="relative">
-              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
               <input autoFocus
-                className="w-full pl-6 pr-2 py-1 text-sm border border-gray-200 rounded-lg outline-none focus:border-primary"
+                className="w-full pl-6 pr-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-primary"
                 placeholder="Rechercher…" value={q} onChange={e => setQ(e.target.value)}
                 onClick={e => e.stopPropagation()} />
             </div>
           </div>
           <div className="overflow-y-auto">
-            {filtered.length === 0 && <p className="text-xs text-gray-400 text-center py-3">Aucun résultat</p>}
+            {filtered.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">Aucun résultat</p>}
             {filtered.map(o => {
               const v = getVal(o); const l = getLbl(o); const sel = isSelected(v)
               return (
                 <button key={v} type="button"
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${sel ? 'text-primary font-medium' : 'text-gray-700'}`}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 ${sel ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-200'}`}
                   onClick={() => toggle(v)}>
                   {/* Radio pour single, checkbox pour multi */}
                   {single
-                    ? <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${sel ? 'border-primary' : 'border-gray-300'}`}>
+                    ? <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${sel ? 'border-primary' : 'border-gray-300 dark:border-gray-500'}`}>
                         {sel && <span className="w-2 h-2 rounded-full bg-primary block" />}
                       </span>
-                    : <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${sel ? 'bg-primary border-primary' : 'border-gray-300'}`}>
+                    : <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${sel ? 'bg-primary border-primary' : 'border-gray-300 dark:border-gray-500'}`}>
                         {sel && <span className="text-white text-xs leading-none">✓</span>}
                       </span>
                   }
@@ -215,8 +215,8 @@ function MultiSearchSelect({ options, value, onChange, placeholder, single = fal
 // ── Section sélection classes + groupes ────────────────────────────────────
 function SelectionEleves({ badge, classes, setClasses, groupes, setGroupes, allClasses, groupOptions }) {
   return (
-    <div className={`rounded-xl border-2 p-4 space-y-3 ${badge === 'add' ? 'border-green-200 bg-green-50/30' : 'border-red-200 bg-red-50/30'}`}>
-      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge === 'add' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+    <div className={`rounded-xl border-2 p-4 space-y-3 ${badge === 'add' ? 'border-green-200 dark:border-green-800 bg-green-50/30' : 'border-red-200 dark:border-red-800 bg-red-50/30'}`}>
+      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge === 'add' ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'}`}>
         {badge === 'add' ? '+ Ajouter élèves de' : '− Retirer élèves de'}
       </span>
       <div className="grid grid-cols-2 gap-3">
@@ -339,11 +339,11 @@ function AvisGenerator({ activiteId, intitule, isVoyage = false, montantParEleve
         type="button"
         onClick={generate}
         disabled={loading}
-        className="flex items-center gap-1.5 text-xs font-medium text-orange-600 hover:text-orange-800 border border-orange-200 hover:border-orange-400 bg-orange-50 hover:bg-orange-100 rounded-lg px-3 py-2 transition-colors disabled:opacity-50">
+        className="flex items-center gap-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 hover:text-orange-800 border border-orange-200 hover:border-orange-400 bg-orange-50 dark:bg-orange-950 hover:bg-orange-100 rounded-lg px-3 py-2 transition-colors disabled:opacity-50">
         {loading ? <Loader2 size={12} className="animate-spin" /> : '📄'}
         {loading ? 'Génération…' : "Générer l'avis"}
       </button>
-      <p className="text-xs text-gray-400 mt-1.5 leading-tight">
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 leading-tight">
         Ouvre un PDF imprimable à destination des parents.
       </p>
     </div>
@@ -376,11 +376,11 @@ function AvanceGenerator({ activiteId, depenses, intitule }) {
   return (
     <div>
       <button type="button" onClick={generate} disabled={loading || avanceDeps.length === 0}
-        className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-2 transition-colors disabled:opacity-40">
+        className="flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 border border-blue-200 hover:border-blue-400 bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 rounded-lg px-3 py-2 transition-colors disabled:opacity-40">
         {loading ? <Loader2 size={12} className="animate-spin" /> : '💳'}
         {loading ? 'Génération…' : "Demande d'avance"}
       </button>
-      <p className="text-xs text-gray-400 mt-1.5 leading-tight">
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 leading-tight">
         {avanceDeps.length === 0 ? 'Aucune dépense marquée "Avance".' : `${avanceDeps.length} dépense(s) cochée(s).`}
       </p>
     </div>
@@ -412,11 +412,11 @@ function RapportVoyageGenerator({ activiteId }) {
   return (
     <div>
       <button type="button" onClick={generate} disabled={loading}
-        className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:text-emerald-800 border border-emerald-200 hover:border-emerald-400 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-2 transition-colors disabled:opacity-50">
+        className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 border border-emerald-200 hover:border-emerald-400 bg-emerald-50 dark:bg-emerald-950 hover:bg-emerald-100 rounded-lg px-3 py-2 transition-colors disabled:opacity-50">
         {loading ? <Loader2 size={12} className="animate-spin" /> : '📊'}
         {loading ? 'Génération…' : 'Générer rapport'}
       </button>
-      <p className="text-xs text-gray-400 mt-1.5 leading-tight">Rapport complet du voyage.</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 leading-tight">Rapport complet du voyage.</p>
     </div>
   )
 }
@@ -439,7 +439,7 @@ function FileStage({ label, files, setFiles }) {
       <label className="label">{label}</label>
       <div
         className={`rounded-xl border-2 border-dashed transition-colors cursor-pointer p-3 text-center
-          ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
+          ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'}`}
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
@@ -448,14 +448,14 @@ function FileStage({ label, files, setFiles }) {
         <input ref={ref} type="file" accept="application/pdf" multiple className="hidden"
           onChange={e => { addFiles(Array.from(e.target.files)); e.target.value = '' }} />
         {files.length === 0
-          ? <p className="text-xs text-gray-400">Glisser-déposer ou <span className="text-primary underline">parcourir</span></p>
+          ? <p className="text-xs text-gray-400 dark:text-gray-500">Glisser-déposer ou <span className="text-primary underline">parcourir</span></p>
           : <div className="flex flex-wrap gap-1.5 justify-center" onClick={e => e.stopPropagation()}>
               {files.map(f => (
-                <span key={f.name} className="flex items-center gap-1 text-xs bg-white border border-gray-200 rounded-full px-2.5 py-1">
+                <span key={f.name} className="flex items-center gap-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full px-2.5 py-1">
                   {f.name}
                   <button type="button"
                     onClick={e => { e.stopPropagation(); setFiles(p => p.filter(x => x.name !== f.name)) }}
-                    className="text-gray-400 hover:text-red-500 ml-0.5">×</button>
+                    className="text-gray-400 dark:text-gray-500 hover:text-red-500 ml-0.5">×</button>
                 </span>
               ))}
             </div>
@@ -655,14 +655,14 @@ function VoyageAcomptesSection({ activiteId, acomptesConfig, participantEleves, 
   const canSolde = depenses.length > 0 && !soldeBatch
 
   return (
-    <div className="border-b border-gray-100">
+    <div className="border-b border-gray-100 dark:border-gray-700">
       <div className="px-3 py-2.5">
-        <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+        <h4 className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
           Acomptes &amp; Solde
         </h4>
 
         {loading ? (
-          <p className="text-xs text-gray-400">Chargement…</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">Chargement…</p>
         ) : (
           <div className="space-y-1">
             {acomptesConfig.map((a, i) => {
@@ -671,10 +671,10 @@ function VoyageAcomptesSection({ activiteId, acomptesConfig, participantEleves, 
               return (
                 <div key={i} className="flex items-center gap-2 text-xs">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isGen ? 'bg-green-500' : 'bg-gray-300'}`} />
-                  <span className="flex-1 text-gray-700 truncate">{a.label || `Acompte ${i+1}`}</span>
-                  <span className="text-gray-500 font-medium shrink-0">{fmt(parseFloat(a.montant||0))}</span>
+                  <span className="flex-1 text-gray-700 dark:text-gray-200 truncate">{a.label || `Acompte ${i+1}`}</span>
+                  <span className="text-gray-500 dark:text-gray-400 font-medium shrink-0">{fmt(parseFloat(a.montant||0))}</span>
                   {isGen ? (
-                    <span className="text-green-600 font-medium shrink-0 text-[10px]">✓ {fmtDate(batch.date)}</span>
+                    <span className="text-green-600 dark:text-green-400 font-medium shrink-0 text-[10px]">✓ {fmtDate(batch.date)}</span>
                   ) : (
                     <button
                       onClick={() => genererAcompte(i)}
@@ -688,16 +688,16 @@ function VoyageAcomptesSection({ activiteId, acomptesConfig, participantEleves, 
             })}
 
             {/* Ligne solde */}
-            <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
               <span className={`w-2 h-2 rounded-full flex-shrink-0 ${soldeBatch ? 'bg-green-500' : 'bg-gray-300'}`} />
-              <span className="flex-1 text-gray-700 font-medium">Solde final</span>
+              <span className="flex-1 text-gray-700 dark:text-gray-200 font-medium">Solde final</span>
               {depenses.length > 0 && (
-                <span className="text-gray-500 shrink-0">
+                <span className="text-gray-500 dark:text-gray-400 shrink-0">
                   présents {fmt(soldePresent)} / absents {fmt(soldeAbsent)}
                 </span>
               )}
               {soldeBatch ? (
-                <span className="text-green-600 font-medium shrink-0 text-[10px]">✓ {fmtDate(soldeBatch.date)}</span>
+                <span className="text-green-600 dark:text-green-400 font-medium shrink-0 text-[10px]">✓ {fmtDate(soldeBatch.date)}</span>
               ) : (
                 <button
                   onClick={genererSolde}
@@ -804,43 +804,43 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
   ]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-white border-l border-gray-100">
-      <div className="px-4 py-3 border-b border-gray-100 shrink-0">
-        <h3 className="font-semibold text-sm text-gray-700">Documents & Factures</h3>
+    <div className="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-800 border-l border-gray-100 dark:border-gray-700">
+      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 shrink-0">
+        <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-200">Documents & Factures</h3>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {/* Top row: 4 sections */}
-        <div className="grid grid-cols-4 gap-0 border-b border-gray-100">
-          <div className="p-3 border-r border-gray-100">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Documents PDF</p>
+        <div className="grid grid-cols-4 gap-0 border-b border-gray-100 dark:border-gray-700">
+          <div className="p-3 border-r border-gray-100 dark:border-gray-700">
+            <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Documents PDF</p>
             <FileStage label="Documents (PDF)" files={pendingDocs} setFiles={setPendingDocs} compact />
             {savedDocs.length > 0 && (
               <ul className="mt-1.5 space-y-1">
                 {savedDocs.map(d => (
-                  <li key={d.id} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 rounded px-2 py-1">
+                  <li key={d.id} className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 rounded px-2 py-1">
                     <span className="flex-1 truncate text-[11px]">{d.nom_fichier}</span>
                     <button onClick={() => viewDoc(d)} className="text-primary hover:underline text-[11px] shrink-0">Voir</button>
-                    <button onClick={() => delSavedDoc(d)} className="text-red-400 hover:underline text-[11px] shrink-0">✕</button>
+                    <button onClick={() => delSavedDoc(d)} className="text-red-400 dark:text-red-300 hover:underline text-[11px] shrink-0">✕</button>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-          <div className="p-3 border-r border-gray-100">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Générer avis</p>
+          <div className="p-3 border-r border-gray-100 dark:border-gray-700">
+            <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Générer avis</p>
             {formType === 'extramuros' || formType === 'intramuros' ? (
               <AvisGenerator activiteId={activiteId} intitule={intitule} />
             ) : (
               <AvisGenerator activiteId={activiteId} intitule={intitule} isVoyage montantParEleve={montantParEleveAnnonce} />
             )}
           </div>
-          <div className="p-3 border-r border-gray-100">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Demande d'avance</p>
+          <div className="p-3 border-r border-gray-100 dark:border-gray-700">
+            <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Demande d'avance</p>
             <AvanceGenerator activiteId={activiteId} depenses={depenses} intitule={intitule} />
           </div>
           <div className="p-3">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Générer rapport</p>
+            <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Générer rapport</p>
             <RapportVoyageGenerator activiteId={activiteId} />
           </div>
         </div>
@@ -863,11 +863,11 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
         {formType !== 'voyage' && (
           <>
             {savedFactures.length > 0 && (
-              <div className="px-3 py-2 border-b border-gray-100">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Factures PDF</p>
+              <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1.5">Factures PDF</p>
                 <ul className="space-y-1">
                   {savedFactures.map(d => (
-                    <li key={d.id} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 rounded px-2 py-1">
+                    <li key={d.id} className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 rounded px-2 py-1">
                       <span className="flex-1 truncate text-[11px]">{d.nom_fichier}</span>
                       <button onClick={() => viewDoc(d)} className="text-primary hover:underline text-[11px] shrink-0">Voir</button>
                     </li>
@@ -876,13 +876,13 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
               </div>
             )}
             {pendingFactures.length > 0 && (
-              <div className="px-3 py-2 border-b border-gray-100">
+              <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
                 <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} compact />
               </div>
             )}
             {pendingFactures.length === 0 && savedFactures.length === 0 && (
-              <div className="px-3 py-2 border-b border-gray-100">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Factures PDF</p>
+              <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1.5">Factures PDF</p>
                 <FileStage label="Factures (PDF)" files={pendingFactures} setFiles={setPendingFactures} compact />
               </div>
             )}
@@ -893,7 +893,7 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
         {type === 'voyage' && (
           <div className="p-3">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Dépenses</h4>
+              <h4 className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Dépenses</h4>
               <button onClick={addDepense}
                 className="flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 font-medium">
                 <Plus size={12} /> Ajouter
@@ -901,16 +901,16 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
             </div>
 
             {loadingDep ? (
-              <p className="text-xs text-gray-400 text-center py-3">Chargement…</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">Chargement…</p>
             ) : depenses.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-3 italic">Aucune dépense enregistrée</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3 italic">Aucune dépense enregistrée</p>
             ) : (
               <div className="space-y-2">
                 {depenses.map(dep => {
                   const effNb = effectiveNb(dep)
                   const mpe   = effNb > 0 ? parseFloat(dep.montant_total || 0) / effNb : 0
                   return (
-                    <div key={dep.id} className="border border-gray-200 rounded-lg p-2 text-xs bg-gray-50/50">
+                    <div key={dep.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-2 text-xs bg-gray-50/50">
                       {/* Row 1: Catégorie + Intitulé */}
                       <div className="grid grid-cols-2 gap-1 mb-1.5">
                         <select className="input text-xs py-1 px-2" value={dep.categorie}
@@ -924,7 +924,7 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
                       {/* Row 2: Montant + Nb élèves + Par élève */}
                       <div className="grid grid-cols-3 gap-1 mb-1.5">
                         <div>
-                          <p className="text-[10px] text-gray-400 mb-0.5">Montant (€)</p>
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-0.5">Montant (€)</p>
                           <input className="input text-xs py-1 px-2" type="number" step="0.01" min="0"
                             defaultValue={dep.montant_total}
                             onBlur={e => {
@@ -933,7 +933,7 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
                             }} />
                         </div>
                         <div>
-                          <p className="text-[10px] text-gray-400 mb-0.5">Nb élèves</p>
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-0.5">Nb élèves</p>
                           <input className="input text-xs py-1 px-2" type="number" min="0"
                             value={dep.nb_eleves_override != null ? dep.nb_eleves_override : effNb}
                             onChange={e => {
@@ -943,8 +943,8 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
                             }} />
                         </div>
                         <div>
-                          <p className="text-[10px] text-gray-400 mb-0.5">Par élève</p>
-                          <div className="input text-xs py-1 px-2 bg-gray-100 text-gray-500 select-none">
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-0.5">Par élève</p>
+                          <div className="input text-xs py-1 px-2 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 select-none">
                             {mpe > 0 ? `${mpe.toFixed(2)} €` : '—'}
                           </div>
                         </div>
@@ -955,13 +955,13 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
                           <input type="checkbox" checked={!!dep.incompressible}
                             onChange={e => updateDepense(dep.id, { incompressible: e.target.checked })}
                             className="rounded" />
-                          <span className="text-[11px] text-gray-600">Incompressible</span>
+                          <span className="text-[11px] text-gray-600 dark:text-gray-300">Incompressible</span>
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
                           <input type="checkbox" checked={!!dep.avance}
                             onChange={e => updateDepense(dep.id, { avance: e.target.checked })}
                             className="rounded accent-blue-600" />
-                          <span className="text-[11px] text-blue-700 font-medium">Avance</span>
+                          <span className="text-[11px] text-blue-700 dark:text-blue-300 font-medium">Avance</span>
                         </label>
                         <select className="input text-xs py-1 px-2 flex-1" value={dep.paye_par || ''}
                           onChange={e => updateDepense(dep.id, { paye_par: e.target.value })}>
@@ -983,7 +983,7 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
                           ) : (
                             <button onClick={() => fileRefs.current[dep.id]?.click()}
                               disabled={uploadingRow === dep.id}
-                              className="text-gray-400 text-[11px] hover:text-primary transition-colors disabled:opacity-50">
+                              className="text-gray-400 dark:text-gray-500 text-[11px] hover:text-primary transition-colors disabled:opacity-50">
                               {uploadingRow === dep.id ? 'Upload…' : '📎 Joindre justificatif'}
                             </button>
                           )}
@@ -1000,19 +1000,19 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
             )}
 
             {/* Totals */}
-            <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
               <div className="grid grid-cols-3 gap-2 mb-3">
-                <div className="bg-white rounded-lg border border-gray-200 px-3 py-2 text-center">
-                  <p className="text-[10px] text-gray-400 mb-0.5">Montant total réel</p>
-                  <p className="font-bold text-sm text-gray-800">{fmt(montantTotalReel)}</p>
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-2 text-center">
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-0.5">Montant total réel</p>
+                  <p className="font-bold text-sm text-gray-800 dark:text-gray-100">{fmt(montantTotalReel)}</p>
                 </div>
-                <div className="bg-white rounded-lg border border-gray-200 px-3 py-2 text-center">
-                  <p className="text-[10px] text-gray-400 mb-0.5">Facturé aux élèves présents</p>
-                  <p className="font-bold text-sm text-gray-800">{fmt(montantParEleveReel)}</p>
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-2 text-center">
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-0.5">Facturé aux élèves présents</p>
+                  <p className="font-bold text-sm text-gray-800 dark:text-gray-100">{fmt(montantParEleveReel)}</p>
                 </div>
-                <div className={`rounded-lg border px-3 py-2 text-center ${absents.length > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200 opacity-40'}`}>
-                  <p className="text-[10px] text-gray-400 mb-0.5">Facturé aux élèves absents</p>
-                  <p className={`font-bold text-sm ${absents.length > 0 ? 'text-amber-700' : 'text-gray-400'}`}>
+                <div className={`rounded-lg border px-3 py-2 text-center ${absents.length > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-600 opacity-40'}`}>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-0.5">Facturé aux élèves absents</p>
+                  <p className={`font-bold text-sm ${absents.length > 0 ? 'text-amber-700' : 'text-gray-400 dark:text-gray-500'}`}>
                     {absents.length > 0 ? fmt(montantAbsentsReel) : '—'}
                   </p>
                 </div>
@@ -1021,8 +1021,8 @@ function DepensesPanel({ activiteId, type, nbTotalEleves, staffPeople, participa
               {/* Élèves absents */}
               {participantEleves.length > 0 && (
                 <div>
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                    Élèves absents {absents.length > 0 && <span className="text-orange-500 normal-case font-normal">({absents.length} absent{absents.length > 1 ? 's' : ''}, {nbPresents} présents)</span>}
+                  <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
+                    Élèves absents {absents.length > 0 && <span className="text-orange-500 dark:text-orange-400 normal-case font-normal">({absents.length} absent{absents.length > 1 ? 's' : ''}, {nbPresents} présents)</span>}
                   </p>
                   <MultiSearchSelect
                     options={participantEleves}
@@ -1353,7 +1353,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
           {/* Personnel */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Personnel</h3>
+            <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 border-t pt-4">Personnel</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="min-w-0">
                 <label className="label">Responsable</label>
@@ -1368,7 +1368,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                   }}
                   placeholder="Choisir un·e responsable…" single />
                 ) : (
-                <div className="input bg-gray-50 text-gray-600 text-sm py-2">
+                <div className="input bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 text-sm py-2">
                   {staffList.find(s => s.value === form.responsable_id)?.label || '—'}
                 </div>
                 )}
@@ -1386,7 +1386,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
           {/* Participants */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Participants</h3>
+            <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 border-t pt-4">Participants</h3>
             <div className="space-y-3">
               <SelectionEleves badge="add"
                 classes={form.classes_incluses} setClasses={v => f('classes_incluses', v)}
@@ -1398,7 +1398,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                 allClasses={allClasses} groupOptions={groupOptions} />
 
               <div className="rounded-xl border-2 border-amber-200 bg-amber-50/30 p-4">
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300">
                   − Retirer spécifiquement
                 </span>
                 <div className="mt-3">
@@ -1413,10 +1413,10 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                 <div>
                   <label className="label">
                     Nb d'élèves
-                    {hasSelection && <span className="ml-2 text-xs text-green-600 font-normal">(calculé auto.)</span>}
+                    {hasSelection && <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-normal">(calculé auto.)</span>}
                   </label>
                   {hasSelection
-                    ? <div className="input bg-green-50 text-green-700 font-semibold">{nbEleves} élève{nbEleves !== 1 ? 's' : ''}</div>
+                    ? <div className="input bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 font-semibold">{nbEleves} élève{nbEleves !== 1 ? 's' : ''}</div>
                     : <input className="input" type="number" value={form.nb_eleves || ''} onChange={e => f('nb_eleves', e.target.value)} />
                   }
                 </div>
@@ -1427,7 +1427,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
           {/* Logistique extramuros / voyage */}
           {(form.type === 'extramuros' || form.type === 'voyage') && (
             <div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Logistique</h3>
+              <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 border-t pt-4">Logistique</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="label">Lieu *</label>
@@ -1451,7 +1451,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                     {TRANSPORT_OPTIONS.map(opt => (
                       <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer select-none">
                         <input type="checkbox"
-                          className="rounded border-gray-300"
+                          className="rounded border-gray-300 dark:border-gray-500"
                           checked={(form.type_transport_list || []).includes(opt.value)}
                           onChange={e => {
                             const cur = form.type_transport_list || []
@@ -1459,7 +1459,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                               ? [...cur, opt.value]
                               : cur.filter(v => v !== opt.value))
                           }} />
-                        <span className="text-sm text-gray-700">{opt.label}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-200">{opt.label}</span>
                       </label>
                     ))}
                   </div>
@@ -1471,8 +1471,8 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
                   {/* SNCB — gares + heure retour + PMR */}
                   {(form.type_transport_list || []).includes('sncb') && (
-                    <div className="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-200 space-y-3">
-                      <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">SNCB</p>
+                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 rounded-xl border border-blue-200 space-y-3">
+                      <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide">SNCB</p>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="label">Gare de départ</label>
@@ -1503,8 +1503,8 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
                   {/* TEC — gares + heure retour + ligne */}
                   {(form.type_transport_list || []).includes('tec') && (
-                    <div className="mt-3 p-3 bg-green-50 rounded-xl border border-green-200 space-y-3">
-                      <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">TEC</p>
+                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-950 rounded-xl border border-green-200 dark:border-green-800 space-y-3">
+                      <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide">TEC</p>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="label">Gare de départ</label>
@@ -1528,8 +1528,8 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
                   {/* De Lijn — message informatif */}
                   {(form.type_transport_list || []).includes('de_lijn') && (
-                    <div className="mt-3 p-3 bg-yellow-50 rounded-xl border border-yellow-200 flex items-start gap-2">
-                      <span className="text-yellow-600 text-base mt-0.5">ℹ️</span>
+                    <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-xl border border-yellow-200 flex items-start gap-2">
+                      <span className="text-yellow-600 dark:text-yellow-400 text-base mt-0.5">ℹ️</span>
                       <p className="text-sm text-yellow-800">
                         Contacter l'économe pour réserver les tickets sur l'application De Lijn.
                       </p>
@@ -1538,7 +1538,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
                   {/* Flixbus — gares + heure retour */}
                   {(form.type_transport_list || []).includes('flixbus') && (
-                    <div className="mt-3 p-3 bg-green-50 rounded-xl border border-green-300 space-y-3">
+                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-950 rounded-xl border border-green-300 space-y-3">
                       <p className="text-xs font-semibold text-green-800 uppercase tracking-wide">Flixbus</p>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -1572,7 +1572,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
           {/* Logistique intramuros */}
           {form.type === 'intramuros' && (
             <div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Logistique</h3>
+              <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 border-t pt-4">Logistique</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="label">Local *</label>
                   <input className="input" value={form.local} onChange={e => f('local', e.target.value)} />
@@ -1589,7 +1589,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
           {/* Finances */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Finances</h3>
+            <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 border-t pt-4">Finances</h3>
             <div className="grid grid-cols-2 gap-4">
               {form.type === 'voyage' ? (<>
                 {/* Voyage : tier par élève → calcul montant total */}
@@ -1602,7 +1602,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                   </select>
                 </div>
                 <div><label className="label">Montant total annoncé</label>
-                  <div className="input bg-gray-50 text-gray-600">
+                  <div className="input bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300">
                     {form.montant_par_eleve_annonce && (hasSelection ? nbEleves : parseInt(form.nb_eleves || 0)) > 0
                       ? fmt(parseFloat(form.montant_par_eleve_annonce) * (hasSelection ? nbEleves : parseInt(form.nb_eleves || 0)))
                       : '—'}
@@ -1614,12 +1614,12 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                     <label className="label mb-0">Acomptes</label>
                     <button type="button"
                       onClick={() => f('acomptes_config', [...(form.acomptes_config||[]), {label:'', montant:''}])}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 font-medium flex items-center gap-1">
                       + Ajouter un acompte
                     </button>
                   </div>
                   {(form.acomptes_config||[]).length === 0 && (
-                    <p className="text-xs text-gray-400 italic">Aucun acompte configuré — les élèves seront facturés en une seule fois.</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 italic">Aucun acompte configuré — les élèves seront facturés en une seule fois.</p>
                   )}
                   {(form.acomptes_config||[]).map((a, i) => (
                     <div key={i} className="flex gap-2 mb-1.5 items-center">
@@ -1646,13 +1646,13 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                       />
                       <button type="button"
                         onClick={() => f('acomptes_config', (form.acomptes_config||[]).filter((_,j)=>j!==i))}
-                        className="text-gray-400 hover:text-red-500 text-lg leading-none flex-shrink-0">&times;</button>
+                        className="text-gray-400 dark:text-gray-500 hover:text-red-500 text-lg leading-none flex-shrink-0">&times;</button>
                     </div>
                   ))}
                   {(form.acomptes_config||[]).length > 0 && (
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                       Total acomptes : {fmt((form.acomptes_config||[]).reduce((s,a)=>s+parseFloat(a.montant||0),0))}
-                      {form.montant_par_eleve_annonce && <span className="ml-2 text-blue-500">/ {fmt(parseFloat(form.montant_par_eleve_annonce))} annoncé</span>}
+                      {form.montant_par_eleve_annonce && <span className="ml-2 text-blue-500 dark:text-blue-400">/ {fmt(parseFloat(form.montant_par_eleve_annonce))} annoncé</span>}
                     </p>
                   )}
                 </div>
@@ -1665,11 +1665,11 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                   <label className="label">POP (€)</label>
                   {isFinancier
                     ? <input className="input" type="number" step="0.01" value={form.pop} onChange={e => f('pop', e.target.value)} />
-                    : <div className="input bg-gray-50 text-gray-600">{form.pop ? fmt(parseFloat(form.pop)) : '—'}</div>
+                    : <div className="input bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300">{form.pop ? fmt(parseFloat(form.pop)) : '—'}</div>
                   }
                 </div>
                 <div><label className="label">Montant par élève (calculé)</label>
-                  <div className="input bg-gray-50 text-gray-600">{montantParEleve !== null ? fmt(montantParEleve) : '—'}</div>
+                  <div className="input bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300">{montantParEleve !== null ? fmt(montantParEleve) : '—'}</div>
                 </div>
               </>)}
 
@@ -1677,13 +1677,13 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
               {isFinancier && (
                 <div className="col-span-2"><label className="label">Statut facturation</label>
                   {form.statut_facturation === 'non_payant' ? (
-                    <span className="inline-block text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-500">Non payant</span>
+                    <span className="inline-block text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Non payant</span>
                   ) : (
                     <div className="flex gap-2 flex-wrap">
                       {[
-                        { val: 'en_attente', label: 'En attente', active: 'bg-orange-50 border-orange-400 text-orange-700', idle: 'border-gray-200 text-gray-400' },
-                        { val: 'a_facturer', label: 'À facturer', active: 'bg-yellow-50 border-yellow-400 text-yellow-700', idle: 'border-gray-200 text-gray-400' },
-                        { val: 'facture',    label: 'Facturé',    active: 'bg-green-50 border-green-500 text-green-700',  idle: 'border-gray-200 text-gray-400' },
+                        { val: 'en_attente', label: 'En attente', active: 'bg-orange-50 dark:bg-orange-950 border-orange-400 text-orange-700 dark:text-orange-300', idle: 'border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500' },
+                        { val: 'a_facturer', label: 'À facturer', active: 'bg-yellow-50 dark:bg-yellow-950 border-yellow-400 text-yellow-700 dark:text-yellow-300', idle: 'border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500' },
+                        { val: 'facture',    label: 'Facturé',    active: 'bg-green-50 dark:bg-green-950 border-green-500 text-green-700 dark:text-green-300',  idle: 'border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500' },
                       ].map(({ val, label, active, idle }) => {
                         const locked = form.statut === 'brouillon' && val !== 'en_attente'
                         return (
@@ -1692,7 +1692,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                             title={locked ? "Publiez l'activité pour modifier ce statut" : undefined}
                             className={`px-4 py-1.5 text-sm rounded-lg border font-medium transition-all
                               ${locked
-                                ? 'opacity-30 cursor-not-allowed border-gray-200 text-gray-400'
+                                ? 'opacity-30 cursor-not-allowed border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500'
                                 : form.statut_facturation === val ? active : idle + ' hover:border-gray-300 hover:text-gray-500'}`}>
                             {label}
                           </button>
@@ -1708,7 +1708,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
           {/* Informations supplémentaires */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Informations supplémentaires</h3>
+            <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 border-t pt-4">Informations supplémentaires</h3>
             <textarea
               className="input resize-none"
               rows={3}
@@ -1720,17 +1720,17 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
           {/* Documents & Factures — uniquement en mode modal */}
           {!isPage && editRow?.id && <div>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 border-t pt-4">Documents & Factures</h3>
+            <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 border-t pt-4">Documents & Factures</h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <FileStage label="Documents (PDF)" files={pendingDocs} setFiles={setPendingDocs} />
                 {savedDocs.length > 0 && (
                   <ul className="mt-2 space-y-1">
                     {savedDocs.map(d => (
-                      <li key={d.id} className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-1.5">
+                      <li key={d.id} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-1.5">
                         <span className="flex-1 truncate">{d.nom_fichier}</span>
                         <button type="button" onClick={() => viewDoc(d)} className="text-primary hover:underline shrink-0">Voir</button>
-                        <button type="button" onClick={() => delSavedDoc(d)} className="text-red-400 hover:underline shrink-0">Suppr.</button>
+                        <button type="button" onClick={() => delSavedDoc(d)} className="text-red-400 dark:text-red-300 hover:underline shrink-0">Suppr.</button>
                       </li>
                     ))}
                   </ul>
@@ -1741,28 +1741,28 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
                 {savedFactures.length > 0 && (
                   <ul className="mt-2 space-y-1">
                     {savedFactures.map(d => (
-                      <li key={d.id} className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-1.5">
+                      <li key={d.id} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-1.5">
                         <span className="flex-1 truncate">{d.nom_fichier}</span>
                         <button type="button" onClick={() => viewDoc(d)} className="text-primary hover:underline shrink-0">Voir</button>
-                        <button type="button" onClick={() => delSavedDoc(d)} className="text-red-400 hover:underline shrink-0">Suppr.</button>
+                        <button type="button" onClick={() => delSavedDoc(d)} className="text-red-400 dark:text-red-300 hover:underline shrink-0">Suppr.</button>
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-2">Générer avis</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Générer avis</p>
                 {editRow?.id && (form.type === 'extramuros' || form.type === 'intramuros') ? (
                   <AvisGenerator activiteId={editRow.id} intitule={form.intitule} />
                 ) : (
-                  <p className="text-xs text-gray-400 italic">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 italic">
                     {editRow?.id ? 'Non disponible pour les voyages.' : 'Disponible après sauvegarde.'}
                   </p>
                 )}
               </div>
             </div>
             {(pendingDocs.length > 0 || pendingFactures.length > 0) && (
-              <p className="text-xs text-gray-400 mt-2">Uploadés automatiquement après sauvegarde.</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Uploadés automatiquement après sauvegarde.</p>
             )}
           </div>}
 
@@ -1771,14 +1771,14 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
   // ── Shared: footer buttons ──────────────────────────────────────────────
   const formFooter = (
-    <div className="flex gap-2 px-6 py-4 border-t border-gray-100 shrink-0 flex-wrap">
+    <div className="flex gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-700 shrink-0 flex-wrap">
       <button onClick={() => save('publie')} disabled={saving}
         className="btn-primary py-1.5 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
         {saving && savingAs === 'publie' && <Loader2 size={14} className="animate-spin" />}
         {saving && savingAs === 'publie' ? 'Publication…' : editRow?.id ? '✓ Sauvegarder les modifications' : '✓ Publier'}
       </button>
       <button onClick={() => save('brouillon')} disabled={saving}
-        className="py-1.5 px-4 text-sm rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5 font-medium">
+        className="py-1.5 px-4 text-sm rounded-xl border border-gray-300 dark:border-gray-500 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-1.5 font-medium">
         {saving && savingAs === 'brouillon' && <Loader2 size={14} className="animate-spin" />}
         {saving && savingAs === 'brouillon' ? 'Enregistrement…' : editRow?.id ? '✎ Repasser en brouillon' : '✎ Brouillon'}
       </button>
@@ -1789,7 +1789,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
           if (!confirm('Supprimer définitivement cette activité ? Cette action est irréversible.')) return
           await supabase.from('activites').delete().eq('id', editRow.id)
           onSaved(); onClose()
-        }} className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-lg px-3 py-1.5 transition-colors">
+        }} className="flex items-center gap-1.5 text-xs text-red-400 dark:text-red-300 hover:text-red-600 border border-red-200 dark:border-red-800 hover:border-red-400 rounded-lg px-3 py-1.5 transition-colors">
           <Trash2 size={13} /> Supprimer
         </button>
       )}
@@ -1802,7 +1802,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
     return (
       <div className="flex h-full overflow-hidden">
         {/* Col 1/5 — Messagerie */}
-        <div className="w-1/5 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden bg-white">
+        <div className="w-1/5 shrink-0 border-r border-gray-100 dark:border-gray-700 flex flex-col overflow-hidden bg-white dark:bg-gray-800">
           <Commentaires
             entityType="activite"
             entityId={editRow.id}
@@ -1811,7 +1811,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
         </div>
 
         {/* Col 2-3/5 — Documents & Factures */}
-        <div className="w-2/5 shrink-0 overflow-hidden flex flex-col border-r border-gray-100">
+        <div className="w-2/5 shrink-0 overflow-hidden flex flex-col border-r border-gray-100 dark:border-gray-700">
           <DepensesPanel
             activiteId={editRow.id}
             type={form.type}
@@ -1835,15 +1835,15 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
         </div>
 
         {/* Col 4-5/5 — Formulaire */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-white">
+        <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800">
           <div className="flex-1 px-6 py-5 space-y-4 overflow-y-auto">
             {errors.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+              <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-300">
                 Champs manquants : {errors.map(e => FIELD_LABELS[e] || e).join(', ')}
               </div>
             )}
             {saveError && (
-              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+              <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-300">
                 Erreur : {saveError}
               </div>
             )}
@@ -1859,11 +1859,11 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={handleBackdropClose} />
-      <div className="relative z-10 w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
+      <div className="relative z-10 w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-          <h2 className="font-bold text-gray-800 text-lg">{modalTitle}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
+          <h2 className="font-bold text-gray-800 dark:text-gray-100 text-lg">{modalTitle}</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={20} /></button>
         </div>
 
         {/* Two-column body */}
@@ -1871,7 +1871,7 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
 
           {/* LEFT — Commentaires (mode édition uniquement) */}
           {editRow?.id && (
-            <div className="w-[26rem] shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+            <div className="w-[26rem] shrink-0 border-r border-gray-100 dark:border-gray-700 flex flex-col overflow-hidden">
               <Commentaires
                 entityType="activite"
                 entityId={editRow.id}
@@ -1884,12 +1884,12 @@ function ActivityModal({ editRow, isFinancier, isAdmin, userId, allEleves, staff
           <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 px-6 py-5 space-y-4 overflow-y-auto">
           {errors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-300">
               Champs manquants : {errors.map(e => FIELD_LABELS[e] || e).join(', ')}
             </div>
           )}
           {saveError && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-300">
               Erreur : {saveError}
             </div>
           )}
@@ -1971,16 +1971,16 @@ function DocsModal({ row, categorie, onClose, onDocsChanged }) {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="font-bold text-gray-800">{label} — {row.intitule}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="font-bold text-gray-800 dark:text-gray-100">{label} — {row.intitule}</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={20} /></button>
         </div>
         <div className="px-6 py-4">
           <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={upload} />
           <div
             className={`rounded-xl border-2 border-dashed mb-4 p-4 text-center cursor-pointer transition-colors
-              ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
+              ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'}`}
             onDragOver={e => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
             onDrop={e => { e.preventDefault(); setDragging(false); uploadFile(e.dataTransfer.files[0]) }}
@@ -1988,16 +1988,16 @@ function DocsModal({ row, categorie, onClose, onDocsChanged }) {
           >
             {uploading
               ? <p className="text-sm text-primary">Upload en cours…</p>
-              : <p className="text-sm text-gray-400">Glisser-déposer ou <span className="text-primary underline">parcourir</span></p>
+              : <p className="text-sm text-gray-400 dark:text-gray-500">Glisser-déposer ou <span className="text-primary underline">parcourir</span></p>
             }
           </div>
-          {docs.length === 0 && <p className="text-sm text-gray-400 text-center py-4">Aucun document</p>}
+          {docs.length === 0 && <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">Aucun document</p>}
           {docs.map(d => (
-            <div key={d.id} className="flex items-center justify-between py-2 border-b border-gray-100 text-sm">
-              <span className="truncate text-gray-700 flex-1">{d.nom_fichier}</span>
+            <div key={d.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 text-sm">
+              <span className="truncate text-gray-700 dark:text-gray-200 flex-1">{d.nom_fichier}</span>
               <div className="flex gap-2 ml-2">
                 <button onClick={() => view(d)} className="text-primary text-xs hover:underline">Voir</button>
-                <button onClick={() => del(d)} className="text-red-500 text-xs hover:underline">Suppr.</button>
+                <button onClick={() => del(d)} className="text-red-500 dark:text-red-400 text-xs hover:underline">Suppr.</button>
               </div>
             </div>
           ))}
@@ -2240,7 +2240,7 @@ export default function Activites() {
 
 
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   const generatePDF = async () => {
     const { data:{ session } } = await supabase.auth.getSession()
@@ -2288,7 +2288,7 @@ export default function Activites() {
             style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
             {mainTabs.map(t => (
               <button key={t.key} onClick={() => { if (!isEditPage) { setMainTab(t.key); setQuickFilter(null) } }}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${mainTab === t.key ? 'bg-white text-green-700 shadow-sm' : 'text-white/60 hover:text-white/90'} ${isEditPage ? 'opacity-50 cursor-default' : ''}`}>
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${mainTab === t.key ? 'bg-white dark:bg-gray-800 text-green-700 dark:text-green-300 shadow-sm' : 'text-white/60 hover:text-white/90'} ${isEditPage ? 'opacity-50 cursor-default' : ''}`}>
                 {t.label}
               </button>
             ))}
@@ -2352,7 +2352,7 @@ export default function Activites() {
     ) : (
     <div className="p-6 max-w-screen-xl mx-auto">
       <div className="grid gap-3">
-        {displayed.length === 0 && <div className="card p-8 text-center text-gray-400">Aucune activité</div>}
+        {displayed.length === 0 && <div className="card p-8 text-center text-gray-400 dark:text-gray-500">Aucune activité</div>}
         {displayed.map(row => {
           const responsableLabel = row.responsable_id ? staffById[row.responsable_id] : row.responsable
           const accompagnateurLabels = (row.accompagnateur_ids || [])
@@ -2383,7 +2383,7 @@ export default function Activites() {
 
                   {/* Ligne 1 — Titre + badges statut */}
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="font-semibold text-gray-800">{row.intitule}</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-100">{row.intitule}</span>
                     {unreadByActivity[row.id] > 0 && (
                       <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1
                         bg-red-500 text-white text-[10px] font-bold rounded-full leading-none"
@@ -2391,15 +2391,15 @@ export default function Activites() {
                         {unreadByActivity[row.id] > 9 ? '9+' : unreadByActivity[row.id]}
                       </span>
                     )}
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUT_COLORS[row.statut] || 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUT_COLORS[row.statut] || 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}>
                       {row.statut === 'brouillon' ? 'Brouillon' : row.statut === 'publie' ? 'Publié' : 'Archivé'}
                     </span>
                     {(isFinancier || isAdmin) && row.statut_facturation && (
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FACT_COLORS[row.statut_facturation] || 'bg-gray-100'}`}>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FACT_COLORS[row.statut_facturation] || 'bg-gray-100 dark:bg-gray-700'}`}>
                         {FACT_LABELS[row.statut_facturation] || row.statut_facturation}
                       </span>
                     )}
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400">
                       {TYPE_LABELS[row.type] || row.type}
                     </span>
                   </div>
@@ -2408,19 +2408,19 @@ export default function Activites() {
                   {allChips.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-1.5">
                       {allChips.slice(0, MAX_CHIPS).map((chip, i) => (
-                        <span key={i} className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 leading-tight">{chip}</span>
+                        <span key={i} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full px-2 py-0.5 leading-tight">{chip}</span>
                       ))}
                       {allChips.length > MAX_CHIPS && (
-                        <span className="text-xs text-gray-400 py-0.5 pl-0.5">+{allChips.length - MAX_CHIPS}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 py-0.5 pl-0.5">+{allChips.length - MAX_CHIPS}</span>
                       )}
                     </div>
                   )}
 
                   {/* Ligne 3 — Date, lieu, élèves, montant, POP */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 mb-1">
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 dark:text-gray-500 mb-1">
                     <span>📅 {fmtDate(row.date_debut)}{row.date_fin ? ` → ${fmtDate(row.date_fin)}` : ''}
                       {dayHint && (
-                        <span className={`ml-1.5 font-medium ${past ? 'text-red-400' : upcoming ? 'text-green-600' : 'text-amber-500'}`}>
+                        <span className={`ml-1.5 font-medium ${past ? 'text-red-400' : upcoming ? 'text-green-600 dark:text-green-400' : 'text-amber-500 dark:text-amber-400'}`}>
                           · {dayHint}
                         </span>
                       )}
@@ -2428,7 +2428,7 @@ export default function Activites() {
                     {(row.local || row.lieu) && <span>📍 {row.local || row.lieu}</span>}
                     {row.nb_eleves && <span>👥 {row.nb_eleves} élève{row.nb_eleves !== 1 ? 's' : ''}</span>}
                     {row.montant_total && <span>💶 {fmt(row.montant_total)} total{row.montant_par_eleve ? ` · ${fmt(row.montant_par_eleve)}/élève` : ''}</span>}
-                    {row.pop && <span className="text-orange-500">🏛 POP : {fmt(row.pop)}</span>}
+                    {row.pop && <span className="text-orange-500 dark:text-orange-400">🏛 POP : {fmt(row.pop)}</span>}
                   </div>
 
                   {/* Ligne 4 — Personnel */}
@@ -2438,7 +2438,7 @@ export default function Activites() {
                         <span className="text-primary/80">👤 {responsableLabel}</span>
                       )}
                       {accompagnateurLabels.length > 0 && (
-                        <span className="text-teal-600">🤝 {accompagnateurLabels.join(' · ')}</span>
+                        <span className="text-teal-600 dark:text-teal-400">🤝 {accompagnateurLabels.join(' · ')}</span>
                       )}
                     </div>
                   )}
@@ -2449,15 +2449,15 @@ export default function Activites() {
                   className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 transition-colors border ${
                     activitiesWithDocs.has(row.id)
                       ? 'text-primary border-primary/40 bg-primary/5 font-medium hover:bg-primary/10'
-                      : 'text-gray-500 hover:text-primary border-gray-200 hover:border-primary'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-primary border-gray-200 dark:border-gray-600 hover:border-primary'
                   }`}>
                   <FileText size={12} /> Docs
                 </button>
                 <button onClick={e => { e.stopPropagation(); openDocs(row, 'facture') }}
                   className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 transition-colors border ${
                     activitiesWithFactures.has(row.id)
-                      ? 'text-emerald-600 border-emerald-300 bg-emerald-50 font-medium hover:bg-emerald-100'
-                      : 'text-gray-500 hover:text-primary border-gray-200 hover:border-primary'
+                      ? 'text-emerald-600 dark:text-emerald-400 border-emerald-300 bg-emerald-50 dark:bg-emerald-950 font-medium hover:bg-emerald-100'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-primary border-gray-200 dark:border-gray-600 hover:border-primary'
                   }`}>
                   <Receipt size={12} /> Factures
                 </button>
@@ -2467,8 +2467,8 @@ export default function Activites() {
                     title={row.statut_facturation === 'en_attente' ? 'Marquer À facturer' : 'Revenir En attente'}
                     className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 transition-colors border font-medium ${
                       row.statut_facturation === 'a_facturer'
-                        ? 'text-yellow-700 border-yellow-300 bg-yellow-50 hover:bg-yellow-100'
-                        : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
+                        ? 'text-yellow-700 dark:text-yellow-300 border-yellow-300 bg-yellow-50 dark:bg-yellow-950 hover:bg-yellow-100'
+                        : 'text-orange-600 dark:text-orange-400 border-orange-200 bg-orange-50 dark:bg-orange-950 hover:bg-orange-100'
                     }`}>
                     <CheckCheck size={12} />
                     {row.statut_facturation === 'a_facturer' ? 'À facturer' : 'En attente'}

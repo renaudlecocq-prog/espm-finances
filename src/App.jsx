@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { DemoProvider, useDemo } from './context/DemoContext'
 import { SettingsProvider, useSettings } from './contexts/SettingsContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import Sidebar from './components/layout/Sidebar'
 import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
@@ -25,7 +26,7 @@ import Profile from './pages/Profile'
 
 function RequireAuth({ children, require = 'user', feature = null }) {
   const { user, loading, role, effectiveRole, can, viewAsRole } = useAuth()
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
   if (!user) return <Navigate to="/login" replace />
   if (require === 'admin'     && !['admin','super_admin'].includes(role))                                    return <Navigate to="/" replace />
   if (require === 'direction' && !['admin','super_admin','direction'].includes(effectiveRole))               return <Navigate to="/" replace />
@@ -51,7 +52,7 @@ function Layout({ children }) {
   const { s } = useSettings()
 
   return (
-    <div className="flex h-screen bg-surface overflow-hidden">
+    <div className="flex h-screen bg-surface dark:bg-gray-950 overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <main
@@ -60,7 +61,7 @@ function Layout({ children }) {
         >
           {children}
         </main>
-        <footer className="px-6 py-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400 shrink-0">
+        <footer className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center text-xs text-gray-400 dark:text-gray-500 shrink-0">
           <span>© 2026 {s('school_nom')} · v{__APP_VERSION__}</span>
           <Link to="/mentions-legales" className="hover:text-primary transition-colors">
             Mentions légales
@@ -94,7 +95,7 @@ function Layout({ children }) {
           <div className="flex-1" />
           <button
             onClick={toggleDemo}
-            className="bg-white font-semibold px-3 py-1 rounded-lg text-xs hover:bg-orange-50 transition-colors shrink-0"
+            className="bg-white dark:bg-gray-800 font-semibold px-3 py-1 rounded-lg text-xs hover:bg-orange-50 transition-colors shrink-0"
             style={{ color: '#E86C00' }}>
             Quitter le mode démo
           </button>
@@ -111,7 +112,7 @@ function Layout({ children }) {
             </strong> — les menus et accès reflètent ce rôle</span>
           </span>
           <button onClick={() => setPreviewRole(null)}
-            className="bg-white text-orange-600 font-semibold px-3 py-1 rounded-lg text-xs hover:bg-orange-50 transition-colors ml-4 shrink-0">
+            className="bg-white dark:bg-gray-800 text-orange-600 dark:text-orange-400 font-semibold px-3 py-1 rounded-lg text-xs hover:bg-orange-50 transition-colors ml-4 shrink-0">
             Quitter l'aperçu
           </button>
         </div>
@@ -122,7 +123,7 @@ function Layout({ children }) {
 
 function AppRoutes() {
   const { user, loading } = useAuth()
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   return (
     <Routes>
@@ -155,6 +156,7 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
       <SettingsProvider>
         <DemoProvider>
           <AuthProvider>
@@ -162,6 +164,7 @@ export default function App() {
           </AuthProvider>
         </DemoProvider>
       </SettingsProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

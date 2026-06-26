@@ -1,4 +1,12 @@
 ## [v1.14.1] — Fix détection mot de passe existant
+## [v1.15.0] — Dark mode
+- Nouveau mode sombre accessible via Profil → Préférences → Thème
+- Préférence persistée dans localStorage (dark/light)
+- Couverture complète : backgrounds, textes, bordures, badges sémantiques (vert/rouge/amber/indigo/bleu/orange/violet/emerald/yellow/purple)
+- Classes CSS globales (.card, .input, .btn-ghost, .label) adaptées en dark
+- Scrollbars et autofill stylisés en dark
+- Toggle dans l'onglet Préférences du profil personnel (remplace le placeholder "À venir")
+
 - Fix : `hasPassword` détecte maintenant l'identité email via `user.identities` en plus de `has_password` (évite le cas où des utilisateurs ayant un MDP avant l'ajout de la colonne devaient quand même re-saisir l'ancien)
 - DB : `has_password = true` mis à jour pour les comptes existants concernés
 - Clic sur le nom dans la sidebar → page /profile (rôle responsable exclu)

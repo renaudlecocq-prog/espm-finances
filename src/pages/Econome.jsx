@@ -110,36 +110,36 @@ function NatureSelect({ value, natures, onChange, disabled }) {
   const selected = natures.find(n => n.id === value)
 
   if (disabled) return (
-    <span className="text-xs text-gray-500 italic">{selected?.libelle || '—'}</span>
+    <span className="text-xs text-gray-500 dark:text-gray-400 italic">{selected?.libelle || '—'}</span>
   )
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => { setOpen(!open); setQ('') }}
-        className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-200 hover:border-indigo-400 bg-white max-w-[180px] truncate"
+        className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-200 dark:border-gray-600 hover:border-indigo-400 bg-white dark:bg-gray-800 max-w-[180px] truncate"
       >
-        <span className={`flex-1 truncate text-left ${selected ? 'text-gray-800' : 'text-gray-400 italic'}`}>
+        <span className={`flex-1 truncate text-left ${selected ? 'text-gray-800 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500 italic'}`}>
           {selected?.libelle || 'Choisir…'}
         </span>
-        <ChevronDown size={10} className="text-gray-400 shrink-0" />
+        <ChevronDown size={10} className="text-gray-400 dark:text-gray-500 shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl flex flex-col max-h-72">
-          <div className="p-2 border-b border-gray-100">
+        <div className="absolute z-50 top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl flex flex-col max-h-72">
+          <div className="p-2 border-b border-gray-100 dark:border-gray-700">
             <input
               autoFocus
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="Rechercher…"
-              className="w-full text-xs border border-gray-200 rounded px-2 py-1 outline-none"
+              className="w-full text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1 outline-none"
             />
           </div>
           <div className="overflow-y-auto flex-1">
             <button
               onClick={() => { onChange(null); setOpen(false) }}
-              className="w-full text-left text-xs px-3 py-1.5 text-gray-400 italic hover:bg-gray-50"
+              className="w-full text-left text-xs px-3 py-1.5 text-gray-400 dark:text-gray-500 italic hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               — Non classé
             </button>
@@ -147,20 +147,20 @@ function NatureSelect({ value, natures, onChange, disabled }) {
               ? filtered.map(n => (
                 <button key={n.id}
                   onClick={() => { onChange(n.id); setOpen(false) }}
-                  className={`w-full text-left text-xs px-3 py-1.5 hover:bg-indigo-50 ${value === n.id ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700'}`}
+                  className={`w-full text-left text-xs px-3 py-1.5 hover:bg-indigo-50 ${value === n.id ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 font-medium' : 'text-gray-700 dark:text-gray-200'}`}
                 >
                   {n.libelle}
                 </button>
               ))
               : Object.entries(grouped).map(([cat, items]) => (
                 <div key={cat}>
-                  <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wide bg-gray-50">
+                  <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide bg-gray-50 dark:bg-gray-900">
                     {cat}
                   </div>
                   {items.map(n => (
                     <button key={n.id}
                       onClick={() => { onChange(n.id); setOpen(false) }}
-                      className={`w-full text-left text-xs px-4 py-1.5 hover:bg-indigo-50 ${value === n.id ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700'}`}
+                      className={`w-full text-left text-xs px-4 py-1.5 hover:bg-indigo-50 ${value === n.id ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 font-medium' : 'text-gray-700 dark:text-gray-200'}`}
                     >
                       {n.sous_categorie}
                     </button>
@@ -260,17 +260,17 @@ function ImportModal({ compte, onClose, onImported }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            <h2 className="font-semibold text-gray-800">
+            <h2 className="font-semibold text-gray-800 dark:text-gray-100">
               Import CSV — {compte === 'fonctionnement' ? 'Fonctionnement' : 'Élèves'}
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">Fichier d'export Belfius (.csv)</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Fichier d'export Belfius (.csv)</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X size={18} className="text-gray-500" />
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+            <X size={18} className="text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
@@ -282,14 +282,14 @@ function ImportModal({ compte, onClose, onImported }) {
             onDragOver={e => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
             className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors
-              ${dragging ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}
+              ${dragging ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950' : 'border-gray-200 dark:border-gray-600 hover:border-indigo-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
             onClick={() => document.getElementById('csv-input').click()}
           >
-            <Upload size={28} className="mx-auto text-gray-400 mb-2" />
-            <p className="text-sm font-medium text-gray-600">
+            <Upload size={28} className="mx-auto text-gray-400 dark:text-gray-500 mb-2" />
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
               {filename || 'Glisser le CSV ou cliquer pour choisir'}
             </p>
-            {filename && <p className="text-xs text-gray-400 mt-1">{rows.length} lignes lues</p>}
+            {filename && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{rows.length} lignes lues</p>}
             <input id="csv-input" type="file" accept=".csv" className="hidden"
               onChange={e => parseFile(e.target.files[0])} />
           </div>
@@ -298,26 +298,26 @@ function ImportModal({ compte, onClose, onImported }) {
           {rows.length > 0 && (
             <>
               <div className="flex gap-3">
-                <div className="flex-1 bg-green-50 rounded-lg px-4 py-3">
-                  <p className="text-xs text-green-600 font-medium">Nouvelles lignes</p>
-                  <p className="text-2xl font-bold text-green-700">{newRows.length}</p>
+                <div className="flex-1 bg-green-50 dark:bg-green-950 rounded-lg px-4 py-3">
+                  <p className="text-xs text-green-600 dark:text-green-400 font-medium">Nouvelles lignes</p>
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-300">{newRows.length}</p>
                 </div>
-                <div className="flex-1 bg-gray-50 rounded-lg px-4 py-3">
-                  <p className="text-xs text-gray-500 font-medium">Déjà importées</p>
-                  <p className="text-2xl font-bold text-gray-400">{dupRows.length}</p>
+                <div className="flex-1 bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Déjà importées</p>
+                  <p className="text-2xl font-bold text-gray-400 dark:text-gray-500">{dupRows.length}</p>
                 </div>
-                <div className="flex-1 bg-gray-50 rounded-lg px-4 py-3">
-                  <p className="text-xs text-gray-500 font-medium">Année détectée</p>
-                  <p className="text-2xl font-bold text-gray-700">{annee}</p>
+                <div className="flex-1 bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Année détectée</p>
+                  <p className="text-2xl font-bold text-gray-700 dark:text-gray-200">{annee}</p>
                 </div>
               </div>
 
               {/* Aperçu 5 premières lignes nouvelles */}
               {newRows.length > 0 && (
-                <div className="border border-gray-100 rounded-lg overflow-hidden">
+                <div className="border border-gray-100 dark:border-gray-700 rounded-lg overflow-hidden">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="bg-gray-50 text-gray-500">
+                      <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
                         <th className="text-left px-3 py-2">Date</th>
                         <th className="text-left px-3 py-2">Libellé</th>
                         <th className="text-right px-3 py-2">Entrée</th>
@@ -326,16 +326,16 @@ function ImportModal({ compte, onClose, onImported }) {
                     </thead>
                     <tbody>
                       {newRows.slice(0, 8).map((r, i) => (
-                        <tr key={i} className="border-t border-gray-50">
-                          <td className="px-3 py-1.5 text-gray-500">{fmtDate(r.date_operation)}</td>
-                          <td className="px-3 py-1.5 text-gray-700 max-w-[200px] truncate">{r.libelle || r.communication || '—'}</td>
-                          <td className="px-3 py-1.5 text-right text-green-600 font-medium">{r.montant_entree ? fmtEur(r.montant_entree) : ''}</td>
-                          <td className="px-3 py-1.5 text-right text-red-500 font-medium">{r.montant_sortie ? fmtEur(r.montant_sortie) : ''}</td>
+                        <tr key={i} className="border-t border-gray-50 dark:border-gray-800">
+                          <td className="px-3 py-1.5 text-gray-500 dark:text-gray-400">{fmtDate(r.date_operation)}</td>
+                          <td className="px-3 py-1.5 text-gray-700 dark:text-gray-200 max-w-[200px] truncate">{r.libelle || r.communication || '—'}</td>
+                          <td className="px-3 py-1.5 text-right text-green-600 dark:text-green-400 font-medium">{r.montant_entree ? fmtEur(r.montant_entree) : ''}</td>
+                          <td className="px-3 py-1.5 text-right text-red-500 dark:text-red-400 font-medium">{r.montant_sortie ? fmtEur(r.montant_sortie) : ''}</td>
                         </tr>
                       ))}
                       {newRows.length > 8 && (
-                        <tr className="border-t border-gray-50">
-                          <td colSpan={4} className="px-3 py-2 text-center text-gray-400 italic">
+                        <tr className="border-t border-gray-50 dark:border-gray-800">
+                          <td colSpan={4} className="px-3 py-2 text-center text-gray-400 dark:text-gray-500 italic">
                             + {newRows.length - 8} autres lignes…
                           </td>
                         </tr>
@@ -349,8 +349,8 @@ function ImportModal({ compte, onClose, onImported }) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
             Annuler
           </button>
           <button
@@ -391,10 +391,10 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
   )
 
   const SortIcon = ({ col }) => {
-    if (sort.col !== col) return <ChevronsUpDown size={11} className="text-gray-300 ml-0.5" />
+    if (sort.col !== col) return <ChevronsUpDown size={11} className="text-gray-300 dark:text-gray-600 ml-0.5" />
     return sort.dir === 'asc'
-      ? <ChevronUp size={11} className="text-indigo-500 ml-0.5" />
-      : <ChevronDown size={11} className="text-indigo-500 ml-0.5" />
+      ? <ChevronUp size={11} className="text-indigo-500 dark:text-indigo-400 ml-0.5" />
+      : <ChevronDown size={11} className="text-indigo-500 dark:text-indigo-400 ml-0.5" />
   }
 
   const sorted = [...transactions].sort((a, b) => {
@@ -407,8 +407,8 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
   })
 
   if (!sorted.length) return (
-    <div className="text-center py-16 text-gray-400">
-      <FileText size={32} className="mx-auto mb-3 text-gray-300" />
+    <div className="text-center py-16 text-gray-400 dark:text-gray-500">
+      <FileText size={32} className="mx-auto mb-3 text-gray-300 dark:text-gray-600" />
       <p className="text-sm">Aucune transaction pour cette période</p>
       <p className="text-xs mt-1">Importez un CSV Belfius pour commencer</p>
     </div>
@@ -418,7 +418,7 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b-2 border-gray-100">
+          <tr className="border-b-2 border-gray-100 dark:border-gray-700">
             {/* Checkbox select all */}
             <th className="w-8 px-2 py-2.5">
               <input
@@ -426,23 +426,23 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
                 checked={allSelected}
                 ref={el => { if (el) el.indeterminate = someSelected }}
                 onChange={toggleAll}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                className="rounded border-gray-300 dark:border-gray-500 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 cursor-pointer"
               />
             </th>
-            <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 cursor-pointer whitespace-nowrap"
+            <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 cursor-pointer whitespace-nowrap"
               onClick={() => toggleSort('date_operation')}>
               Date <SortIcon col="date_operation" />
             </th>
-            <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Libellé / Communication</th>
-            <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 min-w-[180px]">Nature comptable</th>
+            <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Libellé / Communication</th>
+            <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 min-w-[180px]">Nature comptable</th>
             {compte === 'eleves' && (
-              <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500">Statut</th>
+              <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Statut</th>
             )}
-            <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 cursor-pointer"
+            <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 cursor-pointer"
               onClick={() => toggleSort('montant_entree')}>
               Entrée <SortIcon col="montant_entree" />
             </th>
-            <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 cursor-pointer"
+            <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 cursor-pointer"
               onClick={() => toggleSort('montant_sortie')}>
               Sortie <SortIcon col="montant_sortie" />
             </th>
@@ -453,7 +453,7 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
           {sorted.map((tx, i) => (
             <tr key={tx.id || i}
               onClick={() => tx.id && toggleOne(tx.id)}
-              className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors cursor-pointer
+              className={`border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50/60 transition-colors cursor-pointer
                 ${selected.has(tx.id) ? 'bg-indigo-50/60' : tx.confirme ? '' : 'bg-amber-50/30'}`}
             >
               <td className="w-8 px-2 py-2.5" onClick={e => e.stopPropagation()}>
@@ -461,16 +461,16 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
                   type="checkbox"
                   checked={selected.has(tx.id)}
                   onChange={() => toggleOne(tx.id)}
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  className="rounded border-gray-300 dark:border-gray-500 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 cursor-pointer"
                 />
               </td>
-              <td className="px-3 py-2.5 text-gray-500 whitespace-nowrap text-xs">
+              <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400 whitespace-nowrap text-xs">
                 {fmtDate(tx.date_operation)}
               </td>
               <td className="px-3 py-2.5 max-w-xs">
-                <p className="text-gray-800 truncate text-xs font-medium">{tx.libelle || '—'}</p>
+                <p className="text-gray-800 dark:text-gray-100 truncate text-xs font-medium">{tx.libelle || '—'}</p>
                 {tx.communication && (
-                  <p className="text-gray-400 truncate text-[11px]">{tx.communication}</p>
+                  <p className="text-gray-400 dark:text-gray-500 truncate text-[11px]">{tx.communication}</p>
                 )}
               </td>
               <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
@@ -483,17 +483,17 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
               {compte === 'eleves' && (
                 <td className="px-3 py-2.5 text-center">
                   {tx.statut_paiement === 'imported' && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">
                       <Check size={9} /> Importé
                     </span>
                   )}
                   {tx.statut_paiement === 'pending' && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-full">
                       En attente
                     </span>
                   )}
                   {tx.statut_paiement === 'ignored' && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full">
                       Ignoré
                     </span>
                   )}
@@ -501,18 +501,18 @@ function TransactionTable({ transactions, natures, compte, onNatureChange, onDel
               )}
               <td className="px-3 py-2.5 text-right whitespace-nowrap">
                 {tx.montant_entree ? (
-                  <span className="text-green-600 font-semibold text-xs">{fmtEur(tx.montant_entree)}</span>
-                ) : <span className="text-gray-300 text-xs">—</span>}
+                  <span className="text-green-600 dark:text-green-400 font-semibold text-xs">{fmtEur(tx.montant_entree)}</span>
+                ) : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>}
               </td>
               <td className="px-3 py-2.5 text-right whitespace-nowrap">
                 {tx.montant_sortie ? (
-                  <span className="text-red-500 font-semibold text-xs">{fmtEur(tx.montant_sortie)}</span>
-                ) : <span className="text-gray-300 text-xs">—</span>}
+                  <span className="text-red-500 dark:text-red-400 font-semibold text-xs">{fmtEur(tx.montant_sortie)}</span>
+                ) : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>}
               </td>
               <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
                 <button
                   onClick={() => onDelete(tx.id)}
-                  className="p-1 hover:bg-red-50 rounded text-gray-300 hover:text-red-400 transition-colors"
+                  className="p-1 hover:bg-red-50 rounded text-gray-300 dark:text-gray-600 hover:text-red-400 transition-colors"
                   title="Supprimer"
                 >
                   <Trash2 size={13} />
@@ -535,41 +535,41 @@ function SummaryBar({ transactions, compte, selected, bulkNature, setBulkNature,
 
   return (
     <div className="flex flex-wrap gap-3 mb-4">
-      <div className="flex items-center gap-2.5 bg-green-50 border border-green-100 rounded-lg px-4 py-2.5 min-w-[150px]">
-        <TrendingUp size={16} className="text-green-500 shrink-0" />
+      <div className="flex items-center gap-2.5 bg-green-50 dark:bg-green-950 border border-green-100 dark:border-green-900 rounded-lg px-4 py-2.5 min-w-[150px]">
+        <TrendingUp size={16} className="text-green-500 dark:text-green-400 shrink-0" />
         <div>
-          <p className="text-[10px] text-green-600 font-medium uppercase tracking-wide">Entrées</p>
-          <p className="text-sm font-bold text-green-700">{fmtEur(totalEntree)}</p>
+          <p className="text-[10px] text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Entrées</p>
+          <p className="text-sm font-bold text-green-700 dark:text-green-300">{fmtEur(totalEntree)}</p>
         </div>
       </div>
-      <div className="flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-lg px-4 py-2.5 min-w-[150px]">
-        <TrendingDown size={16} className="text-red-400 shrink-0" />
+      <div className="flex items-center gap-2.5 bg-red-50 dark:bg-red-950 border border-red-100 dark:border-red-900 rounded-lg px-4 py-2.5 min-w-[150px]">
+        <TrendingDown size={16} className="text-red-400 dark:text-red-300 shrink-0" />
         <div>
-          <p className="text-[10px] text-red-500 font-medium uppercase tracking-wide">Sorties</p>
-          <p className="text-sm font-bold text-red-600">{fmtEur(totalSortie)}</p>
+          <p className="text-[10px] text-red-500 dark:text-red-400 font-medium uppercase tracking-wide">Sorties</p>
+          <p className="text-sm font-bold text-red-600 dark:text-red-400">{fmtEur(totalSortie)}</p>
         </div>
       </div>
       <div className={`flex items-center gap-2.5 border rounded-lg px-4 py-2.5 min-w-[150px]
-        ${solde >= 0 ? 'bg-indigo-50 border-indigo-100' : 'bg-orange-50 border-orange-100'}`}>
-        <Minus size={16} className={solde >= 0 ? 'text-indigo-500' : 'text-orange-500'} />
+        ${solde >= 0 ? 'bg-indigo-50 dark:bg-indigo-950 border-indigo-100 dark:border-indigo-900' : 'bg-orange-50 dark:bg-orange-950 border-orange-100'}`}>
+        <Minus size={16} className={solde >= 0 ? 'text-indigo-500 dark:text-indigo-400' : 'text-orange-500 dark:text-orange-400'} />
         <div>
-          <p className={`text-[10px] font-medium uppercase tracking-wide ${solde >= 0 ? 'text-indigo-600' : 'text-orange-600'}`}>Solde</p>
-          <p className={`text-sm font-bold ${solde >= 0 ? 'text-indigo-700' : 'text-orange-600'}`}>{fmtEur(solde)}</p>
+          <p className={`text-[10px] font-medium uppercase tracking-wide ${solde >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-orange-600 dark:text-orange-400'}`}>Solde</p>
+          <p className={`text-sm font-bold ${solde >= 0 ? 'text-indigo-700 dark:text-indigo-300' : 'text-orange-600 dark:text-orange-400'}`}>{fmtEur(solde)}</p>
         </div>
       </div>
-      <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-100 rounded-lg px-4 py-2.5">
-        <FileText size={16} className="text-gray-400 shrink-0" />
+      <div className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-lg px-4 py-2.5">
+        <FileText size={16} className="text-gray-400 dark:text-gray-500 shrink-0" />
         <div>
-          <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Transactions</p>
-          <p className="text-sm font-bold text-gray-700">{transactions.length}</p>
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Transactions</p>
+          <p className="text-sm font-bold text-gray-700 dark:text-gray-200">{transactions.length}</p>
         </div>
       </div>
       {nonClasses > 0 && (
-        <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-100 rounded-lg px-4 py-2.5">
-          <AlertTriangle size={16} className="text-amber-500 shrink-0" />
+        <div className="flex items-center gap-2.5 bg-amber-50 dark:bg-amber-950 border border-amber-100 rounded-lg px-4 py-2.5">
+          <AlertTriangle size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
           <div>
-            <p className="text-[10px] text-amber-600 font-medium uppercase tracking-wide">Non classé</p>
-            <p className="text-sm font-bold text-amber-700">{nonClasses}</p>
+            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wide">Non classé</p>
+            <p className="text-sm font-bold text-amber-700 dark:text-amber-300">{nonClasses}</p>
           </div>
         </div>
       )}
@@ -577,9 +577,9 @@ function SummaryBar({ transactions, compte, selected, bulkNature, setBulkNature,
       {/* ── Bulk action (inline) ── */}
       {selected && selected.size > 0 && (
         <>
-          <div className="w-px h-8 bg-gray-200 self-center mx-1" />
-          <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-1.5">
-            <span className="text-xs font-medium text-indigo-700 whitespace-nowrap">
+          <div className="w-px h-8 bg-gray-200 dark:bg-gray-600 self-center mx-1" />
+          <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 rounded-lg px-3 py-1.5">
+            <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
               {selected.size} sélectionnée{selected.size > 1 ? 's' : ''}
             </span>
             <div className="w-44">
@@ -595,7 +595,7 @@ function SummaryBar({ transactions, compte, selected, bulkNature, setBulkNature,
             </button>
             <button
               onClick={deselectAll}
-              className="p-1 hover:bg-indigo-100 rounded text-indigo-400 hover:text-indigo-600"
+              className="p-1 hover:bg-indigo-100 rounded text-indigo-400 dark:text-indigo-300 hover:text-indigo-600"
               title="Désélectionner tout"
             >
               <X size={13} />
@@ -689,7 +689,7 @@ function CompteTab({ compte, natures }) {
         <select
           value={annee}
           onChange={e => setAnnee(Number(e.target.value))}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:border-indigo-400"
+          className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-indigo-400"
         >
           {anneOptions.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
@@ -698,7 +698,7 @@ function CompteTab({ compte, natures }) {
         <select
           value={moisFilter}
           onChange={e => setMoisFilter(Number(e.target.value))}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:border-indigo-400"
+          className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-indigo-400"
         >
           <option value={0}>Tous les mois</option>
           {MOIS_LABELS.slice(1).map((m, i) => (
@@ -708,12 +708,12 @@ function CompteTab({ compte, natures }) {
 
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher libellé, communication…"
-            className="w-full text-sm pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-400"
+            className="w-full text-sm pl-8 pr-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:border-indigo-400"
           />
         </div>
 
@@ -721,8 +721,8 @@ function CompteTab({ compte, natures }) {
           <button
             onClick={() => setPendingOnly(!pendingOnly)}
             className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${pendingOnly
-              ? 'bg-amber-50 border-amber-300 text-amber-700 font-medium'
-              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+              ? 'bg-amber-50 dark:bg-amber-950 border-amber-300 text-amber-700 dark:text-amber-300 font-medium'
+              : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
           >
             En attente seulement
@@ -732,7 +732,7 @@ function CompteTab({ compte, natures }) {
         {/* Spacer */}
         <div className="flex-1" />
 
-        <button onClick={load} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500" title="Actualiser">
+        <button onClick={load} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400" title="Actualiser">
           <RefreshCw size={15} />
         </button>
         <button
@@ -751,7 +751,7 @@ function CompteTab({ compte, natures }) {
             })]
             exportToExcel(rows, `ESPM_${label}_${annee}.xlsx`)
           }}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600"
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
           title="Exporter en Excel"
         >
           <Download size={13} /> Excel
@@ -779,9 +779,9 @@ function CompteTab({ compte, natures }) {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-16 gap-2 text-gray-400">
+          <div className="flex items-center justify-center py-16 gap-2 text-gray-400 dark:text-gray-500">
             <Loader2 size={18} className="animate-spin" /> Chargement…
           </div>
         ) : (
@@ -817,12 +817,12 @@ function CompteTab({ compte, natures }) {
 function PlaceholderTab({ label, icon, desc }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mb-4">
         {icon}
       </div>
-      <h3 className="font-semibold text-gray-600 mb-1">{label}</h3>
-      <p className="text-sm text-gray-400 max-w-xs">{desc}</p>
-      <span className="mt-3 text-xs font-medium px-3 py-1 bg-amber-100 text-amber-600 rounded-full">
+      <h3 className="font-semibold text-gray-600 dark:text-gray-300 mb-1">{label}</h3>
+      <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs">{desc}</p>
+      <span className="mt-3 text-xs font-medium px-3 py-1 bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-400 rounded-full">
         En développement
       </span>
     </div>
@@ -852,7 +852,7 @@ export default function Econome() {
   }, [])
 
   if (!isAdmin) return (
-    <div className="flex items-center justify-center h-64 text-gray-400">
+    <div className="flex items-center justify-center h-64 text-gray-400 dark:text-gray-500">
       Accès réservé à l'administrateur
     </div>
   )
@@ -963,22 +963,22 @@ function PopTab({ natures }) {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <select value={annee} onChange={e => setAnnee(Number(e.target.value))}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-400">
+          className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400">
           {anneOptions.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
         <select value={moisFilter} onChange={e => setMoisFilter(Number(e.target.value))}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-400">
+          className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400">
           <option value={0}>Tous les mois</option>
           {MOIS_LABELS.slice(1).map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
         </select>
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher fournisseur, pièce, nature…"
-            className="w-full text-sm pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-400" />
+            className="w-full text-sm pl-8 pr-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:border-indigo-400" />
         </div>
         <div className="flex-1" />
-        <button onClick={load} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+        <button onClick={load} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400">
           <RefreshCw size={15} />
         </button>
         <button
@@ -996,7 +996,7 @@ function PopTab({ natures }) {
             })]
             exportToExcel(rows, `ESPM_POP_${annee}.xlsx`)
           }}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600"
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
           title="Exporter en Excel"
         >
           <Download size={13} /> Excel
@@ -1015,26 +1015,26 @@ function PopTab({ natures }) {
       {/* Barre de synthèse */}
       {!loading && (
         <div className="flex flex-wrap gap-3 mb-4">
-          <div className="flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-lg px-4 py-2.5">
-            <TrendingDown size={16} className="text-red-400 shrink-0" />
+          <div className="flex items-center gap-2.5 bg-red-50 dark:bg-red-950 border border-red-100 dark:border-red-900 rounded-lg px-4 py-2.5">
+            <TrendingDown size={16} className="text-red-400 dark:text-red-300 shrink-0" />
             <div>
-              <p className="text-[10px] text-red-500 font-medium uppercase tracking-wide">Total transmis au POP</p>
-              <p className="text-sm font-bold text-red-600">{fmtEur(totalMontant)}</p>
+              <p className="text-[10px] text-red-500 dark:text-red-400 font-medium uppercase tracking-wide">Total transmis au POP</p>
+              <p className="text-sm font-bold text-red-600 dark:text-red-400">{fmtEur(totalMontant)}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-100 rounded-lg px-4 py-2.5">
-            <FileText size={16} className="text-gray-400 shrink-0" />
+          <div className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-lg px-4 py-2.5">
+            <FileText size={16} className="text-gray-400 dark:text-gray-500 shrink-0" />
             <div>
-              <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Lignes</p>
-              <p className="text-sm font-bold text-gray-700">{filtered.length}</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Lignes</p>
+              <p className="text-sm font-bold text-gray-700 dark:text-gray-200">{filtered.length}</p>
             </div>
           </div>
           {nonClasses > 0 && (
-            <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-100 rounded-lg px-4 py-2.5">
-              <AlertTriangle size={16} className="text-amber-500 shrink-0" />
+            <div className="flex items-center gap-2.5 bg-amber-50 dark:bg-amber-950 border border-amber-100 rounded-lg px-4 py-2.5">
+              <AlertTriangle size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
               <div>
-                <p className="text-[10px] text-amber-600 font-medium uppercase tracking-wide">Non classé</p>
-                <p className="text-sm font-bold text-amber-700">{nonClasses}</p>
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wide">Non classé</p>
+                <p className="text-sm font-bold text-amber-700 dark:text-amber-300">{nonClasses}</p>
               </div>
             </div>
           )}
@@ -1042,36 +1042,36 @@ function PopTab({ natures }) {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-16 gap-2 text-gray-400">
+          <div className="flex items-center justify-center py-16 gap-2 text-gray-400 dark:text-gray-500">
             <Loader2 size={18} className="animate-spin" /> Chargement…
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <FileText size={32} className="mx-auto mb-3 text-gray-300" />
+          <div className="text-center py-16 text-gray-400 dark:text-gray-500">
+            <FileText size={32} className="mx-auto mb-3 text-gray-300 dark:text-gray-600" />
             <p className="text-sm">Aucune note de frais pour cette période</p>
             <p className="text-xs mt-1">Cliquez sur "Ajouter une ligne" pour encoder une facture</p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-gray-100">
-                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Date</th>
-                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Fournisseur</th>
-                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">N° pièce</th>
-                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 min-w-[180px]">Nature comptable</th>
-                <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500">Montant</th>
-                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Commentaire</th>
+              <tr className="border-b-2 border-gray-100 dark:border-gray-700">
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Date</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Fournisseur</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">N° pièce</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 min-w-[180px]">Nature comptable</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Montant</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Commentaire</th>
                 <th className="w-16 px-2 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(l => (
-                <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
-                  <td className="px-3 py-2.5 text-gray-500 text-xs whitespace-nowrap">{fmtDate(l.date_transmission)}</td>
-                  <td className="px-3 py-2.5 text-gray-800 text-xs font-medium max-w-[160px] truncate">{l.fournisseur || '—'}</td>
-                  <td className="px-3 py-2.5 text-gray-500 text-xs">{l.numero_piece || '—'}</td>
+                <tr key={l.id} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50/60 transition-colors">
+                  <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">{fmtDate(l.date_transmission)}</td>
+                  <td className="px-3 py-2.5 text-gray-800 dark:text-gray-100 text-xs font-medium max-w-[160px] truncate">{l.fournisseur || '—'}</td>
+                  <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400 text-xs">{l.numero_piece || '—'}</td>
                   <td className="px-3 py-2.5">
                     <NatureSelect
                       value={l.nature_id}
@@ -1088,20 +1088,20 @@ function PopTab({ natures }) {
                     />
                   </td>
                   <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                    <span className="text-red-500 font-semibold text-xs">{fmtEur(l.montant)}</span>
+                    <span className="text-red-500 dark:text-red-400 font-semibold text-xs">{fmtEur(l.montant)}</span>
                   </td>
-                  <td className="px-3 py-2.5 text-gray-400 text-xs max-w-[200px] truncate">{l.commentaire || ''}</td>
+                  <td className="px-3 py-2.5 text-gray-400 dark:text-gray-500 text-xs max-w-[200px] truncate">{l.commentaire || ''}</td>
                   <td className="px-2 py-2.5">
                     <div className="flex items-center gap-1">
                       <button onClick={() => setEditItem({ ...l })}
-                        className="p-1.5 hover:bg-indigo-50 rounded text-gray-300 hover:text-indigo-500 transition-colors">
+                        className="p-1.5 hover:bg-indigo-50 rounded text-gray-300 dark:text-gray-600 hover:text-indigo-500 transition-colors">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                           <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                       </button>
                       <button onClick={() => deleteLigne(l.id)}
-                        className="p-1.5 hover:bg-red-50 rounded text-gray-300 hover:text-red-400 transition-colors">
+                        className="p-1.5 hover:bg-red-50 rounded text-gray-300 dark:text-gray-600 hover:text-red-400 transition-colors">
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -1133,60 +1133,60 @@ function PopLigneModal({ item, natures, saving, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800">
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100">
             {item.id ? 'Modifier' : 'Nouvelle'} note de frais / facture POP
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X size={16} className="text-gray-500" />
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+            <X size={16} className="text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Date de transmission *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Date de transmission *</label>
               <input type="date" value={form.date_transmission}
                 onChange={e => set('date_transmission', e.target.value)}
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">N° pièce / référence</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">N° pièce / référence</label>
               <input value={form.numero_piece || ''} onChange={e => set('numero_piece', e.target.value)}
                 placeholder="ex: FAC-2026-001"
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Fournisseur</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Fournisseur</label>
             <input value={form.fournisseur || ''} onChange={e => set('fournisseur', e.target.value)}
               placeholder="Nom du fournisseur ou prestataire"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+              className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Nature comptable</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Nature comptable</label>
               <NatureSelect value={form.nature_id} natures={natures} onChange={v => set('nature_id', v)} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Montant (€) *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Montant (€) *</label>
               <input type="number" step="0.01" min="0" value={form.montant || ''}
                 onChange={e => set('montant', e.target.value)}
                 placeholder="0.00"
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Commentaire</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Commentaire</label>
             <textarea value={form.commentaire || ''} onChange={e => set('commentaire', e.target.value)}
               rows={2} placeholder="Description, contexte…"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400 resize-none" />
+              className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400 resize-none" />
           </div>
         </div>
 
-        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
             Annuler
           </button>
           <button
@@ -1312,10 +1312,10 @@ function BilanTab({ natures }) {
       {/* Toolbar */}
       <div className="flex items-center gap-3 mb-5">
         <select value={annee} onChange={e => setAnnee(Number(e.target.value))}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-400">
+          className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400">
           {anneOptions.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
-        <button onClick={load} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
+        <button onClick={load} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 dark:text-gray-500">
           <RefreshCw size={15} />
         </button>
         <button
@@ -1325,12 +1325,12 @@ function BilanTab({ natures }) {
             if (!token) return
             window.open(`/.netlify/functions/econome-bilan-pdf?annee=${annee}&token=${encodeURIComponent(token)}`, '_blank')
           }}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
         >
           <FileText size={13} /> PDF Bilan
         </button>
         {/* Inner tabs */}
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 ml-2">
+        <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1 ml-2">
           {[
             { key: 'couverture', label: 'Couverture élèves' },
             { key: 'general',    label: 'Vue générale' },
@@ -1338,15 +1338,15 @@ function BilanTab({ natures }) {
             <button key={t.key} onClick={() => setInnerTab(t.key)}
               className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
                 innerTab === t.key
-                  ? 'bg-white text-indigo-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white dark:bg-gray-800 text-indigo-700 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}>
               {t.label}
             </button>
           ))}
         </div>
         {data?.nonClasses > 0 && (
-          <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-1.5">
+          <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border border-amber-100 rounded-lg px-3 py-1.5">
             <AlertTriangle size={13} />
             {data.nonClasses} transaction{data.nonClasses > 1 ? 's' : ''} sans nature — non comptabilisée{data.nonClasses > 1 ? 's' : ''}
           </div>
@@ -1354,7 +1354,7 @@ function BilanTab({ natures }) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 gap-2 text-gray-400">
+        <div className="flex items-center justify-center py-20 gap-2 text-gray-400 dark:text-gray-500">
           <Loader2 size={18} className="animate-spin" /> Chargement…
         </div>
       ) : !data ? null : innerTab === 'couverture' ? (
@@ -1382,23 +1382,23 @@ function BilanCharts({ chartData, barKeys, colors, title }) {
   })
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
       <button
         onClick={() => setShow(s => !s)}
         className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50/60 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <TrendingUp size={15} className="text-indigo-400" />
-          <span className="text-sm font-semibold text-gray-700">{title}</span>
+          <TrendingUp size={15} className="text-indigo-400 dark:text-indigo-300" />
+          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</span>
         </div>
-        <ChevronDown size={15} className={`text-gray-400 transition-transform ${show ? 'rotate-180' : ''}`} />
+        <ChevronDown size={15} className={`text-gray-400 dark:text-gray-500 transition-transform ${show ? 'rotate-180' : ''}`} />
       </button>
 
       {show && (
         <div className="px-4 pb-5 space-y-6">
           {/* Barres groupées */}
           <div>
-            <p className="text-xs text-gray-400 mb-3 font-medium">Comparaison mensuelle</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-3 font-medium">Comparaison mensuelle</p>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
                 barCategoryGap="30%" barGap={2}>
@@ -1416,7 +1416,7 @@ function BilanCharts({ chartData, barKeys, colors, title }) {
 
           {/* Courbe solde cumulé */}
           <div>
-            <p className="text-xs text-gray-400 mb-3 font-medium">Évolution du solde cumulé</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-3 font-medium">Évolution du solde cumulé</p>
             <ResponsiveContainer width="100%" height={180}>
               <ComposedChart data={dataWithCumul} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -1450,7 +1450,7 @@ function VueCouverture({ data, moisActifs, annee }) {
   const soldeAnnee    = totalEncAnnee - totalDepAnnee
 
   if (couverture.length === 0 && produits.length === 0) return (
-    <div className="bg-white rounded-xl border border-gray-100 p-16 text-center text-gray-400">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-16 text-center text-gray-400 dark:text-gray-500">
       <p className="font-medium">Aucune donnée pour {annee}</p>
       <p className="text-xs mt-1">Importez des transactions et classez-les avec une nature comptable.</p>
     </div>
@@ -1467,28 +1467,28 @@ function VueCouverture({ data, moisActifs, annee }) {
     <div className="space-y-4">
       {/* Carte récap */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-red-50 border border-red-100 rounded-xl px-5 py-4">
-          <p className="text-[11px] text-red-500 font-semibold uppercase tracking-wide mb-1">Total dépenses élèves</p>
-          <p className="text-xl font-bold text-red-600">{fmtEur(totalDepAnnee)}</p>
-          <p className="text-[11px] text-red-400 mt-1">{couverture.length} natures · {Object.keys(catsDep).length} catégories</p>
+        <div className="bg-red-50 dark:bg-red-950 border border-red-100 dark:border-red-900 rounded-xl px-5 py-4">
+          <p className="text-[11px] text-red-500 dark:text-red-400 font-semibold uppercase tracking-wide mb-1">Total dépenses élèves</p>
+          <p className="text-xl font-bold text-red-600 dark:text-red-400">{fmtEur(totalDepAnnee)}</p>
+          <p className="text-[11px] text-red-400 dark:text-red-300 mt-1">{couverture.length} natures · {Object.keys(catsDep).length} catégories</p>
         </div>
-        <div className="bg-green-50 border border-green-100 rounded-xl px-5 py-4">
-          <p className="text-[11px] text-green-600 font-semibold uppercase tracking-wide mb-1">Total encaissé élèves</p>
-          <p className="text-xl font-bold text-green-600">{fmtEur(totalEncAnnee)}</p>
-          <p className="text-[11px] text-green-500 mt-1">{produits.length} nature{produits.length > 1 ? 's' : ''}</p>
+        <div className="bg-green-50 dark:bg-green-950 border border-green-100 dark:border-green-900 rounded-xl px-5 py-4">
+          <p className="text-[11px] text-green-600 dark:text-green-400 font-semibold uppercase tracking-wide mb-1">Total encaissé élèves</p>
+          <p className="text-xl font-bold text-green-600 dark:text-green-400">{fmtEur(totalEncAnnee)}</p>
+          <p className="text-[11px] text-green-500 dark:text-green-400 mt-1">{produits.length} nature{produits.length > 1 ? 's' : ''}</p>
         </div>
         <div className={`rounded-xl px-5 py-4 border ${
           soldeAnnee >= 0
-            ? 'bg-indigo-50 border-indigo-100'
-            : 'bg-amber-50 border-amber-100'
+            ? 'bg-indigo-50 border-indigo-100 dark:border-indigo-900'
+            : 'bg-amber-50 dark:bg-amber-950 border-amber-100'
         }`}>
-          <p className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600'}`}>
+          <p className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600 dark:text-amber-400'}`}>
             {soldeAnnee >= 0 ? '✓ Avance' : '⚠ Découvert'}
           </p>
-          <p className={`text-xl font-bold ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600'}`}>
+          <p className={`text-xl font-bold ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600 dark:text-amber-400'}`}>
             {soldeAnnee >= 0 ? '+' : ''}{fmtEur(soldeAnnee)}
           </p>
-          <p className={`text-[11px] mt-1 ${soldeAnnee >= 0 ? 'text-indigo-400' : 'text-amber-500'}`}>
+          <p className={`text-[11px] mt-1 ${soldeAnnee >= 0 ? 'text-indigo-400' : 'text-amber-500 dark:text-amber-400'}`}>
             {soldeAnnee >= 0
               ? 'Encaissements > dépenses'
               : 'Dépenses > encaissements'}
@@ -1497,19 +1497,19 @@ function VueCouverture({ data, moisActifs, annee }) {
       </div>
 
       {/* Tableau mensuel */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-x-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b-2 border-gray-100">
-              <th className="sticky left-0 bg-white text-left px-4 py-3 text-xs font-semibold text-gray-600 min-w-[220px] z-10">
+            <tr className="border-b-2 border-gray-100 dark:border-gray-700">
+              <th className="sticky left-0 bg-white dark:bg-gray-800 text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 min-w-[220px] z-10">
                 Nature comptable
               </th>
               {moisActifs.map(({ m, hasData }) => (
-                <th key={m} className={`px-2 py-3 text-right text-xs font-semibold w-24 ${hasData ? 'text-gray-600' : 'text-gray-300'}`}>
+                <th key={m} className={`px-2 py-3 text-right text-xs font-semibold w-24 ${hasData ? 'text-gray-600 dark:text-gray-300' : 'text-gray-300 dark:text-gray-600'}`}>
                   {MOIS_LABELS[m]}
                 </th>
               ))}
-              <th className="px-2 py-3 text-right text-xs font-semibold text-gray-700 border-l border-gray-100 w-28">
+              <th className="px-2 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 border-l border-gray-100 dark:border-gray-700 w-28">
                 Total {annee}
               </th>
             </tr>
@@ -1517,32 +1517,32 @@ function VueCouverture({ data, moisActifs, annee }) {
           <tbody>
 
             {/* ── DÉPENSES ÉLÈVES ── */}
-            <tr className="bg-red-50 border-b border-red-100">
+            <tr className="bg-red-50 dark:bg-red-950 border-b border-red-100 dark:border-red-900">
               <td colSpan={moisActifs.length + 2}
-                className="sticky left-0 px-4 py-2 text-xs font-bold text-red-600 uppercase tracking-wide">
+                className="sticky left-0 px-4 py-2 text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">
                 Dépenses élèves
               </td>
             </tr>
             {Object.entries(catsDep).map(([cat, lignes]) => (
               <BilanSection key={cat} categorie={cat} lignes={lignes}
-                moisActifs={moisActifs} colorClass="text-red-500" negative />
+                moisActifs={moisActifs} colorClass="text-red-500 dark:text-red-400" negative />
             ))}
-            <tr className="border-t-2 border-red-200 bg-red-50/50">
-              <td className="sticky left-0 bg-red-50/50 px-4 py-2.5 text-xs font-bold text-red-600 z-10">TOTAL DÉPENSES</td>
+            <tr className="border-t-2 border-red-200 dark:border-red-800 bg-red-50/50">
+              <td className="sticky left-0 bg-red-50/50 px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 z-10">TOTAL DÉPENSES</td>
               {moisActifs.map(({ m }) => (
-                <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-red-500">
-                  {totalDepMois(m) ? <>−{fmtEur(totalDepMois(m))}</> : <span className="text-gray-200">—</span>}
+                <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-red-500 dark:text-red-400">
+                  {totalDepMois(m) ? <>−{fmtEur(totalDepMois(m))}</> : <span className="text-gray-200 dark:text-gray-700">—</span>}
                 </td>
               ))}
-              <td className="px-2 py-2.5 text-right text-xs font-bold text-red-600 border-l border-gray-100 tabular-nums">
+              <td className="px-2 py-2.5 text-right text-xs font-bold text-red-600 dark:text-red-400 border-l border-gray-100 dark:border-gray-700 tabular-nums">
                 −{fmtEur(totalDepAnnee)}
               </td>
             </tr>
 
             {/* ── ENCAISSEMENTS ÉLÈVES ── */}
-            <tr className="bg-green-50 border-t-4 border-gray-100 border-b border-green-100">
+            <tr className="bg-green-50 dark:bg-green-950 border-t-4 border-gray-100 dark:border-gray-700 border-b border-green-100 dark:border-green-900">
               <td colSpan={moisActifs.length + 2}
-                className="sticky left-0 px-4 py-2 text-xs font-bold text-green-700 uppercase tracking-wide">
+                className="sticky left-0 px-4 py-2 text-xs font-bold text-green-700 dark:text-green-300 uppercase tracking-wide">
                 Encaissements élèves
               </td>
             </tr>
@@ -1554,26 +1554,26 @@ function VueCouverture({ data, moisActifs, annee }) {
               }
               return Object.entries(cats).map(([cat, lignes]) => (
                 <BilanSection key={cat} categorie={cat} lignes={lignes}
-                  moisActifs={moisActifs} colorClass="text-green-600" />
+                  moisActifs={moisActifs} colorClass="text-green-600 dark:text-green-400" />
               ))
             })()}
-            <tr className="border-t-2 border-green-200 bg-green-50/50">
-              <td className="sticky left-0 bg-green-50/50 px-4 py-2.5 text-xs font-bold text-green-700 z-10">TOTAL ENCAISSEMENTS</td>
+            <tr className="border-t-2 border-green-200 dark:border-green-800 bg-green-50/50">
+              <td className="sticky left-0 bg-green-50/50 px-4 py-2.5 text-xs font-bold text-green-700 dark:text-green-300 z-10">TOTAL ENCAISSEMENTS</td>
               {moisActifs.map(({ m }) => (
-                <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-green-600">
-                  {totalEncMois(m) ? fmtEur(totalEncMois(m)) : <span className="text-gray-200">—</span>}
+                <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-green-600 dark:text-green-400">
+                  {totalEncMois(m) ? fmtEur(totalEncMois(m)) : <span className="text-gray-200 dark:text-gray-700">—</span>}
                 </td>
               ))}
-              <td className="px-2 py-2.5 text-right text-xs font-bold text-green-700 border-l border-gray-100 tabular-nums">
+              <td className="px-2 py-2.5 text-right text-xs font-bold text-green-700 dark:text-green-300 border-l border-gray-100 dark:border-gray-700 tabular-nums">
                 {fmtEur(totalEncAnnee)}
               </td>
             </tr>
 
             {/* ── SOLDE ── */}
-            <tr className="border-t-4 border-gray-300 bg-gray-50">
-              <td className="sticky left-0 bg-gray-50 px-4 py-3 z-10">
-                <div className="text-xs font-bold text-gray-800">SOLDE COUVERTURE {annee}</div>
-                <div className={`text-[10px] font-semibold mt-0.5 ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600'}`}>
+            <tr className="border-t-4 border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900">
+              <td className="sticky left-0 bg-gray-50 dark:bg-gray-900 px-4 py-3 z-10">
+                <div className="text-xs font-bold text-gray-800 dark:text-gray-100">SOLDE COUVERTURE {annee}</div>
+                <div className={`text-[10px] font-semibold mt-0.5 ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600 dark:text-amber-400'}`}>
                   {soldeAnnee >= 0 ? '✓ Avance' : '⚠ Découvert'}
                 </div>
               </td>
@@ -1581,13 +1581,13 @@ function VueCouverture({ data, moisActifs, annee }) {
                 const s = soldeMois(m)
                 return (
                   <td key={m} className={`px-2 py-3 text-right text-xs font-bold tabular-nums whitespace-nowrap
-                    ${s > 0 ? 'text-indigo-600' : s < 0 ? 'text-amber-600' : 'text-gray-200'}`}>
+                    ${s > 0 ? 'text-indigo-600' : s < 0 ? 'text-amber-600' : 'text-gray-200 dark:text-gray-700'}`}>
                     {s !== 0 ? <>{s > 0 ? '+' : '−'}{fmtEur(Math.abs(s))}</> : '—'}
                   </td>
                 )
               })}
-              <td className={`px-2 py-3 text-right text-sm font-extrabold border-l border-gray-200 tabular-nums
-                ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600'}`}>
+              <td className={`px-2 py-3 text-right text-sm font-extrabold border-l border-gray-200 dark:border-gray-600 tabular-nums
+                ${soldeAnnee >= 0 ? 'text-indigo-600' : 'text-amber-600 dark:text-amber-400'}`}>
                 {soldeAnnee >= 0 ? '+' : '−'}{fmtEur(Math.abs(soldeAnnee))}
               </td>
             </tr>
@@ -1606,9 +1606,9 @@ function VueCouverture({ data, moisActifs, annee }) {
         colors={['#f87171', '#4ade80', '#6366f1']}
         title="Graphiques — Couverture élèves"
       />
-      <p className="text-xs text-gray-400 mt-1">
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
         * Les charges non marquées "couverture élèves" (Achats divers, Entretien, etc.) n'apparaissent pas dans cette vue.
-        Consultez la <button className="underline hover:text-gray-600" onClick={() => {}}>Vue générale</button> pour le tableau complet.
+        Consultez la <button className="underline hover:text-gray-600 dark:hover:text-gray-300" onClick={() => {}}>Vue générale</button> pour le tableau complet.
       </p>
     </div>
   )
@@ -1627,93 +1627,93 @@ function VueGenerale({ data, moisActifs, annee }) {
 
   return (
     <>
-    <div className="bg-white rounded-xl border border-gray-100 overflow-x-auto">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-x-auto">
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="border-b-2 border-gray-100">
-            <th className="sticky left-0 bg-white text-left px-4 py-3 text-xs font-semibold text-gray-600 min-w-[220px] z-10">
+          <tr className="border-b-2 border-gray-100 dark:border-gray-700">
+            <th className="sticky left-0 bg-white dark:bg-gray-800 text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 min-w-[220px] z-10">
               Nature comptable
             </th>
             {moisActifs.map(({ m, hasData }) => (
-              <th key={m} className={`px-2 py-3 text-right text-xs font-semibold w-24 ${hasData ? 'text-gray-600' : 'text-gray-300'}`}>
+              <th key={m} className={`px-2 py-3 text-right text-xs font-semibold w-24 ${hasData ? 'text-gray-600 dark:text-gray-300' : 'text-gray-300 dark:text-gray-600'}`}>
                 {MOIS_LABELS[m]}
               </th>
             ))}
-            <th className="px-2 py-3 text-right text-xs font-semibold text-gray-700 border-l border-gray-100 w-28">
+            <th className="px-2 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 border-l border-gray-100 dark:border-gray-700 w-28">
               Total {annee}
             </th>
           </tr>
         </thead>
         <tbody>
           {/* PRODUITS */}
-          <tr className="bg-green-50 border-b border-green-100">
-            <td colSpan={moisActifs.length + 2} className="sticky left-0 px-4 py-2 text-xs font-bold text-green-700 uppercase tracking-wide">
+          <tr className="bg-green-50 dark:bg-green-950 border-b border-green-100 dark:border-green-900">
+            <td colSpan={moisActifs.length + 2} className="sticky left-0 px-4 py-2 text-xs font-bold text-green-700 dark:text-green-300 uppercase tracking-wide">
               Produits
             </td>
           </tr>
           {produits.length === 0
-            ? <tr><td colSpan={moisActifs.length + 2} className="px-4 py-3 text-xs text-gray-400 italic">Aucun produit pour {annee}</td></tr>
+            ? <tr><td colSpan={moisActifs.length + 2} className="px-4 py-3 text-xs text-gray-400 dark:text-gray-500 italic">Aucun produit pour {annee}</td></tr>
             : (() => {
                 const cats = {}
                 for (const e of produits) { if (!cats[e.categorie]) cats[e.categorie] = []; cats[e.categorie].push(e) }
                 return Object.entries(cats).map(([cat, lignes]) => (
-                  <BilanSection key={cat} categorie={cat} lignes={lignes} moisActifs={moisActifs} colorClass="text-green-600" />
+                  <BilanSection key={cat} categorie={cat} lignes={lignes} moisActifs={moisActifs} colorClass="text-green-600 dark:text-green-400" />
                 ))
               })()
           }
-          <tr className="border-t-2 border-green-200 bg-green-50/50">
-            <td className="sticky left-0 bg-green-50/50 px-4 py-2.5 text-xs font-bold text-green-700 z-10">TOTAL PRODUITS</td>
+          <tr className="border-t-2 border-green-200 dark:border-green-800 bg-green-50/50">
+            <td className="sticky left-0 bg-green-50/50 px-4 py-2.5 text-xs font-bold text-green-700 dark:text-green-300 z-10">TOTAL PRODUITS</td>
             {moisActifs.map(({ m }) => (
-              <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-green-600">
-                {totalProduitsMois(m) ? fmtEur(totalProduitsMois(m)) : <span className="text-gray-200">—</span>}
+              <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-green-600 dark:text-green-400">
+                {totalProduitsMois(m) ? fmtEur(totalProduitsMois(m)) : <span className="text-gray-200 dark:text-gray-700">—</span>}
               </td>
             ))}
-            <td className="px-2 py-2.5 text-right text-xs font-bold text-green-700 border-l border-gray-100 tabular-nums">{fmtEur(totalProduitsAnnee)}</td>
+            <td className="px-2 py-2.5 text-right text-xs font-bold text-green-700 dark:text-green-300 border-l border-gray-100 dark:border-gray-700 tabular-nums">{fmtEur(totalProduitsAnnee)}</td>
           </tr>
 
           {/* CHARGES */}
-          <tr className="bg-red-50 border-t-4 border-gray-100 border-b border-red-100">
-            <td colSpan={moisActifs.length + 2} className="sticky left-0 px-4 py-2 text-xs font-bold text-red-600 uppercase tracking-wide">
+          <tr className="bg-red-50 dark:bg-red-950 border-t-4 border-gray-100 dark:border-gray-700 border-b border-red-100 dark:border-red-900">
+            <td colSpan={moisActifs.length + 2} className="sticky left-0 px-4 py-2 text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">
               Charges
             </td>
           </tr>
           {charges.length === 0
-            ? <tr><td colSpan={moisActifs.length + 2} className="px-4 py-3 text-xs text-gray-400 italic">Aucune charge pour {annee}</td></tr>
+            ? <tr><td colSpan={moisActifs.length + 2} className="px-4 py-3 text-xs text-gray-400 dark:text-gray-500 italic">Aucune charge pour {annee}</td></tr>
             : (() => {
                 const cats = {}
                 for (const e of charges) { if (!cats[e.categorie]) cats[e.categorie] = []; cats[e.categorie].push(e) }
                 return Object.entries(cats).map(([cat, lignes]) => (
-                  <BilanSection key={cat} categorie={cat} lignes={lignes} moisActifs={moisActifs} colorClass="text-red-500" negative />
+                  <BilanSection key={cat} categorie={cat} lignes={lignes} moisActifs={moisActifs} colorClass="text-red-500 dark:text-red-400" negative />
                 ))
               })()
           }
-          <tr className="border-t-2 border-red-200 bg-red-50/50">
-            <td className="sticky left-0 bg-red-50/50 px-4 py-2.5 text-xs font-bold text-red-600 z-10">TOTAL CHARGES</td>
+          <tr className="border-t-2 border-red-200 dark:border-red-800 bg-red-50/50">
+            <td className="sticky left-0 bg-red-50/50 px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 z-10">TOTAL CHARGES</td>
             {moisActifs.map(({ m }) => (
-              <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-red-500">
-                {totalChargesMois(m) ? <>−{fmtEur(totalChargesMois(m))}</> : <span className="text-gray-200">—</span>}
+              <td key={m} className="px-2 py-2.5 text-right text-xs font-bold tabular-nums text-red-500 dark:text-red-400">
+                {totalChargesMois(m) ? <>−{fmtEur(totalChargesMois(m))}</> : <span className="text-gray-200 dark:text-gray-700">—</span>}
               </td>
             ))}
-            <td className="px-2 py-2.5 text-right text-xs font-bold text-red-600 border-l border-gray-100 tabular-nums">−{fmtEur(totalChargesAnnee)}</td>
+            <td className="px-2 py-2.5 text-right text-xs font-bold text-red-600 dark:text-red-400 border-l border-gray-100 dark:border-gray-700 tabular-nums">−{fmtEur(totalChargesAnnee)}</td>
           </tr>
 
           {/* SOLDE */}
-          <tr className="border-t-4 border-gray-300 bg-gray-50">
-            <td className="sticky left-0 bg-gray-50 px-4 py-3 z-10">
-              <div className="text-xs font-bold text-gray-800">SOLDE {annee}</div>
-              <div className={`text-[10px] font-semibold mt-0.5 ${soldeAnnee >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+          <tr className="border-t-4 border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900">
+            <td className="sticky left-0 bg-gray-50 dark:bg-gray-900 px-4 py-3 z-10">
+              <div className="text-xs font-bold text-gray-800 dark:text-gray-100">SOLDE {annee}</div>
+              <div className={`text-[10px] font-semibold mt-0.5 ${soldeAnnee >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
                 {soldeAnnee >= 0 ? '✓ Sur couverture' : '⚠ Sous couverture'}
               </div>
             </td>
             {moisActifs.map(({ m }) => {
               const s = soldeMois(m)
               return (
-                <td key={m} className={`px-2 py-3 text-right text-xs font-bold tabular-nums whitespace-nowrap ${s > 0 ? 'text-green-600' : s < 0 ? 'text-red-500' : 'text-gray-200'}`}>
+                <td key={m} className={`px-2 py-3 text-right text-xs font-bold tabular-nums whitespace-nowrap ${s > 0 ? 'text-green-600' : s < 0 ? 'text-red-500' : 'text-gray-200 dark:text-gray-700'}`}>
                   {s !== 0 ? <>{s > 0 ? '+' : '−'}{fmtEur(Math.abs(s))}</> : '—'}
                 </td>
               )
             })}
-            <td className={`px-2 py-3 text-right text-sm font-extrabold border-l border-gray-200 tabular-nums ${soldeAnnee >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+            <td className={`px-2 py-3 text-right text-sm font-extrabold border-l border-gray-200 dark:border-gray-600 tabular-nums ${soldeAnnee >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
               {soldeAnnee >= 0 ? '+' : '−'}{fmtEur(Math.abs(soldeAnnee))}
             </td>
           </tr>
@@ -1740,35 +1740,35 @@ function BilanSection({ categorie, lignes, moisActifs, colorClass, negative = fa
   const [open, setOpen] = useState(true)
   return (
     <>
-      <tr className="border-b border-gray-50 cursor-pointer hover:bg-gray-50/40 select-none"
+      <tr className="border-b border-gray-50 dark:border-gray-800 cursor-pointer hover:bg-gray-50/40 select-none"
         onClick={() => setOpen(o => !o)}>
-        <td className="sticky left-0 bg-white px-4 py-1.5 z-10">
+        <td className="sticky left-0 bg-white dark:bg-gray-800 px-4 py-1.5 z-10">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-gray-400">{open ? '▾' : '▸'}</span>
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{categorie}</span>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500">{open ? '▾' : '▸'}</span>
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{categorie}</span>
           </div>
         </td>
         {moisActifs.map(({ m }) => {
           const tot = lignes.reduce((s, e) => s + e.mois[m], 0)
           return (
-            <td key={m} className={`px-2 py-1.5 text-right text-xs font-semibold tabular-nums whitespace-nowrap ${tot ? colorClass : 'text-gray-200'}`}>
+            <td key={m} className={`px-2 py-1.5 text-right text-xs font-semibold tabular-nums whitespace-nowrap ${tot ? colorClass : 'text-gray-200 dark:text-gray-700'}`}>
               {tot ? (negative ? <>−{fmtEur(tot)}</> : fmtEur(tot)) : '—'}
             </td>
           )
         })}
-        <td className={`px-2 py-1.5 text-right text-xs font-semibold border-l border-gray-100 tabular-nums ${colorClass}`}>
+        <td className={`px-2 py-1.5 text-right text-xs font-semibold border-l border-gray-100 dark:border-gray-700 tabular-nums ${colorClass}`}>
           {(() => { const t = lignes.reduce((s, e) => s + e.total, 0); return t ? (negative ? <>−{fmtEur(t)}</> : fmtEur(t)) : '—' })()}
         </td>
       </tr>
       {open && lignes.map(e => (
-        <tr key={e.libelle} className="border-b border-gray-50 hover:bg-gray-50/30">
-          <td className="sticky left-0 bg-white px-4 py-1.5 z-10 pl-8 text-xs text-gray-600">{e.libelle}</td>
+        <tr key={e.libelle} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50/30">
+          <td className="sticky left-0 bg-white dark:bg-gray-800 px-4 py-1.5 z-10 pl-8 text-xs text-gray-600 dark:text-gray-300">{e.libelle}</td>
           {moisActifs.map(({ m }) => (
-            <td key={m} className={`px-2 py-1.5 text-right text-xs tabular-nums whitespace-nowrap ${e.mois[m] ? colorClass : 'text-gray-200'}`}>
+            <td key={m} className={`px-2 py-1.5 text-right text-xs tabular-nums whitespace-nowrap ${e.mois[m] ? colorClass : 'text-gray-200 dark:text-gray-700'}`}>
               {e.mois[m] ? (negative ? <>−{fmtEur(e.mois[m])}</> : fmtEur(e.mois[m])) : '—'}
             </td>
           ))}
-          <td className={`px-2 py-1.5 text-right text-xs border-l border-gray-100 tabular-nums font-medium ${colorClass}`}>
+          <td className={`px-2 py-1.5 text-right text-xs border-l border-gray-100 dark:border-gray-700 tabular-nums font-medium ${colorClass}`}>
             {e.total ? (negative ? <>−{fmtEur(e.total)}</> : fmtEur(e.total)) : '—'}
           </td>
         </tr>
@@ -1916,7 +1916,7 @@ function ProjetsTab() {
   for (let y = 2023; y <= new Date().getFullYear() + 1; y++) anneOptions.push(y)
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20 gap-2 text-gray-400">
+    <div className="flex items-center justify-center py-20 gap-2 text-gray-400 dark:text-gray-500">
       <Loader2 size={18} className="animate-spin" /> Chargement…
     </div>
   )
@@ -1927,7 +1927,7 @@ function ProjetsTab() {
       <div className="flex flex-wrap items-center gap-3 mb-5">
         {projets.length > 0 ? (
           <select value={projetId || ''} onChange={e => setProjetId(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-400 max-w-xs">
+            className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 focus:outline-none focus:border-indigo-400 max-w-xs">
             {projets.map(p => (
               <option key={p.id} value={p.id}>
                 {p.nom} ({p.annee}){p.cloture ? ' ✓' : ''}
@@ -1944,7 +1944,7 @@ function ProjetsTab() {
         {projet && (
           <>
             <button onClick={() => { setEditProjet({ ...projet }); setShowProjetModal(true) }}
-              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 px-2 py-1.5 hover:bg-gray-100 rounded-lg">
+              className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                 <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -1952,7 +1952,7 @@ function ProjetsTab() {
               Configurer
             </button>
             <button onClick={deleteProjet}
-              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 px-2 py-1.5 hover:bg-red-50 rounded-lg">
+              className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 px-2 py-1.5 hover:bg-red-50 rounded-lg">
               <Trash2 size={13} /> Supprimer
             </button>
             <button
@@ -1962,7 +1962,7 @@ function ProjetsTab() {
                 if (!token || !projetId) return
                 window.open(`/.netlify/functions/econome-projet-pdf?projetId=${projetId}&token=${encodeURIComponent(token)}`, '_blank')
               }}
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
             >
               <FileText size={13} /> PDF Projet
             </button>
@@ -1971,10 +1971,10 @@ function ProjetsTab() {
       </div>
 
       {projets.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 p-16 text-center">
-          <PlusCircle size={32} className="mx-auto mb-3 text-gray-300" />
-          <p className="font-medium text-gray-500">Aucun projet</p>
-          <p className="text-xs text-gray-400 mt-1">Créez un projet pour Pâtes, Fancy Fair, Rhétos…</p>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-16 text-center">
+          <PlusCircle size={32} className="mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+          <p className="font-medium text-gray-500 dark:text-gray-400">Aucun projet</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Créez un projet pour Pâtes, Fancy Fair, Rhétos…</p>
           <button
             onClick={() => { setEditProjet({ nom: '', description: '', annee: new Date().getFullYear(), categories: [], cloture: false }); setShowProjetModal(true) }}
             className="mt-4 px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
@@ -1987,31 +1987,31 @@ function ProjetsTab() {
           {/* ── Cartes récap ── */}
           <div className="flex flex-wrap gap-3 mb-4">
             {projet.description && (
-              <div className="flex-1 min-w-[200px] bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
-                <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wide">Description</p>
-                <p className="text-xs text-indigo-700 mt-0.5">{projet.description}</p>
+              <div className="flex-1 min-w-[200px] bg-indigo-50 dark:bg-indigo-950 border border-indigo-100 dark:border-indigo-900 rounded-xl px-4 py-3">
+                <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold uppercase tracking-wide">Description</p>
+                <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-0.5">{projet.description}</p>
               </div>
             )}
-            <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-center">
-              <p className="text-[10px] text-green-600 font-semibold uppercase tracking-wide">Entrées</p>
-              <p className="text-base font-bold text-green-600">{fmtEur(totalEntree)}</p>
+            <div className="bg-green-50 dark:bg-green-950 border border-green-100 dark:border-green-900 rounded-xl px-4 py-3 text-center">
+              <p className="text-[10px] text-green-600 dark:text-green-400 font-semibold uppercase tracking-wide">Entrées</p>
+              <p className="text-base font-bold text-green-600 dark:text-green-400">{fmtEur(totalEntree)}</p>
             </div>
-            <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-center">
-              <p className="text-[10px] text-red-500 font-semibold uppercase tracking-wide">Sorties</p>
-              <p className="text-base font-bold text-red-500">{fmtEur(totalSortie)}</p>
+            <div className="bg-red-50 dark:bg-red-950 border border-red-100 dark:border-red-900 rounded-xl px-4 py-3 text-center">
+              <p className="text-[10px] text-red-500 dark:text-red-400 font-semibold uppercase tracking-wide">Sorties</p>
+              <p className="text-base font-bold text-red-500 dark:text-red-400">{fmtEur(totalSortie)}</p>
             </div>
-            <div className={`rounded-xl px-4 py-3 text-center border ${solde >= 0 ? 'bg-indigo-50 border-indigo-100' : 'bg-amber-50 border-amber-100'}`}>
-              <p className={`text-[10px] font-semibold uppercase tracking-wide ${solde >= 0 ? 'text-indigo-500' : 'text-amber-600'}`}>Solde</p>
-              <p className={`text-base font-bold ${solde >= 0 ? 'text-indigo-600' : 'text-amber-600'}`}>
+            <div className={`rounded-xl px-4 py-3 text-center border ${solde >= 0 ? 'bg-indigo-50 border-indigo-100 dark:border-indigo-900' : 'bg-amber-50 dark:bg-amber-950 border-amber-100'}`}>
+              <p className={`text-[10px] font-semibold uppercase tracking-wide ${solde >= 0 ? 'text-indigo-500' : 'text-amber-600 dark:text-amber-400'}`}>Solde</p>
+              <p className={`text-base font-bold ${solde >= 0 ? 'text-indigo-600' : 'text-amber-600 dark:text-amber-400'}`}>
                 {solde >= 0 ? '+' : ''}{fmtEur(solde)}
               </p>
             </div>
             {projet.cloture && (
-              <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-xl px-4 py-3">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
+              <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 dark:text-gray-500">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                <span className="text-xs font-medium text-gray-500">Clôturé</span>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Clôturé</span>
               </div>
             )}
           </div>
@@ -2033,25 +2033,25 @@ function ProjetsTab() {
 
           {/* ── Table par catégorie ── */}
           {loadingLignes ? (
-            <div className="flex items-center justify-center py-10 gap-2 text-gray-400">
+            <div className="flex items-center justify-center py-10 gap-2 text-gray-400 dark:text-gray-500">
               <Loader2 size={16} className="animate-spin" /> Chargement…
             </div>
           ) : lignes.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-100 p-12 text-center text-gray-400">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-12 text-center text-gray-400 dark:text-gray-500">
               <p className="text-sm">Aucune ligne pour ce projet</p>
               <p className="text-xs mt-1">Cliquez sur "Ajouter une ligne" pour commencer.</p>
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b-2 border-gray-100">
-                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Date</th>
-                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Intitulé</th>
-                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 w-32">Catégorie</th>
-                    <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 w-28">Entrée</th>
-                    <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 w-28">Sortie</th>
-                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Commentaire</th>
+                  <tr className="border-b-2 border-gray-100 dark:border-gray-700">
+                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Date</th>
+                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Intitulé</th>
+                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 w-32">Catégorie</th>
+                    <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 w-28">Entrée</th>
+                    <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 w-28">Sortie</th>
+                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">Commentaire</th>
                     <th className="w-16 px-2 py-2.5"></th>
                   </tr>
                 </thead>
@@ -2072,15 +2072,15 @@ function ProjetsTab() {
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t-2 border-gray-200 bg-gray-50">
-                    <td colSpan={3} className="px-3 py-3 text-xs font-bold text-gray-700 uppercase">Total</td>
-                    <td className="px-3 py-3 text-right text-sm font-bold text-green-600 tabular-nums">
+                  <tr className="border-t-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
+                    <td colSpan={3} className="px-3 py-3 text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">Total</td>
+                    <td className="px-3 py-3 text-right text-sm font-bold text-green-600 dark:text-green-400 tabular-nums">
                       {totalEntree ? fmtEur(totalEntree) : '—'}
                     </td>
-                    <td className="px-3 py-3 text-right text-sm font-bold text-red-500 tabular-nums">
+                    <td className="px-3 py-3 text-right text-sm font-bold text-red-500 dark:text-red-400 tabular-nums">
                       {totalSortie ? fmtEur(totalSortie) : '—'}
                     </td>
-                    <td className={`px-3 py-3 text-right text-sm font-extrabold tabular-nums ${solde >= 0 ? 'text-indigo-600' : 'text-amber-600'}`}>
+                    <td className={`px-3 py-3 text-right text-sm font-extrabold tabular-nums ${solde >= 0 ? 'text-indigo-600' : 'text-amber-600 dark:text-amber-400'}`}>
                       {solde >= 0 ? '+' : '−'}{fmtEur(Math.abs(solde))}
                     </td>
                     <td />
@@ -2121,51 +2121,51 @@ function ProjetCatSection({ categorie, lignes, catEntree, catSortie, catSolde, o
   return (
     <>
       {/* En-tête catégorie */}
-      <tr className="border-b border-gray-100 bg-gray-50/80 cursor-pointer select-none hover:bg-gray-100/60"
+      <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 cursor-pointer select-none hover:bg-gray-100/60"
         onClick={() => setOpen(o => !o)}>
         <td colSpan={3} className="px-3 py-1.5">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-gray-400">{open ? '▾' : '▸'}</span>
-            <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">{categorie}</span>
-            <span className="text-[10px] text-gray-400 ml-1">({lignes.length})</span>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500">{open ? '▾' : '▸'}</span>
+            <span className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wide">{categorie}</span>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-1">({lignes.length})</span>
           </div>
         </td>
-        <td className="px-3 py-1.5 text-right text-xs font-bold text-green-600 tabular-nums">
+        <td className="px-3 py-1.5 text-right text-xs font-bold text-green-600 dark:text-green-400 tabular-nums">
           {catEntree ? fmtEur(catEntree) : '—'}
         </td>
-        <td className="px-3 py-1.5 text-right text-xs font-bold text-red-500 tabular-nums">
+        <td className="px-3 py-1.5 text-right text-xs font-bold text-red-500 dark:text-red-400 tabular-nums">
           {catSortie ? fmtEur(catSortie) : '—'}
         </td>
-        <td className={`px-3 py-1.5 text-right text-xs font-bold tabular-nums ${catSolde > 0 ? 'text-indigo-600' : catSolde < 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+        <td className={`px-3 py-1.5 text-right text-xs font-bold tabular-nums ${catSolde > 0 ? 'text-indigo-600 dark:text-indigo-400' : catSolde < 0 ? 'text-amber-600' : 'text-gray-400 dark:text-gray-500'}`}>
           {catSolde !== 0 ? <>{catSolde > 0 ? '+' : '−'}{fmtEur(Math.abs(catSolde))}</> : '—'}
         </td>
         <td />
       </tr>
       {/* Lignes */}
       {open && lignes.map(l => (
-        <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50/40">
-          <td className="px-3 py-2 text-xs text-gray-500 whitespace-nowrap pl-6">{fmtDate(l.date || l.date_ligne)}</td>
-          <td className="px-3 py-2 text-xs text-gray-800 font-medium">{l.intitule}</td>
-          <td className="px-3 py-2 text-xs text-gray-400">{l.categorie || '—'}</td>
-          <td className="px-3 py-2 text-right text-xs text-green-600 font-medium tabular-nums">
+        <tr key={l.id} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50/40">
+          <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap pl-6">{fmtDate(l.date || l.date_ligne)}</td>
+          <td className="px-3 py-2 text-xs text-gray-800 dark:text-gray-100 font-medium">{l.intitule}</td>
+          <td className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500">{l.categorie || '—'}</td>
+          <td className="px-3 py-2 text-right text-xs text-green-600 dark:text-green-400 font-medium tabular-nums">
             {l.entree ? fmtEur(l.entree) : ''}
           </td>
-          <td className="px-3 py-2 text-right text-xs text-red-500 font-medium tabular-nums">
+          <td className="px-3 py-2 text-right text-xs text-red-500 dark:text-red-400 font-medium tabular-nums">
             {l.sortie ? fmtEur(l.sortie) : ''}
           </td>
-          <td className="px-3 py-2 text-xs text-gray-400 max-w-[180px] truncate">{l.commentaire || ''}</td>
+          <td className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500 max-w-[180px] truncate">{l.commentaire || ''}</td>
           <td className="px-2 py-2">
             {!cloture && (
               <div className="flex items-center gap-1">
                 <button onClick={() => onEdit(l)}
-                  className="p-1.5 hover:bg-indigo-50 rounded text-gray-300 hover:text-indigo-500">
+                  className="p-1.5 hover:bg-indigo-50 rounded text-gray-300 dark:text-gray-600 hover:text-indigo-500">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                 </button>
                 <button onClick={() => onDelete(l.id)}
-                  className="p-1.5 hover:bg-red-50 rounded text-gray-300 hover:text-red-400">
+                  className="p-1.5 hover:bg-red-50 rounded text-gray-300 dark:text-gray-600 hover:text-red-400">
                   <Trash2 size={12} />
                 </button>
               </div>
@@ -2193,50 +2193,50 @@ function ProjetModal({ item, saving, anneOptions, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800">{item.id ? 'Modifier le projet' : 'Nouveau projet'}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><X size={16} className="text-gray-500" /></button>
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100">{item.id ? 'Modifier le projet' : 'Nouveau projet'}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><X size={16} className="text-gray-500 dark:text-gray-400" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Nom du projet *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Nom du projet *</label>
               <input value={form.nom} onChange={e => set('nom', e.target.value)}
                 placeholder="ex: Pâtes 2026, Fancy Fair…"
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Année *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Année *</label>
               <select value={form.annee} onChange={e => set('annee', parseInt(e.target.value))}
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400">
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400">
                 {anneOptions.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Description</label>
             <input value={form.description || ''} onChange={e => set('description', e.target.value)}
               placeholder="Courte description du projet"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+              className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Catégories</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Catégories</label>
             <div className="flex gap-2 mb-2">
               <input value={newCat} onChange={e => setNewCat(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCat())}
                 placeholder="Ajouter une catégorie…"
-                className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-400" />
+                className="flex-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-400" />
               <button onClick={addCat} type="button"
-                className="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600">
+                className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-gray-600 dark:text-gray-300">
                 Ajouter
               </button>
             </div>
             <div className="flex flex-wrap gap-1.5 min-h-[28px]">
               {form.categories.length === 0
-                ? <span className="text-xs text-gray-400 italic">Aucune catégorie — les lignes seront non catégorisées</span>
+                ? <span className="text-xs text-gray-400 dark:text-gray-500 italic">Aucune catégorie — les lignes seront non catégorisées</span>
                 : form.categories.map(c => (
-                  <span key={c} className="flex items-center gap-1 bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full border border-indigo-100">
+                  <span key={c} className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs px-2.5 py-1 rounded-full border border-indigo-100 dark:border-indigo-900">
                     {c}
                     <button onClick={() => removeCat(c)} className="hover:text-red-500 ml-0.5">×</button>
                   </span>
@@ -2245,15 +2245,15 @@ function ProjetModal({ item, saving, anneOptions, onSave, onClose }) {
             </div>
           </div>
           {item.id && (
-            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
               <input type="checkbox" checked={form.cloture} onChange={e => set('cloture', e.target.checked)}
-                className="rounded border-gray-300 text-indigo-600" />
+                className="rounded border-gray-300 dark:border-gray-500 text-indigo-600 dark:text-indigo-400" />
               Projet clôturé (lecture seule)
             </label>
           )}
         </div>
-        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Annuler</button>
+        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Annuler</button>
           <button onClick={() => onSave(form)} disabled={!form.nom || saving}
             className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
             {saving ? 'Enregistrement…' : (item.id ? 'Enregistrer' : 'Créer le projet')}
@@ -2272,64 +2272,64 @@ function LigneModal({ item, categories, saving, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800">{item.id ? 'Modifier' : 'Nouvelle'} ligne</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><X size={16} className="text-gray-500" /></button>
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100">{item.id ? 'Modifier' : 'Nouvelle'} ligne</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><X size={16} className="text-gray-500 dark:text-gray-400" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Date *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Date *</label>
               <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Catégorie</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Catégorie</label>
               {hasCategories ? (
                 <select value={form.categorie || ''} onChange={e => set('categorie', e.target.value)}
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400">
+                  className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400">
                   <option value="">— Sans catégorie —</option>
                   {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               ) : (
                 <input value={form.categorie || ''} onChange={e => set('categorie', e.target.value)}
                   placeholder="Catégorie libre"
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+                  className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
               )}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Intitulé *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Intitulé *</label>
             <input value={form.intitule} onChange={e => set('intitule', e.target.value)}
               placeholder="Description de l'opération"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+              className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Entrée (€)</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Entrée (€)</label>
               <input type="number" step="0.01" min="0" value={form.entree || ''}
                 onChange={e => { set('entree', e.target.value); if (e.target.value) set('sortie', '') }}
                 placeholder="0.00"
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-green-400" />
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-green-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Sortie (€)</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Sortie (€)</label>
               <input type="number" step="0.01" min="0" value={form.sortie || ''}
                 onChange={e => { set('sortie', e.target.value); if (e.target.value) set('entree', '') }}
                 placeholder="0.00"
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-red-400" />
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-red-400" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Commentaire</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Commentaire</label>
             <input value={form.commentaire || ''} onChange={e => set('commentaire', e.target.value)}
               placeholder="Facultatif"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
+              className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400" />
           </div>
         </div>
-        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Annuler</button>
+        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Annuler</button>
           <button onClick={() => onSave(form)}
             disabled={!form.date || !form.intitule || (!form.entree && !form.sortie) || saving}
             className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">

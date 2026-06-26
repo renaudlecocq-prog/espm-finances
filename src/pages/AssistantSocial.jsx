@@ -14,16 +14,16 @@ import PageHeader from '../components/ui/PageHeader'
 // ── Constants ──────────────────────────────────────────────────────────────
 const CATEGORIES_ARTICLES = ['Frais obligatoires', 'Fournitures scolaires', 'Vêtements', 'Divers']
 const STATUT_ECH = {
-  en_cours:     { label: 'En cours',     cls: 'bg-blue-100 text-blue-700'    },
-  attente:      { label: 'En attente',   cls: 'bg-yellow-100 text-yellow-700' },
-  non_respecte: { label: 'Non respecté', cls: 'bg-red-100 text-red-700'      },
-  termine:      { label: 'Terminé',      cls: 'bg-green-100 text-green-700'  },
+  en_cours:     { label: 'En cours',     cls: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'    },
+  attente:      { label: 'En attente',   cls: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300' },
+  non_respecte: { label: 'Non respecté', cls: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'      },
+  termine:      { label: 'Terminé',      cls: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'  },
 }
 const STATUT_OT = {
-  en_cours: { label: 'Demande en cours', cls: 'bg-blue-100 text-blue-700'  },
-  valide:   { label: 'Validé',   cls: 'bg-green-100 text-green-700' },
-  refuse:   { label: 'Refusé',   cls: 'bg-red-100 text-red-700'    },
-  cloture:  { label: 'Clôturé',  cls: 'bg-gray-100 text-gray-600'  },
+  en_cours: { label: 'Demande en cours', cls: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'  },
+  valide:   { label: 'Validé',   cls: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' },
+  refuse:   { label: 'Refusé',   cls: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'    },
+  cloture:  { label: 'Clôturé',  cls: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'  },
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -41,12 +41,12 @@ const addMonths = (dateStr, n) => {
 }
 
 function Badge({ val, map }) {
-  const m = map[val] || { label: val, cls: 'bg-gray-100 text-gray-600' }
+  const m = map[val] || { label: val, cls: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' }
   return <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${m.cls}`}>{m.label}</span>
 }
 
 function SortIcon({ col, sort }) {
-  if (sort.col !== col) return <ChevronsUpDown size={11} className="text-gray-300 ml-0.5" />
+  if (sort.col !== col) return <ChevronsUpDown size={11} className="text-gray-300 dark:text-gray-600 ml-0.5" />
   return sort.dir === 'asc'
     ? <ChevronUp   size={11} className="text-primary ml-0.5" />
     : <ChevronDown size={11} className="text-primary ml-0.5" />
@@ -226,18 +226,18 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/25" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-5xl h-full shadow-2xl flex flex-col"
+      <div className="relative bg-white dark:bg-gray-800 w-full max-w-5xl h-full shadow-2xl flex flex-col"
            style={{ zIndex: 51 }}>
 
         {/* Header */}
-        <div className="bg-white border-b border-gray-100 px-6 py-4 z-10 flex items-start justify-between shrink-0">
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-6 py-4 z-10 flex items-start justify-between shrink-0">
           <div>
-            <h2 className="text-lg font-bold text-gray-800">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
               {ech.eleve?.nom} {ech.eleve?.prenom}
-              <span className="ml-2 text-sm font-normal text-gray-400">{ech.eleve?.classe}</span>
+              <span className="ml-2 text-sm font-normal text-gray-400 dark:text-gray-500">{ech.eleve?.classe}</span>
             </h2>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
-              <span className="text-sm text-gray-500">{fmtEur(ech.montant)} · {ech.nombre_echeances} mois</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{fmtEur(ech.montant)} · {ech.nombre_echeances} mois</span>
               <Badge val={statut} map={STATUT_ECH} />
             </div>
           </div>
@@ -249,7 +249,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
               </button>
             )}
 
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
+            <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1">
               <X size={18} />
             </button>
           </div>
@@ -259,7 +259,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
         <div className="flex flex-1 overflow-hidden">
 
           {/* LEFT — Commentaires */}
-          <div className="w-96 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+          <div className="w-96 shrink-0 border-r border-gray-100 dark:border-gray-700 flex flex-col overflow-hidden">
             <Commentaires
               entityType="echelonnement"
               entityId={ech.id}
@@ -273,19 +273,19 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
 
           {/* Summary cards */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <div className="text-xs text-gray-400 mb-1">Total prévu</div>
-              <div className="font-bold text-gray-800 text-sm">{fmtEur(totalPrevu)}</div>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3 text-center">
+              <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Total prévu</div>
+              <div className="font-bold text-gray-800 dark:text-gray-100 text-sm">{fmtEur(totalPrevu)}</div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <div className="text-xs text-gray-400 mb-1">Total payé</div>
-              <div className={`font-bold text-sm ${totalPaid >= totalExpectedToDate - 0.01 ? 'text-green-600' : 'text-orange-500'}`}>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3 text-center">
+              <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Total payé</div>
+              <div className={`font-bold text-sm ${totalPaid >= totalExpectedToDate - 0.01 ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-400'}`}>
                 {fmtEur(totalPaid)}
               </div>
             </div>
-            <div className={`rounded-xl p-3 text-center ${retard > 0.01 ? 'bg-red-50' : avance > 0.01 ? 'bg-green-50' : 'bg-gray-50'}`}>
-              <div className="text-xs text-gray-400 mb-1">{retard > 0.01 ? 'Retard' : avance > 0.01 ? 'Avance' : 'Situation'}</div>
-              <div className={`font-bold text-sm ${retard > 0.01 ? 'text-red-600' : 'text-green-600'}`}>
+            <div className={`rounded-xl p-3 text-center ${retard > 0.01 ? 'bg-red-50' : avance > 0.01 ? 'bg-green-50' : 'bg-gray-50 dark:bg-gray-900'}`}>
+              <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">{retard > 0.01 ? 'Retard' : avance > 0.01 ? 'Avance' : 'Situation'}</div>
+              <div className={`font-bold text-sm ${retard > 0.01 ? 'text-red-600' : 'text-green-600 dark:text-green-400'}`}>
                 {retard > 0.01 ? `−${fmtEur(retard)}` : avance > 0.01 ? `+${fmtEur(avance)}` : '✓ À jour'}
               </div>
             </div>
@@ -293,11 +293,11 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
 
           {/* Alerte déséquilibre mensualités */}
           {Math.abs(ecartTotal) > 0.01 && (
-            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
-              <AlertTriangle size={15} className="text-amber-500 mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950 border border-amber-200 rounded-xl px-4 py-3 text-sm">
+              <AlertTriangle size={15} className="text-amber-500 dark:text-amber-400 mt-0.5 shrink-0" />
               <div className="text-amber-800">
                 <span className="font-semibold">La somme des mensualités ne correspond pas au total.</span>
-                <div className="mt-1 text-amber-700">
+                <div className="mt-1 text-amber-700 dark:text-amber-300">
                   Total déclaré&nbsp;: <strong>{fmtEur(Number(ech.montant))}</strong>
                   {' · '}Somme des mensualités&nbsp;: <strong>{fmtEur(totalPrevu)}</strong>
                   {' · '}
@@ -311,14 +311,14 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
           )}
 
           {/* Dates */}
-          <div className="flex items-center gap-5 text-sm text-gray-500 flex-wrap">
+          <div className="flex items-center gap-5 text-sm text-gray-500 dark:text-gray-400 flex-wrap">
             <span className="flex items-center gap-1.5">
               <Calendar size={13} />Début&nbsp;:&nbsp;
               {isAllowed && editDateDebut !== null ? (
                 <span className="flex items-center gap-1">
                   <input
                     type="date" autoFocus
-                    className="border border-primary rounded px-1.5 py-0.5 text-xs text-gray-700 outline-none"
+                    className="border border-primary rounded px-1.5 py-0.5 text-xs text-gray-700 dark:text-gray-200 outline-none"
                     value={editDateDebut}
                     onChange={e => setEditDateDebut(e.target.value)}
                     onKeyDown={e => {
@@ -326,12 +326,12 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
                       if (e.key === 'Escape') setEditDateDebut(null)
                     }}
                   />
-                  <button onClick={() => saveDateDebut(editDateDebut)} className="text-green-500 hover:text-green-700 text-xs font-bold">✓</button>
-                  <button onClick={() => setEditDateDebut(null)} className="text-gray-400 hover:text-gray-600 text-xs font-bold">✗</button>
+                  <button onClick={() => saveDateDebut(editDateDebut)} className="text-green-500 dark:text-green-400 hover:text-green-700 text-xs font-bold">✓</button>
+                  <button onClick={() => setEditDateDebut(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xs font-bold">✗</button>
                 </span>
               ) : (
                 <strong
-                  className={`text-gray-700 ${isAllowed ? 'cursor-pointer hover:underline decoration-dotted' : ''}`}
+                  className={`text-gray-700 dark:text-gray-200 ${isAllowed ? 'cursor-pointer hover:underline decoration-dotted' : ''}`}
                   title={isAllowed ? 'Cliquer pour modifier' : undefined}
                   onClick={() => isAllowed && setEditDateDebut(ech.date_debut)}
                 >{fmtDate(ech.date_debut)}</strong>
@@ -339,7 +339,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
             </span>
             {dateFin && (
               <span className="flex items-center gap-1.5">
-                <Calendar size={13} />Fin&nbsp;: <strong className="text-gray-700">{fmtDate(editDateDebut !== null ? addMonths(editDateDebut || ech.date_debut, Number(ech.nombre_echeances) - 1) : dateFin)}</strong>
+                <Calendar size={13} />Fin&nbsp;: <strong className="text-gray-700 dark:text-gray-200">{fmtDate(editDateDebut !== null ? addMonths(editDateDebut || ech.date_debut, Number(ech.nombre_echeances) - 1) : dateFin)}</strong>
               </span>
             )}
           </div>
@@ -347,36 +347,36 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
           {/* Echeances table */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-700">Suivi des échéances</h3>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Suivi des échéances</h3>
               {retard > 0.01 && (
-                <span className="flex items-center gap-1 text-xs text-red-500 font-medium">
+                <span className="flex items-center gap-1 text-xs text-red-500 dark:text-red-400 font-medium">
                   <AlertTriangle size={12} />{fmtEur(retard)} en retard
                 </span>
               )}
             </div>
 
             {sorted.length === 0 ? (
-              <div className="text-sm text-gray-400 text-center py-4 bg-gray-50 rounded-xl">
+              <div className="text-sm text-gray-400 dark:text-gray-500 text-center py-4 bg-gray-50 dark:bg-gray-900 rounded-xl">
                 Aucune échéance — plan créé dans l'ancien format
               </div>
             ) : (
-              <div className="border border-gray-100 rounded-xl overflow-hidden">
+              <div className="border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-100">
+                  <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
                     <tr>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase w-12">#</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Date</th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-gray-400 uppercase">Prévu</th>
-                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase">Statut</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase w-12">#</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase">Date</th>
+                      <th className="px-3 py-2 text-right text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase">Prévu</th>
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase">Statut</th>
                     </tr>
                   </thead>
                   <tbody>
                     {echeanceRows.map(e => (
                       <tr key={e.id}
-                        className={`border-b border-gray-50 last:border-0
+                        className={`border-b border-gray-50 dark:border-gray-800 last:border-0
                           ${e.status === 'late' ? 'bg-red-50/40' : e.status === 'paid' ? 'bg-green-50/30' : ''}`}>
-                        <td className="px-3 py-2.5 text-gray-400 text-xs font-mono">M{e.numero_mois}</td>
-                        <td className="px-3 py-2.5 text-gray-600">{fmtDate(e.date_echeance)}</td>
+                        <td className="px-3 py-2.5 text-gray-400 dark:text-gray-500 text-xs font-mono">M{e.numero_mois}</td>
+                        <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300">{fmtDate(e.date_echeance)}</td>
                         <td className="px-3 py-2.5 text-right">
                           {isAllowed && editEch?.id === e.id ? (
                             <div className="flex items-center gap-1 justify-end">
@@ -391,13 +391,13 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
                                 }}
                               />
                               <button onClick={() => saveEcheance(e.id, editEch.value)}
-                                className="text-green-500 hover:text-green-700 text-xs font-bold">✓</button>
+                                className="text-green-500 dark:text-green-400 hover:text-green-700 text-xs font-bold">✓</button>
                               <button onClick={() => setEditEch(null)}
-                                className="text-gray-400 hover:text-gray-600 text-xs font-bold">✗</button>
+                                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xs font-bold">✗</button>
                             </div>
                           ) : (
                             <span
-                              className={`font-medium text-gray-700 ${isAllowed ? 'cursor-pointer hover:underline decoration-dotted' : ''}`}
+                              className={`font-medium text-gray-700 dark:text-gray-200 ${isAllowed ? 'cursor-pointer hover:underline decoration-dotted' : ''}`}
                               title={isAllowed ? 'Cliquer pour modifier' : undefined}
                               onClick={() => isAllowed && setEditEch({ id: e.id, value: String(e.montant_prevu) })}
                             >{fmtEur(e.montant_prevu)}</span>
@@ -405,17 +405,17 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
                         </td>
                         <td className="px-3 py-2.5 text-center">
                           {e.status === 'paid' && (
-                            <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                            <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                               <CheckCircle2 size={12} />Payé
                             </span>
                           )}
                           {e.status === 'late' && (
-                            <span className="inline-flex items-center gap-1 text-xs text-red-500 font-medium">
+                            <span className="inline-flex items-center gap-1 text-xs text-red-500 dark:text-red-400 font-medium">
                               <AlertTriangle size={12} />En retard
                             </span>
                           )}
                           {e.status === 'upcoming' && (
-                            <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                            <span className="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
                               <Clock size={12} />À venir
                             </span>
                           )}
@@ -430,20 +430,20 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
 
           {/* Paiements reçus */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
               Paiements reçus depuis le début
-              <span className="ml-2 text-xs font-normal text-gray-400">({recentPaiements.length})</span>
+              <span className="ml-2 text-xs font-normal text-gray-400 dark:text-gray-500">({recentPaiements.length})</span>
             </h3>
             {recentPaiements.length === 0 ? (
-              <div className="text-sm text-gray-400 text-center py-4 bg-gray-50 rounded-xl">
+              <div className="text-sm text-gray-400 dark:text-gray-500 text-center py-4 bg-gray-50 dark:bg-gray-900 rounded-xl">
                 Aucun paiement enregistré depuis le début
               </div>
             ) : (
               <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
                 {recentPaiements.map(p => (
-                  <div key={p.id} className="flex items-center justify-between bg-green-50 rounded-lg px-3 py-2">
-                    <span className="text-sm text-gray-600">{fmtDate(p.date)}</span>
-                    <span className="text-sm font-semibold text-green-700">+{fmtEur(p.montant)}</span>
+                  <div key={p.id} className="flex items-center justify-between bg-green-50 dark:bg-green-950 rounded-lg px-3 py-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-300">{fmtDate(p.date)}</span>
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-300">+{fmtEur(p.montant)}</span>
                   </div>
                 ))}
               </div>
@@ -451,8 +451,8 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
           </div>
 
           {/* Rapport signé — upload */}
-          <div className="border-t border-gray-100 pt-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Rapport signé</h3>
+          <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Rapport signé</h3>
             <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
               onChange={e => { uploadFile(e.target.files[0]); e.target.value = '' }} />
             <div className="flex gap-2 mb-3">
@@ -467,7 +467,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
               {/* Zone drag & drop — 3/4 */}
               <div
                 className={`flex-1 rounded-xl border-2 border-dashed p-3 text-center cursor-pointer transition-colors
-                  ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
+                  ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'}`}
                 onDragOver={e => { e.preventDefault(); setDragging(true) }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={e => { e.preventDefault(); setDragging(false); uploadFile(e.dataTransfer.files[0]) }}
@@ -475,7 +475,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
               >
                 {uploading
                   ? <p className="text-sm text-primary">Upload en cours…</p>
-                  : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400">
+                  : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400 dark:text-gray-500">
                       <Upload size={14} />
                       <span className="text-sm">Glisser-déposer ou <span className="text-primary underline">parcourir</span></span>
                     </div>
@@ -483,16 +483,16 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
               </div>
             </div>
             {docs.length === 0
-              ? <p className="text-xs text-gray-400 text-center">Aucun document uploadé</p>
+              ? <p className="text-xs text-gray-400 dark:text-gray-500 text-center">Aucun document uploadé</p>
               : docs.map(d => (
-                  <div key={d.id} className="flex items-center justify-between py-1.5 border-b border-gray-100 text-sm">
-                    <span className="truncate text-gray-700 flex-1 mr-2">{d.nom_fichier}</span>
+                  <div key={d.id} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-700 text-sm">
+                    <span className="truncate text-gray-700 dark:text-gray-200 flex-1 mr-2">{d.nom_fichier}</span>
                     <div className="flex gap-2 shrink-0">
                       <button onClick={() => viewDoc(d)} className="text-primary hover:text-primary/70 transition-colors" title="Voir">
                         <Eye size={14} />
                       </button>
                       {isAllowed && (
-                        <button onClick={() => deleteDoc(d)} className="text-red-400 hover:text-red-600 transition-colors" title="Supprimer">
+                        <button onClick={() => deleteDoc(d)} className="text-red-400 dark:text-red-300 hover:text-red-600 transition-colors" title="Supprimer">
                           <Trash2 size={14} />
                         </button>
                       )}
@@ -504,8 +504,8 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
 
           {/* Statut manuel */}
           {isAllowed && (
-            <div className="border-t border-gray-100 pt-4 pb-2">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Statut du plan (manuel)</h3>
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-4 pb-2">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Statut du plan (manuel)</h3>
               <div className="flex items-center gap-2">
                 <select className="input text-sm flex-1" value={statut} onChange={e => setStatut(e.target.value)}>
                   {Object.entries(STATUT_ECH).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -515,7 +515,7 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
                   {saving ? '…' : 'Sauvegarder'}
                 </button>
               </div>
-              {ech.remarque && <p className="text-xs text-gray-400 mt-2 italic">"{ech.remarque}"</p>}
+              {ech.remarque && <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 italic">"{ech.remarque}"</p>}
             </div>
           )}
 
@@ -576,10 +576,10 @@ function EchelonnementForm({ eleves, onSaved, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-8 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
-          <h2 className="font-bold text-gray-800 text-lg">Nouvel échelonnement</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl my-8 flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 rounded-t-2xl z-10">
+          <h2 className="font-bold text-gray-800 dark:text-gray-100 text-lg">Nouvel échelonnement</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={20} /></button>
         </div>
         <div className="px-6 py-5 space-y-4 overflow-y-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -607,7 +607,7 @@ function EchelonnementForm({ eleves, onSaved, onClose }) {
               <label className="label">
                 Mensualité (€)
                 {mensCalc > 0 && !form.mensualite && (
-                  <span className="ml-1 font-normal text-gray-400 text-xs">auto {fmtEur(mensCalc)}</span>
+                  <span className="ml-1 font-normal text-gray-400 dark:text-gray-500 text-xs">auto {fmtEur(mensCalc)}</span>
                 )}
               </label>
               <input className="input" type="number" step="0.01" min="0"
@@ -621,8 +621,8 @@ function EchelonnementForm({ eleves, onSaved, onClose }) {
                 onChange={e => setForm(f => ({ ...f, date_debut: e.target.value }))} />
             </div>
             <div>
-              <label className="label">Date de fin <span className="font-normal text-gray-400">(calculée)</span></label>
-              <input className="input bg-gray-100 cursor-not-allowed" type="date" value={dateFin} readOnly />
+              <label className="label">Date de fin <span className="font-normal text-gray-400 dark:text-gray-500">(calculée)</span></label>
+              <input className="input bg-gray-100 dark:bg-gray-700 cursor-not-allowed" type="date" value={dateFin} readOnly />
             </div>
             <div>
               <label className="label">Statut initial</label>
@@ -740,11 +740,11 @@ function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, 
 
   const detail = detailId ? rows.find(r => r.id === detailId) : null
 
-  if (loading) return <div className="py-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="py-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   const TH = ({ col, label, right }) => (
     <th onClick={() => toggleSort(col)}
-      className="px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase cursor-pointer select-none hover:text-primary whitespace-nowrap"
+      className="px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase cursor-pointer select-none hover:text-primary whitespace-nowrap"
       style={{ textAlign: right ? 'right' : 'left' }}>
       <span className={`flex items-center gap-0.5 ${right ? 'justify-end' : ''}`}>
         {label}<SortIcon col={col} sort={sort} />
@@ -766,7 +766,7 @@ function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, 
       {/* Table */}
       <div className="card p-0 overflow-x-auto">
         <table className="w-full text-sm" style={{ minWidth: 860 }}>
-          <thead className="bg-gray-50 border-b border-gray-100">
+          <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
             <tr>
               <TH col="nom"             label="Nom" />
               <TH col="prenom"          label="Prénom" />
@@ -774,9 +774,9 @@ function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, 
               <TH col="montant"         label="Montant" right />
               <TH col="nombre_echeances" label="Mois" />
               <TH col="date_debut"      label="Début" />
-              <th className="px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase text-left whitespace-nowrap">Fin</th>
+              <th className="px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase text-left whitespace-nowrap">Fin</th>
               <TH col="statut"          label="Statut" />
-              <th className="px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase text-center whitespace-nowrap">Suivi auto</th>
+              <th className="px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase text-center whitespace-nowrap">Suivi auto</th>
               <th className="px-3 py-2.5 w-8" />
               {isAllowed && <th className="px-3 py-2.5 w-10" />}
             </tr>
@@ -784,7 +784,7 @@ function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, 
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-4 py-10 text-center text-gray-400">Aucun échelonnement</td>
+                <td colSpan={10} className="px-4 py-10 text-center text-gray-400 dark:text-gray-500">Aucun échelonnement</td>
               </tr>
             ) : filtered.map(r => {
               const echeances = echeancesMap[r.id] || []
@@ -797,35 +797,35 @@ function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, 
               return (
                 <tr key={r.id}
                   onClick={() => setDetailId(isSelected ? null : r.id)}
-                  className={`border-b border-gray-50 cursor-pointer transition-colors
+                  className={`border-b border-gray-50 dark:border-gray-800 cursor-pointer transition-colors
                     ${isSelected ? 'bg-primary/5 border-primary/10' : 'hover:bg-primary/5'}`}>
-                  <td className="px-3 py-2.5 font-medium text-gray-800">{r.eleve?.nom}</td>
-                  <td className="px-3 py-2.5 text-gray-700">{r.eleve?.prenom}</td>
-                  <td className="px-3 py-2.5 text-gray-500 text-xs">{r.eleve?.classe}</td>
-                  <td className="px-3 py-2.5 text-right font-semibold text-orange-500">{fmtEur(r.montant)}</td>
-                  <td className="px-3 py-2.5 text-center text-gray-600">{r.nombre_echeances}</td>
-                  <td className="px-3 py-2.5 text-gray-500 text-xs">{fmtDate(r.date_debut)}</td>
-                  <td className="px-3 py-2.5 text-gray-500 text-xs">{fmtDate(dateFin)}</td>
+                  <td className="px-3 py-2.5 font-medium text-gray-800 dark:text-gray-100">{r.eleve?.nom}</td>
+                  <td className="px-3 py-2.5 text-gray-700 dark:text-gray-200">{r.eleve?.prenom}</td>
+                  <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400 text-xs">{r.eleve?.classe}</td>
+                  <td className="px-3 py-2.5 text-right font-semibold text-orange-500 dark:text-orange-400">{fmtEur(r.montant)}</td>
+                  <td className="px-3 py-2.5 text-center text-gray-600 dark:text-gray-300">{r.nombre_echeances}</td>
+                  <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400 text-xs">{fmtDate(r.date_debut)}</td>
+                  <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400 text-xs">{fmtDate(dateFin)}</td>
                   <td className="px-3 py-2.5"><Badge val={r.statut} map={STATUT_ECH} /></td>
                   <td className="px-3 py-2.5 text-center">
-                    {alert.type === 'no_echeances' && <span className="text-gray-300 text-xs">—</span>}
+                    {alert.type === 'no_echeances' && <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>}
                     {alert.type === 'not_started'  && (
-                      <span className="inline-flex items-center gap-1 text-xs text-gray-400 justify-center">
+                      <span className="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 justify-center">
                         <Clock size={12} />Non démarré
                       </span>
                     )}
                     {alert.type === 'upcoming'     && (
-                      <span className="inline-flex items-center gap-1 text-xs text-gray-400 justify-center">
+                      <span className="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 justify-center">
                         <Clock size={12} />À venir
                       </span>
                     )}
                     {alert.type === 'ok'           && (
-                      <span className="inline-flex items-center gap-1 text-xs text-green-500 justify-center">
+                      <span className="inline-flex items-center gap-1 text-xs text-green-500 dark:text-green-400 justify-center">
                         <CheckCircle2 size={13} />À jour
                       </span>
                     )}
                     {alert.type === 'late'         && (
-                      <span className="inline-flex items-center gap-1 text-xs text-red-500 font-semibold justify-center">
+                      <span className="inline-flex items-center gap-1 text-xs text-red-500 dark:text-red-400 font-semibold justify-center">
                         <AlertTriangle size={13} />−{fmtEur(alert.montantRetard)}
                       </span>
                     )}
@@ -834,14 +834,14 @@ function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, 
                     <button
                       onClick={() => handlePdfRapport(r.id)}
                       title="Générer le PDF"
-                      className="text-gray-300 hover:text-primary transition-colors">
+                      className="text-gray-300 dark:text-gray-600 hover:text-primary transition-colors">
                       <FileText size={14} />
                     </button>
                   </td>
                   {isAllowed && (
                     <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
                       <button onClick={() => del(r.id)}
-                        className="text-gray-300 hover:text-red-500 transition-colors">
+                        className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors">
                         <Trash2 size={14} />
                       </button>
                     </td>
@@ -1051,14 +1051,14 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
     <>
       <div className="fixed inset-0 z-50 flex justify-end">
         <div className="absolute inset-0 bg-black/25" onClick={onClose} />
-        <div className="relative z-10 w-full max-w-5xl bg-white shadow-2xl flex flex-col h-full overflow-hidden">
+        <div className="relative z-10 w-full max-w-5xl bg-white dark:bg-gray-800 shadow-2xl flex flex-col h-full overflow-hidden">
 
           {/* Header */}
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0">
             <div>
-              <div className="font-bold text-gray-800 text-base">{eleve.nom} {eleve.prenom}</div>
+              <div className="font-bold text-gray-800 dark:text-gray-100 text-base">{eleve.nom} {eleve.prenom}</div>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs text-gray-400">{eleve.classe}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">{eleve.classe}</span>
                 <Badge val={form.statut} map={STATUT_OT} />
                 {totalDemande > 0 && (
                   <span className="text-xs font-semibold text-primary">{fmtEur(totalDemande)} demandé</span>
@@ -1070,7 +1070,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                 className="text-xs text-primary border border-primary/30 hover:bg-primary/5 rounded-lg px-2.5 py-1 transition-colors">
                 Fiche élève
               </button>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
+              <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1">
                 <X size={18} />
               </button>
             </div>
@@ -1080,7 +1080,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
           <div className="flex flex-1 overflow-hidden">
 
             {/* LEFT — Commentaires */}
-            <div className="w-96 shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+            <div className="w-96 shrink-0 border-r border-gray-100 dark:border-gray-700 flex flex-col overflow-hidden">
               <Commentaires
                 entityType="organisme_tiers"
                 entityId={row.id}
@@ -1101,7 +1101,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                           onChange={e => setForm(f => ({ ...f, organisme: e.target.value }))}>
                           {['CPAS','ULB','SPJ','Autre'].map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
-                      : <div className="input bg-gray-50 font-semibold text-primary">{form.organisme}</div>
+                      : <div className="input bg-gray-50 dark:bg-gray-900 font-semibold text-primary">{form.organisme}</div>
                     }
                   </div>
                   <div>
@@ -1161,19 +1161,19 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-700 space-y-0.5">
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-200 space-y-0.5">
                       {form.institution && <div className="font-medium">{form.institution}</div>}
                       {form.rue         && <div>{form.rue}</div>}
                       {(form.code_postal || form.commune) && <div>{[form.code_postal, form.commune].filter(Boolean).join(' ')}</div>}
-                      {!form.institution && !form.rue && <span className="text-gray-400 italic">—</span>}
+                      {!form.institution && !form.rue && <span className="text-gray-400 dark:text-gray-500 italic">—</span>}
                     </div>
                   )}
                 </div>
 
                 {/* Articles */}
-                <div className="border-t border-gray-100 pt-4">
+                <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold text-gray-700">Articles à charge</h3>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Articles à charge</h3>
                     <span className="text-sm font-bold text-primary">{fmtEur(totalDemande)}</span>
                   </div>
 
@@ -1181,9 +1181,9 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                   {otArticles.length > 0 && (
                     <div className="mb-3 space-y-1">
                       {otArticles.map(a => (
-                        <div key={a.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm">
-                          <span className="text-gray-700 flex-1 truncate mr-2">{a.titre}</span>
-                          <span className="font-semibold text-gray-800 mr-2 shrink-0">{fmtEur(a.montant)}</span>
+                        <div key={a.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 text-sm">
+                          <span className="text-gray-700 dark:text-gray-200 flex-1 truncate mr-2">{a.titre}</span>
+                          <span className="font-semibold text-gray-800 dark:text-gray-100 mr-2 shrink-0">{fmtEur(a.montant)}</span>
                           {isAllowed && (
                             <button onClick={() => removeArticle(a.id)} className="text-red-300 hover:text-red-500 transition-colors shrink-0">
                               <X size={13} />
@@ -1210,19 +1210,19 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                         }]).filter(g => g.items.length > 0)
                         return (
                           <div className="mb-2">
-                            <p className="text-xs text-gray-400 mb-1.5">Catalogue articles :</p>
-                            <div className="space-y-0 max-h-48 overflow-y-auto pr-1 border border-gray-100 rounded-lg">
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1.5">Catalogue articles :</p>
+                            <div className="space-y-0 max-h-48 overflow-y-auto pr-1 border border-gray-100 dark:border-gray-700 rounded-lg">
                               {grouped.map(({ cat, items }) => (
                                 <div key={cat}>
-                                  <div className="px-3 py-1 bg-gray-50 text-xs font-semibold text-gray-400 uppercase tracking-wide sticky top-0">
+                                  <div className="px-3 py-1 bg-gray-50 dark:bg-gray-900 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide sticky top-0">
                                     {cat}
                                   </div>
                                   {items.map(a => (
                                     <button key={a.id}
                                       onClick={() => addArticle(a)}
-                                      className="w-full flex items-center justify-between text-left border-b border-gray-50 hover:bg-primary/5 px-3 py-1.5 text-sm transition-colors group">
-                                      <span className="text-gray-700 flex-1 truncate mr-2">{a.nom}</span>
-                                      <span className="text-gray-500 text-xs shrink-0 mr-2">{fmtEur(a.prix_unitaire)}</span>
+                                      className="w-full flex items-center justify-between text-left border-b border-gray-50 dark:border-gray-800 hover:bg-primary/5 px-3 py-1.5 text-sm transition-colors group">
+                                      <span className="text-gray-700 dark:text-gray-200 flex-1 truncate mr-2">{a.nom}</span>
+                                      <span className="text-gray-500 dark:text-gray-400 text-xs shrink-0 mr-2">{fmtEur(a.prix_unitaire)}</span>
                                       <Plus size={13} className="text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                                     </button>
                                   ))}
@@ -1265,15 +1265,15 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                     ? <textarea className="input resize-none" rows={3} value={form.notes}
                         onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                         placeholder="Remarques, contacts, numéros de dossier…" />
-                    : <div className="input bg-gray-50 text-gray-700 min-h-[60px] whitespace-pre-wrap">
-                        {form.notes || <span className="text-gray-400 italic">Aucune note</span>}
+                    : <div className="input bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 min-h-[60px] whitespace-pre-wrap">
+                        {form.notes || <span className="text-gray-400 dark:text-gray-500 italic">Aucune note</span>}
                       </div>
                   }
                 </div>
 
                 {/* Rapport signé */}
-                <div className="border-t border-gray-100 pt-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Rapport signé</h3>
+                <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Rapport signé</h3>
                   <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
                     onChange={e => { uploadFile(e.target.files[0]); e.target.value = '' }} />
                   <div className="flex gap-2 mb-3">
@@ -1284,7 +1284,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                     </button>
                     <div
                       className={`flex-1 rounded-xl border-2 border-dashed p-3 text-center cursor-pointer transition-colors
-                        ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
+                        ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'}`}
                       onDragOver={e => { e.preventDefault(); setDragging(true) }}
                       onDragLeave={() => setDragging(false)}
                       onDrop={e => { e.preventDefault(); setDragging(false); uploadFile(e.dataTransfer.files[0]) }}
@@ -1292,7 +1292,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                     >
                       {uploading
                         ? <p className="text-sm text-primary">Upload en cours…</p>
-                        : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400">
+                        : <div className="flex flex-col items-center justify-center gap-1.5 h-full text-gray-400 dark:text-gray-500">
                             <Upload size={14} />
                             <span className="text-sm">Glisser-déposer ou <span className="text-primary underline">parcourir</span></span>
                           </div>
@@ -1300,16 +1300,16 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                     </div>
                   </div>
                   {docs.length === 0
-                    ? <p className="text-xs text-gray-400 text-center">Aucun document uploadé</p>
+                    ? <p className="text-xs text-gray-400 dark:text-gray-500 text-center">Aucun document uploadé</p>
                     : docs.map(d => (
-                        <div key={d.id} className="flex items-center justify-between py-1.5 border-b border-gray-100 text-sm">
-                          <span className="truncate text-gray-700 flex-1 mr-2">{d.nom_fichier}</span>
+                        <div key={d.id} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-700 text-sm">
+                          <span className="truncate text-gray-700 dark:text-gray-200 flex-1 mr-2">{d.nom_fichier}</span>
                           <div className="flex gap-2 shrink-0">
                             <button onClick={() => viewDoc(d)} className="text-primary hover:text-primary/70 transition-colors" title="Voir">
                               <Eye size={14} />
                             </button>
                             {isAllowed && (
-                              <button onClick={() => deleteDoc(d)} className="text-red-400 hover:text-red-600 transition-colors" title="Supprimer">
+                              <button onClick={() => deleteDoc(d)} className="text-red-400 dark:text-red-300 hover:text-red-600 transition-colors" title="Supprimer">
                                 <Trash2 size={14} />
                               </button>
                             )}
@@ -1320,7 +1320,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                 </div>
 
                 {/* Dates */}
-                <div className="text-xs text-gray-400 space-y-0.5 border-t border-gray-100 pt-3">
+                <div className="text-xs text-gray-400 dark:text-gray-500 space-y-0.5 border-t border-gray-100 dark:border-gray-700 pt-3">
                   {row.created_at && <div>Créé le {fmtDate(row.created_at.slice(0,10))}</div>}
                   {row.updated_at && row.updated_at !== row.created_at &&
                     <div>Modifié le {fmtDate(row.updated_at.slice(0,10))}</div>}
@@ -1330,9 +1330,9 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
 
               {/* Footer */}
               {isAllowed && (
-                <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
+                <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0">
                   <button onClick={del}
-                    className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 transition-colors">
+                    className="flex items-center gap-1.5 text-xs text-red-400 dark:text-red-300 hover:text-red-600 transition-colors">
                     <Trash2 size={13} /> Supprimer
                   </button>
                   <button onClick={save} disabled={saving}
@@ -1445,11 +1445,11 @@ function TabOrganismesTiers({ isAllowed, openEleveId, search, onSearch, filters,
     })
   }, [rows, search, filters, sort])
 
-  if (loading) return <div className="py-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="py-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   const TH = ({ col, label }) => (
     <th onClick={() => toggleSort(col)}
-      className="px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase cursor-pointer select-none hover:text-primary whitespace-nowrap text-left">
+      className="px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase cursor-pointer select-none hover:text-primary whitespace-nowrap text-left">
       <span className="flex items-center gap-0.5">{label}<SortIcon col={col} sort={sort} /></span>
     </th>
   )
@@ -1467,10 +1467,10 @@ function TabOrganismesTiers({ isAllowed, openEleveId, search, onSearch, filters,
       {showOrgModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
           onClick={e => e.target === e.currentTarget && onToggleOrgModal?.(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-800 text-lg">Nouvel organisme</h2>
-              <button onClick={() => onToggleOrgModal?.(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+              <h2 className="font-bold text-gray-800 dark:text-gray-100 text-lg">Nouvel organisme</h2>
+              <button onClick={() => onToggleOrgModal?.(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={20} /></button>
             </div>
             <div className="px-6 py-5 space-y-3">
               <div>
@@ -1533,10 +1533,10 @@ function TabOrganismesTiers({ isAllowed, openEleveId, search, onSearch, filters,
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto"
           onClick={e => e.target === e.currentTarget && onToggleForm?.(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl my-8 flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
-              <h2 className="font-bold text-gray-800 text-lg">Nouvelle situation</h2>
-              <button onClick={() => onToggleForm?.(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl my-8 flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 rounded-t-2xl z-10">
+              <h2 className="font-bold text-gray-800 dark:text-gray-100 text-lg">Nouvelle situation</h2>
+              <button onClick={() => onToggleForm?.(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={20} /></button>
             </div>
             <div className="px-6 py-5 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1618,7 +1618,7 @@ function TabOrganismesTiers({ isAllowed, openEleveId, search, onSearch, filters,
 
       <div className="card p-0">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100">
+          <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
             <tr>
               <TH col="nom"             label="Nom" />
               <TH col="prenom"          label="Prénom" />
@@ -1632,31 +1632,31 @@ function TabOrganismesTiers({ isAllowed, openEleveId, search, onSearch, filters,
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Aucun organisme tiers</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Aucun organisme tiers</td></tr>
             ) : filtered.map(r => (
               <tr key={r.id}
                 onClick={() => setDetailOTId(r.id)}
-                className="border-b border-gray-50 hover:bg-primary/5 cursor-pointer">
-                <td className="px-3 py-2.5 font-medium text-gray-800">{r.eleve?.nom}</td>
-                <td className="px-3 py-2.5 text-gray-700">{r.eleve?.prenom}</td>
-                <td className="px-3 py-2.5 text-gray-500 text-xs">{r.eleve?.classe}</td>
+                className="border-b border-gray-50 dark:border-gray-800 hover:bg-primary/5 cursor-pointer">
+                <td className="px-3 py-2.5 font-medium text-gray-800 dark:text-gray-100">{r.eleve?.nom}</td>
+                <td className="px-3 py-2.5 text-gray-700 dark:text-gray-200">{r.eleve?.prenom}</td>
+                <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400 text-xs">{r.eleve?.classe}</td>
                 <td className="px-3 py-2.5">
                   <span className="font-semibold text-primary">{(r.organisme || '').toUpperCase()}</span>
                 </td>
-                <td className="px-3 py-2.5 text-gray-700">
+                <td className="px-3 py-2.5 text-gray-700 dark:text-gray-200">
                   {r.montant_demande ? fmtEur(r.montant_demande) : '—'}
                 </td>
                 <td className="px-3 py-2.5"><Badge val={r.statut} map={STATUT_OT} /></td>
                 <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
                   <button onClick={() => handlePdfOT(r.id)} title="Générer le rapport PDF"
-                    className="text-gray-300 hover:text-primary transition-colors">
+                    className="text-gray-300 dark:text-gray-600 hover:text-primary transition-colors">
                     <FileText size={14} />
                   </button>
                 </td>
                 {isAllowed && (
                   <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
                     <button onClick={() => del(r.id)}
-                      className="text-gray-300 hover:text-red-500 transition-colors">
+                      className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors">
                       <Trash2 size={14} />
                     </button>
                   </td>

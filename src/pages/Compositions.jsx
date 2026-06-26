@@ -110,7 +110,7 @@ function ElevePhoto({ username, internalNumber, photoUrl = null, eleveId = null,
     <div
       style={{ width: sz, height: sz }}
       onClick={canUpload ? () => inputRef.current?.click() : undefined}
-      className={`rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500 font-bold text-xs shrink-0${canUpload ? ' cursor-pointer hover:bg-indigo-200 transition-colors' : ''}`}
+      className={`rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-500 dark:text-indigo-400 font-bold text-xs shrink-0${canUpload ? ' cursor-pointer hover:bg-indigo-200 transition-colors' : ''}`}
       title={canUpload ? 'Cliquer pour uploader une photo' : ''}>
       {uploading
         ? <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
@@ -153,31 +153,31 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
   const compact = cardMode === 'compact'
 
   return (
-    <div className={`relative rounded-xl border bg-white transition-all select-none cursor-grab-custom active:cursor-grabbing-custom overflow-hidden
+    <div className={`relative rounded-xl border bg-white dark:bg-gray-800 transition-all select-none cursor-grab-custom active:cursor-grabbing-custom overflow-hidden
       ${separationViolation ? 'border-red-400 shadow-md ring-2 ring-red-200/60'
         : selected ? 'border-indigo-400 shadow-md ring-2 ring-indigo-300/60'
-        : isDragging ? 'border-indigo-200 shadow-lg opacity-80'
-        : 'border-gray-100 shadow-sm hover:border-indigo-200 hover:shadow-md'}`}>
+        : isDragging ? 'border-indigo-200 dark:border-indigo-800 shadow-lg opacity-80'
+        : 'border-gray-100 dark:border-gray-700 shadow-sm hover:border-indigo-200 hover:shadow-md'}`}>
       {linked && (
-        <div className="absolute top-1.5 right-1.5 z-10 bg-violet-100 rounded-full p-0.5">
+        <div className="absolute top-1.5 right-1.5 z-10 bg-violet-100 dark:bg-violet-900 rounded-full p-0.5">
           <Link size={10} className="text-violet-500" />
         </div>
       )}
       {separationViolation && (
-        <div className="absolute top-1.5 left-1.5 z-10 bg-red-100 rounded-full p-0.5">
-          <AlertTriangle size={10} className="text-red-500" />
+        <div className="absolute top-1.5 left-1.5 z-10 bg-red-100 dark:bg-red-900 rounded-full p-0.5">
+          <AlertTriangle size={10} className="text-red-500 dark:text-red-400" />
         </div>
       )}
       {separated && !separationViolation && (
-        <div className="absolute top-1.5 right-1.5 z-10 bg-orange-100 rounded-full p-0.5" style={{ right: linked ? '20px' : '6px' }}>
-          <Scissors size={10} className="text-orange-500" />
+        <div className="absolute top-1.5 right-1.5 z-10 bg-orange-100 dark:bg-orange-900 rounded-full p-0.5" style={{ right: linked ? '20px' : '6px' }}>
+          <Scissors size={10} className="text-orange-500 dark:text-orange-400" />
         </div>
       )}
       <div className={`p-2.5 pt-2 w-full min-w-0 ${compact ? '' : 'pb-3'}`}>
         <div className="flex items-center gap-2">
           <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onSelect(eleve.id) }}
             className={`shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors
-              ${selected ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-gray-400 hover:border-indigo-400 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]'}`}>
+              ${selected ? 'bg-indigo-500 border-indigo-500' : 'bg-white dark:bg-gray-800 border-gray-400 hover:border-indigo-400 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]'}`}>
             {selected && <Check size={9} className="text-white" strokeWidth={3} />}
           </button>
           {fields.photo && <ElevePhoto
@@ -188,13 +188,13 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
               onUpload={null}
               size={compact ? 32 : 40} />}
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-gray-800 leading-tight truncate">{eleve.nom?.toUpperCase()}</p>
-            <p className="text-xs text-gray-500 leading-tight truncate">{eleve.prenom}</p>
+            <p className="text-xs font-bold text-gray-800 dark:text-gray-100 leading-tight truncate">{eleve.nom?.toUpperCase()}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight truncate">{eleve.prenom}</p>
             {compact && fields.classe && eleve.classe && (
-              <span className="text-[10px] text-blue-500 font-medium">{eleve.classe}</span>
+              <span className="text-[10px] text-blue-500 dark:text-blue-400 font-medium">{eleve.classe}</span>
             )}
             {compact && fields.sexe && eleve.sexe && (
-              <span className={`text-[10px] font-bold ml-0.5 ${eleve.sexe === 'M' ? 'text-green-500' : eleve.sexe === 'F' ? 'text-red-400' : 'text-gray-400'}`}>{eleve.sexe}</span>
+              <span className={`text-[10px] font-bold ml-0.5 ${eleve.sexe === 'M' ? 'text-green-500 dark:text-green-400' : eleve.sexe === 'F' ? 'text-red-400' : 'text-gray-400 dark:text-gray-500'}`}>{eleve.sexe}</span>
             )}
           </div>
         </div>
@@ -202,32 +202,32 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
           <>
             <div className="flex flex-wrap gap-1 mt-2">
               {fields.classe && eleve.classe && (
-                <span className="text-[10px] font-semibold bg-blue-50 text-blue-600 rounded px-1.5 py-0.5">{eleve.classe}</span>
+                <span className="text-[10px] font-semibold bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 rounded px-1.5 py-0.5">{eleve.classe}</span>
               )}
               {fields.sexe && eleve.sexe && (
-                <span className={`text-[10px] font-semibold rounded px-1.5 py-0.5 ${eleve.sexe === 'M' ? 'bg-green-50 text-green-600' : eleve.sexe === 'F' ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-500'}`}>{eleve.sexe === 'M' ? 'G' : eleve.sexe === 'F' ? 'F' : eleve.sexe}</span>
+                <span className={`text-[10px] font-semibold rounded px-1.5 py-0.5 ${eleve.sexe === 'M' ? 'bg-green-50 dark:bg-green-950 text-green-600 dark:text-green-400' : eleve.sexe === 'F' ? 'bg-red-50 text-red-500' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>{eleve.sexe === 'M' ? 'G' : eleve.sexe === 'F' ? 'F' : eleve.sexe}</span>
               )}
               {fields.troubles && hasAR && (
-                <span className="text-[10px] font-semibold bg-orange-50 text-orange-600 rounded px-1.5 py-0.5 flex items-center gap-0.5">
+                <span className="text-[10px] font-semibold bg-orange-50 dark:bg-orange-950 text-orange-600 dark:text-orange-400 rounded px-1.5 py-0.5 flex items-center gap-0.5">
                   <AlertTriangle size={9} /> Troubles
                 </span>
               )}
               {fields.groupes && groupes.map((g, i) => (
-                <span key={i} className="text-[10px] bg-gray-50 text-gray-500 rounded px-1.5 py-0.5">{g}</span>
+                <span key={i} className="text-[10px] bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 rounded px-1.5 py-0.5">{g}</span>
               ))}
             </div>
             {fields.troubles && hasAR && (
-              <div className="mt-1.5 text-[10px] text-orange-700 bg-orange-50 rounded px-2 py-1 border border-orange-100 leading-snug">
+              <div className="mt-1.5 text-[10px] text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950 rounded px-2 py-1 border border-orange-100 leading-snug">
                 {eleve.amenagements_raisonnables}
               </div>
             )}
             {customFields?.map(cf => (
               <div key={cf.id} className="mt-1" onPointerDown={e => e.stopPropagation()}>
                 <div className="flex items-center gap-1.5 w-full min-w-0 overflow-hidden">
-                  <span className="text-[10px] text-gray-400 shrink-0 truncate max-w-[70px]">{cf.label}:</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0 truncate max-w-[70px]">{cf.label}:</span>
                   <input value={cf.values?.[eleve.id] || ''} onChange={e => onCFChange?.(cf.id, eleve.id, e.target.value)}
                     onClick={e => e.stopPropagation()} placeholder="—"
-                    className="text-[10px] flex-1 min-w-0 border-b border-gray-200 bg-transparent focus:outline-none focus:border-indigo-400 text-gray-700" />
+                    className="text-[10px] flex-1 min-w-0 border-b border-gray-200 dark:border-gray-600 bg-transparent focus:outline-none focus:border-indigo-400 text-gray-700 dark:text-gray-200" />
                 </div>
               </div>
             ))}
@@ -293,11 +293,11 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
 
   return (
     <div className={`flex flex-col rounded-2xl border-2 transition-colors shrink-0
-      ${isPool ? 'border-gray-200 bg-gray-50/80' : isOver ? 'border-indigo-300 bg-indigo-50/40' : 'border-gray-100 bg-white'}`}
+      ${isPool ? 'border-gray-200 dark:border-gray-600 bg-gray-50/80' : isOver ? 'border-indigo-300 bg-indigo-50/40' : 'border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800'}`}
       style={{ width: colW, minHeight: 300 }}>
-      <div className={`px-3 py-2 border-b flex items-center gap-2 ${isPool ? 'border-gray-200' : 'border-gray-100'}`}>
+      <div className={`px-3 py-2 border-b flex items-center gap-2 ${isPool ? 'border-gray-200' : 'border-gray-100 dark:border-gray-700'}`}>
         {dragHandleProps && (
-          <span {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 shrink-0 touch-none" title="Déplacer le groupe">
+          <span {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-gray-300 dark:text-gray-600 hover:text-gray-500 shrink-0 touch-none" title="Déplacer le groupe">
             <GripHorizontal size={13} />
           </span>
         )}
@@ -309,25 +309,25 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
               className="w-full text-xs font-semibold border-b border-indigo-400 outline-none bg-transparent" />
           ) : (
             <button onClick={() => !isPool && setEditing(true)}
-              className={`text-xs font-bold truncate text-left w-full ${isPool ? 'text-gray-500 cursor-default' : 'text-gray-700 hover:text-indigo-600'}`}>
+              className={`text-xs font-bold truncate text-left w-full ${isPool ? 'text-gray-500 cursor-default' : 'text-gray-700 dark:text-gray-200 hover:text-indigo-600'}`}>
               {group.name}
             </button>
           )}
         </div>
-        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${isPool ? 'bg-gray-200 text-gray-600' : 'bg-indigo-100 text-indigo-600'}`}>
+        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${isPool ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300' : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'}`}>
           {eleves.length}
         </span>
         {!isPool && garconCount > 0 && (
-          <span className="text-[10px] font-semibold bg-green-100 text-green-600 px-1.5 py-0.5 rounded-full">{garconCount}G</span>
+          <span className="text-[10px] font-semibold bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full">{garconCount}G</span>
         )}
         {!isPool && filleCount > 0 && (
-          <span className="text-[10px] font-semibold bg-red-100 text-red-500 px-1.5 py-0.5 rounded-full">{filleCount}F</span>
+          <span className="text-[10px] font-semibold bg-red-100 dark:bg-red-900 text-red-500 dark:text-red-400 px-1.5 py-0.5 rounded-full">{filleCount}F</span>
         )}
         {arCount > 0 && (
-          <span className="text-[10px] font-semibold bg-orange-100 text-orange-600 px-1 py-0.5 rounded-full">{arCount}AR</span>
+          <span className="text-[10px] font-semibold bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-400 px-1 py-0.5 rounded-full">{arCount}AR</span>
         )}
         {!isPool && (
-          <button onClick={() => onDelete(group.id)} className="text-gray-300 hover:text-red-400 ml-0.5"><X size={12} /></button>
+          <button onClick={() => onDelete(group.id)} className="text-gray-300 dark:text-gray-600 hover:text-red-400 ml-0.5"><X size={12} /></button>
         )}
       </div>
       <div ref={setNodeRef} className={`flex-1 flex flex-col gap-1.5 p-1.5 overflow-y-auto transition-colors ${isOver ? 'bg-indigo-50/60' : ''}`}
@@ -342,7 +342,7 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
         </SortableContext>
         {eleves.length === 0 && (
           <div className="flex-1 flex items-center justify-center py-6">
-            <p className="text-xs text-gray-300">{isPool ? 'Tous placés ✓' : 'Déposer ici'}</p>
+            <p className="text-xs text-gray-300 dark:text-gray-600">{isPool ? 'Tous placés ✓' : 'Déposer ici'}</p>
           </div>
         )}
       </div>
@@ -406,9 +406,9 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
       {/* Nom */}
       {showName && (
         <div>
-          <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Nom de la composition</label>
+          <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5 block">Nom de la composition</label>
           <input value={compositionName} onChange={e => setCompositionName(e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
+            className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400"
             placeholder="Ex : Classes de 3e — 2026-2027" />
         </div>
       )}
@@ -416,8 +416,8 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
       {/* Source */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-xs font-semibold text-gray-600">Source — Élèves</label>
-          <button onClick={onReload} className="p-1 hover:bg-gray-100 rounded text-gray-400">
+          <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Source — Élèves</label>
+          <button onClick={onReload} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 dark:text-gray-500">
             <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
@@ -430,18 +430,18 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
         {/* Exclure */}
         <div className="mb-2">
           <div className="flex items-center gap-1.5 mb-1">
-            <MinusCircle size={11} className="text-red-400" />
-            <span className="text-xs font-medium text-gray-500">Exclure un élève</span>
+            <MinusCircle size={11} className="text-red-400 dark:text-red-300" />
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Exclure un élève</span>
             {excludedIds.size > 0 && (
               <button onClick={() => setExcludedIds(new Set())}
-                className="ml-auto text-xs text-red-400 hover:text-red-600">Tout retirer</button>
+                className="ml-auto text-xs text-red-400 dark:text-red-300 hover:text-red-600">Tout retirer</button>
             )}
           </div>
           <div className="relative">
-            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input value={eleveSearch} onChange={e => setEleveSearch(e.target.value)}
               placeholder="Rechercher un élève à exclure…"
-              className="w-full text-xs border border-gray-200 rounded-lg pl-7 pr-3 py-1.5 focus:outline-none focus:border-red-300" />
+              className="w-full text-xs border border-gray-200 dark:border-gray-600 rounded-lg pl-7 pr-3 py-1.5 focus:outline-none focus:border-red-300" />
           </div>
           {/* Résultats recherche exclusion */}
           {eleveSearch && (
@@ -454,9 +454,9 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
                   setEleveSearch('')
                 }}
                   className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs border transition-colors
-                    ${excludedIds.has(e.id) ? 'bg-red-50 border-red-200 text-red-500' : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-red-300 hover:bg-red-50'}`}>
-                  {excludedIds.has(e.id) ? <CheckCircle2 size={9} className="text-red-400" /> : <MinusCircle size={9} className="text-gray-300" />}
-                  {e.nom} {e.prenom} <span className="text-gray-400">· {e.classe}</span>
+                    ${excludedIds.has(e.id) ? 'bg-red-50 border-red-200 dark:border-red-800 text-red-500 dark:text-red-400' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-red-300 hover:bg-red-50'}`}>
+                  {excludedIds.has(e.id) ? <CheckCircle2 size={9} className="text-red-400 dark:text-red-300" /> : <MinusCircle size={9} className="text-gray-300 dark:text-gray-600" />}
+                  {e.nom} {e.prenom} <span className="text-gray-400 dark:text-gray-500">· {e.classe}</span>
                 </button>
               ))}
             </div>
@@ -465,7 +465,7 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
           {excludedIds.size > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5">
               {allEleves.filter(e => excludedIds.has(e.id)).map(e => (
-                <span key={e.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-red-50 border border-red-200 text-red-600">
+                <span key={e.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
                   {e.nom} {e.prenom} · {e.classe}
                   <button onClick={() => setExcludedIds(prev => { const n = new Set(prev); n.delete(e.id); return n })}
                     className="ml-0.5 hover:text-red-800"><X size={9} /></button>
@@ -479,17 +479,17 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
         <div className="mb-2">
           <div className="flex items-center gap-1.5 mb-1">
             <PlusCircle size={11} className="text-emerald-500" />
-            <span className="text-xs font-medium text-gray-500">Ajouter un élève hors filtre</span>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ajouter un élève hors filtre</span>
             {includedIds.size > 0 && (
               <button onClick={() => setIncludedIds(new Set())}
-                className="ml-auto text-xs text-emerald-600 hover:text-emerald-800">Tout retirer</button>
+                className="ml-auto text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800">Tout retirer</button>
             )}
           </div>
           <div className="relative">
-            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input value={includeSearch} onChange={e => setIncludeSearch(e.target.value)}
               placeholder="Rechercher un élève à ajouter…"
-              className="w-full text-xs border border-gray-200 rounded-lg pl-7 pr-3 py-1.5 focus:outline-none focus:border-emerald-300" />
+              className="w-full text-xs border border-gray-200 dark:border-gray-600 rounded-lg pl-7 pr-3 py-1.5 focus:outline-none focus:border-emerald-300" />
           </div>
           {/* Résultats recherche inclusion */}
           {includeSearch && (
@@ -502,9 +502,9 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
                   setIncludeSearch('')
                 }}
                   className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs border transition-colors
-                    ${includedIds.has(e.id) ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-emerald-300 hover:bg-emerald-50'}`}>
-                  {includedIds.has(e.id) ? <CheckCircle2 size={9} className="text-emerald-500" /> : <PlusCircle size={9} className="text-gray-300" />}
-                  {e.nom} {e.prenom} <span className="text-gray-400">· {e.classe}</span>
+                    ${includedIds.has(e.id) ? 'bg-emerald-50 border-emerald-200 text-emerald-600 dark:text-emerald-400' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-emerald-300 hover:bg-emerald-50'}`}>
+                  {includedIds.has(e.id) ? <CheckCircle2 size={9} className="text-emerald-500" /> : <PlusCircle size={9} className="text-gray-300 dark:text-gray-600" />}
+                  {e.nom} {e.prenom} <span className="text-gray-400 dark:text-gray-500">· {e.classe}</span>
                 </button>
               ))}
             </div>
@@ -513,7 +513,7 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
           {includedIds.size > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5">
               {allEleves.filter(e => includedIds.has(e.id)).map(e => (
-                <span key={e.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-50 border border-emerald-200 text-emerald-700">
+                <span key={e.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 text-emerald-700 dark:text-emerald-300">
                   {e.nom} {e.prenom} · {e.classe}
                   <button onClick={() => setIncludedIds(prev => { const n = new Set(prev); n.delete(e.id); return n })}
                     className="ml-0.5 hover:text-emerald-900"><X size={9} /></button>
@@ -525,26 +525,26 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
 
         {/* Compteur */}
         <div className="flex items-center gap-1.5">
-          <Users size={12} className="text-indigo-400" />
-          <span className="text-xs text-gray-600">
-            <span className="font-bold text-indigo-600">{filteredCount}</span> élève{filteredCount !== 1 ? 's' : ''} sélectionné{filteredCount !== 1 ? 's' : ''}
+          <Users size={12} className="text-indigo-400 dark:text-indigo-300" />
+          <span className="text-xs text-gray-600 dark:text-gray-300">
+            <span className="font-bold text-indigo-600 dark:text-indigo-400">{filteredCount}</span> élève{filteredCount !== 1 ? 's' : ''} sélectionné{filteredCount !== 1 ? 's' : ''}
           </span>
-          {includedIds.size > 0 && <span className="text-xs text-emerald-600">+{includedIds.size} ajouté{includedIds.size > 1 ? 's' : ''}</span>}
-          {excludedIds.size > 0 && <span className="text-xs text-red-500">−{excludedIds.size} exclus</span>}
+          {includedIds.size > 0 && <span className="text-xs text-emerald-600 dark:text-emerald-400">+{includedIds.size} ajouté{includedIds.size > 1 ? 's' : ''}</span>}
+          {excludedIds.size > 0 && <span className="text-xs text-red-500 dark:text-red-400">−{excludedIds.size} exclus</span>}
         </div>
       </div>
 
       {/* Champs vignettes */}
       <div>
-        <label className="text-xs font-semibold text-gray-600 mb-2 block">Champs affichés sur les vignettes</label>
+        <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2 block">Champs affichés sur les vignettes</label>
         <div className="space-y-2">
           {Object.entries(fields).map(([key, field]) => (
             <div key={key} className="flex items-center gap-2.5">
               <button onClick={() => setFields(prev => ({ ...prev, [key]: { ...prev[key], enabled: !prev[key].enabled } }))}
-                className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${field.enabled ? 'bg-indigo-500' : 'bg-gray-200'}`}>
-                <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all ${field.enabled ? 'left-[18px]' : 'left-0.5'}`} />
+                className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${field.enabled ? 'bg-indigo-500' : 'bg-gray-200 dark:bg-gray-600'}`}>
+                <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white dark:bg-gray-800 shadow transition-all ${field.enabled ? 'left-[18px]' : 'left-0.5'}`} />
               </button>
-              <span className={`text-sm ${field.enabled ? 'text-gray-700' : 'text-gray-400'}`}>{field.label}</span>
+              <span className={`text-sm ${field.enabled ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500'}`}>{field.label}</span>
             </div>
           ))}
         </div>
@@ -552,12 +552,12 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
 
       {/* Champs personnalisés */}
       <div>
-        <label className="text-xs font-semibold text-gray-600 mb-2 block">Champs personnalisés</label>
+        <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2 block">Champs personnalisés</label>
         <div className="flex gap-2 mb-2">
           <input value={newCFLabel} onChange={e => setNewCFLabel(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addCustomField()}
             placeholder="Nom du champ…"
-            className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-400" />
+            className="flex-1 text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-400" />
           <button onClick={addCustomField} className="text-xs font-semibold bg-indigo-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-indigo-700">
             <Plus size={12} />
           </button>
@@ -565,28 +565,28 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
         {customFields.length > 0 && (
           <div className="space-y-1">
             {customFields.map(cf => (
-              <div key={cf.id} className="flex items-center justify-between bg-gray-50 rounded px-2.5 py-1.5 border border-gray-100">
-                <span className="text-xs font-medium text-gray-700">{cf.label}</span>
-                <button onClick={() => setCustomFields(prev => prev.filter(f => f.id !== cf.id))} className="text-gray-300 hover:text-red-400">
+              <div key={cf.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded px-2.5 py-1.5 border border-gray-100 dark:border-gray-700">
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-200">{cf.label}</span>
+                <button onClick={() => setCustomFields(prev => prev.filter(f => f.id !== cf.id))} className="text-gray-300 dark:text-gray-600 hover:text-red-400">
                   <Trash2 size={11} />
                 </button>
               </div>
             ))}
           </div>
         )}
-        {customFields.length === 0 && <p className="text-xs text-gray-400">Aucun champ personnalisé.</p>}
+        {customFields.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-500">Aucun champ personnalisé.</p>}
 
         {/* Export / Import Excel */}
         {(onExport || onImport) && (
-          <div className="flex gap-2 pt-1 border-t border-gray-100 mt-2">
+          <div className="flex gap-2 pt-1 border-t border-gray-100 dark:border-gray-700 mt-2">
             {onExport && (
               <button onClick={onExport}
-                className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1.5 rounded-lg transition-colors flex-1 justify-center">
+                className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1.5 rounded-lg transition-colors flex-1 justify-center">
                 <FileDown size={12} /> Exporter vers Excel
               </button>
             )}
             {onImport && (
-              <label className="flex items-center gap-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1.5 rounded-lg transition-colors flex-1 justify-center cursor-pointer">
+              <label className="flex items-center gap-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 border border-blue-200 px-2.5 py-1.5 rounded-lg transition-colors flex-1 justify-center cursor-pointer">
                 <FileUp size={12} /> Importer depuis Excel
                 <input type="file" accept=".xlsx,.xls" className="hidden" onChange={onImport} />
               </label>
@@ -1112,7 +1112,7 @@ export default function Compositions() {
               <input type="file" accept=".json" className="hidden" onChange={importJSON} />
             </label>
             <button onClick={openCreateModal}
-              className="flex items-center gap-1.5 text-xs font-semibold bg-white text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
+              className="flex items-center gap-1.5 text-xs font-semibold bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
               <Plus size={13} /> Nouveau projet
             </button>
           </div>
@@ -1121,7 +1121,7 @@ export default function Compositions() {
 
       <div className="flex-1 overflow-y-auto p-6">
         {!dbLoading && hasLocalData && (
-          <div className="mb-4 flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <div className="mb-4 flex items-center justify-between gap-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 rounded-xl px-4 py-3">
             <div className="flex items-center gap-2 text-sm text-amber-800">
               <span className="text-base">📦</span>
               <span>Des projets de l'ancienne version (stockage local) ont été détectés. Importer vers Supabase pour les retrouver partout ?</span>
@@ -1133,14 +1133,14 @@ export default function Compositions() {
           </div>
         )}
         {dbLoading ? (
-          <div className="flex items-center justify-center h-full text-gray-400 text-sm">Chargement…</div>
+          <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500 text-sm">Chargement…</div>
         ) : savedList.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4">
-              <LayoutGrid size={28} className="text-indigo-400" />
+            <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-950 rounded-2xl flex items-center justify-center mb-4">
+              <LayoutGrid size={28} className="text-indigo-400 dark:text-indigo-300" />
             </div>
-            <h3 className="text-base font-semibold text-gray-700 mb-1">Aucun projet de composition</h3>
-            <p className="text-sm text-gray-400 mb-6">Créez votre premier projet pour commencer à composer les classes.</p>
+            <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-1">Aucun projet de composition</h3>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mb-6">Créez votre premier projet pour commencer à composer les classes.</p>
             <button onClick={openCreateModal}
               className="flex items-center gap-2 bg-indigo-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors">
               <Plus size={16} /> Créer un projet
@@ -1151,7 +1151,7 @@ export default function Compositions() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
               {/* Carte + Nouveau */}
               <button onClick={openCreateModal}
-                className="flex flex-col items-center justify-center gap-2 h-40 rounded-2xl border-2 border-dashed border-indigo-200 text-indigo-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/40 transition-all">
+                className="flex flex-col items-center justify-center gap-2 h-40 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-800 text-indigo-400 dark:text-indigo-300 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/40 transition-all">
                 <Plus size={24} />
                 <span className="text-sm font-semibold">Nouveau projet</span>
               </button>
@@ -1163,35 +1163,35 @@ export default function Compositions() {
                 const placed = Object.values(d.assignments || {}).filter(v => v !== POOL_ID).length
                 return (
                   <div key={entry.id}
-                    className="relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all group cursor-pointer flex flex-col"
+                    className="relative bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all group cursor-pointer flex flex-col"
                     onClick={() => loadComposition(entry)}>
                     <div className="flex-1 p-4">
                       <div className="flex items-start justify-between mb-3">
-                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
-                          <LayoutGrid size={18} className="text-indigo-500" />
+                        <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-950 rounded-xl flex items-center justify-center shrink-0">
+                          <LayoutGrid size={18} className="text-indigo-500 dark:text-indigo-400" />
                         </div>
                         <button onClick={e => { e.stopPropagation(); deleteComposition(entry.id) }}
-                          className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all">
+                          className="opacity-0 group-hover:opacity-100 text-gray-300 dark:text-gray-600 hover:text-red-400 transition-all">
                           <Trash2 size={14} />
                         </button>
                       </div>
-                      <h3 className="text-sm font-bold text-gray-800 mb-1 leading-tight">{entry.name}</h3>
-                      <div className="flex items-center gap-1 text-xs text-gray-400 mb-3">
+                      <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-1 leading-tight">{entry.name}</h3>
+                      <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 mb-3">
                         <Calendar size={11} />
                         {new Date(entry.date).toLocaleDateString('fr-BE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </div>
                       <div className="flex gap-2 flex-wrap">
-                        <span className="text-[11px] font-medium bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">
+                        <span className="text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full">
                           {groupCount} groupe{groupCount !== 1 ? 's' : ''}
                         </span>
-                        <span className="text-[11px] font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                        <span className="text-[11px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
                           {placed} placé{placed !== 1 ? 's' : ''}
                         </span>
                       </div>
                     </div>
-                    <div className="px-4 py-2.5 border-t border-gray-50 flex items-center justify-between">
-                      <span className="text-xs text-gray-400">Ouvrir le board</span>
-                      <ChevronRight size={14} className="text-gray-300 group-hover:text-indigo-400 transition-colors" />
+                    <div className="px-4 py-2.5 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
+                      <span className="text-xs text-gray-400 dark:text-gray-500">Ouvrir le board</span>
+                      <ChevronRight size={14} className="text-gray-300 dark:text-gray-600 group-hover:text-indigo-400 transition-colors" />
                     </div>
                   </div>
                 )
@@ -1204,10 +1204,10 @@ export default function Compositions() {
       {/* ── Modal Créer ─────────────────────────────────────────────── */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowCreateModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-              <h3 className="text-sm font-bold text-gray-800">Nouveau projet de composition</h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0">
+              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Nouveau projet de composition</h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={16} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-6">
               <ConfigForm
@@ -1221,8 +1221,8 @@ export default function Compositions() {
                 showName
               />
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex gap-2 justify-end shrink-0">
-              <button onClick={() => setShowCreateModal(false)} className="text-sm text-gray-500 px-4 py-2 hover:text-gray-700">Annuler</button>
+            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex gap-2 justify-end shrink-0">
+              <button onClick={() => setShowCreateModal(false)} className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 hover:text-gray-700 dark:hover:text-gray-200">Annuler</button>
               <button onClick={confirmCreate}
                 className="text-sm font-semibold bg-indigo-600 text-white px-5 py-2 rounded-xl hover:bg-indigo-700 flex items-center gap-2">
                 <LayoutGrid size={14} /> Créer la composition
@@ -1344,7 +1344,7 @@ export default function Compositions() {
             ))}
             </SortableContext>
             <button onClick={addGroup}
-              className="shrink-0 w-[170px] h-20 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-indigo-300 hover:text-indigo-400 transition-colors flex flex-col items-center justify-center gap-1">
+              className="shrink-0 w-[170px] h-20 border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-2xl text-gray-400 dark:text-gray-500 hover:border-indigo-300 hover:text-indigo-400 transition-colors flex flex-col items-center justify-center gap-1">
               <Plus size={18} /><span className="text-xs font-medium">Nouveau groupe</span>
             </button>
           </div>
@@ -1380,11 +1380,11 @@ export default function Compositions() {
       {/* ── Modal Configuration ──────────────────────────────────────── */}
       {showConfigModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowConfigModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-              <h3 className="text-sm font-bold text-gray-800">Configuration — {compositionName}</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0">
+              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Configuration — {compositionName}</h3>
 
-                <button onClick={() => setShowConfigModal(false)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
+                <button onClick={() => setShowConfigModal(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={16} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-6">
               <ConfigForm
@@ -1398,7 +1398,7 @@ export default function Compositions() {
                 showName onExport={exportXLSX} onImport={importXLSX}
               />
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end shrink-0">
+            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end shrink-0">
               <button onClick={() => setShowConfigModal(false)}
                 className="text-sm font-semibold bg-indigo-600 text-white px-5 py-2 rounded-xl hover:bg-indigo-700">
                 Fermer

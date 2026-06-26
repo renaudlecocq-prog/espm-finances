@@ -36,7 +36,7 @@ function SystemEvent({ m }) {
   const meta = m.meta || {}
   let Icon = Pencil
   let text = ''
-  let colorClass = 'text-blue-500'
+  let colorClass = 'text-blue-500 dark:text-blue-400'
 
   if (meta.action === 'edit') {
     Icon = Pencil
@@ -44,26 +44,26 @@ function SystemEvent({ m }) {
     text = `a modifié : ${(meta.fields || []).join(', ')}`
   } else if (meta.action === 'doc_add') {
     Icon = FileText
-    colorClass = 'text-green-500'
+    colorClass = 'text-green-500 dark:text-green-400'
     const cat = meta.categorie === 'facture' ? 'une facture' : 'un document'
     text = `a ajouté ${cat} : ${meta.filename}`
   } else if (meta.action === 'doc_del') {
     Icon = FileMinus
-    colorClass = 'text-red-400'
+    colorClass = 'text-red-400 dark:text-red-300'
     const cat = meta.categorie === 'facture' ? 'une facture' : 'un document'
     text = `a supprimé ${cat} : ${meta.filename}`
   }
 
   return (
     <div className="flex items-center gap-2 py-1 select-none">
-      <div className="flex-1 h-px bg-gray-100" />
+      <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
       <div className={`flex items-center gap-1 text-[10px] ${colorClass} shrink-0 max-w-[80%]`}>
         <Icon size={10} className="shrink-0" />
-        <span className="font-semibold text-gray-600 truncate">{m.auteur_nom}</span>
-        <span className="text-gray-400 truncate">{text}</span>
-        <span className="text-gray-300 shrink-0">· {fmtDateTime(m.created_at)}</span>
+        <span className="font-semibold text-gray-600 dark:text-gray-300 truncate">{m.auteur_nom}</span>
+        <span className="text-gray-400 dark:text-gray-500 truncate">{text}</span>
+        <span className="text-gray-300 dark:text-gray-600 shrink-0">· {fmtDateTime(m.created_at)}</span>
       </div>
-      <div className="flex-1 h-px bg-gray-100" />
+      <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
     </div>
   )
 }
@@ -170,12 +170,12 @@ export default function Commentaires({ entityType, entityId, entityLabel }) {
   return (
     <div className="flex flex-col h-full" style={{ minHeight: 0 }}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 pt-4 pb-2 border-b border-gray-100 shrink-0">
-        <MessageCircle size={14} className="text-gray-400" />
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      <div className="flex items-center gap-2 px-4 pt-4 pb-2 border-b border-gray-100 dark:border-gray-700 shrink-0">
+        <MessageCircle size={14} className="text-gray-400 dark:text-gray-500" />
+        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           Messages & journal
           {msgCount > 0 && (
-            <span className="ml-1.5 bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 text-xs font-medium">
+            <span className="ml-1.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full px-1.5 py-0.5 text-xs font-medium">
               {msgCount}
             </span>
           )}
@@ -185,9 +185,9 @@ export default function Commentaires({ entityType, entityId, entityLabel }) {
       {/* Liste */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 min-h-0">
         {loading ? (
-          <div className="text-xs text-gray-400 text-center py-4">Chargement…</div>
+          <div className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">Chargement…</div>
         ) : messages.length === 0 ? (
-          <div className="text-xs text-gray-400 text-center py-6 italic">
+          <div className="text-xs text-gray-400 dark:text-gray-500 text-center py-6 italic">
             Aucun message pour le moment.
           </div>
         ) : (
@@ -204,14 +204,14 @@ export default function Commentaires({ entityType, entityId, entityLabel }) {
                 <div className={`flex flex-col gap-0.5 max-w-[78%] ${isMe ? 'items-end' : 'items-start'}`}>
                   <div className="flex items-baseline gap-1.5">
                     {!isMe && (
-                      <span className="text-xs font-semibold text-gray-700">{m.auteur_nom}</span>
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{m.auteur_nom}</span>
                     )}
-                    <span className="text-[10px] text-gray-400">{fmtDateTime(m.created_at)}</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500">{fmtDateTime(m.created_at)}</span>
                   </div>
                   <div className={`px-3 py-2 rounded-2xl text-sm leading-snug whitespace-pre-wrap break-words
                     ${isMe
                       ? 'bg-primary text-white rounded-tr-sm'
-                      : 'bg-gray-100 text-gray-800 rounded-tl-sm'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-tl-sm'
                     }`}>
                     {m.message}
                   </div>
@@ -224,8 +224,8 @@ export default function Commentaires({ entityType, entityId, entityLabel }) {
       </div>
 
       {/* Input */}
-      <div className="px-4 pb-4 pt-2 shrink-0 border-t border-gray-50">
-        <div className="flex items-end gap-2 bg-gray-50 rounded-xl border border-gray-200 pr-1.5 pl-3 py-1.5
+      <div className="px-4 pb-4 pt-2 shrink-0 border-t border-gray-50 dark:border-gray-800">
+        <div className="flex items-end gap-2 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-600 pr-1.5 pl-3 py-1.5
           focus-within:border-primary/40 transition-colors">
           <textarea
             ref={inputRef}
@@ -234,7 +234,7 @@ export default function Commentaires({ entityType, entityId, entityLabel }) {
             onChange={e => setTexte(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Écrire un message… (Entrée)"
-            className="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-400 resize-none
+            className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 resize-none
               outline-none leading-snug py-0.5"
             style={{ maxHeight: 80 }}
           />
@@ -246,7 +246,7 @@ export default function Commentaires({ entityType, entityId, entityLabel }) {
             <Send size={13} />
           </button>
         </div>
-        <p className="text-[10px] text-gray-400 mt-1 ml-1">Shift+Entrée pour un saut de ligne</p>
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">Shift+Entrée pour un saut de ligne</p>
       </div>
     </div>
   )

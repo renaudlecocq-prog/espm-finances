@@ -63,7 +63,7 @@ export default function ClassesSelect({ value = [], onChange, disabled }) {
       </div>
 
       {open && filtered.length > 0 && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-accent rounded-lg shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-accent rounded-lg shadow-lg max-h-48 overflow-y-auto">
           {filtered.map(cls => (
             <button
               key={cls} type="button"

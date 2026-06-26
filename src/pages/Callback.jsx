@@ -63,14 +63,14 @@ export default function Callback() {
         {error ? (
           <>
             <div className="text-4xl mb-4">⚠️</div>
-            <h2 className="text-lg font-bold text-gray-800 mb-2">Connexion échouée</h2>
-            <p className="text-sm text-red-600 mb-4">{error}</p>
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Connexion échouée</h2>
+            <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>
             <a href="/login" className="btn-primary inline-flex">Retour à la connexion</a>
           </>
         ) : (
           <>
             <div className="inline-block w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-sm text-gray-600">{status}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">{status}</p>
           </>
         )}
       </div>

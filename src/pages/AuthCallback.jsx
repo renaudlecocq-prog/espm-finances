@@ -75,10 +75,10 @@ export default function AuthCallback() {
 
   if (blocked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface px-4">
+      <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-gray-950 px-4">
         <div className="max-w-md w-full card p-8 text-center">
-          <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle size={28} className="text-amber-500" />
+          <div className="w-14 h-14 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle size={28} className="text-amber-500 dark:text-amber-400" />
           </div>
           <h2 className="text-lg font-semibold text-primary mb-3">Accès non autorisé</h2>
           <p className="text-sm text-primary-lighter leading-relaxed mb-6">{blockedMsg}</p>
@@ -94,7 +94,7 @@ export default function AuthCallback() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface">
+    <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-gray-950">
       <div className="text-center">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         <p className="text-primary font-medium">{status}</p>

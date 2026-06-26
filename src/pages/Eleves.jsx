@@ -10,20 +10,20 @@ const fmt = n => Number(n || 0).toFixed(2) + ' €'
 
 const fmtSolde = v => {
   const n = Number(v || 0)
-  if (n < 0) return <span className="font-semibold text-red-600">{fmt(n)}</span>
-  if (n > 0) return <span className="font-semibold text-green-600">{fmt(n)}</span>
-  return <span className="text-gray-400">{fmt(0)}</span>
+  if (n < 0) return <span className="font-semibold text-red-600 dark:text-red-400">{fmt(n)}</span>
+  if (n > 0) return <span className="font-semibold text-green-600 dark:text-green-400">{fmt(n)}</span>
+  return <span className="text-gray-400 dark:text-gray-500">{fmt(0)}</span>
 }
 
 const fmtMoney = v => {
   const n = Number(v || 0)
   return n === 0
-    ? <span className="text-gray-400">{fmt(0)}</span>
-    : <span className="text-gray-700">{fmt(n)}</span>
+    ? <span className="text-gray-400 dark:text-gray-500">{fmt(0)}</span>
+    : <span className="text-gray-700 dark:text-gray-200">{fmt(n)}</span>
 }
 
 function SortIcon({ col, sort }) {
-  if (sort.col !== col) return <ChevronsUpDown size={11} className="text-gray-300 ml-0.5 shrink-0" />
+  if (sort.col !== col) return <ChevronsUpDown size={11} className="text-gray-300 dark:text-gray-600 ml-0.5 shrink-0" />
   return sort.dir === 'asc'
     ? <ChevronUp   size={11} className="text-primary ml-0.5 shrink-0" />
     : <ChevronDown size={11} className="text-primary ml-0.5 shrink-0" />
@@ -150,7 +150,7 @@ export default function Eleves() {
   const toggleSort = col =>
     setSort(s => s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'asc' })
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Chargement…</div>
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   const totalW = COLS.reduce((s, c) => s + c.w, 0)
   const hasFilters = search || Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
@@ -182,7 +182,7 @@ export default function Eleves() {
       <div className="card p-0 flex-1 overflow-auto min-h-0">
         <table className="text-sm border-collapse w-full" style={{ minWidth: totalW + 'px' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 20 }}>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-600">
               {COLS.map(c => {
                 const isSticky = c.sticky !== undefined
                 return (
@@ -192,8 +192,8 @@ export default function Eleves() {
                       ...(isSticky ? { width: c.w, minWidth: c.w, position: 'sticky', left: c.sticky, zIndex: 30 } : { minWidth: c.w }),
                       textAlign: c.align || 'left',
                     }}
-                    className={`px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase
-                      bg-gray-50 border-r border-gray-100 last:border-r-0 whitespace-nowrap
+                    className={`px-3 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase
+                      bg-gray-50 dark:bg-gray-900 border-r border-gray-100 dark:border-gray-700 last:border-r-0 whitespace-nowrap
                       ${!c.noSort ? 'cursor-pointer select-none hover:text-primary' : ''}`}
                   >
                     <span className={`flex items-center gap-0.5 ${c.align === 'right' ? 'justify-end' : c.align === 'center' ? 'justify-center' : ''}`}>
@@ -206,11 +206,11 @@ export default function Eleves() {
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={COLS.length} className="px-4 py-10 text-center text-gray-400">Aucun élève</td></tr>
+              <tr><td colSpan={COLS.length} className="px-4 py-10 text-center text-gray-400 dark:text-gray-500">Aucun élève</td></tr>
             ) : filtered.map(row => (
               <tr key={row.id}
                 onClick={() => setFicheId(row.id)}
-                className="border-b border-gray-50 hover:bg-primary/5 cursor-pointer group">
+                className="border-b border-gray-50 dark:border-gray-800 hover:bg-primary/5 cursor-pointer group">
                 {COLS.map((c, i) => {
                   const isSticky = c.sticky !== undefined
                   let cell
@@ -220,15 +220,15 @@ export default function Eleves() {
                   else if (c.key === '_ech')   cell = fmtMoney(row._ech)
                   else if (c.key === '_as') {
                     const ORG_COLORS = {
-                      cpas:  'bg-purple-100 text-purple-700',
-                      ulb:   'bg-blue-100 text-blue-700',
-                      spj:   'bg-green-100 text-green-700',
-                      autre: 'bg-red-100 text-red-700',
+                      cpas:  'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+                      ulb:   'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+                      spj:   'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+                      autre: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
                     }
                     const orgs = row._asOrganismes || []
                     cell = orgs.length > 0
                       ? <span className="inline-flex flex-wrap gap-1">{orgs.map(o => (
-                          <span key={o} className={`inline-block rounded-full text-xs px-1.5 py-0.5 font-medium leading-none ${ORG_COLORS[o] || 'bg-gray-100 text-gray-600'}`}>
+                          <span key={o} className={`inline-block rounded-full text-xs px-1.5 py-0.5 font-medium leading-none ${ORG_COLORS[o] || 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}>
                             {o.toUpperCase()}
                           </span>
                         ))}</span>
@@ -242,11 +242,11 @@ export default function Eleves() {
                         ...(isSticky ? { width: c.w, minWidth: c.w, position: 'sticky', left: c.sticky, zIndex: 10 } : { minWidth: c.w }),
                         textAlign: c.align || 'left',
                       }}
-                      className={`px-3 py-2 whitespace-nowrap border-r border-gray-50 last:border-r-0
-                        bg-white group-hover:bg-primary/5
-                        ${i < 2 ? 'font-medium text-gray-800' : 'text-gray-600 text-sm'}`}
+                      className={`px-3 py-2 whitespace-nowrap border-r border-gray-50 dark:border-gray-800 last:border-r-0
+                        bg-white dark:bg-gray-800 group-hover:bg-primary/5
+                        ${i < 2 ? 'font-medium text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-gray-300 text-sm'}`}
                     >
-                      {cell ?? <span className="text-gray-300 select-none">—</span>}
+                      {cell ?? <span className="text-gray-300 dark:text-gray-600 select-none">—</span>}
                     </td>
                   )
                 })}

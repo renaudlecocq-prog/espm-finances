@@ -106,7 +106,7 @@ function generateComment(encoding, subjects, competencies, templates, eleve, res
 
 // ── Status badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
-  if (!status) return <span className="text-gray-300 text-xs">—</span>
+  if (!status) return <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
   return (
     <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium"
       style={{ backgroundColor: status.color + '20', color: status.color }}>
@@ -127,18 +127,18 @@ function EleveRow({ eleve, encoding, status, active, onClick }) {
       className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all flex items-center gap-3 ${
         active
           ? 'bg-primary text-white border-primary shadow-sm'
-          : 'bg-white border-gray-100 hover:border-primary/30 hover:shadow-sm'
+          : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/30 hover:shadow-sm'
       }`}>
       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-        active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+        active ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
       }`}>
         {eleve.prenom?.charAt(0)}{eleve.nom?.charAt(0)}
       </div>
       <div className="flex-1 min-w-0">
-        <div className={`text-sm font-medium truncate ${active ? 'text-white' : 'text-gray-800'}`}>
+        <div className={`text-sm font-medium truncate ${active ? 'text-white' : 'text-gray-800 dark:text-gray-100'}`}>
           {eleve.nom} {eleve.prenom}
         </div>
-        <div className={`text-xs truncate ${active ? 'text-white/70' : 'text-gray-400'}`}>
+        <div className={`text-xs truncate ${active ? 'text-white/70' : 'text-gray-400 dark:text-gray-500'}`}>
           {eleve.classe}
         </div>
       </div>
@@ -388,7 +388,7 @@ export default function ConseilsDeGuidance() {
 
       {/* Notification realtime distant */}
       {lastUpdBy && (
-        <div className="mx-4 mt-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 flex items-center gap-2">
+        <div className="mx-4 mt-2 px-3 py-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
           <RefreshCw size={14} />
           Mis à jour par <strong>{lastUpdBy}</strong>
         </div>
@@ -398,8 +398,8 @@ export default function ConseilsDeGuidance() {
       <div className="flex flex-1 gap-0 overflow-hidden">
 
         {/* ── Colonne gauche : liste élèves ─────────────────────────────────── */}
-        <div className="w-72 flex-shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
-          <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs text-gray-500 font-medium flex justify-between">
+        <div className="w-72 flex-shrink-0 border-r border-gray-100 dark:border-gray-700 flex flex-col overflow-hidden">
+          <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400 font-medium flex justify-between">
             <span>{filteredEleves.length} élève{filteredEleves.length > 1 ? 's' : ''}</span>
           </div>
 
@@ -417,8 +417,8 @@ export default function ConseilsDeGuidance() {
         {/* ── Colonne droite : formulaire d'encodage ───────────────────────── */}
         <div className="flex-1 overflow-y-auto">
           {!selectedId ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
-              <Users size={48} className="text-gray-200" />
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 gap-3">
+              <Users size={48} className="text-gray-200 dark:text-gray-700" />
               <p className="text-sm">Sélectionne un élève pour commencer l'encodage</p>
             </div>
           ) : (
@@ -427,15 +427,15 @@ export default function ConseilsDeGuidance() {
               {/* Header élève */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800">
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                     {currentEleve?.nom} {currentEleve?.prenom}
                   </h2>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-gray-400 dark:text-gray-500">
                     {currentEleve?.classe} · Degré {currentDegree} · {period}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {saving && <span className="text-xs text-gray-400 flex items-center gap-1"><RefreshCw size={12} className="animate-spin"/>Enreg…</span>}
+                  {saving && <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1"><RefreshCw size={12} className="animate-spin"/>Enreg…</span>}
                   <select value={enc.status_id || ''}
                     onChange={e => update({ status_id: e.target.value || null })}
                     className="input text-sm py-1.5 w-36">
@@ -447,7 +447,7 @@ export default function ConseilsDeGuidance() {
 
               {/* ── Cas ──────────────────────────────────────────────────────── */}
               <section className="card p-4">
-                <h3 className="text-sm font-semibold text-gray-600 mb-3">Situation de l'élève</h3>
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">Situation de l'élève</h3>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { cas: 1, label: 'Bonne situation',   color: 'green',  desc: 'Résultats satisfaisants' },
@@ -457,10 +457,10 @@ export default function ConseilsDeGuidance() {
                     <button key={cas} onClick={() => update({ cas })}
                       className={`p-3 rounded-xl border-2 text-left transition-all ${
                         enc.cas === cas
-                          ? color === 'green'  ? 'border-green-500  bg-green-50  text-green-700'
-                          : color === 'yellow' ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
-                          :                      'border-red-500    bg-red-50    text-red-700'
-                          : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                          ? color === 'green'  ? 'border-green-500  bg-green-50 dark:bg-green-950  text-green-700 dark:text-green-300'
+                          : color === 'yellow' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-300'
+                          :                      'border-red-500    bg-red-50 dark:bg-red-950    text-red-700 dark:text-red-300'
+                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 text-gray-600 dark:text-gray-300'
                       }`}>
                       <div className="font-medium text-sm">{cas}. {label}</div>
                       <div className="text-xs opacity-70 mt-0.5">{desc}</div>
@@ -471,22 +471,22 @@ export default function ConseilsDeGuidance() {
 
               {/* ── Matières ─────────────────────────────────────────────────── */}
               <section className="card p-4">
-                <h3 className="text-sm font-semibold text-gray-600 mb-3">Matières</h3>
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">Matières</h3>
                 <div className="grid grid-cols-1 gap-1.5">
                   {currentSubjects.map(s => {
                     const st = enc.subject_status?.[s.id]
                     return (
                       <div key={s.id} className="flex items-center gap-2">
-                        <span className="text-sm text-gray-700 w-40 flex-shrink-0">{s.name}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-200 w-40 flex-shrink-0">{s.name}</span>
                         <div className="flex gap-1">
                           {[
-                            { key: 'echec',      label: 'Échec',      bg: 'bg-red-100 text-red-700 border-red-300'       },
-                            { key: 'difficulte', label: 'Difficulté', bg: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
-                            { key: 'NE',         label: 'NE',         bg: 'bg-gray-100 text-gray-600 border-gray-300'    },
+                            { key: 'echec',      label: 'Échec',      bg: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-300'       },
+                            { key: 'difficulte', label: 'Difficulté', bg: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-300' },
+                            { key: 'NE',         label: 'NE',         bg: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-500'    },
                           ].map(({ key, label, bg }) => (
                             <button key={key} onClick={() => toggleSubject(s.id, key)}
                               className={`text-xs px-2 py-0.5 rounded-full border transition-all ${
-                                st === key ? bg : 'border-gray-200 text-gray-400 hover:border-gray-300'
+                                st === key ? bg : 'border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-gray-300'
                               }`}>
                               {label}
                             </button>
@@ -500,7 +500,7 @@ export default function ConseilsDeGuidance() {
 
               {/* ── Compétences transversales ─────────────────────────────────── */}
               <section className="card p-4">
-                <h3 className="text-sm font-semibold text-gray-600 mb-3">Compétences transversales</h3>
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">Compétences transversales</h3>
                 <div className="flex flex-wrap gap-2">
                   {currentComps.map(c => {
                     const checked = enc.competencies?.[c.id]
@@ -509,7 +509,7 @@ export default function ConseilsDeGuidance() {
                         className={`text-sm px-3 py-1.5 rounded-lg border transition-all ${
                           checked
                             ? 'bg-primary text-white border-primary'
-                            : 'border-gray-200 text-gray-600 hover:border-primary/40'
+                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-primary/40'
                         }`}>
                         {checked && <Check size={12} className="inline mr-1" />}{c.name}
                       </button>
@@ -520,17 +520,17 @@ export default function ConseilsDeGuidance() {
 
               {/* ── Travail autonome ─────────────────────────────────────────── */}
               <section className="card p-4">
-                <h3 className="text-sm font-semibold text-gray-600 mb-3">Travail autonome (TA)</h3>
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">Travail autonome (TA)</h3>
                 <div className="flex gap-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={enc.ta_force} onChange={e => update({ ta_force: e.target.checked })}
                       className="w-4 h-4 rounded accent-green-500" />
-                    <span className="text-sm text-green-700 font-medium">Force</span>
+                    <span className="text-sm text-green-700 dark:text-green-300 font-medium">Force</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={enc.ta_faiblesse} onChange={e => update({ ta_faiblesse: e.target.checked })}
                       className="w-4 h-4 rounded accent-orange-500" />
-                    <span className="text-sm text-orange-700 font-medium">Faiblesse</span>
+                    <span className="text-sm text-orange-700 dark:text-orange-300 font-medium">Faiblesse</span>
                   </label>
                 </div>
                 <textarea value={enc.ta_manual_text || ''} onChange={e => update({ ta_manual_text: e.target.value })}
@@ -540,7 +540,7 @@ export default function ConseilsDeGuidance() {
 
               {/* ── Champs libres ─────────────────────────────────────────────── */}
               <section className="card p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-gray-600">Notes libres</h3>
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300">Notes libres</h3>
                 <div>
                   <label className="label">Freins</label>
                   <textarea value={enc.freins || ''} onChange={e => update({ freins: e.target.value })}
@@ -560,12 +560,12 @@ export default function ConseilsDeGuidance() {
 
               {/* ── Suivi ─────────────────────────────────────────────────────── */}
               <section className="card p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-gray-600">Suivi</h3>
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300">Suivi</h3>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={enc.suivi_necessaire}
                     onChange={e => update({ suivi_necessaire: e.target.checked })}
                     className="w-4 h-4 rounded accent-primary" />
-                  <span className="text-sm text-gray-700">Suivi nécessaire</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-200">Suivi nécessaire</span>
                 </label>
                 {enc.suivi_necessaire && (
                   <textarea value={enc.suivi_raisons || ''} onChange={e => update({ suivi_raisons: e.target.value })}
@@ -596,26 +596,26 @@ export default function ConseilsDeGuidance() {
               {/* ── Commentaire généré ──────────────────────────────────────── */}
               <section className="card p-4 space-y-3 border-l-4 border-accent">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <MessageSquare size={16} className="text-accent" />
                     Commentaire de bulletin généré
                   </h3>
                 </div>
                 {comment ? (
-                  <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <p className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                     {comment}
                   </p>
                 ) : (
-                  <p className="text-sm text-gray-400 italic">
+                  <p className="text-sm text-gray-400 dark:text-gray-500 italic">
                     Remplis les champs ci-dessus pour générer le commentaire automatiquement.
                   </p>
                 )}
 
                 {comment && (
-                  <div className="border-t border-gray-100 pt-3 flex justify-end">
+                  <div className="border-t border-gray-100 dark:border-gray-700 pt-3 flex justify-end">
                     <button onClick={copyComment}
                       className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all ${
-                        copied ? 'bg-green-100 text-green-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                        copied ? 'bg-green-100 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
                       }`}>
                       {copied ? <><Check size={12}/>Copié !</> : <><Copy size={12}/>Copier le commentaire</>}
                     </button>

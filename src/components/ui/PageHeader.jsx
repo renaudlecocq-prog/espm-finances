@@ -45,9 +45,9 @@ export default function PageHeader({
 
   const tabColor = (t, active) => {
     if (!active) return 'text-white/60 hover:text-white/90'
-    if (t.color === 'orange') return 'bg-white text-orange-600 shadow-sm'
-    if (t.color === 'red')    return 'bg-white text-red-600 shadow-sm'
-    return 'bg-white text-green-700 shadow-sm'
+    if (t.color === 'orange') return 'bg-white dark:bg-gray-800 text-orange-600 dark:text-orange-400 shadow-sm'
+    if (t.color === 'red')    return 'bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 shadow-sm'
+    return 'bg-white dark:bg-gray-800 text-green-700 dark:text-green-300 shadow-sm'
   }
   const countColor = (t, active) => {
     if (!active) return { color: 'rgba(255,255,255,0.38)' }

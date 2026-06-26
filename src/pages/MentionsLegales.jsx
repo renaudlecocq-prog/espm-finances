@@ -3,14 +3,14 @@ import { ArrowLeft } from 'lucide-react'
 
 const Section = ({ title, children }) => (
   <section className="mb-8">
-    <h2 className="text-lg font-semibold text-primary mb-3 pb-2 border-b border-gray-100">{title}</h2>
+    <h2 className="text-lg font-semibold text-primary mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">{title}</h2>
     <div className="text-sm text-primary-lighter leading-relaxed space-y-2">{children}</div>
   </section>
 )
 
 export default function MentionsLegales() {
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface dark:bg-gray-950">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-primary-lighter hover:text-primary mb-8 transition-colors">
           <ArrowLeft size={15} /> Retour
@@ -127,7 +127,7 @@ export default function MentionsLegales() {
           <p>Les données affichées sont issues des systèmes internes de l'école (ProEco, Smartschool). En cas d'erreur ou de divergence, contactez l'économat : <a href="mailto:renaud.lecocq@espmaritime.be" className="hover:underline">renaud.lecocq@espmaritime.be</a></p>
         </Section>
 
-        <p className="text-xs text-primary-lighter border-t border-gray-100 pt-6 mt-4">
+        <p className="text-xs text-primary-lighter border-t border-gray-100 dark:border-gray-700 pt-6 mt-4">
           Dernière mise à jour : juin 2026 · École Secondaire Plurielle Maritime · v1.04
         </p>
       </div>

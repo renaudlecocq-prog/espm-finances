@@ -33,15 +33,15 @@ function DropdownFilter({ label, options, selected, onChange }) {
       {open && (
         <div
           ref={dropRef}
-          className={`absolute top-full mt-1 z-[200] bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] max-h-64 overflow-y-auto ${alignRight ? 'right-0' : 'left-0'}`}
+          className={`absolute top-full mt-1 z-[200] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg min-w-[180px] max-h-64 overflow-y-auto ${alignRight ? 'right-0' : 'left-0'}`}
         >
           {selected.length > 0 && (
-            <button onClick={() => onChange([])} className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 border-b border-gray-100">
+            <button onClick={() => onChange([])} className="w-full text-left px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 border-b border-gray-100 dark:border-gray-700">
               Effacer la sélection
             </button>
           )}
           {options.map(opt => (
-            <label key={opt} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm">
+            <label key={opt} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer text-sm">
               <input
                 type="checkbox"
                 checked={selected.includes(opt)}
@@ -94,7 +94,7 @@ export default function DataTable({ columns, data, searchable = true, multiFilte
   return (
     <div className="card p-0">
       {(searchable || multiFilters.length > 0) && (
-        <div className="p-4 border-b border-gray-100 flex flex-wrap gap-2 items-center">
+        <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-2 items-center">
           {searchable && (
             <input
               className="input max-w-xs"
@@ -113,24 +113,24 @@ export default function DataTable({ columns, data, searchable = true, multiFilte
             />
           ))}
           {hasActiveFilters && (
-            <button onClick={clearAll} className="btn btn-sm text-red-600 border-red-200 hover:bg-red-50">
+            <button onClick={clearAll} className="btn btn-sm text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50">
               Tout effacer
             </button>
           )}
-          <span className="ml-auto text-xs text-gray-400">{rows.length} résultat{rows.length !== 1 ? 's' : ''}</span>
+          <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{rows.length} résultat{rows.length !== 1 ? 's' : ''}</span>
         </div>
       )}
       <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 280px)' }}>
         <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
+          <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
             <tr>
               {columns.map((col, i) => (
                 <th
                   key={col.key}
                   onClick={() => col.sortable !== false && toggleSort(col.key)}
-                  className={`px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap
-                    ${col.sortable !== false ? 'cursor-pointer hover:text-gray-800' : ''}
-                    ${i < stickyColumns ? `sticky z-20 bg-gray-50` : ''}`}
+                  className={`px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide whitespace-nowrap
+                    ${col.sortable !== false ? 'cursor-pointer hover:text-gray-800 dark:hover:text-gray-100' : ''}
+                    ${i < stickyColumns ? `sticky z-20 bg-gray-50 dark:bg-gray-900` : ''}`}
                   style={i < stickyColumns ? { left: columns.slice(0, i).reduce((a, c) => a + (c.width || 150), 0) } : {}}
                 >
                   {col.label}
@@ -141,17 +141,17 @@ export default function DataTable({ columns, data, searchable = true, multiFilte
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-gray-400">Aucun résultat</td></tr>
+              <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Aucun résultat</td></tr>
             ) : rows.map((row, ri) => (
               <tr
                 key={row.id ?? ri}
                 onClick={() => onRowClick?.(row)}
-                className={`border-b border-gray-50 hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''}`}
+                className={`border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 ${onRowClick ? 'cursor-pointer' : ''}`}
               >
                 {columns.map((col, i) => (
                   <td
                     key={col.key}
-                    className={`px-4 py-3 ${i < stickyColumns ? 'sticky bg-white hover:bg-gray-50 z-10' : ''}`}
+                    className={`px-4 py-3 ${i < stickyColumns ? 'sticky bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 z-10' : ''}`}
                     style={i < stickyColumns ? { left: columns.slice(0, i).reduce((a, c) => a + (c.width || 150), 0) } : {}}
                   >
                     {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
