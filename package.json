@@ -1,7 +1,7 @@
 {
   "name": "espm-finances",
   "private": true,
-  "version": "1.16.5",
+  "version": "1.16.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -22,7 +22,10 @@
     "react-is": "^19.2.7",
     "react-router-dom": "^6.21.0",
     "recharts": "^3.9.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "@blocknote/mantine": "^0.51.4",
+    "@mantine/core": "^7.0.0",
+    "@mantine/hooks": "^7.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",

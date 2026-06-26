@@ -1,3 +1,8 @@
+## [v1.16.6] — BlockNote : MantineProvider local + @mantine/core v7 + styles CSS
+- Réintégration @blocknote/mantine avec MantineProvider uniquement autour de léditeur
+- @mantine/core v7 (pas v9) + import CSS obligatoire pour Mantine v7+
+- Slash menu, toolbar et side menu fonctionnels
+
 ## [v1.16.5] — BlockNote : ajouter BlockNoteDefaultUI (slash menu, toolbar, side menu)
 - BlockNoteViewRaw nécessite BlockNoteDefaultUI pour le slash menu et la toolbar
 
