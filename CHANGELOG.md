@@ -1,3 +1,6 @@
+## [v1.16.3] — Fix useEditorChange : arguments dans le bon ordre (callback, editor)
+- Correction du crash à l'ouverture de l'éditeur BlockNote
+
 ## [v1.16.2] — Fix suppression page : mise à jour liste immédiate
 - Après suppression d'une page, la liste se rafraîchit sans rechargement
 

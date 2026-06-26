@@ -124,8 +124,8 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
     setSaveStatus(error ? 'unsaved' : 'saved')
   }, [page.id, user.id])
 
-  // ← API correcte pour BlockNote 0.51+ : useEditorChange (hook)
-  useEditorChange(editor, () => {
+  // ← API correcte pour BlockNote 0.51+ : useEditorChange(callback, editor)
+  useEditorChange(() => {
     if (isFirstChange.current) {
       isFirstChange.current = false
       return
@@ -133,7 +133,7 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
     setSaveStatus('unsaved')
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => save(editor.document), 1500)
-  })
+  }, editor)
 
   // Nettoyage du timer au démontage
   useEffect(() => {
