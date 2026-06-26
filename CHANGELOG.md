@@ -1,3 +1,9 @@
+## [v1.13.5] — PageHeader : responsive avec menu ⋯
+- Zone centrale (onglets, recherche, filtres) overflow:hidden — jamais de 2e ligne
+- Bouton ⋯ apparaît automatiquement dès que les items débordent (ResizeObserver)
+- Dropdown sous le header avec tous les items, fermeture au clic extérieur
+- Titre et actions toujours visibles à gauche / droite
+
 ## [v1.13.4] — PageHeader : layout repensé, ligne unique
 - Gauche : Titre + (séparateur) + zone scrollable → onglets, leftActions, recherche, filtres, info
 - Droite : actions spécifiques de la page (toujours fixe)
