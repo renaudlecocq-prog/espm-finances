@@ -1,3 +1,6 @@
+## [v1.13.6] — PageHeader : fix toggle bouton ⋯
+- Reclique sur ⋯ ferme correctement le dropdown (exclusion du bouton du listener mousedown extérieur)
+
 ## [v1.13.5] — PageHeader : responsive avec menu ⋯
 - Zone centrale (onglets, recherche, filtres) overflow:hidden — jamais de 2e ligne
 - Bouton ⋯ apparaît automatiquement dès que les items débordent (ResizeObserver)

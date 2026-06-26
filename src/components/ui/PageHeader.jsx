@@ -20,6 +20,7 @@ export default function PageHeader({
 }) {
   const centerRef  = useRef(null)
   const menuRef    = useRef(null)
+  const moreRef    = useRef(null)
   const [hasOverflow, setHasOverflow] = useState(false)
   const [menuOpen,    setMenuOpen]    = useState(false)
 
@@ -37,7 +38,7 @@ export default function PageHeader({
   // Fermer le menu si clic en dehors
   useEffect(() => {
     if (!menuOpen) return
-    const handler = e => { if (!menuRef.current?.contains(e.target)) setMenuOpen(false) }
+    const handler = e => { if (!menuRef.current?.contains(e.target) && !moreRef.current?.contains(e.target)) setMenuOpen(false) }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [menuOpen])
@@ -124,6 +125,7 @@ export default function PageHeader({
         {/* Bouton ⋯ — toujours dans le DOM pour stabiliser le layout, visible seulement si overflow */}
         {hasCenter && (
           <button
+            ref={moreRef}
             onClick={() => setMenuOpen(v => !v)}
             style={{
               flexShrink:0, marginLeft:'4px',
