@@ -1,5 +1,16 @@
 ## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
 
+## [v1.16.14] — EleveTableBlock fix JSONB + fix ProseMirror mouseover
+
+- Fix critique : .overlaps() ne fonctionne pas sur colonnes JSONB dans PostgREST
+  → filtre client-side pour groupes_ss (école ~400 élèves, négligeable)
+- Classes seules : filtre DB .in('classe') conservé (text column, performant)
+- Classes + groupes : requête UNION propre sans doublons
+- Fix erreurs console au survol : stopPropagation mousemove/mouseover sur le dom
+  container pour éviter que le plugin table de ProseMirror ne tente de lire .rows
+  sur notre <table> HTML (TypeError: Cannot read .rows of undefined)
+
+
 ## [v1.16.13] — EleveTableBlock UX
 
 - Dropdown classes/groupes : fermeture au clic en dehors (listener capture phase — fonctionne avec BlockNote stopPropagation)

@@ -248,34 +248,45 @@ function EleveTableDisplay({ classes, groups, columns, freeColumns, onEdit, edit
     if (!isMounted.current) return
     setLoading(true)
     try {
-      const base = () => supabase.from('eleves').select('nom, prenom, sexe, classe, groupes_ss').eq('actif', true)
-      let data = []
+      // groupes_ss est stocké en JSONB → .overlaps() ne fonctionne pas (jsonb && unknown)
+      // On filtre côté client pour les groupes, ce qui est correct pour une école (~400 élèves max)
+      let query = supabase.from('eleves').select('nom, prenom, sexe, classe, groupes_ss').eq('actif', true)
 
+      // Filtre DB uniquement sur les classes (text column → .in() fonctionne)
       if (classes.length > 0 && groups.length === 0) {
-        const { data: d, error } = await base().in('classe', classes).order('classe').order('nom')
-        if (error) throw error
-        data = d || []
-      } else if (groups.length > 0 && classes.length === 0) {
-        const { data: d, error } = await base().overlaps('groupes_ss', groups).order('classe').order('nom')
-        if (error) throw error
-        data = d || []
-      } else if (classes.length > 0 && groups.length > 0) {
-        const [r1, r2] = await Promise.all([
-          base().in('classe', classes).order('classe').order('nom'),
-          base().overlaps('groupes_ss', groups).order('classe').order('nom'),
-        ])
-        if (r1.error) throw r1.error
-        if (r2.error) throw r2.error
-        const all = [...(r1.data || []), ...(r2.data || [])]
-        const seen = new Set()
-        data = all.filter(e => {
-          const k = `${e.nom}|${e.prenom}|${e.classe}`
-          if (seen.has(k)) return false
-          seen.add(k)
-          return true
-        }).sort((a, b) =>
-          (a.classe||'').localeCompare(b.classe||'') || (a.nom||'').localeCompare(b.nom||'')
-        )
+        query = query.in('classe', classes)
+      }
+      // Si on a des groupes (seuls ou combinés), on fetch tous les actifs et on filtre en JS
+      // (pour classes+groupes : on veut UNION, pas intersection)
+
+      const { data: raw, error } = await query.order('classe').order('nom')
+      if (error) throw error
+
+      let data = raw || []
+
+      if (groups.length > 0) {
+        const groupSet = new Set(groups)
+        if (classes.length === 0) {
+          // Groupes seuls : garder uniquement les élèves appartenant à au moins un des groupes
+          data = data.filter(e => Array.isArray(e.groupes_ss) && e.groupes_ss.some(g => groupSet.has(g)))
+        } else {
+          // Classes + groupes : UNION — élèves de ces classes OU de ces groupes
+          // On a déjà filtré par classe côté DB ; on ajoute les élèves des groupes manquants
+          const { data: allForGroups, error: e2 } = await supabase
+            .from('eleves').select('nom, prenom, sexe, classe, groupes_ss').eq('actif', true)
+          if (e2) throw e2
+          const byGroup = (allForGroups || []).filter(e =>
+            Array.isArray(e.groupes_ss) && e.groupes_ss.some(g => groupSet.has(g))
+          )
+          const seen = new Set(data.map(e => `${e.nom}|${e.prenom}|${e.classe}`))
+          byGroup.forEach(e => {
+            const k = `${e.nom}|${e.prenom}|${e.classe}`
+            if (!seen.has(k)) { seen.add(k); data.push(e) }
+          })
+          data.sort((a, b) =>
+            (a.classe||'').localeCompare(b.classe||'') || (a.nom||'').localeCompare(b.nom||'')
+          )
+        }
       }
 
       if (isMounted.current) {
@@ -516,6 +527,11 @@ export const EleveTableBlock = createBlockSpec(
       dom.setAttribute('data-eleve-table', 'true')
       dom.style.width = '100%'
       dom.style.overflow = 'hidden'
+      // Empêche le plugin table de ProseMirror de traiter notre <table> HTML
+      // comme un nœud ProseMirror (évite l'erreur "Cannot read .rows of undefined")
+      const stopPM = e => e.stopPropagation()
+      dom.addEventListener('mouseover', stopPM)
+      dom.addEventListener('mousemove', stopPM)
       const root = createRoot(dom)
       root.render(React.createElement(EleveTableBlockComponent, { block, editor }))
       return {
