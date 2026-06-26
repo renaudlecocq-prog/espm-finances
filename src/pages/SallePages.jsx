@@ -248,7 +248,7 @@ function PageCard({ page, onOpen, onEdit, onDelete, onPin, canEdit }) {
       {canEdit && (
         <div ref={menuRef} className="absolute top-2 right-2">
           <button onClick={e => { e.stopPropagation(); setMenu(m => !m) }}
-            className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur flex items-center justify-center text-gray-500 hover:bg-white dark:hover:bg-gray-900 transition-all shadow-sm">
+            className="w-7 h-7 rounded-lg bg-white/80 dark:bg-gray-700/80 backdrop-blur flex items-center justify-center text-gray-500 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-600 transition-all shadow-sm">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
             </svg>
@@ -256,20 +256,20 @@ function PageCard({ page, onOpen, onEdit, onDelete, onPin, canEdit }) {
           {menu && (
             <div className="absolute right-0 top-8 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-20"
               onClick={e => e.stopPropagation()}>
-              <button onClick={() => { onOpen(page); setMenu(false) }}
+              <button onClick={e => { e.stopPropagation(); onOpen(page); setMenu(false) }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2">
                 <span>📖</span> Ouvrir
               </button>
-              <button onClick={() => { onEdit(page); setMenu(false) }}
+              <button onClick={e => { e.stopPropagation(); onEdit(page); setMenu(false) }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2">
                 <span>✏️</span> Renommer
               </button>
-              <button onClick={() => { onPin(page); setMenu(false) }}
+              <button onClick={e => { e.stopPropagation(); onPin(page); setMenu(false) }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2">
                 <span>{page.pinned ? '📌' : '📍'}</span> {page.pinned ? 'Désépingler' : 'Épingler'}
               </button>
               <div className="border-t border-gray-100 dark:border-gray-700" />
-              <button onClick={() => { onDelete(page); setMenu(false) }}
+              <button onClick={e => { e.stopPropagation(); onDelete(page); setMenu(false) }}
                 className="w-full px-3 py-2 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
                 <span>🗑️</span> Supprimer
               </button>
