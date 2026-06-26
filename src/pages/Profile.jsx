@@ -46,7 +46,7 @@ export default function Profile() {
   const [notifSaving,setNotifSaving]= useState(false)
   const [notifMsg,   setNotifMsg]   = useState(null)
 
-  const hasPassword = profile?.has_password ?? false
+  const hasPassword = profile?.has_password || user?.identities?.some(i => i.provider === 'email') || (user?.app_metadata?.providers ?? []).includes('email')
 
   useEffect(() => {
     if (profile?.notif_schedule && Object.keys(profile.notif_schedule).length > 0) {

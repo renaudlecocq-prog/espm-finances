@@ -1,4 +1,6 @@
-## [v1.14.0] — Profil personnel
+## [v1.14.1] — Fix détection mot de passe existant
+- Fix : `hasPassword` détecte maintenant l'identité email via `user.identities` en plus de `has_password` (évite le cas où des utilisateurs ayant un MDP avant l'ajout de la colonne devaient quand même re-saisir l'ancien)
+- DB : `has_password = true` mis à jour pour les comptes existants concernés
 - Clic sur le nom dans la sidebar → page /profile (rôle responsable exclu)
 - Onglet Sécurité : définir ou modifier son mot de passe (re-auth si MDP existant)
 - Onglet Notifications : plages silencieuses (heures + jours) — badge + temps réel coupés
