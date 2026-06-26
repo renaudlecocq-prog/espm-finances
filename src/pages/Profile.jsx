@@ -256,19 +256,35 @@ export default function Profile() {
           {/* ── Préférences ── */}
           {tab === 'preferences' && (
             <>
-              {[
-                { icon: <Palette size={18} className="text-purple-500 dark:text-purple-400" />, bg: 'bg-purple-50 dark:bg-purple-950', title: 'Thème', desc: "Choisissez le thème visuel de l'application" },
-                { icon: <Home     size={18} className="text-blue-500 dark:text-blue-400"   />, bg: 'bg-blue-50 dark:bg-blue-950',   title: "Page d'accueil", desc: 'Personnalisez les widgets de votre tableau de bord' },
-              ].map(item => (
-                <div key={item.title} className={`${card} flex items-center gap-4`}>
-                  <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center shrink-0`}>{item.icon}</div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="font-semibold text-gray-800 dark:text-gray-100">{item.title}</h2>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.desc}</p>
-                  </div>
-                  <span className="text-xs font-semibold bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-2.5 py-1 rounded-full shrink-0">À venir</span>
+              {/* Thème — dark mode toggle */}
+              <div className={`${card} flex items-center gap-4`}>
+                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900 flex items-center justify-center shrink-0">
+                  <Palette size={18} className="text-purple-500 dark:text-purple-400" />
                 </div>
-              ))}
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-semibold text-gray-800 dark:text-gray-100">Thème</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{dark ? 'Mode sombre activé' : 'Mode clair activé'}</p>
+                </div>
+                <button
+                  onClick={toggle}
+                  aria-label="Basculer le thème"
+                  className={`relative w-12 h-6 rounded-full transition-colors duration-200 shrink-0 ${dark ? 'bg-indigo-600' : 'bg-gray-300'}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${dark ? 'translate-x-6' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              {/* Page d'accueil — à venir */}
+              <div className={`${card} flex items-center gap-4`}>
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950 flex items-center justify-center shrink-0">
+                  <Home size={18} className="text-blue-500 dark:text-blue-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-semibold text-gray-800 dark:text-gray-100">{"Page d'accueil"}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Personnalisez les widgets de votre tableau de bord</p>
+                </div>
+                <span className="text-xs font-semibold bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-2.5 py-1 rounded-full shrink-0">À venir</span>
+              </div>
             </>
           )}
 
