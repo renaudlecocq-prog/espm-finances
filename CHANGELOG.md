@@ -1,3 +1,6 @@
+## [v1.15.8] — Fix dark mode : MiniStat Home illisibles
+- Home.jsx : MiniStat color variants → dark:text-*-200 pour blue/red/green/orange/indigo/purple
+
 ## [v1.15.7] — Fix dark mode : compteur élèves concernés illisible
 - Articles.jsx : nbEleves → text-primary dark:text-accent
 
