@@ -83,6 +83,7 @@ export default function Admin() {
   const [overrideFeature, setOverrideFeature] = useState('')
   const [overrideEnabled, setOverrideEnabled] = useState(true)
   const [protectModal, setProtectModal] = useState(null) // {type:'blocked'|'confirm', newRole, targetId, otherEmail}
+  const [transferModal, setTransferModal] = useState(null) // {newRole, targetId, recipientId}
 
   // ── Gestion des droits ───────────────────────────────────────────────────
   const loadDroits = useCallback(async () => {
@@ -149,6 +150,15 @@ export default function Admin() {
     setProtectModal(null)
   }
 
+  const confirmTransfer = async () => {
+    if (!transferModal?.recipientId) return
+    // Atomique : 1. promouvoir le destinataire en super_admin, 2. changer le rôle du super_admin actuel
+    await supabase.from('profiles').update({ role: 'super_admin' }).eq('id', transferModal.recipientId)
+    await supabase.from('profiles').update({ role: transferModal.newRole }).eq('id', transferModal.targetId)
+    await loadUsers()
+    setTransferModal(null)
+  }
+
   const updateRole = async (id, newRole) => {
     const targetUser = users.find(u => u.id === id)
     // Protections super_admin
@@ -156,8 +166,13 @@ export default function Admin() {
       if (targetUser?.role === 'super_admin') return // un admin normal ne peut pas toucher un super_admin
       if (newRole === 'super_admin') return // un admin normal ne peut pas promouvoir en super_admin
     }
-    // Protection : empêcher de se retirer son propre rang sans successeur
-    if (id === user?.id && ['admin', 'super_admin'].includes(myRole) && !['admin', 'super_admin'].includes(newRole)) {
+    // Protection super_admin : transfert obligatoire avant auto-démote
+    if (id === user?.id && myRole === 'super_admin' && newRole !== 'super_admin') {
+      setTransferModal({ newRole, targetId: id, recipientId: '' })
+      return
+    }
+    // Protection admin : empêcher de se retirer le dernier rang privilégié
+    if (id === user?.id && myRole === 'admin' && !['admin', 'super_admin'].includes(newRole)) {
       const otherPrivileged = users.filter(u => ['admin', 'super_admin'].includes(u.role) && u.id !== id)
       if (otherPrivileged.length === 0) {
         setProtectModal({ type: 'blocked', newRole, targetId: id })
@@ -694,6 +709,47 @@ export default function Admin() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL TRANSFERT SUPER ADMIN ─────────────── */}
+      {transferModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <div className="text-3xl mb-3 text-center">👑</div>
+            <h3 className="font-bold text-purple-700 mb-2 text-center">Transférer le grade Super Admin</h3>
+            <p className="text-sm text-gray-600 mb-1 text-center">
+              Le grade <strong>Super Admin</strong> doit toujours être attribué à quelqu'un.
+            </p>
+            <p className="text-sm text-gray-600 mb-4 text-center">
+              Choisissez à qui le transférer avant de changer votre propre rôle.
+            </p>
+            <div className="mb-4">
+              <label className="label mb-1">Nouveau Super Admin</label>
+              <select className="input" value={transferModal.recipientId}
+                onChange={e => setTransferModal(m => ({ ...m, recipientId: e.target.value }))}>
+                <option value="">— Sélectionner un utilisateur —</option>
+                {users.filter(u => u.id !== user?.id).map(u => (
+                  <option key={u.id} value={u.id}>
+                    {[u.prenom, u.nom].filter(Boolean).join(' ')} ({ROLE_META[u.role]?.label ?? u.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs text-gray-400 text-center mb-4">
+              Votre rôle deviendra : <strong>{ROLE_META[transferModal.newRole]?.label ?? transferModal.newRole}</strong>
+            </p>
+            <div className="flex gap-2">
+              <button onClick={confirmTransfer} disabled={!transferModal.recipientId}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{background:'#7c3aed'}}>
+                Transférer et changer
+              </button>
+              <button onClick={() => setTransferModal(null)} className="btn-secondary flex-1 py-2">
+                Annuler
+              </button>
+            </div>
           </div>
         </div>
       )}

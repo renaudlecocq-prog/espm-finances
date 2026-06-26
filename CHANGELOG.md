@@ -1955,3 +1955,9 @@ git push origin main
 ## [v1.09] — Fix accès Administration pour super_admin
 - RequireAuth : les checks require="admin" et feature acceptent désormais super_admin
 - Corrige la redirection vers / pour Renaud lors de l'accès au panneau Admin
+
+## [v1.10] — Protection transfert Super Admin
+- Changer son propre rôle depuis super_admin ouvre une boîte de dialogue
+- Obligatoire : choisir un destinataire pour le grade avant de pouvoir se dégrader
+- Le transfert est atomique : le destinataire devient super_admin, puis le rôle actuel change
+- Impossible de fermer la modale sans sélectionner un destinataire (bouton désactivé)
