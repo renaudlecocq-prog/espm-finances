@@ -1,5 +1,11 @@
 ## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
 
+## [v1.16.18] — Fix drag handle menu caché par la sidebar
+
+- paddingLeft 60px sur BlockNoteView : le drag handle et son menu ont de l'espace à gauche
+- overflowX visible sur le container pour ne pas clipper le menu
+
+
 ## [v1.16.17] — Fix dropdown MultiSelect : reclique sur le champ
 
 - onClick sur l'input force setOpen(true) même si le champ a déjà le focus

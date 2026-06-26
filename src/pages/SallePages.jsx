@@ -222,9 +222,9 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
         <span className={`text-xs ${statusColor} transition-colors`}>{statusLabel}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900" style={{ overflowX: "visible" }}>
         <MantineProvider forceColorScheme={dark ? 'dark' : 'light'}>
-          <BlockNoteView editor={editor} editable={canEdit} theme={dark ? 'dark' : 'light'} style={{ minHeight: '100%' }} />
+          <BlockNoteView editor={editor} editable={canEdit} theme={dark ? 'dark' : 'light'} style={{ minHeight: '100%', paddingLeft: '60px', paddingRight: '24px' }} />
         </MantineProvider>
       </div>
 
