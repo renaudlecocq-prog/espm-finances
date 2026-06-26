@@ -1,3 +1,6 @@
+## [v1.16.2] — Fix suppression page : mise à jour liste immédiate
+- Après suppression d'une page, la liste se rafraîchit sans rechargement
+
 ## [v1.16.1] — Fix critique : supprimer @blocknote/mantine + MantineProvider (app blanche)
 - Suppression de @blocknote/mantine, @mantine/core, @mantine/hooks
 - Remplacement par BlockNoteViewRaw de @blocknote/react (sans dépendance Mantine)

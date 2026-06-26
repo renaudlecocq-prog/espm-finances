@@ -336,6 +336,7 @@ export default function SallePages({ pageType = 'shared' }) {
 
   const deletePage = async () => {
     await supabase.from('salle_pages').delete().eq('id', deleteModal.id)
+    setPages(prev => prev.filter(p => p.id !== deleteModal.id))
     if (openPage?.id === deleteModal.id) setOpenPage(null)
     setDeleteModal(null)
   }
