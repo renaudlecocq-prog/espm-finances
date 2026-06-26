@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import imageCompression from 'browser-image-compression'
+import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
@@ -11,10 +12,10 @@ const STATUTS = {
   en_cours:   { label: 'En cours',   color: '#D97706', bg: '#FEF3C7' },
   en_attente: { label: 'En attente', color: '#7C3AED', bg: '#EDE9FE' },
   resolu:     { label: 'Résolu',     color: '#059669', bg: '#D1FAE5' },
-  ferme:      { label: 'Fermé',      color: '#6B7280', bg: '#F3F4F6' },
+  ferme:      { label: 'Fermé',      color: dark ? '#9CA3AF' : '#6B7280', bg: '#F3F4F6' },
 }
 const PRIORITES = {
-  faible:  { label: 'Faible',  color: '#6B7280', icon: '↓' },
+  faible:  { label: 'Faible',  color: dark ? '#9CA3AF' : '#6B7280', icon: '↓' },
   normale: { label: 'Normale', color: '#2563EB', icon: '→' },
   haute:   { label: 'Haute',   color: '#D97706', icon: '↑' },
   urgente: { label: 'Urgente', color: '#DC2626', icon: '⚡' },
@@ -29,14 +30,16 @@ async function compressFile(file) {
 }
 
 // ── Résumé des champs formulaire ──────────────────────────────────────────────
-function FormDataSummary({ formFields, formData }) {
+function FormDataSummary({
+  formFields, formData }) {
+  const { dark } = useTheme()
   if (!formFields?.length) return null
   const filled = formFields.filter(f => formData?.[f.id] !== undefined && formData?.[f.id] !== '')
   if (!filled.length) return null
   return (
-    <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB',
+    <div style={{ backgroundColor: dark ? '#1F2937' : '#F9FAFB', border: `1px solid ${dark ? '#4B5563' : '#E5E7EB'}`,
       borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF',
+      <div style={{ fontSize: 11, fontWeight: 700, color: dark ? '#6B7280' : '#9CA3AF',
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
         Détails de la demande
       </div>
@@ -46,9 +49,9 @@ function FormDataSummary({ formFields, formData }) {
           const display = Array.isArray(val) ? val.join(', ') : String(val)
           return (
             <div key={f.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: 12, color: '#6B7280', fontWeight: 600,
+              <span style={{ fontSize: 12, color: dark ? '#9CA3AF' : '#6B7280', fontWeight: 600,
                 minWidth: 140, flexShrink: 0 }}>{f.label}</span>
-              <span style={{ fontSize: 12, color: '#111' }}>{display}</span>
+              <span style={{ fontSize: 12, color: dark ? '#F9FAFB' : '#111' }}>{display}</span>
             </div>
           )
         })}
@@ -58,7 +61,8 @@ function FormDataSummary({ formFields, formData }) {
 }
 
 // ── Pièce jointe ─────────────────────────────────────────────────────────────
-function AttachmentChip({ attachment, dark }) {
+function AttachmentChip({ attachment }) {
+  const { dark } = useTheme()
   const isImage = attachment.type?.startsWith('image/')
   return (
     <a href={attachment.url} target="_blank" rel="noopener noreferrer"
@@ -72,7 +76,9 @@ function AttachmentChip({ attachment, dark }) {
 }
 
 // ── Bulle de message ──────────────────────────────────────────────────────────
-function MessageBubble({ msg, isOwn }) {
+function MessageBubble({
+  msg, isOwn }) {
+  const { dark } = useTheme()
   const dateStr = new Date(msg.created_at).toLocaleString('fr-BE', {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
   })
@@ -91,7 +97,7 @@ function MessageBubble({ msg, isOwn }) {
   return (
     <div style={{ display: 'flex', justifyContent: isOwn ? 'flex-end' : 'flex-start', margin: '8px 0' }}>
       <div style={{ maxWidth: '72%' }}>
-        <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4, textAlign: isOwn ? 'right' : 'left' }}>
+        <div style={{ fontSize: 11, color: dark ? '#6B7280' : '#9CA3AF', marginBottom: 4, textAlign: isOwn ? 'right' : 'left' }}>
           {!isOwn && `${msg.author_profile?.prenom} ${msg.author_profile?.nom} · `}{dateStr}
         </div>
         <div style={{
@@ -123,6 +129,7 @@ function Tag({ label, color, bg }) {
 
 // ── Composant principal ───────────────────────────────────────────────────────
 export default function HelpdeskDetail() {
+  const { dark } = useTheme()
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, isAdmin } = useAuth()
@@ -255,12 +262,12 @@ export default function HelpdeskDetail() {
   }
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: '#9CA3AF' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: dark ? '#6B7280' : '#9CA3AF' }}>
       Chargement…
     </div>
   )
   if (!ticket) return (
-    <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>Ticket introuvable.</div>
+    <div style={{ padding: 40, textAlign: 'center', color: dark ? '#6B7280' : '#9CA3AF' }}>Ticket introuvable.</div>
   )
 
   const statut   = STATUTS[ticket.statut]   || STATUTS.nouveau
@@ -336,7 +343,7 @@ export default function HelpdeskDetail() {
           <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
             <FormDataSummary formFields={cat?.form_fields} formData={ticket.form_data} />
             {messages.length === 0 && (
-              <div style={{ textAlign: 'center', color: '#9CA3AF', fontSize: 13, padding: '40px 0' }}>
+              <div style={{ textAlign: 'center', color: dark ? '#6B7280' : '#9CA3AF', fontSize: 13, padding: '40px 0' }}>
                 Aucun message pour l'instant. Soyez le premier à répondre.
               </div>
             )}
@@ -348,7 +355,7 @@ export default function HelpdeskDetail() {
 
           {/* Zone de saisie */}
           {ticket.statut !== 'ferme' ? (
-            <div style={{ borderTop: '1px solid #E5E7EB', padding: '16px 24px', flexShrink: 0 }}>
+            <div style={{ borderTop: `1px solid ${dark ? '#4B5563' : '#E5E7EB'}`, padding: '16px 24px', flexShrink: 0 }}>
               {error && (
                 <div style={{ backgroundColor: '#FEE2E2', color: '#DC2626', padding: '8px 12px',
                   borderRadius: 8, fontSize: 13, marginBottom: 10 }}>{error}</div>
@@ -384,14 +391,14 @@ export default function HelpdeskDetail() {
                         padding: '4px 10px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                         📎 {f.name}
                         <button type="button" onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 0 }}>×</button>
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: dark ? '#9CA3AF' : '#6B7280', padding: 0 }}>×</button>
                       </span>
                     ))}
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <button type="button" onClick={() => fileRef.current?.click()}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280',
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: dark ? '#9CA3AF' : '#6B7280',
                       fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                     📎 Pièce jointe
                   </button>
@@ -402,7 +409,7 @@ export default function HelpdeskDetail() {
                     {isAdmin && !isNote && (
                       <button type="button" onClick={handleFermer} disabled={sending || updating}
                         style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                          border: '1.5px solid #E5E7EB', backgroundColor: '#fff', color: '#6B7280',
+                          border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`, backgroundColor: dark ? '#1F2937' : '#fff', color: dark ? '#9CA3AF' : '#6B7280',
                           cursor: 'pointer', opacity: (sending || updating) ? 0.5 : 1 }}>
                         Fermer le ticket
                       </button>
@@ -419,8 +426,8 @@ export default function HelpdeskDetail() {
               </form>
             </div>
           ) : (
-            <div style={{ borderTop: '1px solid #E5E7EB', padding: '14px 24px',
-              backgroundColor: '#F9FAFB', textAlign: 'center', color: '#6B7280', fontSize: 13 }}>
+            <div style={{ borderTop: `1px solid ${dark ? '#4B5563' : '#E5E7EB'}`, padding: '14px 24px',
+              backgroundColor: dark ? '#1F2937' : '#F9FAFB', textAlign: 'center', color: dark ? '#9CA3AF' : '#6B7280', fontSize: 13 }}>
               Ce ticket est fermé.
             </div>
           )}
@@ -429,14 +436,14 @@ export default function HelpdeskDetail() {
         {/* Colonne droite : panneau agent */}
         {isAdmin && (
           <div style={{ width: 250, flexShrink: 0, overflowY: 'auto', padding: '20px 16px',
-            backgroundColor: '#FAFAFA' }}>
+            backgroundColor: dark ? '#1F2937' : '#FAFAFA' }}>
 
             {/* Statut */}
             <SectionLabel>Statut</SectionLabel>
             <select value={ticket.statut} onChange={e => updateField('statut', e.target.value)}
               disabled={updating}
               style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 12,
-                border: '1.5px solid #E5E7EB', backgroundColor: '#fff', cursor: 'pointer', marginBottom: 14 }}>
+                border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`, backgroundColor: dark ? '#1F2937' : '#fff', cursor: 'pointer', marginBottom: 14 }}>
               {Object.entries(STATUTS).map(([k, v]) => (
                 <option key={k} value={k}>{v.label}</option>
               ))}
@@ -447,7 +454,7 @@ export default function HelpdeskDetail() {
             <select value={ticket.priorite} onChange={e => updateField('priorite', e.target.value)}
               disabled={updating}
               style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 12,
-                border: '1.5px solid #E5E7EB', backgroundColor: '#fff', cursor: 'pointer', marginBottom: 14 }}>
+                border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`, backgroundColor: dark ? '#1F2937' : '#fff', cursor: 'pointer', marginBottom: 14 }}>
               {Object.entries(PRIORITES).map(([k, v]) => (
                 <option key={k} value={k}>{v.icon} {v.label}</option>
               ))}
@@ -464,11 +471,11 @@ export default function HelpdeskDetail() {
                   {creator?.prenom?.[0]}{creator?.nom?.[0]}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#111', 
+                  <div style={{ fontSize: 12, fontWeight: 600, color: dark ? '#F9FAFB' : '#111', 
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {creator?.prenom} {creator?.nom}
                   </div>
-                  <div style={{ fontSize: 10, color: '#9CA3AF' }}>Demandeur</div>
+                  <div style={{ fontSize: 10, color: dark ? '#6B7280' : '#9CA3AF' }}>Demandeur</div>
                 </div>
               </div>
 
@@ -481,14 +488,14 @@ export default function HelpdeskDetail() {
                     {p.prenom?.[0]}{p.nom?.[0]}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#111',
+                    <div style={{ fontSize: 12, fontWeight: 600, color: dark ? '#F9FAFB' : '#111',
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {p.prenom} {p.nom}
                     </div>
                   </div>
                   <button onClick={() => removeParticipant(p.id)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer',
-                      color: '#9CA3AF', fontSize: 14, lineHeight: 1, padding: '2px 4px' }}
+                      color: dark ? '#6B7280' : '#9CA3AF', fontSize: 14, lineHeight: 1, padding: '2px 4px' }}
                     title="Retirer">×</button>
                 </div>
               ))}
@@ -496,7 +503,7 @@ export default function HelpdeskDetail() {
               {/* Ajouter */}
               {!showAddParticipant && availableToAdd.length > 0 && (
                 <button onClick={() => setShowAddParticipant(true)}
-                  style={{ fontSize: 12, color: '#6B7280', background: 'none', border: 'none',
+                  style={{ fontSize: 12, color: dark ? '#9CA3AF' : '#6B7280', background: 'none', border: 'none',
                     cursor: 'pointer', padding: 0, marginTop: 4 }}>
                   + Ajouter un·e collègue
                 </button>
@@ -506,14 +513,14 @@ export default function HelpdeskDetail() {
                   <select defaultValue=""
                     onChange={e => { if (e.target.value) addParticipant(e.target.value) }}
                     style={{ width: '100%', padding: '6px 8px', borderRadius: 6, fontSize: 12,
-                      border: '1.5px solid #E5E7EB', backgroundColor: '#fff', cursor: 'pointer' }}>
+                      border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`, backgroundColor: dark ? '#1F2937' : '#fff', cursor: 'pointer' }}>
                     <option value="">Choisir…</option>
                     {availableToAdd.map(p => (
                       <option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>
                     ))}
                   </select>
                   <button onClick={() => setShowAddParticipant(false)}
-                    style={{ fontSize: 11, color: '#9CA3AF', background: 'none', border: 'none',
+                    style={{ fontSize: 11, color: dark ? '#6B7280' : '#9CA3AF', background: 'none', border: 'none',
                       cursor: 'pointer', padding: '4px 0' }}>
                     Annuler
                   </button>
@@ -522,7 +529,7 @@ export default function HelpdeskDetail() {
             </div>
 
             {/* Infos ticket */}
-            <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 16, marginTop: 8 }}>
+            <div style={{ borderTop: `1px solid ${dark ? '#4B5563' : '#E5E7EB'}`, paddingTop: 16, marginTop: 8 }}>
               <SectionLabel>Informations</SectionLabel>
               <InfoRow label="Ticket" value={numStr} />
               <InfoRow label="Créé le" value={new Date(ticket.created_at).toLocaleDateString('fr-BE', {
@@ -541,20 +548,24 @@ export default function HelpdeskDetail() {
   )
 }
 
-function SectionLabel({ children }) {
+function SectionLabel({
+  children }) {
+  const { dark } = useTheme()
   return (
-    <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF',
+    <div style={{ fontSize: 10, fontWeight: 700, color: dark ? '#6B7280' : '#9CA3AF',
       textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
       {children}
     </div>
   )
 }
 
-function InfoRow({ label, value }) {
+function InfoRow({
+  label, value }) {
+  const { dark } = useTheme()
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
-      <span style={{ fontSize: 11, color: '#9CA3AF' }}>{label}</span>
-      <span style={{ fontSize: 11, color: '#374151', fontWeight: 600, textAlign: 'right' }}>{value}</span>
+      <span style={{ fontSize: 11, color: dark ? '#6B7280' : '#9CA3AF' }}>{label}</span>
+      <span style={{ fontSize: 11, color: dark ? '#D1D5DB' : '#374151', fontWeight: 600, textAlign: 'right' }}>{value}</span>
     </div>
   )
 }

@@ -514,7 +514,7 @@ function AttributionsTab({ articles, allEleves, allClasses, groupOptions, eleveO
                 const prix = r.prix_unitaire_applique ?? r.article?.prix_unitaire ?? 0
                 const total = (r.nb_eleves || 0) * Number(prix) * (r.quantite || 1)
                 return (
-                  <tr key={r.id} className="border-b border-gray-200 dark:border-gray-600 odd:bg-white even:bg-gray-50/60 hover:bg-primary/5 transition-colors">
+                  <tr key={r.id} className="border-b border-gray-200 dark:border-gray-600 odd:bg-white dark:odd:bg-gray-800 even:bg-gray-50/60 dark:even:bg-gray-900 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors">
                     <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100">{r.article?.nom || '—'}</td>
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{r.article?.categorie || '—'}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[200px] truncate" title={getAttributionLabel(r)}>{getAttributionLabel(r)}</td>

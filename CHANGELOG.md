@@ -1,3 +1,10 @@
+## [v1.15.1] — Fix dark mode (inline styles)
+- Helpdesk : cards tickets, modal nouveau ticket, champs dynamiques — fond blanc corrigé en dark
+- HelpdeskDetail : panneau admin, dropdowns statut/priorité, barre ticket fermé — corrigés en dark
+- Admin (Helpdesk) : cards catégories, modal édition catégorie — corrigés en dark
+- Articles : ligne impaire (`odd:bg-white`) sans variante dark — corrigée
+- Cause : le script v1.15.0 ne couvrait pas les `style={{ backgroundColor: '#fff' }}` inline React
+
 ## [v1.14.1] — Fix détection mot de passe existant
 ## [v1.15.0] — Dark mode
 - Nouveau mode sombre accessible via Profil → Préférences → Thème

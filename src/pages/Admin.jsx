@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { RefreshCw, UserPlus, Shield, Lock } from "lucide-react"
@@ -11,6 +12,7 @@ import MasterFilter from '../components/ui/MasterFilter'
 
 // ── Toggle de permission ──────────────────────────────────────────────────────
 function PermToggle({ value, onChange, disabled, saving }) {
+  const { dark } = useTheme()
   return (
     <button type="button"
       onClick={() => !disabled && !saving && onChange(!value)}
@@ -25,7 +27,7 @@ function PermToggle({ value, onChange, disabled, saving }) {
       <div style={{
         position: 'absolute', top: 3, left: value ? 21 : 3,
         width: 16, height: 16, borderRadius: 8,
-        backgroundColor: '#fff', transition: 'left 0.2s',
+        backgroundColor: dark ? '#1F2937' : '#fff', transition: 'left 0.2s',
         boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
       }} />
     </button>
@@ -815,6 +817,7 @@ export default function Admin() {
 //  Helpdesk Admin — composant inline
 // ══════════════════════════════════════════════════════════
 export function HelpdeskAdmin() {
+  const { dark } = useTheme()
   const [categories, setCategories] = useState([])
   const [loading, setLoading]       = useState(true)
   const [editCat, setEditCat]       = useState(null) // null | 'new' | {category object}
@@ -879,17 +882,17 @@ export function HelpdeskAdmin() {
     setPurgeInfo({ done: true, count: tickets.length })
   }
 
-  const label_style = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }
+  const label_style = { fontSize: 12, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151', display: 'block', marginBottom: 6 }
   const input_style = { width: '100%', padding: '8px 10px', borderRadius: 6, fontSize: 13,
-    border: '1.5px solid #e5e7eb', outline: 'none', boxSizing: 'border-box' }
+    border: `1.5px solid ${dark ? '#4B5563' : '#e5e7eb'}`, outline: 'none', boxSizing: 'border-box' }
 
   return (
     <div style={{ padding: '24px 0' }}>
       {/* En-tête */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Catégories</div>
-          <div style={{ fontSize: 12, color: '#6B7280' }}>Gérez les catégories de tickets et leurs formulaires</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: dark ? '#F9FAFB' : '#111' }}>Catégories</div>
+          <div style={{ fontSize: 12, color: dark ? '#9CA3AF' : '#6B7280' }}>Gérez les catégories de tickets et leurs formulaires</div>
         </div>
         <button onClick={() => setEditCat({ nom:'', description:'', icone:'ticket', couleur:'#6B4A73',
           form_fields:[], rapporteur_roles:['admin','direction','mdp'], agent_roles:['admin'] })}
@@ -900,12 +903,12 @@ export function HelpdeskAdmin() {
       </div>
 
       {loading ? (
-        <div style={{ color: '#9CA3AF', textAlign: 'center', padding: 40 }}>Chargement…</div>
+        <div style={{ color: dark ? '#6B7280' : '#9CA3AF', textAlign: 'center', padding: 40 }}>Chargement…</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {categories.map(cat => (
             <div key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 14,
-              backgroundColor: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '14px 16px',
+              backgroundColor: dark ? '#1F2937' : '#fff', border: `1px solid ${dark ? '#4B5563' : '#E5E7EB'}`, borderRadius: 10, padding: '14px 16px',
               opacity: cat.actif ? 1 : 0.5 }}>
               <div style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: cat.couleur + '20',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -914,20 +917,20 @@ export function HelpdeskAdmin() {
                 </span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 14, color: '#111' }}>{cat.nom}</div>
-                <div style={{ fontSize: 12, color: '#6B7280' }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: dark ? '#F9FAFB' : '#111' }}>{cat.nom}</div>
+                <div style={{ fontSize: 12, color: dark ? '#9CA3AF' : '#6B7280' }}>
                   {(cat.form_fields || []).length} champ{(cat.form_fields || []).length !== 1 ? 's' : ''} dans le formulaire
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setEditCat(cat)}
-                  style={{ padding: '6px 14px', borderRadius: 6, border: '1.5px solid #E5E7EB',
-                    background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                  style={{ padding: '6px 14px', borderRadius: 6, border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`,
+                    background: dark ? '#1F2937' : '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151' }}>
                   Modifier
                 </button>
                 <button onClick={() => toggleActif(cat)}
-                  style={{ padding: '6px 14px', borderRadius: 6, border: '1.5px solid #E5E7EB',
-                    background: '#fff', cursor: 'pointer', fontSize: 12, color: '#6B7280' }}>
+                  style={{ padding: '6px 14px', borderRadius: 6, border: `1.5px solid ${dark ? '#4B5563' : '#E5E7EB'}`,
+                    background: dark ? '#1F2937' : '#fff', cursor: 'pointer', fontSize: 12, color: dark ? '#9CA3AF' : '#6B7280' }}>
                   {cat.actif ? 'Désactiver' : 'Activer'}
                 </button>
               </div>
@@ -949,7 +952,7 @@ export function HelpdeskAdmin() {
         {!purgeInfo ? (
           <button onClick={getPurgeStats}
             style={{ padding: '8px 16px', borderRadius: 8, border: '1.5px solid #D97706',
-              background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#D97706' }}>
+              background: dark ? '#1F2937' : '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#D97706' }}>
             Analyser
           </button>
         ) : purgeInfo.done ? (
@@ -983,6 +986,7 @@ export function HelpdeskAdmin() {
 
 // ── Modal édition/création catégorie ─────────────────────────────────────────
 function CategoryModal({ cat, onClose, onSave, saving, error }) {
+  const { dark } = useTheme()
   const [form, setForm] = useState({ ...cat })
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
 
@@ -1007,21 +1011,21 @@ function CategoryModal({ cat, onClose, onSave, saving, error }) {
   }
 
   const inp = { width: '100%', padding: '7px 10px', borderRadius: 6, fontSize: 12,
-    border: '1.5px solid #e5e7eb', outline: 'none', boxSizing: 'border-box' }
+    border: `1.5px solid ${dark ? '#4B5563' : '#e5e7eb'}`, outline: 'none', boxSizing: 'border-box' }
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 16 }}>
-      <div style={{ backgroundColor: '#fff', borderRadius: 12, width: '100%', maxWidth: 640,
+      <div style={{ backgroundColor: dark ? '#1F2937' : '#fff', borderRadius: 12, width: '100%', maxWidth: 640,
         maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #e5e7eb',
+        <div style={{ padding: '20px 24px 16px', borderBottom: `1px solid ${dark ? '#4B5563' : '#e5e7eb'}`,
           display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontWeight: 700, fontSize: 16, color: '#111' }}>
+          <div style={{ fontWeight: 700, fontSize: 16, color: dark ? '#F9FAFB' : '#111' }}>
             {cat.id ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 20, color: '#6B7280' }}>×</button>
+            fontSize: 20, color: dark ? '#9CA3AF' : '#6B7280' }}>×</button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
           {error && <div style={{ backgroundColor: '#FEE2E2', color: '#DC2626', padding: '10px 14px',
@@ -1030,19 +1034,19 @@ function CategoryModal({ cat, onClose, onSave, saving, error }) {
           {/* Infos de base */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151', display: 'block', marginBottom: 6 }}>
                 Nom *
               </label>
               <input value={form.nom} onChange={e => set('nom', e.target.value)} style={inp}
                 placeholder="ex: Problème bâtiment" />
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151', display: 'block', marginBottom: 6 }}>
                 Couleur
               </label>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <input type="color" value={form.couleur} onChange={e => set('couleur', e.target.value)}
-                  style={{ width: 40, height: 36, borderRadius: 6, border: '1.5px solid #e5e7eb',
+                  style={{ width: 40, height: 36, borderRadius: 6, border: `1.5px solid ${dark ? '#4B5563' : '#e5e7eb'}`,
                     padding: 2, cursor: 'pointer' }} />
                 <input value={form.couleur} onChange={e => set('couleur', e.target.value)}
                   style={{ ...inp, width: 'auto', flex: 1 }} />
@@ -1050,14 +1054,14 @@ function CategoryModal({ cat, onClose, onSave, saving, error }) {
             </div>
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151', display: 'block', marginBottom: 6 }}>
               Description
             </label>
             <input value={form.description || ''} onChange={e => set('description', e.target.value)}
               style={inp} placeholder="Courte description de la catégorie" />
           </div>
           <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151', display: 'block', marginBottom: 8 }}>
               Icône
             </label>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -1073,9 +1077,9 @@ function CategoryModal({ cat, onClose, onSave, saving, error }) {
           </div>
 
           {/* Form builder */}
-          <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 20 }}>
+          <div style={{ borderTop: `1px solid ${dark ? '#4B5563' : '#E5E7EB'}`, paddingTop: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: dark ? '#F9FAFB' : '#111' }}>
                 Champs du formulaire
               </div>
               <button onClick={addField}
@@ -1085,13 +1089,13 @@ function CategoryModal({ cat, onClose, onSave, saving, error }) {
               </button>
             </div>
             {(form.form_fields || []).length === 0 && (
-              <div style={{ textAlign: 'center', color: '#9CA3AF', fontSize: 13, padding: '20px 0' }}>
+              <div style={{ textAlign: 'center', color: dark ? '#6B7280' : '#9CA3AF', fontSize: 13, padding: '20px 0' }}>
                 Aucun champ. Le formulaire contiendra seulement un titre et une priorité.
               </div>
             )}
             {(form.form_fields || []).map((fld, idx) => (
-              <div key={fld.id} style={{ border: '1px solid #E5E7EB', borderRadius: 8,
-                padding: 14, marginBottom: 10, backgroundColor: '#FAFAFA' }}>
+              <div key={fld.id} style={{ border: `1px solid ${dark ? '#4B5563' : '#E5E7EB'}`, borderRadius: 8,
+                padding: 14, marginBottom: 10, backgroundColor: dark ? '#1F2937' : '#FAFAFA' }}>
                 <div style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'center' }}>
                   <input value={fld.label} onChange={e => updateField(idx, 'label', e.target.value)}
                     placeholder="Libellé du champ" style={{ ...inp, flex: 1 }} />
@@ -1113,7 +1117,7 @@ function CategoryModal({ cat, onClose, onSave, saving, error }) {
                 </div>
                 {(fld.type === 'select_single' || fld.type === 'select_multiple') && (
                   <div>
-                    <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, color: dark ? '#9CA3AF' : '#6B7280', marginBottom: 6 }}>
                       Options (une par ligne)
                     </div>
                     <textarea value={(fld.options || []).join('\n')}
@@ -1129,12 +1133,12 @@ function CategoryModal({ cat, onClose, onSave, saving, error }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button onClick={() => moveField(idx, -1)} disabled={idx === 0}
-                      style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #E5E7EB',
-                        background: '#fff', cursor: idx === 0 ? 'default' : 'pointer', fontSize: 12,
+                      style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${dark ? '#4B5563' : '#E5E7EB'}`,
+                        background: dark ? '#1F2937' : '#fff', cursor: idx === 0 ? 'default' : 'pointer', fontSize: 12,
                         color: idx === 0 ? '#D1D5DB' : '#374151' }}>↑</button>
                     <button onClick={() => moveField(idx, 1)} disabled={idx === (form.form_fields || []).length - 1}
-                      style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #E5E7EB',
-                        background: '#fff', cursor: 'pointer', fontSize: 12, color: '#374151' }}>↓</button>
+                      style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${dark ? '#4B5563' : '#E5E7EB'}`,
+                        background: dark ? '#1F2937' : '#fff', cursor: 'pointer', fontSize: 12, color: dark ? '#D1D5DB' : '#374151' }}>↓</button>
                   </div>
                   <button onClick={() => removeField(idx)}
                     style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #FCA5A5',
@@ -1149,8 +1153,8 @@ function CategoryModal({ cat, onClose, onSave, saving, error }) {
         <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e7eb',
           display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
           <button onClick={onClose} style={{ padding: '9px 20px', borderRadius: 8,
-            border: '1.5px solid #e5e7eb', background: '#fff', cursor: 'pointer',
-            fontSize: 13, fontWeight: 600, color: '#374151' }}>Annuler</button>
+            border: `1.5px solid ${dark ? '#4B5563' : '#e5e7eb'}`, background: dark ? '#1F2937' : '#fff', cursor: 'pointer',
+            fontSize: 13, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151' }}>Annuler</button>
           <button onClick={() => onSave(form)} disabled={saving || !form.nom}
             style={{ padding: '9px 20px', borderRadius: 8, border: 'none',
               backgroundColor: saving || !form.nom ? '#9CA3AF' : '#2D1B2E',

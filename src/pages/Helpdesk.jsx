@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import imageCompression from 'browser-image-compression'
+import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
@@ -11,10 +12,10 @@ const STATUTS = {
   en_cours:   { label: 'En cours',    color: '#D97706', bg: '#FEF3C7' },
   en_attente: { label: 'En attente',  color: '#7C3AED', bg: '#EDE9FE' },
   resolu:     { label: 'Résolu',      color: '#059669', bg: '#D1FAE5' },
-  ferme:      { label: 'Fermé',       color: '#6B7280', bg: '#F3F4F6' },
+  ferme:      { label: 'Fermé',       color: dark ? '#9CA3AF' : '#6B7280', bg: '#F3F4F6' },
 }
 const PRIORITES = {
-  faible:   { label: 'Faible',   color: '#6B7280', icon: '↓' },
+  faible:   { label: 'Faible',   color: dark ? '#9CA3AF' : '#6B7280', icon: '↓' },
   normale:  { label: 'Normale',  color: '#2563EB', icon: '→' },
   haute:    { label: 'Haute',    color: '#D97706', icon: '↑' },
   urgente:  { label: 'Urgente',  color: '#DC2626', icon: '⚡' },
@@ -41,10 +42,11 @@ function StatutBadge({ statut }) {
 
 // ── Champ dynamique ───────────────────────────────────────────────────────────
 function DynamicField({ field, value, onChange }) {
+  const { dark } = useTheme()
   const base = {
     width: '100%', padding: '8px 10px', borderRadius: 6, fontSize: 13,
-    border: '1.5px solid #e5e7eb', outline: 'none', boxSizing: 'border-box',
-    backgroundColor: '#fff',
+    border: `1.5px solid ${dark ? '#4B5563' : '#e5e7eb'}`, outline: 'none', boxSizing: 'border-box',
+    backgroundColor: dark ? '#1F2937' : '#fff',
   }
   if (field.type === 'text_short') return (
     <input type="text" value={value || ''} placeholder={field.placeholder || ''}
@@ -105,7 +107,9 @@ function CatIcon({ name, color, size = 20 }) {
 }
 
 // ── Modal Nouveau Ticket ──────────────────────────────────────────────────────
-function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
+function NouveauTicketModal({
+  categories, openTickets, onClose, onCreated }) {
+  const { dark } = useTheme()
   const { user } = useAuth()
   const navigate = useNavigate()
   const fileRef  = useRef(null)
@@ -175,27 +179,27 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-      <div style={{ backgroundColor: '#fff', borderRadius: 12, width: '100%', maxWidth: 560,
+      <div style={{ backgroundColor: dark ? '#1F2937' : '#fff', borderRadius: 12, width: '100%', maxWidth: 560,
         maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
 
         {/* Header modal */}
-        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #e5e7eb',
+        <div style={{ padding: '20px 24px 16px', borderBottom: `1px solid ${dark ? '#4B5563' : '#e5e7eb'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 16, color: '#111' }}>
+            <div style={{ fontWeight: 700, fontSize: 16, color: dark ? '#F9FAFB' : '#111' }}>
               {step === 1 ? 'Nouveau ticket' : selectedCat?.nom}
             </div>
             {step === 2 && (
               <button onClick={() => { setStep(1); setSelectedCat(null) }}
-                style={{ fontSize: 12, color: '#6B7280', background: 'none', border: 'none',
+                style={{ fontSize: 12, color: dark ? '#9CA3AF' : '#6B7280', background: 'none', border: 'none',
                   cursor: 'pointer', padding: 0, marginTop: 2 }}>
                 ← Changer de catégorie
               </button>
             )}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer',
-            color: '#6B7280', fontSize: 20, lineHeight: 1 }}>×</button>
+            color: dark ? '#9CA3AF' : '#6B7280', fontSize: 20, lineHeight: 1 }}>×</button>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
@@ -203,7 +207,7 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
           {/* Étape 1 — choix catégorie */}
           {step === 1 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 8px' }}>
+              <p style={{ fontSize: 13, color: dark ? '#9CA3AF' : '#6B7280', margin: '0 0 8px' }}>
                 Quelle est la nature de votre demande ?
               </p>
               {categories.map(cat => {
@@ -211,8 +215,8 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
                 return (
                   <button key={cat.id} onClick={() => handleSelectCat(cat)}
                     style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
-                      border: '1.5px solid #e5e7eb', borderRadius: 10, cursor: 'pointer',
-                      backgroundColor: '#fff', textAlign: 'left', transition: 'all 0.15s' }}
+                      border: `1.5px solid ${dark ? '#4B5563' : '#e5e7eb'}`, borderRadius: 10, cursor: 'pointer',
+                      backgroundColor: dark ? '#1F2937' : '#fff', textAlign: 'left', transition: 'all 0.15s' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = cat.couleur; e.currentTarget.style.backgroundColor = '#f9fafb' }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.backgroundColor = '#fff' }}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0,
@@ -220,7 +224,7 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
                       <CatIcon name={cat.icone} color={cat.couleur} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 14, color: '#111', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: dark ? '#F9FAFB' : '#111', display: 'flex', alignItems: 'center', gap: 8 }}>
                         {cat.nom}
                         {openCount > 0 && (
                           <span style={{ fontSize: 11, fontWeight: 700, backgroundColor: '#FEF3C7',
@@ -230,7 +234,7 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
                         )}
                       </div>
                       {cat.description && (
-                        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{cat.description}</div>
+                        <div style={{ fontSize: 12, color: dark ? '#9CA3AF' : '#6B7280', marginTop: 2 }}>{cat.description}</div>
                       )}
                     </div>
                     <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="#D1D5DB" strokeWidth={2}>
@@ -249,20 +253,20 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
               {/* Liste tickets ouverts — simple et discrète */}
               {relatedTickets.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: dark ? '#9CA3AF' : '#6B7280', marginBottom: 8 }}>
                     Tickets déjà ouverts dans cette catégorie :
                   </div>
                   {relatedTickets.map(rt => (
                     <div key={rt.id} style={{ display: 'flex', alignItems: 'center', gap: 10,
                       padding: '6px 0', borderBottom: '1px solid #F3F4F6' }}>
-                      <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600, flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, color: dark ? '#6B7280' : '#9CA3AF', fontWeight: 600, flexShrink: 0 }}>
                         #{String(rt.numero).padStart(4, '0')}
                       </span>
-                      <span style={{ fontSize: 13, color: '#374151', flex: 1,
+                      <span style={{ fontSize: 13, color: dark ? '#D1D5DB' : '#374151', flex: 1,
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {rt.titre}
                       </span>
-                      <span style={{ fontSize: 11, color: '#9CA3AF', flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, color: dark ? '#6B7280' : '#9CA3AF', flexShrink: 0 }}>
                         {rt.created_by_profile?.prenom} {rt.created_by_profile?.nom}
                       </span>
                       <button type="button"
@@ -273,7 +277,7 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
                       </button>
                     </div>
                   ))}
-                  <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 8 }}>
+                  <div style={{ fontSize: 11, color: dark ? '#6B7280' : '#9CA3AF', marginTop: 8 }}>
                     Vous pouvez quand même créer un nouveau ticket ci-dessous.
                   </div>
                 </div>
@@ -286,19 +290,19 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
 
               {/* Titre */}
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151', display: 'block', marginBottom: 6 }}>
                   Titre <span style={{ color: '#DC2626' }}>*</span>
                 </label>
                 <input type="text" value={titre} required
                   onChange={e => setTitre(e.target.value)}
                   placeholder="Résumez votre demande en une phrase..."
                   style={{ width: '100%', padding: '8px 10px', borderRadius: 6, fontSize: 13,
-                    border: '1.5px solid #e5e7eb', outline: 'none', boxSizing: 'border-box' }} />
+                    border: `1.5px solid ${dark ? '#4B5563' : '#e5e7eb'}`, outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
               {/* Priorité */}
               <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151', display: 'block', marginBottom: 8 }}>
                   Priorité
                 </label>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -317,7 +321,7 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
               {/* Champs dynamiques */}
               {(selectedCat?.form_fields || []).map(field => (
                 <div key={field.id} style={{ marginBottom: 16 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151', display: 'block', marginBottom: 6 }}>
                     {field.label} {field.required && <span style={{ color: '#DC2626' }}>*</span>}
                   </label>
                   <DynamicField field={field} value={formData[field.id]}
@@ -326,8 +330,8 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
               ))}
 
               {/* Pièces jointes */}
-              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F3F4F6' }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${dark ? '#374151' : '#F3F4F6'}` }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151', display: 'block', marginBottom: 8 }}>
                   Pièces jointes
                 </label>
                 {files.length > 0 && (
@@ -337,13 +341,13 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
                         padding: '4px 10px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                         📎 {f.name}
                         <button type="button" onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 0, lineHeight: 1 }}>×</button>
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: dark ? '#9CA3AF' : '#6B7280', padding: 0, lineHeight: 1 }}>×</button>
                       </span>
                     ))}
                   </div>
                 )}
                 <button type="button" onClick={() => fileRef.current?.click()}
-                  style={{ fontSize: 12, color: '#6B7280', background: 'none',
+                  style={{ fontSize: 12, color: dark ? '#9CA3AF' : '#6B7280', background: 'none',
                     border: '1.5px dashed #D1D5DB', cursor: 'pointer', padding: '8px 14px',
                     borderRadius: 8, width: '100%', textAlign: 'center' }}>
                   + Ajouter un fichier (image, PDF, Word)
@@ -361,8 +365,8 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
           <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e7eb',
             display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
             <button onClick={onClose} disabled={saving}
-              style={{ padding: '9px 20px', borderRadius: 8, border: '1.5px solid #e5e7eb',
-                background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#374151' }}>
+              style={{ padding: '9px 20px', borderRadius: 8, border: `1.5px solid ${dark ? '#4B5563' : '#e5e7eb'}`,
+                background: dark ? '#1F2937' : '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: dark ? '#D1D5DB' : '#374151' }}>
               Annuler
             </button>
             <button type="submit" form="new-ticket-form" disabled={saving}
@@ -380,6 +384,7 @@ function NouveauTicketModal({ categories, openTickets, onClose, onCreated }) {
 
 // ── Carte ticket ──────────────────────────────────────────────────────────────
 function TicketCard({ ticket: t, isUnread, onClick, onStatusChange }) {
+  const { dark } = useTheme()
   const cat = t.helpdesk_categories
   const catColor = cat?.couleur || '#E5E7EB'
   const creator = t.created_by_profile
@@ -390,7 +395,7 @@ function TicketCard({ ticket: t, isUnread, onClick, onStatusChange }) {
 
   return (
     <div onClick={onClick} style={{
-        backgroundColor: '#fff', borderRadius: 10, borderLeft: `4px solid ${catColor}`,
+        backgroundColor: dark ? '#1F2937' : '#fff', borderRadius: 10, borderLeft: `4px solid ${catColor}`,
         padding: '14px 18px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
         transition: 'box-shadow 0.15s, transform 0.1s',
       }}
@@ -399,7 +404,7 @@ function TicketCard({ ticket: t, isUnread, onClick, onStatusChange }) {
 
       {/* Ligne 1 — titre + badges */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-        <span style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>{t.titre}</span>
+        <span style={{ fontWeight: 700, fontSize: 14, color: dark ? '#F9FAFB' : '#111' }}>{t.titre}</span>
         {isUnread && (
           <span style={{ backgroundColor: '#EF4444', color: '#fff', borderRadius: 999,
             minWidth: 18, height: 18, padding: '0 5px', fontSize: 10, fontWeight: 800,
@@ -432,7 +437,7 @@ function TicketCard({ ticket: t, isUnread, onClick, onStatusChange }) {
 
       {/* Ligne 2 — méta */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 20px',
-        fontSize: 12, color: '#6B7280', alignItems: 'center' }}>
+        fontSize: 12, color: dark ? '#9CA3AF' : '#6B7280', alignItems: 'center' }}>
         {cat && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <CatIcon name={cat.icone} color={catColor} size={12} />
@@ -448,7 +453,7 @@ function TicketCard({ ticket: t, isUnread, onClick, onStatusChange }) {
             {creator}
           </span>
         )}
-        <span style={{ color: '#9CA3AF', fontWeight: 600 }}>#{String(t.numero).padStart(4, '0')}</span>
+        <span style={{ color: dark ? '#6B7280' : '#9CA3AF', fontWeight: 600 }}>#{String(t.numero).padStart(4, '0')}</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <svg viewBox="0 0 24 24" width={11} height={11} fill="none" stroke="#9CA3AF" strokeWidth={2}>
             <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
@@ -462,6 +467,7 @@ function TicketCard({ ticket: t, isUnread, onClick, onStatusChange }) {
 
 // ── Composant principal ───────────────────────────────────────────────────────
 export default function Helpdesk() {
+  const { dark } = useTheme()
   const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
 
@@ -605,7 +611,7 @@ export default function Helpdesk() {
         actions={
           <button onClick={() => setShowModal(true)}
             style={{ padding: '7px 16px', borderRadius: 8, border: 'none',
-              backgroundColor: '#fff', color: '#2D1B2E', cursor: 'pointer',
+              backgroundColor: dark ? '#1F2937' : '#fff', color: '#2D1B2E', cursor: 'pointer',
               fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
             + Nouveau ticket
           </button>
@@ -614,9 +620,9 @@ export default function Helpdesk() {
 
       <div className="p-6 max-w-screen-xl mx-auto">
         {loading ? (
-          <div style={{ textAlign: 'center', color: '#9CA3AF', padding: 60 }}>Chargement…</div>
+          <div style={{ textAlign: 'center', color: dark ? '#6B7280' : '#9CA3AF', padding: 60 }}>Chargement…</div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#9CA3AF', padding: 60 }}>
+          <div style={{ textAlign: 'center', color: dark ? '#6B7280' : '#9CA3AF', padding: 60 }}>
             {search || filterCatId
               ? 'Aucun ticket ne correspond aux filtres.'
               : filterMine
