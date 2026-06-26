@@ -1,5 +1,13 @@
 ## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
 
+## [v1.16.15] — EleveTableBlock : retrait de colonnes au survol
+
+- Bouton × sur chaque en-tête de colonne (visible au survol, mode édition)
+- Retire la colonne immédiatement sans passer par le menu Modifier
+- Fonctionne pour les colonnes standard et les colonnes libres
+- Désactivé si c'est la dernière colonne restante
+
+
 ## [v1.16.14] — EleveTableBlock fix JSONB + fix ProseMirror mouseover
 
 - Fix critique : .overlaps() ne fonctionne pas sur colonnes JSONB dans PostgREST

@@ -232,7 +232,7 @@ function SortIcon({ active, dir }) {
     : <svg className="w-3 h-3 text-blue-500 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" /></svg>
 }
 
-function EleveTableDisplay({ classes, groups, columns, freeColumns, onEdit, editable }) {
+function EleveTableDisplay({ classes, groups, columns, freeColumns, onEdit, onRemoveColumn, editable }) {
   const [eleves,    setEleves]    = useState([])
   const [loading,   setLoading]   = useState(true)
   const [sortField, setSortField] = useState('classe')
@@ -400,14 +400,23 @@ function EleveTableDisplay({ classes, groups, columns, freeColumns, onEdit, edit
                   <th
                     key={col.key}
                     onClick={() => !col.key.startsWith('free_') && toggleSort(col.key)}
-                    className={`px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700/60 whitespace-nowrap ${
+                    className={`px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700/60 whitespace-nowrap group/col ${
                       !col.key.startsWith('free_') ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none' : ''
                     }`}
                   >
-                    {col.label}
-                    {!col.key.startsWith('free_') && (
-                      <SortIcon active={sortField === col.key} dir={sortDir} />
-                    )}
+                    <span className="inline-flex items-center gap-1">
+                      {col.label}
+                      {!col.key.startsWith('free_') && (
+                        <SortIcon active={sortField === col.key} dir={sortDir} />
+                      )}
+                      {editable && allCols.length > 1 && (
+                        <button
+                          onClick={e => { e.stopPropagation(); onRemoveColumn(col.key) }}
+                          title={`Retirer la colonne "${col.label}"`}
+                          className="opacity-0 group-hover/col:opacity-100 ml-1 text-gray-300 hover:text-red-400 dark:text-gray-600 dark:hover:text-red-400 transition-opacity leading-none font-normal normal-case text-sm"
+                        >×</button>
+                      )}
+                    </span>
                   </th>
                 ))}
               </tr>
@@ -468,6 +477,26 @@ function EleveTableBlockComponent({ block, editor }) {
     })
   }, [configMode])
 
+  const handleRemoveColumn = (key) => {
+    if (!editor.isEditable) return
+    let newColumns = columns
+    let newFree = freeColumns
+    if (key.startsWith('free_')) {
+      newFree = freeColumns.filter(c => c.key !== key)
+    } else {
+      newColumns = columns.filter(c => c !== key)
+    }
+    editor.updateBlock(block, {
+      type: 'eleveTable',
+      props: {
+        classes:     block.props.classes,
+        groups:      block.props.groups,
+        columns:     JSON.stringify(newColumns),
+        freeColumns: JSON.stringify(newFree),
+      }
+    })
+  }
+
   const handleSave = (selClasses, selGroups, selCols, selFree) => {
     if (editor.isEditable) {
       editor.updateBlock(block, {
@@ -505,6 +534,7 @@ function EleveTableBlockComponent({ block, editor }) {
       freeColumns={freeColumns}
       editable={editor.isEditable}
       onEdit={() => setConfigMode(true)}
+      onRemoveColumn={handleRemoveColumn}
     />
   )
 }
