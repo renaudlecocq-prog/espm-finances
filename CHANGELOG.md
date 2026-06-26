@@ -1,3 +1,9 @@
+## [v1.16.9] — Tableau d'élèves dans l'éditeur de pages
+- Nouveau bloc custom BlockNote : "Tableau d'élèves"
+- Mode config : sélection de classes et/ou groupes + choix des colonnes (Nom, Prénom, Sexe, Classe, Groupes)
+- Mode affichage : table live depuis Supabase, rechargeable, bouton "Modifier" pour reconfigurer
+- Bouton "Tableau" dans la barre du PageEditor pour insérer le bloc au curseur
+
 ## [v1.16.7] — BlockNote : locale française (placeholder + menu slash)
 - dictionary: fr de @blocknote/core/locales
 

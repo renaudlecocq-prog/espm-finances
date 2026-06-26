@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { BlockNoteSchema, defaultBlockSpecs } from '@blocknote/core'
+import { EleveTableBlock } from '../blocknote/EleveTableBlock'
 import { BlockNoteView } from '@blocknote/mantine'
 import { useCreateBlockNote, useEditorChange } from '@blocknote/react'
 import { fr as frLocale } from '@blocknote/core/locales'
@@ -9,6 +11,11 @@ import '@blocknote/mantine/style.css'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+
+// ── Schema BlockNote avec blocs custom ───────────────────────────────────────
+const eleveTableSchema = BlockNoteSchema.create({
+  blockSpecs: { ...defaultBlockSpecs, eleveTable: EleveTableBlock },
+})
 
 const PAGE_EMOJIS = ['📄','📝','📋','📌','💡','🎯','📊','🔧','📚','🗒️',
                      '🏫','📢','🌟','🎉','🔔','📅','🎨','💼','🗂️','📦']
@@ -108,6 +115,7 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
 
   // Initialiser l'éditeur avec le contenu existant
   const editor = useCreateBlockNote({
+    schema: eleveTableSchema,
     initialContent: (() => {
       try {
         const parsed = typeof page.content === 'string'
@@ -196,7 +204,22 @@ function PageEditor({ page, onBack, onTitleChange, canEdit }) {
             </svg>
           )}
         </button>
-        <span className={`ml-auto text-xs ${statusColor} transition-colors`}>{statusLabel}</span>
+        {canEdit && (
+          <button
+            onClick={() => {
+              const pos = editor.getTextCursorPosition()
+              editor.insertBlocks([{ type: 'eleveTable' }], pos.block, 'after')
+            }}
+            title="Insérer un tableau d'élèves"
+            className="ml-auto flex items-center gap-1 text-xs text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 3v18M14 3v18" />
+            </svg>
+            Tableau
+          </button>
+        )}
+        <span className={`text-xs ${statusColor} transition-colors`}>{statusLabel}</span>
       </div>
 
       <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
