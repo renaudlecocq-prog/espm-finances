@@ -1,5 +1,11 @@
 ## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
 
+## [v1.16.17] — Fix dropdown MultiSelect : reclique sur le champ
+
+- onClick sur l'input force setOpen(true) même si le champ a déjà le focus
+- Le dropdown s'ouvre correctement après avoir sélectionné un item
+
+
 ## [v1.16.16] — Fix menus BlockNote en dark mode
 
 - MantineProvider : ajout forceColorScheme={dark ? dark : light}

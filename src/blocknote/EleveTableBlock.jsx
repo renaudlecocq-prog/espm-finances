@@ -62,6 +62,7 @@ function MultiSelect({ label, all, selected, onToggle, color = 'blue' }) {
           value={query}
           onChange={e => { setQuery(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
+          onClick={() => setOpen(true)}
           placeholder={`Rechercher…`}
           className={`w-full text-xs px-3 py-1.5 pr-8 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 outline-none focus:ring-2 ${ring}`}
         />
