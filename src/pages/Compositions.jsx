@@ -16,6 +16,7 @@ import {
   RefreshCw, Users, Link, Unlink, Check, FolderOpen, Settings,
   Maximize2, Minimize2, Search, ArrowLeft, Calendar, ChevronRight,
   FileDown, FileUp, Table2, PlusCircle, MinusCircle, CheckCircle2,
+  Scissors, GitFork,
 } from 'lucide-react'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -146,19 +147,30 @@ function ElevePhoto({ username, internalNumber, photoUrl = null, eleveId = null,
 }
 
 // ── EleveCard ──────────────────────────────────────────────────────────────────
-function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, isDragging }) {
+function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, separated, separationViolation, cardMode, isDragging }) {
   const hasAR  = eleve.amenagements_raisonnables?.trim()
   const groupes = Array.isArray(eleve.groupes_ss) ? eleve.groupes_ss.filter(Boolean) : []
   const compact = cardMode === 'compact'
 
   return (
     <div className={`relative rounded-xl border bg-white transition-all select-none cursor-grab-custom active:cursor-grabbing-custom overflow-hidden
-      ${selected ? 'border-indigo-400 shadow-md ring-2 ring-indigo-300/60'
+      ${separationViolation ? 'border-red-400 shadow-md ring-2 ring-red-200/60'
+        : selected ? 'border-indigo-400 shadow-md ring-2 ring-indigo-300/60'
         : isDragging ? 'border-indigo-200 shadow-lg opacity-80'
         : 'border-gray-100 shadow-sm hover:border-indigo-200 hover:shadow-md'}`}>
       {linked && (
         <div className="absolute top-1.5 right-1.5 z-10 bg-violet-100 rounded-full p-0.5">
           <Link size={10} className="text-violet-500" />
+        </div>
+      )}
+      {separationViolation && (
+        <div className="absolute top-1.5 left-1.5 z-10 bg-red-100 rounded-full p-0.5">
+          <AlertTriangle size={10} className="text-red-500" />
+        </div>
+      )}
+      {separated && !separationViolation && (
+        <div className="absolute top-1.5 right-1.5 z-10 bg-orange-100 rounded-full p-0.5" style={{ right: linked ? '20px' : '6px' }}>
+          <Scissors size={10} className="text-orange-500" />
         </div>
       )}
       <div className={`p-2.5 pt-2 w-full min-w-0 ${compact ? '' : 'pb-3'}`}>
@@ -227,20 +239,21 @@ function EleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect
 }
 
 // ── SortableEleveCard ──────────────────────────────────────────────────────────
-function SortableEleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, cardMode, groupId, selectedIds }) {
+function SortableEleveCard({ eleve, fields, customFields, onCFChange, selected, onSelect, linked, separated, separationViolation, cardMode, groupId, selectedIds }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: eleve.id, data: { type: 'card', eleveId: eleve.id, groupId, selectedIds },
   })
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} {...attributes} {...listeners}>
       <EleveCard eleve={eleve} fields={fields} customFields={customFields} onCFChange={onCFChange}
-        selected={selected} onSelect={onSelect} linked={linked} cardMode={cardMode} isDragging={isDragging} />
+        selected={selected} onSelect={onSelect} linked={linked} separated={separated} separationViolation={separationViolation}
+        cardMode={cardMode} isDragging={isDragging} />
     </div>
   )
 }
 
 // ── GroupColumn ────────────────────────────────────────────────────────────────
-function GroupColumn({ group, eleves, fields, customFields, onCFChange, selectedIds, onSelect, linkedSets, onRename, onDelete, cardMode, isPool }) {
+function GroupColumn({ group, eleves, fields, customFields, onCFChange, selectedIds, onSelect, linkedSets, separatedSets, assignments, onRename, onDelete, cardMode, isPool }) {
   const { setNodeRef, isOver } = useDroppable({ id: group.id, data: { type: 'column', groupId: group.id } })
   const [editing, setEditing] = useState(false)
   const [name, setName]       = useState(group.name)
@@ -250,6 +263,18 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
   const garconCount = eleves.filter(e => e.sexe === 'M').length
   const filleCount  = eleves.filter(e => e.sexe === 'F').length
   const isLinked = id => linkedSets.some(s => s.has(id))
+  const isSeparated = id => separatedSets.some(s => s.has(id))
+  // Violation : deux élèves séparés dans le même groupe non-pool
+  const hasSeparationViolation = (id, gid) => {
+    if (!gid || gid === '__pool__') return false
+    return separatedSets.some(s => {
+      if (!s.has(id)) return false
+      for (const partnerId of s) {
+        if (partnerId !== id && assignments[partnerId] === gid) return true
+      }
+      return false
+    })
+  }
   const colW     = cardMode === 'compact' ? 170 : 240
 
   return (
@@ -292,6 +317,7 @@ function GroupColumn({ group, eleves, fields, customFields, onCFChange, selected
           {eleves.map(eleve => (
             <SortableEleveCard key={eleve.id} eleve={eleve} fields={fields} customFields={customFields} onCFChange={onCFChange}
               selected={selectedIds.has(eleve.id)} onSelect={onSelect} linked={isLinked(eleve.id)}
+              separated={isSeparated(eleve.id)} separationViolation={hasSeparationViolation(eleve.id, group.id)}
               cardMode={cardMode} groupId={group.id} selectedIds={selectedIds} />
           ))}
         </SortableContext>
@@ -580,6 +606,7 @@ export default function Compositions() {
   const [assignments, setAssignments] = useState({})
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [linkedSets, setLinkedSets]   = useState([])
+  const [separatedSets, setSeparatedSets] = useState([])
   const [activeId, setActiveId]       = useState(null)
   const [dragging, setDragging]       = useState(null)
   // cardMode : préférence locale uniquement (localStorage), pas sauvegardé/synchro Supabase
@@ -598,6 +625,7 @@ export default function Compositions() {
   // ── Modals ────────────────────────────────────────────────────────────────
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showConfigModal, setShowConfigModal]  = useState(false)
+  const [sameClassWarning, setSameClassWarning] = useState(null)  // class name string | null
   const [showImportModal, setShowImportModal]  = useState(false)
 
   // État temporaire pour la modal de création
@@ -698,7 +726,7 @@ export default function Compositions() {
       const data = {
         name: compositionName, date: now, filters, excludedIds: [...excludedIds], includedIds: [...includedIds],
         fields: Object.fromEntries(Object.entries(fields).map(([k,v]) => [k,v.enabled])),
-        customFields, groups, assignments, linkedSets: linkedSets.map(s => [...s]),
+        customFields, groups, assignments, linkedSets: linkedSets.map(s => [...s]), separatedSets: separatedSets.map(s => [...s]),
       }
       const pid = currentProjectId.current
       if (!pid) { pendingSave.current = false; setHasPending(false); return } // pas encore de projet créé
@@ -788,6 +816,23 @@ export default function Compositions() {
   }
   const unlinkSelection = () => {
     setLinkedSets(prev => prev.filter(s => { for (const id of selectedIds) { if (s.has(id)) return false } return true }))
+    setSelectedIds(new Set())
+  }
+
+  // ── Séparer/déséparer ─────────────────────────────────────────────────────
+  const separateSelection = (eleves) => {
+    if (selectedIds.size < 2) return
+    // Avertissement si tous dans la même classe scolaire
+    const classes = [...selectedIds].map(id => eleves.find(e => e.id === id)?.classe).filter(Boolean)
+    const sameClass = classes.length === selectedIds.size && new Set(classes).size === 1
+    const ns = new Set(selectedIds)
+    const rest = separatedSets.filter(s => { for (const id of s) { if (ns.has(id)) { s.forEach(x => ns.add(x)); return false } } return true })
+    setSeparatedSets([...rest, ns])
+    setSelectedIds(new Set())
+    if (sameClass) setSameClassWarning(classes[0])
+  }
+  const unseparateSelection = () => {
+    setSeparatedSets(prev => prev.filter(s => { for (const id of selectedIds) { if (s.has(id)) return false } return true }))
     setSelectedIds(new Set())
   }
 
@@ -907,6 +952,7 @@ export default function Compositions() {
     if (d.groups)       setGroups(d.groups)
     if (d.assignments)  setAssignments(d.assignments)
     if (d.linkedSets)   setLinkedSets(d.linkedSets.map(s => new Set(s)))
+    if (d.separatedSets) setSeparatedSets(d.separatedSets.map(s => new Set(s)))
     // cardMode intentionnellement exclu — préférence locale uniquement
   }, [])
 
@@ -968,7 +1014,7 @@ export default function Compositions() {
       name: draftName, date: now, filters: draftFilters,
       excludedIds: [...draftExcludedIds], includedIds: [...draftIncludedIds],
       fields: Object.fromEntries(Object.entries(draftFields).map(([k,v]) => [k,v.enabled])),
-      customFields: draftCustomFields, groups: [], assignments: {}, linkedSets: [],
+      customFields: draftCustomFields, groups: [], assignments: {}, linkedSets: [], separatedSets: [],
     }
     const { data: rows, error } = await supabase.from('compositions_projets')
       .insert({ nom: draftName, updated_at: now, data })
@@ -982,7 +1028,7 @@ export default function Compositions() {
     setSavedList(prev => [entry, ...prev])
     setCompositionName(draftName); setFilters(draftFilters); setExcludedIds(draftExcludedIds); setIncludedIds(draftIncludedIds)
     setFields(draftFields); setCustomFields(draftCustomFields)
-    setGroups([]); setAssignments({}); setLinkedSets([]); setSelectedIds(new Set())
+    setGroups([]); setAssignments({}); setLinkedSets([]); setSeparatedSets([]); setSelectedIds(new Set())
     setLastSaved(now); setLastSavedBy(null)
     setShowCreateModal(false)
     setView('board')
@@ -993,7 +1039,7 @@ export default function Compositions() {
     const date = new Date().toISOString()
     const data = { name: compositionName, date, filters, excludedIds: [...excludedIds], includedIds: [...includedIds],
       fields: Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,v.enabled])),
-      customFields, groups, assignments, linkedSets: linkedSets.map(s=>[...s]) }
+      customFields, groups, assignments, linkedSets: linkedSets.map(s=>[...s]), separatedSets: separatedSets.map(s=>[...s]) }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
     a.download = `composition_${compositionName.replace(/\s+/g,'_')}_${date.split('T')[0]}.json`
@@ -1010,6 +1056,17 @@ export default function Compositions() {
   const allColumns    = useMemo(() => [{ id: POOL_ID, name: 'Pool — Élèves à placer', isPool: true }, ...groups], [groups])
   const enabledFields = useMemo(() => Object.fromEntries(Object.entries(fields).map(([k,v]) => [k,v.enabled])), [fields])
   const isLinked      = useCallback(id => linkedSets.some(s => s.has(id)), [linkedSets])
+  const isSeparatedMain = useCallback(id => separatedSets.some(s => s.has(id)), [separatedSets])
+  const hasSeparationViolationMain = useCallback((id, gid) => {
+    if (!gid || gid === '__pool__') return false
+    return separatedSets.some(s => {
+      if (!s.has(id)) return false
+      for (const partnerId of s) {
+        if (partnerId !== id && assignments[partnerId] === gid) return true
+      }
+      return false
+    })
+  }, [separatedSets, assignments])
 
   // ══ RENDER ════════════════════════════════════════════════════════════════
 
@@ -1192,15 +1249,24 @@ export default function Compositions() {
         actions={
           <div className="flex items-center gap-2">
             {selectedIds.size >= 2 && (
-              <button onClick={linkSelection} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700">
-                <Link size={13} /> Lier
-              </button>
+              <>
+                <button onClick={linkSelection} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700">
+                  <Link size={13} /> Lier
+                </button>
+                <button onClick={() => separateSelection(filteredEleves)} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600">
+                  <Scissors size={13} /> Séparer
+                </button>
+              </>
             )}
             {selectedIds.size >= 1 && (
               <>
                 <button onClick={unlinkSelection} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
                   style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
                   <Unlink size={13} /> Délier
+                </button>
+                <button onClick={unseparateSelection} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
+                  <Scissors size={13} /> Déséparer
                 </button>
                 <button onClick={() => setSelectedIds(new Set())} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
                   style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
@@ -1238,6 +1304,7 @@ export default function Compositions() {
               <GroupColumn key={col.id} group={col} eleves={getGroupEleves(col.id)}
                 fields={enabledFields} customFields={customFields} onCFChange={handleCFChange}
                 selectedIds={selectedIds} onSelect={toggleSelect} linkedSets={linkedSets}
+                separatedSets={separatedSets} assignments={assignments}
                 onRename={renameGroup} onDelete={deleteGroup} cardMode={cardMode} isPool={col.id === POOL_ID} />
             ))}
             <button onClick={addGroup}
@@ -1250,7 +1317,8 @@ export default function Compositions() {
               <div style={{ width: cardMode === 'compact' ? 150 : 220 }} className="rotate-2 shadow-2xl">
                 <EleveCard eleve={dragging} fields={enabledFields} customFields={customFields}
                   onCFChange={() => {}} selected={selectedIds.has(dragging.id)} onSelect={() => {}}
-                  linked={isLinked(dragging.id)} cardMode={cardMode} isDragging />
+                  linked={isLinked(dragging.id)} separated={isSeparatedMain(dragging.id)}
+                  separationViolation={false} cardMode={cardMode} isDragging />
                 {selectedIds.has(dragging.id) && selectedIds.size > 1 && (
                   <div className="mt-1 text-center">
                     <span className="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full shadow">

@@ -1,4 +1,12 @@
 
+## [v1.13.2] — Compositions : contrainte Séparer
+- Nouveau bouton « Séparer » (orange, icône ciseaux) : marque 2+ élèves comme devant être dans des groupes différents
+- Icône ciseaux orange sur les cartes ayant une contrainte de séparation
+- Bordure rouge + icône ⚠️ sur les cartes dont un partenaire séparé est dans le même groupe
+- Bouton « Déséparer » pour retirer la contrainte
+- Avertissement modal si les élèves sélectionnés sont dans la même classe scolaire
+- separatedSets sauvegardé/restauré avec le projet (Supabase + JSON)
+
 ## [v1.13c] — PageHeader adaptatif (1 ligne quand ça rentre)
 - Suppression du 2 lignes forcé : le header s'affiche sur 1 ligne quand titre + toolbar rentrent
 - Le toolbar descend en 2e ligne uniquement si nécessaire (container trop étroit)
