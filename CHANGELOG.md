@@ -1,3 +1,7 @@
+## [v1.16.11] — EleveTableBlock : config compacte + renommage bouton
+- Sélection classes/groupes par recherche + chips (fini la liste de 100+ boutons)
+- Bouton d'insertion renommé "Tableau élèves"
+
 ## [v1.16.10] — Fix EleveTableBlock : invoquer la factory createReactBlockSpec
 - createReactBlockSpec() retourne une fonction factory → appel () nécessaire pour obtenir le BlockSpec
 - Corrige "Cannot read properties of undefined (reading 'node')" au chargement de la salle des profs
