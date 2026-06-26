@@ -1,3 +1,5 @@
+## [v1.16.22] — Fix Backspace dans colonnes libres
+- EleveTableBlock : ajout d'un listener natif `keydown` sur le dom du bloc pour bloquer la propagation vers ProseMirror (Backspace/Delete fonctionnent maintenant dans les inputs)
 ## [v1.16.12] — EleveTableBlock : createBlockSpec + createRoot (bypass createReactBlockSpec)
 
 ## [v1.16.21] — Bouton supprimer sur le bloc tableau

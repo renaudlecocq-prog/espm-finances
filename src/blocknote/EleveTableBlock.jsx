@@ -154,6 +154,7 @@ function EleveTableConfig({ initialClasses, initialGroups, initialColumns, initi
     <div
       className="rounded-xl border-2 border-dashed border-blue-300 dark:border-blue-700 p-4 bg-blue-50/60 dark:bg-blue-950/20 select-none"
       contentEditable={false}
+      onKeyDown={e => e.stopPropagation()}
       onMouseDown={e => e.stopPropagation()}
     >
       <div className="flex items-center gap-2 mb-4">
@@ -362,6 +363,7 @@ function EleveTableDisplay({ classes, groups, columns, freeColumns, onEdit, onRe
       className="rounded-xl border border-gray-200 dark:border-gray-700"
       style={{ overflow: 'clip' }}
       contentEditable={false}
+      onKeyDown={e => e.stopPropagation()}
       onMouseDown={e => e.stopPropagation()}
     >
       {/* En-tête */}
@@ -590,11 +592,15 @@ export const EleveTableBlock = createBlockSpec(
       const stopPM = e => e.stopPropagation()
       dom.addEventListener('mouseover', stopPM)
       dom.addEventListener('mousemove', stopPM)
+      dom.addEventListener('keydown', stopPM)
       const root = createRoot(dom)
       root.render(React.createElement(EleveTableBlockComponent, { block, editor }))
       return {
         dom,
         destroy() {
+          dom.removeEventListener('mouseover', stopPM)
+          dom.removeEventListener('mousemove', stopPM)
+          dom.removeEventListener('keydown', stopPM)
           setTimeout(() => root.unmount(), 0)
         },
       }
