@@ -1,3 +1,7 @@
+## [v1.18.2] — Nettoyage import mort SallePages
+- Suppression import SallePages dans SalleDProfs.jsx (onglet Pages retiré en v1.18.0)
+- Allège le bundle (BlockNote/Mantine non inclus inutilement)
+
 ## [v1.18.1] — Option "Déplacer vers" dans les menus contextuels
 - Menu ⋯ des boards Kanban : option 📂 Déplacer vers…
 - Menu ⋯ des dossiers : option 📂 Déplacer vers…

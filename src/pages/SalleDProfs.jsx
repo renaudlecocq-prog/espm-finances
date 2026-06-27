@@ -11,7 +11,6 @@ import imageCompression from 'browser-image-compression'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
-import SallePages from './SallePages'
 import { CollabEditor } from '../salle/CollabEditor'
 import { supabase as supabaseClient } from '../lib/supabase'
 
