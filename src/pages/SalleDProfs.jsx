@@ -12,6 +12,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
 import SallePages from './SallePages'
+import { SalleDocuments } from '../salle/SalleDocuments'
 
 const COLORS = [
   '#6366F1','#8B5CF6','#EC4899','#EF4444','#F97316',
@@ -977,7 +978,7 @@ export default function SalleDProfs() {
   const tabs = [
     {key:'shared',   label:'Salle des profs'},
     {key:'personal', label:'Mon casier'},
-    {key:'pages',    label:'Pages'},
+    {key:'documents', label:'Documents'},
   ]
 
   // Titre PageHeader
@@ -985,7 +986,7 @@ export default function SalleDProfs() {
     ? openBoard.name
     : currentFolder
     ? currentFolder.name
-    : tab==='pages' ? 'Pages' : tab==='shared' ? 'Salle des profs' : 'Mon casier'
+    : tab==='documents' ? 'Documents' : tab==='shared' ? 'Salle des profs' : 'Mon casier'
 
   const headerSubtitle = openBoard
     ? 'Tableau Kanban'
@@ -1071,12 +1072,14 @@ export default function SalleDProfs() {
         }
       />
 
-      {/* ── Vue pages ── */}
-      {tab === 'pages' && (
-        <SallePages pageType="shared" />
+      {/* ── Vue documents collaboratifs ── */}
+      {tab === 'documents' && (
+        <div className="h-full">
+          <SalleDocuments />
+        </div>
       )}
 
-      <div className={tab === 'pages' ? 'hidden' : 'p-6'}>
+      <div className={tab === 'documents' ? 'hidden' : 'p-6'}>
         {/* ── Vue tableau Trello ouvert ── */}
         {openBoard && (
           <TrelloBoardView board={openBoard} onBack={() => setOpenBoard(null)}

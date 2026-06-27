@@ -1,3 +1,12 @@
+## [v1.17.0] — Document collaboratif (TipTap + Yjs + Supabase Realtime)
+- Nouvel onglet "Documents" dans la Salle des profs (remplace "Pages")
+- Éditeur TipTap avec toolbar : titres, gras/italique/barré, listes, citation, code, séparateur
+- Synchronisation temps réel entre tous les participants via Yjs + Supabase Realtime broadcast
+- Sauvegarde automatique en base (debounce 2s) dans la table salle_documents
+- Indicateur de connexion (vert = synchronisé)
+- Création, renommage inline, suppression de documents
+- Nouveau package @tailwindcss/typography pour le rendu prose
+
 ## [v1.16.28] — Bouton poubelle pour supprimer un bloc
 - Ajout d'un bouton icône poubelle dans la barre d'outils de SallePages
 - Supprime le bloc où se trouve le curseur (tableau natif, tableau élèves, paragraphe…)
