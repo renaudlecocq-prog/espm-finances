@@ -12,7 +12,8 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
 import SallePages from './SallePages'
-import { SalleDocuments } from '../salle/SalleDocuments'
+import { CollabEditor } from '../salle/CollabEditor'
+import { supabase as supabaseClient } from '../lib/supabase'
 
 const COLORS = [
   '#6366F1','#8B5CF6','#EC4899','#EF4444','#F97316',
@@ -430,7 +431,7 @@ function ItemCard({ item, onDelete, canDelete }) {
             {(()=>{try{return new URL(item.content).hostname}catch{return item.content}})()}
           </div>
         )}
-        {item.description&&item.type!=='note'&&(
+        {item.description&&(
           <div style={{fontSize:11,color:'#9CA3AF',marginTop:2,overflow:'hidden',
             display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>
             {item.description}
@@ -523,7 +524,7 @@ function FolderModal({ initial, onClose, onSave }) {
 }
 
 // ── Modal ajout d'item ────────────────────────────────────────────────────────
-function AddItemModal({ folder, onClose, onAdded }) {
+function AddItemModal({ folder, tab, onClose, onAdded, onCreateBoard, onCreateDoc }) {
   const { user } = useAuth()
   const fileRef   = useRef(null)
   const [type,setType]               = useState('link')
@@ -535,10 +536,12 @@ function AddItemModal({ folder, onClose, onAdded }) {
   const [error,setError]             = useState('')
   const [compressing,setCompressing] = useState(false)
   const TYPES = [
-    {key:'link',label:'Lien',emoji:'🔗'},
-    {key:'image',label:'Image',emoji:'🖼️'},
-    {key:'document',label:'Document',emoji:'📄'},
-    {key:'note',label:'Note',emoji:'📝'},
+    {key:'link',    label:'Lien',       emoji:'🔗'},
+    {key:'image',   label:'Image',      emoji:'🖼️'},
+    {key:'pdf',     label:'PDF',        emoji:'📕'},
+    {key:'word',    label:'Word',       emoji:'📘'},
+    {key:'kanban',  label:'Tableau',    emoji:'📋'},
+    ...(tab==='shared'?[{key:'collab_doc',label:'Document',emoji:'📝'}]:[]),
   ]
   const handleFileChange = async(e)=>{
     const f=e.target.files[0]; if(!f) return
@@ -549,6 +552,10 @@ function AddItemModal({ folder, onClose, onAdded }) {
       setCompressing(false)
     } else setFile(f)
     if(!title) setTitle(f.name.replace(/\.[^.]+$/,''))
+  }
+  const handleSpecialAction = ()=>{
+    if(type==='kanban'){ onClose(); onCreateBoard?.() }
+    if(type==='collab_doc'){ onClose(); onCreateDoc?.() }
   }
   const handleSave = async()=>{
     setError(''); setSaving(true)
@@ -565,7 +572,7 @@ function AddItemModal({ folder, onClose, onAdded }) {
       const{error:insErr}=await supabase.from('padlet_items').insert({
         folder_id:folder.id,type,
         title:title||null,
-        content:(type==='link'||type==='note')?content:null,
+        content:type==='link'?content:null,
         description:description||null,
         file_url:fileUrl,file_name:fileName,file_size:fileSize,created_by:user.id,
       })
@@ -576,7 +583,7 @@ function AddItemModal({ folder, onClose, onAdded }) {
   }
   const isValid=()=>{
     if(type==='link') return content.trim().length>0
-    if(type==='note') return content.trim().length>0
+    if(type==='kanban'||type==='collab_doc') return true
     return file!==null
   }
   return (
@@ -592,10 +599,10 @@ function AddItemModal({ folder, onClose, onAdded }) {
           <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9CA3AF',fontSize:20,lineHeight:1}}>×</button>
         </div>
         <div style={{flex:1,overflowY:'auto',padding:'18px 20px'}}>
-          <div style={{display:'flex',gap:8,marginBottom:20}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:20}}>
             {TYPES.map(t=>(
               <button key={t.key} onClick={()=>{setType(t.key);setFile(null);setContent('')}}
-                style={{flex:1,padding:'8px 0',borderRadius:10,border:'2px solid',
+                style={{padding:'8px 4px',borderRadius:10,border:'2px solid',
                   borderColor:type===t.key?folder.color:'#E5E7EB',
                   backgroundColor:type===t.key?softBg(folder.color):'#fff',
                   cursor:'pointer',fontSize:12,fontWeight:600,
@@ -617,19 +624,7 @@ function AddItemModal({ folder, onClose, onAdded }) {
                 style={{width:'100%',padding:'8px 10px',borderRadius:7,fontSize:13,border:'1.5px solid #E5E7EB',outline:'none',boxSizing:'border-box'}} />
             </div>
           </>}
-          {type==='note'&&<>
-            <div style={{marginBottom:14}}>
-              <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:5}}>Titre</label>
-              <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Titre optionnel"
-                style={{width:'100%',padding:'8px 10px',borderRadius:7,fontSize:13,border:'1.5px solid #E5E7EB',outline:'none',boxSizing:'border-box'}} />
-            </div>
-            <div style={{marginBottom:14}}>
-              <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:5}}>Contenu *</label>
-              <textarea value={content} onChange={e=>setContent(e.target.value)} rows={4} placeholder="Votre note…"
-                style={{width:'100%',padding:'8px 10px',borderRadius:7,fontSize:13,border:'1.5px solid #E5E7EB',outline:'none',boxSizing:'border-box',resize:'vertical',backgroundColor:'#FFFBEB'}} />
-            </div>
-          </>}
-          {(type==='image'||type==='document')&&<>
+          {(type==='image'||type==='pdf'||type==='word')&&<>
             <div style={{marginBottom:14}}>
               <div onClick={()=>fileRef.current?.click()}
                 style={{border:'2px dashed #E5E7EB',borderRadius:10,padding:'24px 16px',textAlign:'center',cursor:'pointer',backgroundColor:'#F9FAFB',transition:'all 0.15s'}}
@@ -637,22 +632,22 @@ function AddItemModal({ folder, onClose, onAdded }) {
                 onMouseLeave={e=>{e.currentTarget.style.borderColor='#E5E7EB';e.currentTarget.style.backgroundColor='#F9FAFB'}}>
                 {compressing?<div style={{color:'#6B7280',fontSize:13}}>⏳ Compression…</div>
                 :file?<div>
-                  <div style={{fontSize:24,marginBottom:6}}>{type==='image'?'🖼️':'📄'}</div>
+                  <div style={{fontSize:24,marginBottom:6}}>{type==='image'?'🖼️':type==='pdf'?'📕':'📘'}</div>
                   <div style={{fontSize:13,fontWeight:600,color:'#111'}}>{file.name}</div>
                   <div style={{fontSize:11,color:'#9CA3AF',marginTop:2}}>{fmtSize(file.size)}</div>
                   <div style={{fontSize:11,color:folder.color,marginTop:4}}>Cliquer pour changer</div>
                 </div>:<div>
-                  <div style={{fontSize:32,marginBottom:8}}>{type==='image'?'🖼️':'📄'}</div>
+                  <div style={{fontSize:32,marginBottom:8}}>{type==='image'?'🖼️':type==='pdf'?'📕':'📘'}</div>
                   <div style={{fontSize:13,fontWeight:600,color:'#374151',marginBottom:4}}>
-                    {type==='image'?'Cliquer pour ajouter une image':'Cliquer pour ajouter un document'}
+                    {type==='image'?'Cliquer pour ajouter une image':type==='pdf'?'Cliquer pour ajouter un PDF':'Cliquer pour ajouter un document Word'}
                   </div>
                   <div style={{fontSize:11,color:'#9CA3AF'}}>
-                    {type==='image'?'JPG, PNG, WebP · max 25 Mo (compressé auto)':'PDF, Word · max 25 Mo'}
+                    {type==='image'?'JPG, PNG, WebP · max 25 Mo (compressé auto)':type==='pdf'?'PDF · max 25 Mo':'DOC, DOCX · max 25 Mo'}
                   </div>
                 </div>}
               </div>
               <input ref={fileRef} type="file" style={{display:'none'}}
-                accept={type==='image'?'image/*':'.pdf,.doc,.docx'} onChange={handleFileChange} />
+                accept={type==='image'?'image/*':type==='pdf'?'.pdf':'.doc,.docx'} onChange={handleFileChange} />
             </div>
             <div style={{marginBottom:14}}>
               <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:5}}>Titre</label>
@@ -660,7 +655,21 @@ function AddItemModal({ folder, onClose, onAdded }) {
                 style={{width:'100%',padding:'8px 10px',borderRadius:7,fontSize:13,border:'1.5px solid #E5E7EB',outline:'none',boxSizing:'border-box'}} />
             </div>
           </>}
-          {type!=='note'&&(
+          {type==='kanban'&&(
+            <div style={{textAlign:'center',padding:'24px 16px',backgroundColor:'#F9FAFB',borderRadius:10,marginBottom:14}}>
+              <div style={{fontSize:40,marginBottom:8}}>📋</div>
+              <div style={{fontSize:14,fontWeight:600,color:'#374151',marginBottom:4}}>Nouveau tableau Kanban</div>
+              <div style={{fontSize:12,color:'#9CA3AF'}}>Vous pourrez choisir le nom et la couleur à l'étape suivante.</div>
+            </div>
+          )}
+          {type==='collab_doc'&&(
+            <div style={{textAlign:'center',padding:'24px 16px',background:'linear-gradient(135deg,rgba(59,130,246,0.08),rgba(99,102,241,0.08))',borderRadius:10,marginBottom:14}}>
+              <div style={{fontSize:40,marginBottom:8}}>📝</div>
+              <div style={{fontSize:14,fontWeight:600,color:'#374151',marginBottom:4}}>Nouveau document collaboratif</div>
+              <div style={{fontSize:12,color:'#9CA3AF'}}>Le document sera créé et ouvert immédiatement.<br/>Vous pourrez le renommer et l'éditer en direct.</div>
+            </div>
+          )}
+          {type!=='kanban'&&type!=='collab_doc'&&(
             <div>
               <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:5}}>Description</label>
               <input value={description} onChange={e=>setDescription(e.target.value)} placeholder="Optionnel"
@@ -670,9 +679,11 @@ function AddItemModal({ folder, onClose, onAdded }) {
         </div>
         <div style={{padding:'14px 20px',borderTop:'1px solid #F3F4F6',display:'flex',gap:10}}>
           <button onClick={onClose} style={{flex:1,padding:'10px',borderRadius:10,border:'1.5px solid #E5E7EB',background:'#fff',cursor:'pointer',fontSize:13,fontWeight:600,color:'#374151'}}>Annuler</button>
-          <button onClick={handleSave} disabled={!isValid()||saving||compressing}
-            style={{flex:2,padding:'10px',borderRadius:10,border:'none',backgroundColor:folder.color,color:'#fff',cursor:'pointer',fontSize:13,fontWeight:600,opacity:(!isValid()||saving||compressing)?0.6:1}}>
-            {saving?'Ajout…':'Ajouter'}
+          <button onClick={type==='kanban'||type==='collab_doc'?handleSpecialAction:handleSave}
+            disabled={(type!=='kanban'&&type!=='collab_doc')&&(!isValid()||saving||compressing)}
+            style={{flex:2,padding:'10px',borderRadius:10,border:'none',backgroundColor:folder.color,color:'#fff',cursor:'pointer',fontSize:13,fontWeight:600,
+              opacity:((type!=='kanban'&&type!=='collab_doc')&&(!isValid()||saving||compressing))?0.6:1}}>
+            {saving?'Ajout…':type==='kanban'?'Créer le tableau':type==='collab_doc'?'Créer le document':'Ajouter'}
           </button>
         </div>
       </div>
@@ -681,22 +692,26 @@ function AddItemModal({ folder, onClose, onAdded }) {
 }
 
 // ── Filtre par type ───────────────────────────────────────────────────────────
-function TypeFilter({ subFolders, items, value, onChange }) {
+function TypeFilter({ subFolders, items, boards, docs, value, onChange }) {
   const counts = {
-    all:    subFolders.length + items.length,
+    all:    subFolders.length + items.length + (boards?.length||0) + (docs?.length||0),
     folder: subFolders.length,
     image:  items.filter(i=>i.type==='image').length,
-    document: items.filter(i=>i.type==='document').length,
+    pdf:    items.filter(i=>i.type==='pdf'||i.type==='document').length,
+    word:   items.filter(i=>i.type==='word').length,
     link:   items.filter(i=>i.type==='link').length,
-    note:   items.filter(i=>i.type==='note').length,
+    kanban: boards?.length||0,
+    collab: docs?.length||0,
   }
   const buttons = [
-    {key:'all',      label:'Tout',      emoji:''},
-    {key:'folder',   label:'Dossiers',  emoji:'📁'},
-    {key:'image',    label:'Images',    emoji:'🖼️'},
-    {key:'document', label:'Documents', emoji:'📄'},
-    {key:'link',     label:'Liens',     emoji:'🔗'},
-    {key:'note',     label:'Notes',     emoji:'📝'},
+    {key:'all',    label:'Tout',      emoji:''},
+    {key:'folder', label:'Dossiers',  emoji:'📁'},
+    {key:'image',  label:'Images',    emoji:'🖼️'},
+    {key:'pdf',    label:'PDF',       emoji:'📕'},
+    {key:'word',   label:'Word',      emoji:'📘'},
+    {key:'link',   label:'Liens',     emoji:'🔗'},
+    {key:'kanban', label:'Tableaux',  emoji:'📋'},
+    {key:'collab', label:'Docs',      emoji:'📝'},
   ].filter(b => b.key==='all' || counts[b.key]>0)
 
   if (buttons.length <= 2) return null  // seulement "Tout" + 1 type → inutile
@@ -726,6 +741,9 @@ export default function SalleDProfs() {
 
   // Navigation
   const [openBoard,  setOpenBoard]  = useState(null)  // tableau Trello ouvert
+  const [openColDoc,  setOpenColDoc]  = useState(null)  // doc collaboratif ouvert
+  const [folderBoards, setFolderBoards] = useState([])   // boards dans le dossier courant
+  const [folderDocs,   setFolderDocs]   = useState([])   // docs collab dans le dossier courant
   const [triggerAddList, setTriggerAddList] = useState(false)
   const [allItems,   setAllItems]   = useState([])  // grille racine fusionnée
   const [dragActive, setDragActive] = useState(null)
@@ -820,11 +838,12 @@ export default function SalleDProfs() {
 
   useEffect(()=>{loadFolders();loadBoards();setFolderPath([]);setOpenBoard(null)}, [loadFolders, loadBoards])
 
-  // Fusionner folders + boards dans un tableau ordonné pour la grille racine
+  // Fusionner folders + boards orphelins (folder_id=null) pour la grille racine
   useEffect(() => {
+    const orphanBoards = boards.filter(b => !b.folder_id)
     const combined = [
       ...folders.map(f => ({ ...f, _itemType: 'folder', _sortId: `folder-${f.id}` })),
-      ...boards.map(b => ({ ...b, _itemType: 'board',  _sortId: `board-${b.id}` })),
+      ...orphanBoards.map(b => ({ ...b, _itemType: 'board',  _sortId: `board-${b.id}` })),
     ].sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
     setAllItems(combined)
   }, [folders, boards])
@@ -833,17 +852,22 @@ export default function SalleDProfs() {
   const loadFolderContent = useCallback(async (folder) => {
     setContentLoading(true); setTypeFilter('all')
     try {
-      const [{data:subs,error:e1},{data:its,error:e2}] = await Promise.all([
+      const [{data:subs,error:e1},{data:its,error:e2},{data:bds,error:e3},{data:docs,error:e4}] = await Promise.all([
         supabase.from('padlet_folders').select('*')
           .eq('parent_id',folder.id).order('pinned',{ascending:false}).order('created_at'),
         supabase.from('padlet_items').select('*')
           .eq('folder_id',folder.id).order('created_at'),
+        supabase.from('trello_boards').select('*')
+          .eq('folder_id',folder.id).order('position',{ascending:true}),
+        supabase.from('salle_documents').select('*')
+          .eq('folder_id',folder.id).order('updated_at',{ascending:false}),
       ])
       if (e1) throw e1; if (e2) throw e2
       const subList = subs || []
       setSubFolders(subList)
       setItems(its || [])
-      // Stats + previews des sous-dossiers
+      setFolderBoards(bds || [])
+      setFolderDocs(docs || [])
       if (subList.length > 0) {
         const {data:subItems} = await supabase.from('padlet_items')
           .select('id,folder_id,type,file_url,content').in('folder_id',subList.map(f=>f.id)).order('created_at')
@@ -899,12 +923,20 @@ export default function SalleDProfs() {
   }
   // ── CRUD boards Trello ────────────────────────────────────────────────────
   const createBoard = async (data) => {
-    const { error } = await supabase.from('trello_boards').insert({
-      ...data, type: tab, created_by: user.id,
-    })
+    const payload = { ...data, type: tab, created_by: user.id }
+    if (currentFolder) payload.folder_id = currentFolder.id
+    const { error } = await supabase.from('trello_boards').insert(payload)
     if (error) throw error
-    await loadBoards()
+    if (currentFolder) { loadFolderContent(currentFolder) } else { await loadBoards() }
     setBoardModal(false)
+  }
+  const createColDoc = async () => {
+    const { data, error } = await supabase.from('salle_documents')
+      .insert({ name: 'Sans titre', created_by: user.id, folder_id: currentFolder?.id || null })
+      .select().single()
+    if (error) { console.error(error); return }
+    setFolderDocs(prev => [data, ...prev])
+    setOpenColDoc(data)
   }
   const updateBoard = async (data) => {
     const { error } = await supabase.from('trello_boards').update({ ...data, updated_at: new Date().toISOString() }).eq('id', editBoard.id)
@@ -978,24 +1010,27 @@ export default function SalleDProfs() {
   const tabs = [
     {key:'shared',   label:'Salle des profs'},
     {key:'personal', label:'Mon casier'},
-    {key:'documents', label:'Documents'},
   ]
 
   // Titre PageHeader
-  const headerTitle = openBoard
+  const headerTitle = openColDoc
+    ? openColDoc.name
+    : openBoard
     ? openBoard.name
     : currentFolder
     ? currentFolder.name
-    : tab==='documents' ? 'Documents' : tab==='shared' ? 'Salle des profs' : 'Mon casier'
+    : tab==='shared' ? 'Salle des profs' : 'Mon casier'
 
-  const headerSubtitle = openBoard
+  const headerSubtitle = openColDoc
+    ? 'Document collaboratif'
+    : openBoard
     ? 'Tableau Kanban'
     : currentFolder
     ? (() => {
-        const total = subFolders.length + items.length
+        const total = subFolders.length + items.length + folderBoards.length + folderDocs.length
         return `${total} élément${total!==1?'s':''}`
       })()
-    : tab==='pages' ? 'Éditeur collaboratif' : `${folders.length} dossier${folders.length!==1?'s':''}`
+    : `${folders.length} dossier${folders.length!==1?'s':''}`
 
   return (
     <>
@@ -1005,7 +1040,7 @@ export default function SalleDProfs() {
         leftActions={(currentFolder || openBoard) ? (
           <div style={{display:'flex',alignItems:'center',gap:0}}>
             {/* Breadcrumb */}
-            <button onClick={() => { navigateToRoot(); setOpenBoard(null) }}
+            <button onClick={() => { navigateToRoot(); setOpenBoard(null); setOpenColDoc(null) }}
               style={{background:'none',border:'none',cursor:'pointer',
                 color:'rgba(255,255,255,0.70)',fontSize:12,fontWeight:500,
                 padding:'4px 8px',borderRadius:6,lineHeight:1,display:'flex',alignItems:'center'}}
@@ -1038,28 +1073,19 @@ export default function SalleDProfs() {
         onTabChange={(!currentFolder && !openBoard) ? setTab : undefined}
         actions={
           <div style={{display:'flex',gap:8}}>
-            {currentFolder && !openBoard && (
+            {currentFolder && !openBoard && !openColDoc && (
               <button onClick={()=>setAddItemModal(true)}
                 style={{padding:'7px 14px',borderRadius:8,border:'1.5px solid rgba(255,255,255,0.4)',
                   backgroundColor:'transparent',color:'#fff',cursor:'pointer',fontSize:13,fontWeight:600}}>
                 + Élément
               </button>
             )}
-            {!openBoard && (
-              <>
-                {!currentFolder && !openBoard && (
-                  <button onClick={()=>setBoardModal(true)}
-                    style={{padding:'7px 14px',borderRadius:8,border:'1.5px solid rgba(255,255,255,0.4)',
-                      backgroundColor:'transparent',color:'#fff',cursor:'pointer',fontSize:13,fontWeight:600}}>
-                    + Tableau
-                  </button>
-                )}
-                <button onClick={()=>setFolderModal(true)}
-                  style={{padding:'7px 16px',borderRadius:8,border:'none',
-                    backgroundColor:'#fff',color:'#2D1B2E',cursor:'pointer',fontSize:13,fontWeight:700}}>
-                  + Dossier
-                </button>
-              </>
+            {!currentFolder && !openBoard && !openColDoc && (
+              <button onClick={()=>setFolderModal(true)}
+                style={{padding:'7px 16px',borderRadius:8,border:'none',
+                  backgroundColor:'#fff',color:'#2D1B2E',cursor:'pointer',fontSize:13,fontWeight:700}}>
+                + Dossier
+              </button>
             )}
             {openBoard && (
               <button onClick={()=>setTriggerAddList(true)}
@@ -1072,14 +1098,35 @@ export default function SalleDProfs() {
         }
       />
 
-      {/* ── Vue documents collaboratifs ── */}
-      {tab === 'documents' && (
-        <div className="h-full">
-          <SalleDocuments />
+      {/* ── Vue doc collaboratif ouvert ── */}
+      {openColDoc && (
+        <div className="h-full flex flex-col">
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+            <button
+              onClick={() => setOpenColDoc(null)}
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Retour
+            </button>
+            <span className="text-gray-300 dark:text-gray-600">/</span>
+            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{openColDoc.name}</span>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <CollabEditor
+              key={openColDoc.id}
+              supabase={supabaseClient}
+              document={openColDoc}
+              user={user}
+              dark={false}
+            />
+          </div>
         </div>
       )}
 
-      <div className={tab === 'documents' ? 'hidden' : 'p-6'}>
+      <div className={openColDoc ? 'hidden' : 'p-6'}>
         {/* ── Vue tableau Trello ouvert ── */}
         {openBoard && (
           <TrelloBoardView board={openBoard} onBack={() => setOpenBoard(null)}
@@ -1097,15 +1144,11 @@ export default function SalleDProfs() {
               <div style={{fontSize:16,fontWeight:600,color:'#374151',marginBottom:8}}>
                 {tab==='shared'?'La salle des profs est vide':'Votre casier est vide'}
               </div>
-              <div style={{fontSize:14,color:'#9CA3AF',marginBottom:24}}>Créez votre premier dossier ou tableau.</div>
+              <div style={{fontSize:14,color:'#9CA3AF',marginBottom:24}}>Créez votre premier dossier.</div>
               <div style={{display:'flex',gap:10,justifyContent:'center'}}>
                 <button onClick={()=>setFolderModal(true)}
-                  style={{padding:'10px 20px',borderRadius:10,border:'1.5px solid #2D1B2E',backgroundColor:'#fff',color:'#2D1B2E',cursor:'pointer',fontSize:14,fontWeight:600}}>
-                  + Dossier
-                </button>
-                <button onClick={()=>setBoardModal(true)}
                   style={{padding:'10px 20px',borderRadius:10,border:'none',backgroundColor:'#2D1B2E',color:'#fff',cursor:'pointer',fontSize:14,fontWeight:600}}>
-                  + Tableau
+                  + Dossier
                 </button>
               </div>
             </div>
@@ -1155,11 +1198,11 @@ export default function SalleDProfs() {
         {currentFolder && (
           contentLoading ? (
             <div style={{textAlign:'center',color:'#9CA3AF',padding:60}}>Chargement…</div>
-          ) : subFolders.length===0 && items.length===0 ? (
+          ) : subFolders.length===0 && items.length===0 && folderBoards.length===0 && folderDocs.length===0 ? (
             <div style={{textAlign:'center',padding:80}}>
               <div style={{fontSize:48,marginBottom:16}}>{currentFolder.emoji}</div>
               <div style={{fontSize:16,fontWeight:600,color:'#374151',marginBottom:8}}>Ce dossier est vide</div>
-              <div style={{fontSize:14,color:'#9CA3AF',marginBottom:24}}>Ajoutez des sous-dossiers, images, documents, liens ou notes.</div>
+              <div style={{fontSize:14,color:'#9CA3AF',marginBottom:24}}>Ajoutez des sous-dossiers, images, documents, liens, tableaux ou documents collaboratifs.</div>
               <div style={{display:'flex',gap:10,justifyContent:'center'}}>
                 <button onClick={()=>setFolderModal(true)}
                   style={{padding:'10px 20px',borderRadius:10,border:'1.5px solid #2D1B2E',backgroundColor:'#fff',color:'#2D1B2E',cursor:'pointer',fontSize:14,fontWeight:600}}>
@@ -1173,7 +1216,7 @@ export default function SalleDProfs() {
             </div>
           ) : (
             <>
-              <TypeFilter subFolders={subFolders} items={items} value={typeFilter} onChange={setTypeFilter} />
+              <TypeFilter subFolders={subFolders} items={items} boards={folderBoards} docs={folderDocs} value={typeFilter} onChange={setTypeFilter} />
               <DndContext sensors={sensors} collisionDetection={closestCenter}
                 onDragStart={handleItemDragStart} onDragEnd={handleItemDragEnd}>
                 <SortableContext items={filteredItems.map(i => `item-${i.id}`)} strategy={rectSortingStrategy}>
@@ -1199,6 +1242,37 @@ export default function SalleDProfs() {
                   })()}
                 </DragOverlay>
               </DndContext>
+              {/* Boards dans le dossier */}
+              {(typeFilter==='all'||typeFilter==='kanban') && folderBoards.length>0 && (
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14,marginTop:14}}>
+                  {folderBoards.map(board=>(
+                    <TrelloBoardCard key={board.id} board={board}
+                      onOpen={()=>setOpenBoard(board)} onEdit={()=>setEditBoard(board)}
+                      onPin={()=>togglePinBoard(board)} onDelete={()=>deleteBoard(board)}
+                      canEdit={canEdit(board)} />
+                  ))}
+                </div>
+              )}
+              {/* Docs collaboratifs dans le dossier */}
+              {(typeFilter==='all'||typeFilter==='collab') && folderDocs.length>0 && (
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14,marginTop:14}}>
+                  {folderDocs.map(doc=>(
+                    <div key={doc.id}
+                      onClick={()=>setOpenColDoc(doc)}
+                      style={{borderRadius:14,overflow:'hidden',backgroundColor:'#fff',
+                        boxShadow:'0 2px 8px rgba(0,0,0,0.08)',cursor:'pointer',transition:'all 0.2s'}}
+                      onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.13)'}}
+                      onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'}}>
+                      <div style={{height:80,background:'linear-gradient(135deg,#3B82F6,#6366F1)',
+                        display:'flex',alignItems:'center',justifyContent:'center',fontSize:28}}>📝</div>
+                      <div style={{padding:'10px 12px 12px'}}>
+                        <div style={{fontWeight:700,fontSize:13,color:'#111',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{doc.name}</div>
+                        <div style={{fontSize:11,color:'#9CA3AF',marginTop:2}}>Document collaboratif</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )
         )}
@@ -1210,8 +1284,14 @@ export default function SalleDProfs() {
       {boardModal  && <BoardModal onClose={()=>setBoardModal(false)} onSave={createBoard} />}
       {editBoard   && <BoardModal initial={editBoard} onClose={()=>setEditBoard(null)} onSave={updateBoard} />}
       {addItemModal && currentFolder && (
-        <AddItemModal folder={currentFolder} onClose={()=>setAddItemModal(false)}
-          onAdded={()=>{ setAddItemModal(false); loadFolderContent(currentFolder); loadFolders() }} />
+        <AddItemModal
+          folder={currentFolder}
+          tab={tab}
+          onClose={()=>setAddItemModal(false)}
+          onAdded={()=>{ setAddItemModal(false); loadFolderContent(currentFolder); loadFolders() }}
+          onCreateBoard={()=>setBoardModal(true)}
+          onCreateDoc={()=>createColDoc()}
+        />
       )}
     </>
   )

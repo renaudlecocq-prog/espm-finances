@@ -1,3 +1,12 @@
+## [v1.18.0] — Intégration dossiers : Kanban + Documents collaboratifs + PDF/Word
+- Structure dossiers refondée : racine = dossiers uniquement (boards orphelins restent visibles pour compat)
+- À l'intérieur d'un dossier : Lien / Image / PDF / Word / Tableau Kanban / Document collaboratif
+- Kanban et docs collaboratifs se créent dans le dossier courant (folder_id assigné)
+- Suppression de l'onglet "Documents" séparé — docs intégrés dans Salle des profs + Mon casier
+- Filtre par type mis à jour : PDF, Word, Liens, Tableaux, Docs
+- Mon casier : Kanban dans les dossiers (pas de doc collaboratif = personnel)
+- Clic sur doc collaboratif → ouvre l'éditeur TipTap directement dans la page
+
 ## [v1.17.2] — Fix warning TipTap undo/redo doublon
 - StarterKit : desactiver undoRedo (géré par Collaboration/Yjs)
 
