@@ -786,6 +786,81 @@ function AddItemModal({ folder, tab, onClose, onAdded, onCreateBoard, onCreateDo
 }
 
 // ── Filtre par type ───────────────────────────────────────────────────────────
+// ── ListeCard avec menu contextuel ───────────────────────────────────────────
+function ListeCard({ liste, onOpen, onRename, onMove, onDelete, canEdit }) {
+  const [menu, setMenu] = useState(false)
+  const btnRef = useRef(null)
+  const items = [
+    { label: '✏️ Renommer',        action: onRename },
+    { label: '📂 Déplacer vers…',  action: onMove },
+    { label: '🗑️ Supprimer',       action: onDelete, danger: true },
+  ]
+  return (
+    <div style={{borderRadius:14,overflow:'hidden',backgroundColor:'#fff',
+      boxShadow:'0 2px 8px rgba(0,0,0,0.08)',transition:'all 0.2s',position:'relative'}}
+      onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.13)'}}
+      onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'}}>
+      <div onClick={onOpen} style={{cursor:'pointer'}}>
+        <div style={{height:80,background:'linear-gradient(135deg,#10B981,#3B82F6)',
+          display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,position:'relative'}}>
+          📊
+          {canEdit && (
+            <button ref={btnRef} onClick={e=>{e.stopPropagation();setMenu(v=>!v)}}
+              style={{position:'absolute',top:6,right:6,background:'rgba(255,255,255,0.9)',border:'none',
+                borderRadius:999,width:26,height:26,cursor:'pointer',fontSize:13,
+                display:'flex',alignItems:'center',justifyContent:'center',color:'#374151'}}>
+              ⋯
+            </button>
+          )}
+        </div>
+        <div style={{padding:'10px 12px 12px'}}>
+          <div style={{fontWeight:700,fontSize:13,color:'#111',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{liste.name}</div>
+          <div style={{fontSize:11,color:'#9CA3AF',marginTop:2}}>Liste · {(liste.eleve_ids||[]).length} élève{(liste.eleve_ids||[]).length!==1?'s':''}</div>
+        </div>
+      </div>
+      {menu && <ContextMenu btnRef={btnRef} items={items} onClose={()=>setMenu(false)} />}
+    </div>
+  )
+}
+
+// ── DocCard avec menu contextuel ──────────────────────────────────────────────
+function DocCard({ doc, onOpen, onRename, onMove, onDelete, canEdit }) {
+  const [menu, setMenu] = useState(false)
+  const btnRef = useRef(null)
+  const items = [
+    { label: '✏️ Renommer',        action: onRename },
+    { label: '📂 Déplacer vers…',  action: onMove },
+    { label: '🗑️ Supprimer',       action: onDelete, danger: true },
+  ]
+  return (
+    <div style={{borderRadius:14,overflow:'hidden',backgroundColor:'#fff',
+      boxShadow:'0 2px 8px rgba(0,0,0,0.08)',transition:'all 0.2s',position:'relative'}}
+      onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.13)'}}
+      onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'}}>
+      <div onClick={onOpen} style={{cursor:'pointer'}}>
+        <div style={{height:80,background:'linear-gradient(135deg,#3B82F6,#6366F1)',
+          display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,position:'relative'}}>
+          📝
+          {canEdit && (
+            <button ref={btnRef} onClick={e=>{e.stopPropagation();setMenu(v=>!v)}}
+              style={{position:'absolute',top:6,right:6,background:'rgba(255,255,255,0.9)',border:'none',
+                borderRadius:999,width:26,height:26,cursor:'pointer',fontSize:13,
+                display:'flex',alignItems:'center',justifyContent:'center',color:'#374151'}}>
+              ⋯
+            </button>
+          )}
+        </div>
+        <div style={{padding:'10px 12px 12px'}}>
+          <div style={{fontWeight:700,fontSize:13,color:'#111',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{doc.name}</div>
+          <div style={{fontSize:11,color:'#9CA3AF',marginTop:2}}>Document collaboratif</div>
+        </div>
+      </div>
+      {menu && <ContextMenu btnRef={btnRef} items={items} onClose={()=>setMenu(false)} />}
+    </div>
+  )
+}
+
+
 // ── Modal création liste d'élèves ─────────────────────────────────────────────
 function ListeModal({ folder, tab, onClose, onCreate }) {
   const [step, setStep] = useState(1)     // 1 = nom, 2 = sélection élèves
@@ -1289,6 +1364,32 @@ export default function SalleDProfs() {
     setOpenColDoc(data)
   }
 
+  const renameListe = async (liste) => {
+    const newName = window.prompt('Renommer la liste :', liste.name)
+    if (!newName || !newName.trim() || newName.trim() === liste.name) return
+    await supabase.from('salle_listes').update({ name: newName.trim() }).eq('id', liste.id)
+    setFolderListes(prev => prev.map(l => l.id === liste.id ? { ...l, name: newName.trim() } : l))
+  }
+
+  const deleteListe = async (liste) => {
+    if (!window.confirm(`Supprimer la liste "${liste.name}" ?`)) return
+    await supabase.from('salle_listes').delete().eq('id', liste.id)
+    setFolderListes(prev => prev.filter(l => l.id !== liste.id))
+  }
+
+  const renameDoc = async (doc) => {
+    const newName = window.prompt('Renommer le document :', doc.name)
+    if (!newName || !newName.trim() || newName.trim() === doc.name) return
+    await supabase.from('salle_documents').update({ name: newName.trim() }).eq('id', doc.id)
+    setFolderDocs(prev => prev.map(d => d.id === doc.id ? { ...d, name: newName.trim() } : d))
+  }
+
+  const deleteDoc = async (doc) => {
+    if (!window.confirm(`Supprimer le document "${doc.name}" ?`)) return
+    await supabase.from('salle_documents').delete().eq('id', doc.id)
+    setFolderDocs(prev => prev.filter(d => d.id !== doc.id))
+  }
+
   const createListe = async (name, eleveIds) => {
     const { data, error } = await supabase.from('salle_listes')
       .insert({ name: name || 'Sans titre', created_by: user.id, folder_id: currentFolder?.id || null, eleve_ids: eleveIds, type: tab })
@@ -1674,30 +1775,12 @@ export default function SalleDProfs() {
               {(typeFilter==='all'||typeFilter==='liste') && folderListes.length>0 && (
                 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14,marginTop:14}}>
                   {folderListes.map(liste=>(
-                    <div key={liste.id}
-                      style={{borderRadius:14,overflow:'hidden',backgroundColor:'#fff',
-                        boxShadow:'0 2px 8px rgba(0,0,0,0.08)',transition:'all 0.2s',position:'relative'}}
-                      onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.13)'}}
-                      onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'}}>
-                      <div onClick={()=>setOpenListe(liste)} style={{cursor:'pointer'}}>
-                        <div style={{height:80,background:'linear-gradient(135deg,#10B981,#3B82F6)',
-                          display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,position:'relative'}}>
-                          📊
-                          {canEdit(liste) && (
-                            <button onClick={e=>{e.stopPropagation();setMoveTarget({entity:liste,entityType:'liste'})}}
-                              style={{position:'absolute',top:6,right:6,background:'rgba(255,255,255,0.9)',border:'none',
-                                borderRadius:999,width:26,height:26,cursor:'pointer',fontSize:13,
-                                display:'flex',alignItems:'center',justifyContent:'center',color:'#374151'}}>
-                              ⋯
-                            </button>
-                          )}
-                        </div>
-                        <div style={{padding:'10px 12px 12px'}}>
-                          <div style={{fontWeight:700,fontSize:13,color:'#111',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{liste.name}</div>
-                          <div style={{fontSize:11,color:'#9CA3AF',marginTop:2}}>Liste · {(liste.eleve_ids||[]).length} élève{(liste.eleve_ids||[]).length!==1?'s':''}</div>
-                        </div>
-                      </div>
-                    </div>
+                    <ListeCard key={liste.id} liste={liste}
+                      onOpen={()=>setOpenListe(liste)}
+                      onRename={()=>renameListe(liste)}
+                      onMove={()=>setMoveTarget({entity:liste,entityType:'liste'})}
+                      onDelete={()=>deleteListe(liste)}
+                      canEdit={canEdit(liste)} />
                   ))}
                 </div>
               )}
@@ -1705,30 +1788,12 @@ export default function SalleDProfs() {
               {(typeFilter==='all'||typeFilter==='collab') && folderDocs.length>0 && (
                 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14,marginTop:14}}>
                   {folderDocs.map(doc=>(
-                    <div key={doc.id}
-                      style={{borderRadius:14,overflow:'hidden',backgroundColor:'#fff',
-                        boxShadow:'0 2px 8px rgba(0,0,0,0.08)',transition:'all 0.2s',position:'relative'}}
-                      onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.13)'}}
-                      onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'}}>
-                      <div onClick={()=>setOpenColDoc(doc)} style={{cursor:'pointer'}}>
-                        <div style={{height:80,background:'linear-gradient(135deg,#3B82F6,#6366F1)',
-                          display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,position:'relative'}}>
-                          📝
-                          {canEdit(doc) && (
-                            <button onClick={e=>{e.stopPropagation();setMoveTarget({entity:doc,entityType:'doc'})}}
-                              style={{position:'absolute',top:6,right:6,background:'rgba(255,255,255,0.9)',border:'none',
-                                borderRadius:999,width:26,height:26,cursor:'pointer',fontSize:13,
-                                display:'flex',alignItems:'center',justifyContent:'center',color:'#374151'}}>
-                              ⋯
-                            </button>
-                          )}
-                        </div>
-                        <div style={{padding:'10px 12px 12px'}}>
-                          <div style={{fontWeight:700,fontSize:13,color:'#111',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{doc.name}</div>
-                          <div style={{fontSize:11,color:'#9CA3AF',marginTop:2}}>Document collaboratif</div>
-                        </div>
-                      </div>
-                    </div>
+                    <DocCard key={doc.id} doc={doc}
+                      onOpen={()=>setOpenColDoc(doc)}
+                      onRename={()=>renameDoc(doc)}
+                      onMove={()=>setMoveTarget({entity:doc,entityType:'doc'})}
+                      onDelete={()=>deleteDoc(doc)}
+                      canEdit={canEdit(doc)} />
                   ))}
                 </div>
               )}

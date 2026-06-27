@@ -1,3 +1,11 @@
+## [v1.19.1] — Fix listes : colonnes groupes + menus + modal persistant
+- AddColumnModal reste ouvert après chaque ajout (bouton Fermer explicite)
+- Nouveau tab "Groupes" dans AddColumnModal : liste tous les groupes spécifiques des élèves (✓ = membre, vide = non-membre), avec recherche
+- Colonnes groupe read-only : ✓ vert pour les élèves du groupe, vide pour les autres
+- Menu contextuel complet sur les cartes Listes : Renommer, Déplacer vers..., Supprimer
+- Menu contextuel complet sur les cartes Docs : Renommer, Déplacer vers..., Supprimer
+- ListeCard + DocCard extraits en composants dédiés avec ContextMenu portal
+
 ## [v1.19.0] — Listes d'élèves collaboratives
 - Nouveau type d'élément dans les dossiers : 📊 Liste d'élèves
 - Création en 2 étapes : nom + sélection élèves par Classe / Groupe / Élève individuel
