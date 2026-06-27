@@ -49,7 +49,7 @@ export function CollabEditor({ supabase, document: doc, user, dark }) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ history: false }),
+      StarterKit.configure({ history: false, undoRedo: false }),
       Placeholder.configure({ placeholder: 'Commencez à écrire…' }),
       Collaboration.configure({ document: ydocRef.current }),
     ],

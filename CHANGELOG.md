@@ -1,3 +1,6 @@
+## [v1.17.2] — Fix warning TipTap undo/redo doublon
+- StarterKit : desactiver undoRedo (géré par Collaboration/Yjs)
+
 ## [v1.17.1] — Fix CollabEditor : supprimer CollaborationCursor (awareness incompatible)
 - Suppression de @tiptap/extension-collaboration-cursor qui crashait au montage
 - Yjs + Supabase Realtime fonctionnels sans affichage de curseurs (à rajouter plus tard)
