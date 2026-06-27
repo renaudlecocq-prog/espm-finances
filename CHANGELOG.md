@@ -1,3 +1,7 @@
+## [v1.17.1] — Fix CollabEditor : supprimer CollaborationCursor (awareness incompatible)
+- Suppression de @tiptap/extension-collaboration-cursor qui crashait au montage
+- Yjs + Supabase Realtime fonctionnels sans affichage de curseurs (à rajouter plus tard)
+
 ## [v1.17.0] — Document collaboratif (TipTap + Yjs + Supabase Realtime)
 - Nouvel onglet "Documents" dans la Salle des profs (remplace "Pages")
 - Éditeur TipTap avec toolbar : titres, gras/italique/barré, listes, citation, code, séparateur
