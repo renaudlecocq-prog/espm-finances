@@ -1,3 +1,6 @@
+## [v1.16.25] — Fix side menu : manualChunks BlockNote + floating-ui
+- vite.config.js : manualChunks pour regrouper @blocknote/* et @floating-ui/* dans un seul chunk
+- Évite les circular deps Rollup qui causaient React error #130 sur /salle-des-profs
 ## [v1.16.24] — Tenter réactivation side menu (optimizeDeps)
 - vite.config.js : ajout optimizeDeps.include pour @blocknote/* et @floating-ui/* (fix bundle circulaire)
 - Objectif : rétablir le menu 6 points sans React error #130
