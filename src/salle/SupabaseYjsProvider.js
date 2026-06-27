@@ -2,6 +2,10 @@
  * SupabaseYjsProvider
  * Synchronise un document Yjs entre tous les clients via Supabase Realtime broadcast.
  * Sauvegarde l'état complet en base avec un debounce de 2s.
+ *
+ * Options :
+ *   tableName   — table Supabase cible (défaut: 'salle_documents')
+ *   onSynced    — callback appelé quand le canal est prêt
  */
 import * as Y from 'yjs'
 
@@ -19,11 +23,12 @@ function base64ToUint8(b64) {
 }
 
 export class SupabaseYjsProvider {
-  constructor(ydoc, supabase, documentId, { onSynced } = {}) {
+  constructor(ydoc, supabase, documentId, { onSynced, tableName = 'salle_documents' } = {}) {
     this.ydoc = ydoc
     this.supabase = supabase
     this.documentId = documentId
     this.onSynced = onSynced
+    this.tableName = tableName
     this.channel = null
     this._saveTimer = null
     this._destroyed = false
@@ -34,7 +39,7 @@ export class SupabaseYjsProvider {
   async _init() {
     // 1. Charger l'état existant depuis la DB
     const { data } = await this.supabase
-      .from('salle_documents')
+      .from(this.tableName)
       .select('yjs_state')
       .eq('id', this.documentId)
       .single()
@@ -49,9 +54,9 @@ export class SupabaseYjsProvider {
 
     if (this._destroyed) return
 
-    // 2. Souscrire au canal Realtime pour recevoir les updates des autres clients
+    // 2. Souscrire au canal Realtime
     this.channel = this.supabase
-      .channel('salle-doc-' + this.documentId)
+      .channel(`${this.tableName}-${this.documentId}`)
       .on('broadcast', { event: 'yjs-update' }, ({ payload }) => {
         if (this._destroyed) return
         try {
@@ -67,7 +72,7 @@ export class SupabaseYjsProvider {
         }
       })
 
-    // 3. Écouter les changements locaux -> broadcaster + sauvegarder
+    // 3. Écouter les changements locaux
     this.ydoc.on('update', this._handleUpdate)
   }
 
@@ -92,7 +97,7 @@ export class SupabaseYjsProvider {
     try {
       const state = Y.encodeStateAsUpdate(this.ydoc)
       await this.supabase
-        .from('salle_documents')
+        .from(this.tableName)
         .update({ yjs_state: uint8ToBase64(state), updated_at: new Date().toISOString() })
         .eq('id', this.documentId)
     } catch (e) {

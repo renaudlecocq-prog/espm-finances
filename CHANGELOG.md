@@ -1,3 +1,13 @@
+## [v1.19.0] — Listes d'élèves collaboratives
+- Nouveau type d'élément dans les dossiers : 📊 Liste d'élèves
+- Création en 2 étapes : nom + sélection élèves par Classe / Groupe / Élève individuel
+- Colonnes configurables : Nom, Prénom, Sexe, Classe, Groupe(s) (données réelles depuis la table eleves)
+- Colonnes libres : ajout, suppression, édition inline des cellules
+- Synchronisation temps réel via Yjs + Supabase (même mécanique que les docs collaboratifs)
+- SupabaseYjsProvider.js étendu avec option tableName pour réutilisation
+- Filtre "Listes" dans TypeFilter + carte dans la grille dossier
+- Support Déplacer vers… pour les listes (entityType: 'liste')
+
 ## [v1.18.4] — Fix menu contextuel : portal React (position:fixed)
 - Menus ⋯ des dossiers et boards rendus via ReactDOM.createPortal
 - Calcul automatique : s'ouvre vers le bas ou le haut selon l'espace disponible

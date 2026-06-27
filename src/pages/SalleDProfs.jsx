@@ -13,6 +13,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
 import { CollabEditor } from '../salle/CollabEditor'
+import { ListeEditor } from '../salle/ListeEditor'
 import { supabase as supabaseClient } from '../lib/supabase'
 
 const COLORS = [
@@ -608,7 +609,7 @@ function MoveToModal({ entity, folders, currentFolderId, onClose, onMove }) {
   )
 }
 
-function AddItemModal({ folder, tab, onClose, onAdded, onCreateBoard, onCreateDoc }) {
+function AddItemModal({ folder, tab, onClose, onAdded, onCreateBoard, onCreateDoc, onCreateListe }) {
   const { user } = useAuth()
   const fileRef   = useRef(null)
   const [type,setType]               = useState('link')
@@ -626,6 +627,7 @@ function AddItemModal({ folder, tab, onClose, onAdded, onCreateBoard, onCreateDo
     {key:'word',    label:'Word',       emoji:'📘'},
     {key:'kanban',  label:'Tableau',    emoji:'📋'},
     ...(tab==='shared'?[{key:'collab_doc',label:'Document',emoji:'📝'}]:[]),
+    {key:'liste',      label:'Liste',      emoji:'📊'},
   ]
   const handleFileChange = async(e)=>{
     const f=e.target.files[0]; if(!f) return
@@ -640,6 +642,7 @@ function AddItemModal({ folder, tab, onClose, onAdded, onCreateBoard, onCreateDo
   const handleSpecialAction = ()=>{
     if(type==='kanban'){ onClose(); onCreateBoard?.() }
     if(type==='collab_doc'){ onClose(); onCreateDoc?.() }
+    if(type==='liste'){ onClose(); onCreateListe?.() }
   }
   const handleSave = async()=>{
     setError(''); setSaving(true)
@@ -667,7 +670,7 @@ function AddItemModal({ folder, tab, onClose, onAdded, onCreateBoard, onCreateDo
   }
   const isValid=()=>{
     if(type==='link') return content.trim().length>0
-    if(type==='kanban'||type==='collab_doc') return true
+    if(type==='kanban'||type==='collab_doc'||type==='liste') return true
     return file!==null
   }
   return (
@@ -753,7 +756,14 @@ function AddItemModal({ folder, tab, onClose, onAdded, onCreateBoard, onCreateDo
               <div style={{fontSize:12,color:'#9CA3AF'}}>Le document sera créé et ouvert immédiatement.<br/>Vous pourrez le renommer et l'éditer en direct.</div>
             </div>
           )}
-          {type!=='kanban'&&type!=='collab_doc'&&(
+          {type==='liste'&&(
+            <div style={{textAlign:'center',padding:'24px 16px',background:'linear-gradient(135deg,rgba(34,197,94,0.08),rgba(59,130,246,0.08))',borderRadius:10,marginBottom:14}}>
+              <div style={{fontSize:40,marginBottom:8}}>📊</div>
+              <div style={{fontSize:14,fontWeight:600,color:'#374151',marginBottom:4}}>Nouvelle liste d'élèves</div>
+              <div style={{fontSize:12,color:'#9CA3AF'}}>Choisissez les élèves et les colonnes à l'étape suivante.<br/>La liste se synchronise en temps réel.</div>
+            </div>
+          )}
+          {type!=='kanban'&&type!=='collab_doc'&&type!=='liste'&&(
             <div>
               <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:5}}>Description</label>
               <input value={description} onChange={e=>setDescription(e.target.value)} placeholder="Optionnel"
@@ -763,11 +773,11 @@ function AddItemModal({ folder, tab, onClose, onAdded, onCreateBoard, onCreateDo
         </div>
         <div style={{padding:'14px 20px',borderTop:'1px solid #F3F4F6',display:'flex',gap:10}}>
           <button onClick={onClose} style={{flex:1,padding:'10px',borderRadius:10,border:'1.5px solid #E5E7EB',background:'#fff',cursor:'pointer',fontSize:13,fontWeight:600,color:'#374151'}}>Annuler</button>
-          <button onClick={type==='kanban'||type==='collab_doc'?handleSpecialAction:handleSave}
-            disabled={(type!=='kanban'&&type!=='collab_doc')&&(!isValid()||saving||compressing)}
+          <button onClick={type==='kanban'||type==='collab_doc'||type==='liste'?handleSpecialAction:handleSave}
+            disabled={(type!=='kanban'&&type!=='collab_doc'&&type!=='liste')&&(!isValid()||saving||compressing)}
             style={{flex:2,padding:'10px',borderRadius:10,border:'none',backgroundColor:folder.color,color:'#fff',cursor:'pointer',fontSize:13,fontWeight:600,
-              opacity:((type!=='kanban'&&type!=='collab_doc')&&(!isValid()||saving||compressing))?0.6:1}}>
-            {saving?'Ajout…':type==='kanban'?'Créer le tableau':type==='collab_doc'?'Créer le document':'Ajouter'}
+              opacity:((type!=='kanban'&&type!=='collab_doc'&&type!=='liste')&&(!isValid()||saving||compressing))?0.6:1}}>
+            {saving?'Ajout…':type==='kanban'?'Créer le tableau':type==='collab_doc'?'Créer le document':type==='liste'?'Configurer la liste':'Ajouter'}
           </button>
         </div>
       </div>
@@ -776,9 +786,256 @@ function AddItemModal({ folder, tab, onClose, onAdded, onCreateBoard, onCreateDo
 }
 
 // ── Filtre par type ───────────────────────────────────────────────────────────
-function TypeFilter({ subFolders, items, boards, docs, value, onChange }) {
+// ── Modal création liste d'élèves ─────────────────────────────────────────────
+function ListeModal({ folder, tab, onClose, onCreate }) {
+  const [step, setStep] = useState(1)     // 1 = nom, 2 = sélection élèves
+  const [name, setName] = useState('')
+  const [selectionTab, setSelectionTab] = useState('classes')
+  const [allEleves, setAllEleves] = useState([])
+  const [selected, setSelected] = useState(new Set())
+  const [loading, setLoading] = useState(false)
+
+  // Charger tous les élèves au montage
+  useEffect(() => {
+    supabase.from('eleves').select('id,nom,prenom,classe,groupes_ss')
+      .order('classe').order('nom').order('prenom')
+      .then(({ data }) => setAllEleves(data || []))
+  }, [])
+
+  // Dériver classes et groupes uniques
+  const classes = [...new Set(allEleves.map(e => e.classe).filter(Boolean))].sort()
+  const groupes = [...new Set(
+    allEleves.flatMap(e => {
+      const g = e.groupes_ss
+      if (!g) return []
+      if (Array.isArray(g)) return g
+      try { const p = JSON.parse(g); return Array.isArray(p) ? p : [] } catch { return [] }
+    })
+  )].sort()
+
+  const getEleveGroupes = (e) => {
+    const g = e.groupes_ss
+    if (!g) return []
+    if (Array.isArray(g)) return g
+    try { const p = JSON.parse(g); return Array.isArray(p) ? p : [] } catch { return [] }
+  }
+
+  const toggleEleve = (id) => setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  const toggleClasse = (classe) => {
+    const ids = allEleves.filter(e => e.classe === classe).map(e => e.id)
+    const allSel = ids.every(id => selected.has(id))
+    setSelected(prev => { const n = new Set(prev); ids.forEach(id => allSel ? n.delete(id) : n.add(id)); return n })
+  }
+  const toggleGroupe = (groupe) => {
+    const ids = allEleves.filter(e => getEleveGroupes(e).includes(groupe)).map(e => e.id)
+    const allSel = ids.every(id => selected.has(id))
+    setSelected(prev => { const n = new Set(prev); ids.forEach(id => allSel ? n.delete(id) : n.add(id)); return n })
+  }
+
+  const handleCreate = () => {
+    if (!name.trim()) { setStep(2); return }
+    onCreate(name.trim(), [...selected])
+  }
+
+  return (
+    <div style={{position:'fixed',inset:0,backgroundColor:'rgba(0,0,0,0.5)',
+      display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:16}}>
+      <div style={{backgroundColor:'#fff',borderRadius:16,width:'100%',maxWidth:520,
+        maxHeight:'90vh',display:'flex',flexDirection:'column',boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}>
+
+        {/* Header */}
+        <div style={{padding:'18px 20px 14px',borderBottom:'1px solid #F3F4F6',
+          display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontWeight:700,fontSize:15,color:'#111'}}>
+              📊 Nouvelle liste d'élèves
+            </div>
+            <div style={{fontSize:12,color:'#9CA3AF',marginTop:2}}>Étape {step}/2</div>
+          </div>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9CA3AF',fontSize:20,lineHeight:1}}>×</button>
+        </div>
+
+        <div style={{flex:1,overflowY:'auto',padding:'18px 20px'}}>
+          {step === 1 && (
+            <div>
+              <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>
+                Nom de la liste
+              </label>
+              <input
+                autoFocus
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && name.trim() && setStep(2)}
+                placeholder="ex. Présence — voyage 6e, Remédiation maths…"
+                style={{width:'100%',padding:'10px 12px',borderRadius:8,fontSize:14,
+                  border:'1.5px solid #E5E7EB',outline:'none',boxSizing:'border-box',marginBottom:8}}
+                onFocus={e => e.target.style.borderColor='#2D1B2E'}
+                onBlur={e => e.target.style.borderColor='#E5E7EB'}
+              />
+              <div style={{fontSize:11,color:'#9CA3AF'}}>Vous choisirez les élèves à l'étape suivante.</div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div>
+              <div style={{fontSize:13,fontWeight:600,color:'#374151',marginBottom:12}}>
+                Sélectionner les élèves — <span style={{color:'#2D1B2E'}}>{selected.size} sélectionné{selected.size!==1?'s':''}</span>
+              </div>
+
+              {/* Tabs */}
+              <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
+                {[['classes','📚 Classes'],['groupes','👥 Groupes'],['individuel','🔍 Individuel']].map(([k,l])=>(
+                  <button key={k} onClick={()=>setSelectionTab(k)}
+                    style={{padding:'6px 14px',borderRadius:8,border:'none',cursor:'pointer',fontSize:12,fontWeight:600,
+                      background:selectionTab===k?'#2D1B2E':'#F3F4F6',
+                      color:selectionTab===k?'#fff':'#6B7280'}}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+
+              {/* Classes */}
+              {selectionTab==='classes' && (
+                <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                  {classes.map(classe => {
+                    const ids = allEleves.filter(e=>e.classe===classe).map(e=>e.id)
+                    const selCount = ids.filter(id=>selected.has(id)).length
+                    const allSel = selCount===ids.length && ids.length>0
+                    return (
+                      <label key={classe} style={{display:'flex',alignItems:'center',gap:12,
+                        padding:'10px 14px',borderRadius:10,border:'1.5px solid',cursor:'pointer',
+                        borderColor:allSel?'#2D1B2E':'#E5E7EB',
+                        backgroundColor:allSel?'rgba(45,27,46,0.04)':'#fff'}}>
+                        <input type="checkbox" checked={allSel} onChange={()=>toggleClasse(classe)}
+                          style={{width:16,height:16,cursor:'pointer',accentColor:'#2D1B2E'}} />
+                        <div style={{flex:1}}>
+                          <span style={{fontWeight:600,fontSize:13,color:'#111'}}>{classe}</span>
+                          <span style={{fontSize:12,color:'#9CA3AF',marginLeft:8}}>{ids.length} élève{ids.length!==1?'s':''}</span>
+                        </div>
+                        {selCount>0 && selCount<ids.length && (
+                          <span style={{fontSize:11,color:'#6B7280',background:'#F3F4F6',padding:'2px 8px',borderRadius:999}}>
+                            {selCount}/{ids.length}
+                          </span>
+                        )}
+                      </label>
+                    )
+                  })}
+                  {classes.length===0 && <div style={{color:'#9CA3AF',fontSize:13}}>Aucune classe trouvée.</div>}
+                </div>
+              )}
+
+              {/* Groupes */}
+              {selectionTab==='groupes' && (
+                <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                  {groupes.map(groupe => {
+                    const ids = allEleves.filter(e=>getEleveGroupes(e).includes(groupe)).map(e=>e.id)
+                    const selCount = ids.filter(id=>selected.has(id)).length
+                    const allSel = selCount===ids.length && ids.length>0
+                    return (
+                      <label key={groupe} style={{display:'flex',alignItems:'center',gap:12,
+                        padding:'10px 14px',borderRadius:10,border:'1.5px solid',cursor:'pointer',
+                        borderColor:allSel?'#2D1B2E':'#E5E7EB',
+                        backgroundColor:allSel?'rgba(45,27,46,0.04)':'#fff'}}>
+                        <input type="checkbox" checked={allSel} onChange={()=>toggleGroupe(groupe)}
+                          style={{width:16,height:16,cursor:'pointer',accentColor:'#2D1B2E'}} />
+                        <div style={{flex:1}}>
+                          <span style={{fontWeight:600,fontSize:13,color:'#111'}}>{groupe}</span>
+                          <span style={{fontSize:12,color:'#9CA3AF',marginLeft:8}}>{ids.length} élève{ids.length!==1?'s':''}</span>
+                        </div>
+                        {selCount>0 && selCount<ids.length && (
+                          <span style={{fontSize:11,color:'#6B7280',background:'#F3F4F6',padding:'2px 8px',borderRadius:999}}>
+                            {selCount}/{ids.length}
+                          </span>
+                        )}
+                      </label>
+                    )
+                  })}
+                  {groupes.length===0 && <div style={{color:'#9CA3AF',fontSize:13}}>Aucun groupe trouvé.</div>}
+                </div>
+              )}
+
+              {/* Individuel */}
+              {selectionTab==='individuel' && (
+                <div>
+                  <input
+                    placeholder="Rechercher un élève…"
+                    onChange={e => {
+                      const q = e.target.value.toLowerCase()
+                      e.target._filter = q
+                      e.target.parentNode.querySelectorAll('[data-eleve]').forEach(el => {
+                        el.style.display = el.dataset.eleve.includes(q) ? '' : 'none'
+                      })
+                    }}
+                    style={{width:'100%',padding:'8px 12px',borderRadius:8,fontSize:13,
+                      border:'1.5px solid #E5E7EB',outline:'none',boxSizing:'border-box',marginBottom:10}}
+                  />
+                  <div style={{display:'flex',flexDirection:'column',gap:4,maxHeight:280,overflowY:'auto'}}>
+                    {allEleves.map(e => (
+                      <label key={e.id}
+                        data-eleve={`${e.nom} ${e.prenom} ${e.classe}`.toLowerCase()}
+                        style={{display:'flex',alignItems:'center',gap:10,
+                          padding:'7px 12px',borderRadius:8,cursor:'pointer',
+                          backgroundColor:selected.has(e.id)?'rgba(45,27,46,0.04)':'transparent'}}
+                        onMouseEnter={el=>!selected.has(e.id)&&(el.currentTarget.style.backgroundColor='#F9FAFB')}
+                        onMouseLeave={el=>!selected.has(e.id)&&(el.currentTarget.style.backgroundColor='transparent')}>
+                        <input type="checkbox" checked={selected.has(e.id)} onChange={()=>toggleEleve(e.id)}
+                          style={{width:15,height:15,cursor:'pointer',accentColor:'#2D1B2E'}} />
+                        <span style={{fontSize:13,fontWeight:selected.has(e.id)?600:400,color:'#111',flex:1}}>
+                          {e.nom} {e.prenom}
+                        </span>
+                        <span style={{fontSize:11,color:'#9CA3AF'}}>{e.classe}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{padding:'14px 20px',borderTop:'1px solid #F3F4F6',display:'flex',gap:10}}>
+          {step===2 && (
+            <button onClick={()=>setStep(1)}
+              style={{padding:'10px 16px',borderRadius:10,border:'1.5px solid #E5E7EB',
+                background:'#fff',cursor:'pointer',fontSize:13,fontWeight:600,color:'#374151'}}>
+              ← Retour
+            </button>
+          )}
+          <button onClick={onClose}
+            style={{flex:step===1?1:0,padding:'10px',borderRadius:10,border:'1.5px solid #E5E7EB',
+              background:'#fff',cursor:'pointer',fontSize:13,fontWeight:600,color:'#374151'}}>
+            Annuler
+          </button>
+          {step===1 ? (
+            <button onClick={()=>name.trim()&&setStep(2)}
+              disabled={!name.trim()}
+              style={{flex:2,padding:'10px',borderRadius:10,border:'none',
+                backgroundColor:name.trim()?'#2D1B2E':'#E5E7EB',
+                color:name.trim()?'#fff':'#9CA3AF',
+                cursor:name.trim()?'pointer':'default',fontSize:13,fontWeight:600}}>
+              Suivant →
+            </button>
+          ) : (
+            <button onClick={handleCreate}
+              disabled={selected.size===0}
+              style={{flex:2,padding:'10px',borderRadius:10,border:'none',
+                backgroundColor:selected.size>0?'#2D1B2E':'#E5E7EB',
+                color:selected.size>0?'#fff':'#9CA3AF',
+                cursor:selected.size>0?'pointer':'default',fontSize:13,fontWeight:600}}>
+              Créer la liste ({selected.size} élève{selected.size!==1?'s':''})
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+function TypeFilter({ subFolders, items, boards, docs, listes, value, onChange }) {
   const counts = {
-    all:    subFolders.length + items.length + (boards?.length||0) + (docs?.length||0),
+    all:    subFolders.length + items.length + (boards?.length||0) + (docs?.length||0) + (listes?.length||0),
     folder: subFolders.length,
     image:  items.filter(i=>i.type==='image').length,
     pdf:    items.filter(i=>i.type==='pdf'||i.type==='document').length,
@@ -786,6 +1043,7 @@ function TypeFilter({ subFolders, items, boards, docs, value, onChange }) {
     link:   items.filter(i=>i.type==='link').length,
     kanban: boards?.length||0,
     collab: docs?.length||0,
+    liste:  listes?.length||0,
   }
   const buttons = [
     {key:'all',    label:'Tout',      emoji:''},
@@ -796,6 +1054,7 @@ function TypeFilter({ subFolders, items, boards, docs, value, onChange }) {
     {key:'link',   label:'Liens',     emoji:'🔗'},
     {key:'kanban', label:'Tableaux',  emoji:'📋'},
     {key:'collab', label:'Docs',      emoji:'📝'},
+    {key:'liste',  label:'Listes',    emoji:'📊'},
   ].filter(b => b.key==='all' || counts[b.key]>0)
 
   if (buttons.length <= 2) return null  // seulement "Tout" + 1 type → inutile
@@ -824,10 +1083,12 @@ export default function SalleDProfs() {
   const { user, isAdmin } = useAuth()
 
   // Navigation
-  const [openBoard,  setOpenBoard]  = useState(null)  // tableau Trello ouvert
+  const [openBoard,   setOpenBoard]   = useState(null)  // tableau Trello ouvert
   const [openColDoc,  setOpenColDoc]  = useState(null)  // doc collaboratif ouvert
+  const [openListe,   setOpenListe]   = useState(null)  // liste élèves ouverte
   const [folderBoards, setFolderBoards] = useState([])   // boards dans le dossier courant
   const [folderDocs,   setFolderDocs]   = useState([])   // docs collab dans le dossier courant
+  const [folderListes, setFolderListes] = useState([])   // listes élèves dans le dossier courant
   const [triggerAddList, setTriggerAddList] = useState(false)
   const [allItems,   setAllItems]   = useState([])  // grille racine fusionnée
   const [dragActive, setDragActive] = useState(null)
@@ -860,6 +1121,7 @@ export default function SalleDProfs() {
   const [editFolder,   setEditFolder]   = useState(null)
   const [addItemModal, setAddItemModal] = useState(false)
   const [moveTarget,  setMoveTarget]   = useState(null)  // { entity, entityType: 'board'|'folder'|'doc' }
+  const [listeModal,   setListeModal]   = useState(false)
 
   const currentFolder = folderPath.length > 0 ? folderPath[folderPath.length - 1] : null
 
@@ -937,7 +1199,7 @@ export default function SalleDProfs() {
   const loadFolderContent = useCallback(async (folder) => {
     setContentLoading(true); setTypeFilter('all')
     try {
-      const [{data:subs,error:e1},{data:its,error:e2},{data:bds,error:e3},{data:docs,error:e4}] = await Promise.all([
+      const [{data:subs,error:e1},{data:its,error:e2},{data:bds,error:e3},{data:docs,error:e4},{data:lsts,error:e5}] = await Promise.all([
         supabase.from('padlet_folders').select('*')
           .eq('parent_id',folder.id).order('pinned',{ascending:false}).order('created_at'),
         supabase.from('padlet_items').select('*')
@@ -946,6 +1208,8 @@ export default function SalleDProfs() {
           .eq('folder_id',folder.id).order('position',{ascending:true}),
         supabase.from('salle_documents').select('*')
           .eq('folder_id',folder.id).order('updated_at',{ascending:false}),
+        supabase.from('salle_listes').select('*')
+          .eq('folder_id',folder.id).order('updated_at',{ascending:false}),
       ])
       if (e1) throw e1; if (e2) throw e2
       const subList = subs || []
@@ -953,6 +1217,7 @@ export default function SalleDProfs() {
       setItems(its || [])
       setFolderBoards(bds || [])
       setFolderDocs(docs || [])
+      setFolderListes(lsts || [])
       if (subList.length > 0) {
         const {data:subItems} = await supabase.from('padlet_items')
           .select('id,folder_id,type,file_url,content').in('folder_id',subList.map(f=>f.id)).order('created_at')
@@ -1024,6 +1289,15 @@ export default function SalleDProfs() {
     setOpenColDoc(data)
   }
 
+  const createListe = async (name, eleveIds) => {
+    const { data, error } = await supabase.from('salle_listes')
+      .insert({ name: name || 'Sans titre', created_by: user.id, folder_id: currentFolder?.id || null, eleve_ids: eleveIds, type: tab })
+      .select().single()
+    if (error) { console.error(error); return }
+    setFolderListes(prev => [data, ...prev])
+    setOpenListe(data)
+  }
+
   const moveEntity = async (entity, targetFolderId) => {
     try {
       const type = moveTarget?.entityType
@@ -1033,6 +1307,8 @@ export default function SalleDProfs() {
         await supabase.from('padlet_folders').update({ parent_id: targetFolderId }).eq('id', entity.id)
       } else if (type === 'doc') {
         await supabase.from('salle_documents').update({ folder_id: targetFolderId }).eq('id', entity.id)
+      } else if (type === 'liste') {
+        await supabase.from('salle_listes').update({ folder_id: targetFolderId }).eq('id', entity.id)
       }
       await loadFolders()
       if (currentFolder) await loadFolderContent(currentFolder)
@@ -1118,7 +1394,9 @@ export default function SalleDProfs() {
   ]
 
   // Titre PageHeader
-  const headerTitle = openColDoc
+  const headerTitle = openListe
+    ? openListe.name
+    : openColDoc
     ? openColDoc.name
     : openBoard
     ? openBoard.name
@@ -1126,13 +1404,15 @@ export default function SalleDProfs() {
     ? currentFolder.name
     : tab==='shared' ? 'Salle des profs' : 'Mon casier'
 
-  const headerSubtitle = openColDoc
+  const headerSubtitle = openListe
+    ? 'Liste d\'élèves'
+    : openColDoc
     ? 'Document collaboratif'
     : openBoard
     ? 'Tableau Kanban'
     : currentFolder
     ? (() => {
-        const total = subFolders.length + items.length + folderBoards.length + folderDocs.length
+        const total = subFolders.length + items.length + folderBoards.length + folderDocs.length + folderListes.length
         return `${total} élément${total!==1?'s':''}`
       })()
     : `${folders.length} dossier${folders.length!==1?'s':''}`
@@ -1142,7 +1422,7 @@ export default function SalleDProfs() {
       <PageHeader
         title={headerTitle}
         subtitle={headerSubtitle}
-        leftActions={(currentFolder || openBoard) ? (
+        leftActions={(currentFolder || openBoard || openListe) ? (
           <div style={{display:'flex',alignItems:'center',gap:0}}>
             {/* Breadcrumb */}
             <button onClick={() => { navigateToRoot(); setOpenBoard(null); setOpenColDoc(null) }}
@@ -1173,19 +1453,19 @@ export default function SalleDProfs() {
             <div style={{width:1,height:16,backgroundColor:'rgba(255,255,255,0.20)',margin:'0 6px'}}/>
           </div>
         ) : undefined}
-        tabs={(!currentFolder && !openBoard) ? tabs : undefined}
+        tabs={(!currentFolder && !openBoard && !openListe) ? tabs : undefined}
         activeTab={tab}
-        onTabChange={(!currentFolder && !openBoard) ? setTab : undefined}
+        onTabChange={(!currentFolder && !openBoard && !openListe) ? setTab : undefined}
         actions={
           <div style={{display:'flex',gap:8}}>
-            {currentFolder && !openBoard && !openColDoc && (
+            {currentFolder && !openBoard && !openColDoc && !openListe && (
               <button onClick={()=>setAddItemModal(true)}
                 style={{padding:'7px 14px',borderRadius:8,border:'1.5px solid rgba(255,255,255,0.4)',
                   backgroundColor:'transparent',color:'#fff',cursor:'pointer',fontSize:13,fontWeight:600}}>
                 + Élément
               </button>
             )}
-            {!currentFolder && !openBoard && !openColDoc && (
+            {!currentFolder && !openBoard && !openColDoc && !openListe && (
               <button onClick={()=>setFolderModal(true)}
                 style={{padding:'7px 16px',borderRadius:8,border:'none',
                   backgroundColor:'#fff',color:'#2D1B2E',cursor:'pointer',fontSize:13,fontWeight:700}}>
@@ -1231,7 +1511,35 @@ export default function SalleDProfs() {
         </div>
       )}
 
-      <div className={openColDoc ? 'hidden' : 'p-6'}>
+
+      {/* ── Vue liste élèves ouverte ── */}
+      {openListe && (
+        <div className="h-full flex flex-col">
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+            <button
+              onClick={() => setOpenListe(null)}
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Retour
+            </button>
+            <span className="text-gray-300 dark:text-gray-600">/</span>
+            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{openListe.name}</span>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <ListeEditor
+              key={openListe.id}
+              liste={openListe}
+              canEdit={isAdmin || openListe.created_by === user.id}
+              onTitleChange={(updated) => setOpenListe(updated)}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className={(openColDoc || openListe) ? 'hidden' : 'p-6'}>
         {/* ── Vue tableau Trello ouvert ── */}
         {openBoard && (
           <TrelloBoardView board={openBoard} onBack={() => setOpenBoard(null)}
@@ -1305,11 +1613,11 @@ export default function SalleDProfs() {
         {currentFolder && (
           contentLoading ? (
             <div style={{textAlign:'center',color:'#9CA3AF',padding:60}}>Chargement…</div>
-          ) : subFolders.length===0 && items.length===0 && folderBoards.length===0 && folderDocs.length===0 ? (
+          ) : subFolders.length===0 && items.length===0 && folderBoards.length===0 && folderDocs.length===0 && folderListes.length===0 ? (
             <div style={{textAlign:'center',padding:80}}>
               <div style={{fontSize:48,marginBottom:16}}>{currentFolder.emoji}</div>
               <div style={{fontSize:16,fontWeight:600,color:'#374151',marginBottom:8}}>Ce dossier est vide</div>
-              <div style={{fontSize:14,color:'#9CA3AF',marginBottom:24}}>Ajoutez des sous-dossiers, images, documents, liens, tableaux ou documents collaboratifs.</div>
+              <div style={{fontSize:14,color:'#9CA3AF',marginBottom:24}}>Ajoutez des sous-dossiers, images, liens, tableaux, documents collaboratifs ou listes d'élèves.</div>
               <div style={{display:'flex',gap:10,justifyContent:'center'}}>
                 <button onClick={()=>setFolderModal(true)}
                   style={{padding:'10px 20px',borderRadius:10,border:'1.5px solid #2D1B2E',backgroundColor:'#fff',color:'#2D1B2E',cursor:'pointer',fontSize:14,fontWeight:600}}>
@@ -1323,7 +1631,7 @@ export default function SalleDProfs() {
             </div>
           ) : (
             <>
-              <TypeFilter subFolders={subFolders} items={items} boards={folderBoards} docs={folderDocs} value={typeFilter} onChange={setTypeFilter} />
+              <TypeFilter subFolders={subFolders} items={items} boards={folderBoards} docs={folderDocs} listes={folderListes} value={typeFilter} onChange={setTypeFilter} />
               <DndContext sensors={sensors} collisionDetection={closestCenter}
                 onDragStart={handleItemDragStart} onDragEnd={handleItemDragEnd}>
                 <SortableContext items={filteredItems.map(i => `item-${i.id}`)} strategy={rectSortingStrategy}>
@@ -1359,6 +1667,37 @@ export default function SalleDProfs() {
                       onPin={()=>togglePinBoard(board)} onDelete={()=>deleteBoard(board)}
                       onMove={()=>setMoveTarget({entity:board,entityType:'board'})}
                       canEdit={canEdit(board)} />
+                  ))}
+                </div>
+              )}
+              {/* Listes d'élèves dans le dossier */}
+              {(typeFilter==='all'||typeFilter==='liste') && folderListes.length>0 && (
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14,marginTop:14}}>
+                  {folderListes.map(liste=>(
+                    <div key={liste.id}
+                      style={{borderRadius:14,overflow:'hidden',backgroundColor:'#fff',
+                        boxShadow:'0 2px 8px rgba(0,0,0,0.08)',transition:'all 0.2s',position:'relative'}}
+                      onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.13)'}}
+                      onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'}}>
+                      <div onClick={()=>setOpenListe(liste)} style={{cursor:'pointer'}}>
+                        <div style={{height:80,background:'linear-gradient(135deg,#10B981,#3B82F6)',
+                          display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,position:'relative'}}>
+                          📊
+                          {canEdit(liste) && (
+                            <button onClick={e=>{e.stopPropagation();setMoveTarget({entity:liste,entityType:'liste'})}}
+                              style={{position:'absolute',top:6,right:6,background:'rgba(255,255,255,0.9)',border:'none',
+                                borderRadius:999,width:26,height:26,cursor:'pointer',fontSize:13,
+                                display:'flex',alignItems:'center',justifyContent:'center',color:'#374151'}}>
+                              ⋯
+                            </button>
+                          )}
+                        </div>
+                        <div style={{padding:'10px 12px 12px'}}>
+                          <div style={{fontWeight:700,fontSize:13,color:'#111',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{liste.name}</div>
+                          <div style={{fontSize:11,color:'#9CA3AF',marginTop:2}}>Liste · {(liste.eleve_ids||[]).length} élève{(liste.eleve_ids||[]).length!==1?'s':''}</div>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
@@ -1411,6 +1750,15 @@ export default function SalleDProfs() {
           onAdded={()=>{ setAddItemModal(false); loadFolderContent(currentFolder); loadFolders() }}
           onCreateBoard={()=>setBoardModal(true)}
           onCreateDoc={()=>createColDoc()}
+          onCreateListe={()=>{ setAddItemModal(false); setListeModal(true) }}
+        />
+      )}
+      {listeModal && currentFolder && (
+        <ListeModal
+          folder={currentFolder}
+          tab={tab}
+          onClose={()=>setListeModal(false)}
+          onCreate={(name,eleveIds)=>{ setListeModal(false); createListe(name,eleveIds) }}
         />
       )}
       {moveTarget && (
