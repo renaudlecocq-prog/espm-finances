@@ -1,3 +1,6 @@
+## [v1.16.24] — Tenter réactivation side menu (optimizeDeps)
+- vite.config.js : ajout optimizeDeps.include pour @blocknote/* et @floating-ui/* (fix bundle circulaire)
+- Objectif : rétablir le menu 6 points sans React error #130
 ## [v1.16.23] — Restaurer le menu latéral BlockNote (6 points)
 - Retrait de sideMenu={false} : le menu drag&drop et le "+" sont de retour
 - .bn-container background transparent : le fond de page s'affiche sous le menu latéral (plus de bande bleue)
