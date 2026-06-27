@@ -1,3 +1,8 @@
+## [v1.16.26] — Stabilisation : sideMenu=false + backspace fix conservé
+- Revert sideMenu vers false (bug Rollup/Vite incorrigible côté BlockNote)
+- Backspace dans colonnes libres EleveTableBlock fonctionne (native keydown listener)
+- CSS .bn-container transparent conservé
+- manualChunks en place pour optimiser le chunking
 ## [v1.16.25] — Fix side menu : manualChunks BlockNote + floating-ui
 - vite.config.js : manualChunks pour regrouper @blocknote/* et @floating-ui/* dans un seul chunk
 - Évite les circular deps Rollup qui causaient React error #130 sur /salle-des-profs
