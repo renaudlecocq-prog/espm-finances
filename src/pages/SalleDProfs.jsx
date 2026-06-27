@@ -108,7 +108,7 @@ function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, onMove, canEd
                 width: 28, height: 28, cursor: 'pointer', fontSize: 14,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151' }}>⋯</button>
             {menu && (
-              <div style={{ position: 'absolute', right: 0, top: 32, backgroundColor: '#fff',
+              <div style={{ position: 'absolute', right: 0, bottom: 32, backgroundColor: '#fff',
                 borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
                 minWidth: 140, zIndex: 100, overflow: 'hidden', border: '1px solid #F3F4F6' }}>
                 {[
@@ -352,7 +352,7 @@ function FolderCard({ folder, previews, stats, subCount=0, onOpen, onEdit, onPin
               ⋯
             </button>
             {menu&&(
-              <div style={{position:'absolute',right:0,top:32,backgroundColor:'#fff',
+              <div style={{position:'absolute',right:0,bottom:32,backgroundColor:'#fff',
                 borderRadius:10,boxShadow:'0 4px 20px rgba(0,0,0,0.15)',
                 minWidth:140,zIndex:100,overflow:'hidden',border:'1px solid #F3F4F6'}}>
                 {[

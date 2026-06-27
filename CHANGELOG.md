@@ -1,3 +1,6 @@
+## [v1.18.3] — Fix menu contextuel tronqué en bas d'écran
+- Menus ⋯ des dossiers et boards : ouverture vers le haut (bottom:32) au lieu du bas
+
 ## [v1.18.2] — Nettoyage import mort SallePages
 - Suppression import SallePages dans SalleDProfs.jsx (onglet Pages retiré en v1.18.0)
 - Allège le bundle (BlockNote/Mantine non inclus inutilement)
