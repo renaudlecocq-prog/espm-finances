@@ -1,3 +1,10 @@
+## [v1.18.1] — Option "Déplacer vers" dans les menus contextuels
+- Menu ⋯ des boards Kanban : option 📂 Déplacer vers…
+- Menu ⋯ des dossiers : option 📂 Déplacer vers…
+- Docs collaboratifs : bouton ⋯ → Déplacer vers…
+- Modal de déplacement : liste tous les dossiers disponibles + option racine
+- Fonctionne dans la vue racine ET à l'intérieur d'un dossier
+
 ## [v1.18.0] — Intégration dossiers : Kanban + Documents collaboratifs + PDF/Word
 - Structure dossiers refondée : racine = dossiers uniquement (boards orphelins restent visibles pour compat)
 - À l'intérieur d'un dossier : Lien / Image / PDF / Word / Tableau Kanban / Document collaboratif

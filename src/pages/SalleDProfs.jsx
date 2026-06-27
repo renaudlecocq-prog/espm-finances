@@ -52,7 +52,7 @@ function SortableItemCard({ item, onDelete, canDelete }) {
 }
 
 // ── Carte Trello board (dans la grille) ───────────────────────────────────────
-function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, canEdit }) {
+function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, onMove, canEdit }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortDragging } =
     useSortable({ id: `board-${board.id}` })
   const sortStyle = { transform: CSS.Transform.toString(transform), transition, opacity: isSortDragging ? 0.35 : 1 }
@@ -115,6 +115,7 @@ function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, canEdit }) {
                 {[
                   { label: board.pinned ? '📌 Désépingler' : '📌 Épingler', action: onPin },
                   { label: '✏️ Modifier', action: onEdit },
+                  { label: '📂 Déplacer vers…', action: () => { onMove?.(); setMenu(false) } },
                   { label: '🗑️ Supprimer', action: onDelete, danger: true },
                 ].map(item => (
                   <button key={item.label} onClick={() => { item.action(); setMenu(false) }}
@@ -294,7 +295,7 @@ function StatLine({ stats, subCount }) {
 }
 
 // ── Carte dossier (2 tailles) ─────────────────────────────────────────────────
-function FolderCard({ folder, previews, stats, subCount=0, onOpen, onEdit, onPin, onDelete, canEdit, compact=false }) {
+function FolderCard({ folder, previews, stats, subCount=0, onOpen, onEdit, onPin, onDelete, onMove, canEdit, compact=false }) {
   const [menu,setMenu] = useState(false)
   const menuRef = useRef(null)
   useEffect(()=>{
@@ -358,6 +359,7 @@ function FolderCard({ folder, previews, stats, subCount=0, onOpen, onEdit, onPin
                 {[
                   {label:folder.pinned?'📌 Désépingler':'📌 Épingler',action:onPin},
                   {label:'✏️ Modifier',action:onEdit},
+                  {label:'📂 Déplacer vers…',action:()=>{onMove?.();setMenu(false)}},
                   {label:'🗑️ Supprimer',action:onDelete,danger:true},
                 ].map(item=>(
                   <button key={item.label} onClick={()=>{item.action();setMenu(false)}}
@@ -524,6 +526,77 @@ function FolderModal({ initial, onClose, onSave }) {
 }
 
 // ── Modal ajout d'item ────────────────────────────────────────────────────────
+
+// ── Modal "Déplacer vers" ─────────────────────────────────────────────────────
+function MoveToModal({ entity, folders, currentFolderId, onClose, onMove }) {
+  const [saving, setSaving] = useState(false)
+  const available = folders.filter(f => f.id !== currentFolderId && f.id !== entity?.id)
+  const handleMove = async (targetFolderId) => {
+    setSaving(true)
+    await onMove(entity, targetFolderId)
+    setSaving(false)
+    onClose()
+  }
+  return (
+    <div style={{position:'fixed',inset:0,backgroundColor:'rgba(0,0,0,0.5)',
+      display:'flex',alignItems:'center',justifyContent:'center',zIndex:1050,padding:16}}>
+      <div style={{backgroundColor:'#fff',borderRadius:16,width:'100%',maxWidth:400,
+        maxHeight:'80vh',display:'flex',flexDirection:'column',boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}>
+        <div style={{padding:'18px 20px 14px',borderBottom:'1px solid #F3F4F6',
+          display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div style={{fontWeight:700,fontSize:15,color:'#111'}}>
+            📂 Déplacer vers un dossier
+          </div>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9CA3AF',fontSize:20,lineHeight:1}}>×</button>
+        </div>
+        <div style={{flex:1,overflowY:'auto',padding:'12px 16px'}}>
+          {available.length === 0 ? (
+            <div style={{textAlign:'center',padding:'32px 16px',color:'#9CA3AF',fontSize:13}}>
+              Aucun autre dossier disponible.<br/>Créez un dossier d'abord.
+            </div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              {currentFolderId && (
+                <button onClick={()=>handleMove(null)} disabled={saving}
+                  style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',
+                    borderRadius:10,border:'1.5px dashed #E5E7EB',background:'#fff',
+                    cursor:'pointer',textAlign:'left',width:'100%',
+                    fontSize:13,color:'#6B7280',fontWeight:500}}
+                  onMouseEnter={e=>{e.currentTarget.style.backgroundColor='#F9FAFB';e.currentTarget.style.borderColor='#9CA3AF'}}
+                  onMouseLeave={e=>{e.currentTarget.style.backgroundColor='#fff';e.currentTarget.style.borderColor='#E5E7EB'}}>
+                  <span style={{fontSize:20}}>🏠</span>
+                  <span>Racine (retirer du dossier)</span>
+                </button>
+              )}
+              {available.map(f => (
+                <button key={f.id} onClick={()=>handleMove(f.id)} disabled={saving}
+                  style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',
+                    borderRadius:10,border:'1.5px solid #E5E7EB',background:'#fff',
+                    cursor:'pointer',textAlign:'left',width:'100%',
+                    fontSize:13,color:'#374151',fontWeight:500}}
+                  onMouseEnter={e=>{e.currentTarget.style.backgroundColor=f.color+'18';e.currentTarget.style.borderColor=f.color}}
+                  onMouseLeave={e=>{e.currentTarget.style.backgroundColor='#fff';e.currentTarget.style.borderColor='#E5E7EB'}}>
+                  <div style={{width:32,height:32,borderRadius:8,backgroundColor:f.color,
+                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>
+                    {f.emoji}
+                  </div>
+                  <span>{f.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{padding:'12px 16px',borderTop:'1px solid #F3F4F6'}}>
+          <button onClick={onClose} style={{width:'100%',padding:'10px',borderRadius:10,
+            border:'1.5px solid #E5E7EB',background:'#fff',cursor:'pointer',fontSize:13,fontWeight:600,color:'#374151'}}>
+            Annuler
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AddItemModal({ folder, tab, onClose, onAdded, onCreateBoard, onCreateDoc }) {
   const { user } = useAuth()
   const fileRef   = useRef(null)
@@ -775,6 +848,7 @@ export default function SalleDProfs() {
   const [folderModal,  setFolderModal]  = useState(false)
   const [editFolder,   setEditFolder]   = useState(null)
   const [addItemModal, setAddItemModal] = useState(false)
+  const [moveTarget,  setMoveTarget]   = useState(null)  // { entity, entityType: 'board'|'folder'|'doc' }
 
   const currentFolder = folderPath.length > 0 ? folderPath[folderPath.length - 1] : null
 
@@ -938,6 +1012,26 @@ export default function SalleDProfs() {
     setFolderDocs(prev => [data, ...prev])
     setOpenColDoc(data)
   }
+
+  const moveEntity = async (entity, targetFolderId) => {
+    try {
+      const type = moveTarget?.entityType
+      if (type === 'board') {
+        await supabase.from('trello_boards').update({ folder_id: targetFolderId }).eq('id', entity.id)
+      } else if (type === 'folder') {
+        await supabase.from('padlet_folders').update({ parent_id: targetFolderId }).eq('id', entity.id)
+      } else if (type === 'doc') {
+        await supabase.from('salle_documents').update({ folder_id: targetFolderId }).eq('id', entity.id)
+      }
+      await loadFolders()
+      if (currentFolder) await loadFolderContent(currentFolder)
+    } catch(err) {
+      console.error('moveEntity:', err)
+    }
+  }
+
+  // Liste plate de tous les dossiers racine + sous-dossiers pour le MoveToModal
+  const allFoldersList = [...folders, ...subFolders]
   const updateBoard = async (data) => {
     const { error } = await supabase.from('trello_boards').update({ ...data, updated_at: new Date().toISOString() }).eq('id', editBoard.id)
     if (error) throw error
@@ -1162,11 +1256,13 @@ export default function SalleDProfs() {
                       previews={folderPreviews[item.id]} stats={folderStats[item.id]}
                       onOpen={()=>navigateTo(item)} onEdit={()=>setEditFolder(item)}
                       onPin={()=>togglePin(item)} onDelete={()=>deleteFolder(item)}
+                      onMove={()=>setMoveTarget({entity:item,entityType:'folder'})}
                       canEdit={canEdit(item)} />
                   ) : (
                     <TrelloBoardCard key={`board-${item.id}`} board={item}
                       onOpen={()=>setOpenBoard(item)} onEdit={()=>setEditBoard(item)}
                       onPin={()=>togglePinBoard(item)} onDelete={()=>deleteBoard(item)}
+                      onMove={()=>setMoveTarget({entity:item,entityType:'board'})}
                       canEdit={canEdit(item)} />
                   ))}
                 </div>
@@ -1226,6 +1322,7 @@ export default function SalleDProfs() {
                         previews={subPreviews[sf.id]} stats={subStats[sf.id]}
                         onOpen={()=>navigateTo(sf)} onEdit={()=>setEditFolder(sf)}
                         onPin={()=>togglePin(sf)} onDelete={()=>deleteFolder(sf)}
+                        onMove={()=>setMoveTarget({entity:sf,entityType:'folder'})}
                         canEdit={canEdit(sf)} />
                     ))}
                     {filteredItems.map(item=>(
@@ -1249,6 +1346,7 @@ export default function SalleDProfs() {
                     <TrelloBoardCard key={board.id} board={board}
                       onOpen={()=>setOpenBoard(board)} onEdit={()=>setEditBoard(board)}
                       onPin={()=>togglePinBoard(board)} onDelete={()=>deleteBoard(board)}
+                      onMove={()=>setMoveTarget({entity:board,entityType:'board'})}
                       canEdit={canEdit(board)} />
                   ))}
                 </div>
@@ -1258,16 +1356,27 @@ export default function SalleDProfs() {
                 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14,marginTop:14}}>
                   {folderDocs.map(doc=>(
                     <div key={doc.id}
-                      onClick={()=>setOpenColDoc(doc)}
                       style={{borderRadius:14,overflow:'hidden',backgroundColor:'#fff',
-                        boxShadow:'0 2px 8px rgba(0,0,0,0.08)',cursor:'pointer',transition:'all 0.2s'}}
+                        boxShadow:'0 2px 8px rgba(0,0,0,0.08)',transition:'all 0.2s',position:'relative'}}
                       onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.13)'}}
                       onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'}}>
-                      <div style={{height:80,background:'linear-gradient(135deg,#3B82F6,#6366F1)',
-                        display:'flex',alignItems:'center',justifyContent:'center',fontSize:28}}>📝</div>
-                      <div style={{padding:'10px 12px 12px'}}>
-                        <div style={{fontWeight:700,fontSize:13,color:'#111',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{doc.name}</div>
-                        <div style={{fontSize:11,color:'#9CA3AF',marginTop:2}}>Document collaboratif</div>
+                      <div onClick={()=>setOpenColDoc(doc)} style={{cursor:'pointer'}}>
+                        <div style={{height:80,background:'linear-gradient(135deg,#3B82F6,#6366F1)',
+                          display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,position:'relative'}}>
+                          📝
+                          {canEdit(doc) && (
+                            <button onClick={e=>{e.stopPropagation();setMoveTarget({entity:doc,entityType:'doc'})}}
+                              style={{position:'absolute',top:6,right:6,background:'rgba(255,255,255,0.9)',border:'none',
+                                borderRadius:999,width:26,height:26,cursor:'pointer',fontSize:13,
+                                display:'flex',alignItems:'center',justifyContent:'center',color:'#374151'}}>
+                              ⋯
+                            </button>
+                          )}
+                        </div>
+                        <div style={{padding:'10px 12px 12px'}}>
+                          <div style={{fontWeight:700,fontSize:13,color:'#111',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{doc.name}</div>
+                          <div style={{fontSize:11,color:'#9CA3AF',marginTop:2}}>Document collaboratif</div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1291,6 +1400,15 @@ export default function SalleDProfs() {
           onAdded={()=>{ setAddItemModal(false); loadFolderContent(currentFolder); loadFolders() }}
           onCreateBoard={()=>setBoardModal(true)}
           onCreateDoc={()=>createColDoc()}
+        />
+      )}
+      {moveTarget && (
+        <MoveToModal
+          entity={moveTarget.entity}
+          folders={allFoldersList}
+          currentFolderId={moveTarget.entity.folder_id ?? moveTarget.entity.parent_id ?? null}
+          onClose={()=>setMoveTarget(null)}
+          onMove={moveEntity}
         />
       )}
     </>
