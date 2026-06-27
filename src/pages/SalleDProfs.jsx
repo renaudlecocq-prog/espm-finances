@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import ReactDOM from 'react-dom'
 import {
   DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors,
 } from '@dnd-kit/core'
@@ -38,6 +39,53 @@ function SortableFolderCard({ folder, previews, stats, subCount, onOpen, onEdit,
   )
 }
 
+
+// ── Menu contextuel (portal — évite le clipping overflow:hidden des cards) ────
+function ContextMenu({ btnRef, items, onClose }) {
+  const [pos, setPos] = useState(null)
+  const menuRef = useRef(null)
+  useEffect(() => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      const menuH = items.length * 38 + 8
+      const spaceBelow = window.innerHeight - rect.bottom
+      const openUp = spaceBelow < menuH + 16
+      setPos({
+        top: openUp ? rect.top - menuH - 4 : rect.bottom + 4,
+        left: Math.max(8, rect.right - 158),
+      })
+    }
+    const close = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target) && !btnRef.current?.contains(e.target))
+        onClose()
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [])
+  if (!pos) return null
+  return ReactDOM.createPortal(
+    <div ref={menuRef} style={{
+      position: 'fixed', top: pos.top, left: pos.left,
+      backgroundColor: '#fff', borderRadius: 10,
+      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+      minWidth: 158, zIndex: 9999, overflow: 'hidden',
+      border: '1px solid #F3F4F6'
+    }}>
+      {items.map(item => (
+        <button key={item.label} onClick={() => { item.action(); onClose() }}
+          style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px',
+            border: 'none', background: 'none', cursor: 'pointer', fontSize: 13,
+            color: item.danger ? '#DC2626' : '#374151' }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = item.danger ? '#FEF2F2' : '#F9FAFB'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+          {item.label}
+        </button>
+      ))}
+    </div>,
+    document.body
+  )
+}
+
 // ── SortableItemCard (wrapper DnD) ────────────────────────────────────────────
 function SortableItemCard({ item, onDelete, canDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -56,12 +104,7 @@ function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, onMove, canEd
     useSortable({ id: `board-${board.id}` })
   const sortStyle = { transform: CSS.Transform.toString(transform), transition, opacity: isSortDragging ? 0.35 : 1 }
   const [menu, setMenu] = useState(false)
-  const menuRef = useRef(null)
-  useEffect(() => {
-    const close = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenu(false) }
-    if (menu) document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [menu])
+  const btnRef = useRef(null)
   return (
     <div ref={setNodeRef} style={sortStyle} {...attributes} {...listeners}>
     <div onClick={!isSortDragging ? onOpen : undefined}
@@ -101,32 +144,19 @@ function TrelloBoardCard({ board, onOpen, onEdit, onPin, onDelete, onMove, canEd
           TABLEAU
         </div>
         {canEdit && (
-          <div ref={menuRef} style={{ position: 'absolute', top: 8, right: 8, zIndex: 20 }}
+          <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 20 }}
             onClick={e => e.stopPropagation()}>
-            <button onClick={() => setMenu(m => !m)}
+            <button ref={btnRef} onClick={() => setMenu(m => !m)}
               style={{ backgroundColor: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: 999,
                 width: 28, height: 28, cursor: 'pointer', fontSize: 14,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151' }}>⋯</button>
             {menu && (
-              <div style={{ position: 'absolute', right: 0, bottom: 32, backgroundColor: '#fff',
-                borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                minWidth: 140, zIndex: 100, overflow: 'hidden', border: '1px solid #F3F4F6' }}>
-                {[
-                  { label: board.pinned ? '📌 Désépingler' : '📌 Épingler', action: onPin },
-                  { label: '✏️ Modifier', action: onEdit },
-                  { label: '📂 Déplacer vers…', action: () => { onMove?.(); setMenu(false) } },
-                  { label: '🗑️ Supprimer', action: onDelete, danger: true },
-                ].map(item => (
-                  <button key={item.label} onClick={() => { item.action(); setMenu(false) }}
-                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px',
-                      border: 'none', background: 'none', cursor: 'pointer', fontSize: 13,
-                      color: item.danger ? '#DC2626' : '#374151' }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = item.danger ? '#FEF2F2' : '#F9FAFB'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+              <ContextMenu btnRef={btnRef} onClose={() => setMenu(false)} items={[
+                { label: board.pinned ? '📌 Désépingler' : '📌 Épingler', action: onPin },
+                { label: '✏️ Modifier', action: onEdit },
+                { label: '📂 Déplacer vers…', action: () => { onMove?.() } },
+                { label: '🗑️ Supprimer', action: onDelete, danger: true },
+              ]} />
             )}
           </div>
         )}
@@ -296,12 +326,7 @@ function StatLine({ stats, subCount }) {
 // ── Carte dossier (2 tailles) ─────────────────────────────────────────────────
 function FolderCard({ folder, previews, stats, subCount=0, onOpen, onEdit, onPin, onDelete, onMove, canEdit, compact=false }) {
   const [menu,setMenu] = useState(false)
-  const menuRef = useRef(null)
-  useEffect(()=>{
-    const close=(e)=>{ if(menuRef.current&&!menuRef.current.contains(e.target)) setMenu(false) }
-    if(menu) document.addEventListener('mousedown',close)
-    return ()=>document.removeEventListener('mousedown',close)
-  },[menu])
+  const btnRef = useRef(null)
 
   const headerH  = compact ? 110 : 145
   const cardSize = compact ? 62  : 100
@@ -343,34 +368,21 @@ function FolderCard({ folder, previews, stats, subCount=0, onOpen, onEdit, onPin
           </div>
         )}
         {canEdit && (
-          <div ref={menuRef} style={{position:'absolute',top:8,right:8,zIndex:20}}
+          <div style={{position:'absolute',top:8,right:8,zIndex:20}}
             onClick={e=>e.stopPropagation()}>
-            <button onClick={()=>setMenu(m=>!m)}
+            <button ref={btnRef} onClick={()=>setMenu(m=>!m)}
               style={{backgroundColor:'rgba(255,255,255,0.9)',border:'none',
                 borderRadius:999,width:28,height:28,cursor:'pointer',
                 fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:'#374151'}}>
               ⋯
             </button>
             {menu&&(
-              <div style={{position:'absolute',right:0,bottom:32,backgroundColor:'#fff',
-                borderRadius:10,boxShadow:'0 4px 20px rgba(0,0,0,0.15)',
-                minWidth:140,zIndex:100,overflow:'hidden',border:'1px solid #F3F4F6'}}>
-                {[
-                  {label:folder.pinned?'📌 Désépingler':'📌 Épingler',action:onPin},
-                  {label:'✏️ Modifier',action:onEdit},
-                  {label:'📂 Déplacer vers…',action:()=>{onMove?.();setMenu(false)}},
-                  {label:'🗑️ Supprimer',action:onDelete,danger:true},
-                ].map(item=>(
-                  <button key={item.label} onClick={()=>{item.action();setMenu(false)}}
-                    style={{display:'block',width:'100%',textAlign:'left',
-                      padding:'9px 14px',border:'none',background:'none',
-                      cursor:'pointer',fontSize:13,color:item.danger?'#DC2626':'#374151'}}
-                    onMouseEnter={e=>e.currentTarget.style.backgroundColor=item.danger?'#FEF2F2':'#F9FAFB'}
-                    onMouseLeave={e=>e.currentTarget.style.backgroundColor='transparent'}>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+              <ContextMenu btnRef={btnRef} onClose={()=>setMenu(false)} items={[
+                {label:folder.pinned?'📌 Désépingler':'📌 Épingler',action:onPin},
+                {label:'✏️ Modifier',action:onEdit},
+                {label:'📂 Déplacer vers…',action:()=>{onMove?.()}},
+                {label:'🗑️ Supprimer',action:onDelete,danger:true},
+              ]} />
             )}
           </div>
         )}

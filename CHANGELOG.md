@@ -1,3 +1,8 @@
+## [v1.18.4] — Fix menu contextuel : portal React (position:fixed)
+- Menus ⋯ des dossiers et boards rendus via ReactDOM.createPortal
+- Calcul automatique : s'ouvre vers le bas ou le haut selon l'espace disponible
+- Résout le clipping causé par overflow:hidden des cards
+
 ## [v1.18.3] — Fix menu contextuel tronqué en bas d'écran
 - Menus ⋯ des dossiers et boards : ouverture vers le haut (bottom:32) au lieu du bas
 
