@@ -1,3 +1,8 @@
+## [v1.16.28] — Bouton poubelle pour supprimer un bloc
+- Ajout d'un bouton icône poubelle dans la barre d'outils de SallePages
+- Supprime le bloc où se trouve le curseur (tableau natif, tableau élèves, paragraphe…)
+- Si c'est le dernier bloc de la page, le vide plutôt que de le supprimer
+
 ## [v1.16.27] — Fix config Vite : supprimer manualChunks (cassait init tiptap)
 - Retour à vite.config.js minimal (sans optimizeDeps ni manualChunks)
 - sideMenu=false maintenu — bug BlockNote/Rollup non corrigeable côté app
