@@ -1,3 +1,7 @@
+## [v1.16.27] — Fix config Vite : supprimer manualChunks (cassait init tiptap)
+- Retour à vite.config.js minimal (sans optimizeDeps ni manualChunks)
+- sideMenu=false maintenu — bug BlockNote/Rollup non corrigeable côté app
+- Backspace dans colonnes libres fonctionnel
 ## [v1.16.26] — Stabilisation : sideMenu=false + backspace fix conservé
 - Revert sideMenu vers false (bug Rollup/Vite incorrigible côté BlockNote)
 - Backspace dans colonnes libres EleveTableBlock fonctionne (native keydown listener)
