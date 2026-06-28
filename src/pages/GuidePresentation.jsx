@@ -111,9 +111,6 @@ export default function GuidePresentation() {
     /* Modules group label */
     .gp-group-label{font-size:0.72rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#9CA3AF;margin:24px 0 10px;padding-left:2px}
 
-    /* Footer */
-    .gp-footer{background:#2D1B2E;color:rgba(255,255,255,0.45);text-align:center;padding:22px;font-size:0.77rem}
-    .gp-footer strong{color:rgba(255,255,255,0.75)}
   `
 
   return (
@@ -600,10 +597,6 @@ export default function GuidePresentation() {
 
       </div>
 
-      <div className="gp-footer">
-        <strong>ESPM+ · Plateforme de l&apos;École Secondaire Plurielle Maritime</strong> &mdash; outil interne confidentiel &mdash;{' '}
-        <a href="https://espmaritime.netlify.app" style={{color:'#C4B5FD'}}>espmaritime.netlify.app</a>
-      </div>
     </div>
   )
 }

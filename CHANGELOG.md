@@ -1,3 +1,7 @@
+## [v1.20.1] — Guide : suppression du footer redondant
+- Le site ayant déjà son propre footer, celui du guide a été retiré
+
+
 ## [v1.20.0] — Guide de présentation de la plateforme
 - Nouvelle page GuidePresentation.jsx : infographie complète de la plateforme ESPM+
 - Accessible depuis Admin → onglet "Guide" (section Guide)
