@@ -1,3 +1,8 @@
+## [v1.20.18] — Filtre par classe dans l'onglet Notes
+- Bouton Filtres dans l'onglet Notes avec filtre par classe (MasterFilter)
+- Compteur d'élèves dans le sous-titre du PageHeader
+- Les élèves passés au NotesPanel sont pré-filtrés par classe sélectionnée
+
 ## [v1.20.17] — Fix footer PDF notes collé en bas de page
 - Footer positionné en bas via margin-top:auto (flex column)
 

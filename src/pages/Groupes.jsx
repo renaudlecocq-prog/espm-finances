@@ -402,6 +402,7 @@ export default function Groupes() {
   const [notesSelectedId, setNotesSelectedId] = useState(null)
   const [noteModalOpen,   setNoteModalOpen]   = useState(false)
   const [notesPanelKey,   setNotesPanelKey]   = useState(0)
+  const [notesClassFilter, setNotesClassFilter] = useState([])
 
   useEffect(() => {
     supabase.from('eleves').select('*').eq('actif', true).order('nom')
@@ -419,6 +420,14 @@ export default function Groupes() {
     FILTER_COLS.forEach(c => { o[c.key] = [...new Set(rows.map(r => r[c.key]).filter(Boolean))].sort() })
     return o
   }, [rows])
+
+  const classOpts = useMemo(() =>
+    [...new Set(rows.map(r => r.classe).filter(Boolean))].sort()
+  , [rows])
+
+  const toggleNotesClass = useCallback((cls) =>
+    setNotesClassFilter(f => f.includes(cls) ? f.filter(v => v !== cls) : [...f, cls])
+  , [])
 
   const toggleFilter = useCallback((col, val) =>
     setFilters(f => {
@@ -450,6 +459,11 @@ export default function Groupes() {
 
   if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
+  const notesEleves = useMemo(() => {
+    if (notesClassFilter.length === 0) return rows
+    return rows.filter(r => notesClassFilter.includes(r.classe))
+  }, [rows, notesClassFilter])
+
   const selectedNoteEleve = rows.find(e => e.id === notesSelectedId)
 
   return (
@@ -480,10 +494,17 @@ export default function Groupes() {
             onChange={toggleFilter}
             onClearAll={() => setFilters({})}
           />
-        ) : null}
+        ) : (
+          <MasterFilter dark
+            filters={{ classe: notesClassFilter }}
+            filterDefs={[{ key: 'classe', label: 'Classe', options: classOpts }]}
+            onChange={(col, val) => toggleNotesClass(val)}
+            onClearAll={() => setNotesClassFilter([])}
+          />
+        )}
         info={activeTab === 'groupes'
           ? `${filtered.length} résultat${filtered.length !== 1 ? 's' : ''}`
-          : null}
+          : `${notesEleves.length} élève${notesEleves.length !== 1 ? 's' : ''}`}
         actions={activeTab === 'notes' && notesSelectedId ? (
           <button onClick={() => setNoteModalOpen(true)}
             className="btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold">
@@ -558,7 +579,7 @@ export default function Groupes() {
       ) : (
         <NotesPanel
           key={notesPanelKey}
-          eleves={rows}
+          eleves={notesEleves}
           onOpenFiche={id => setFicheId(id)}
           setSelectedIdUp={setNotesSelectedId}
           search={notesSearch}
