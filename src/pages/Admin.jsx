@@ -9,6 +9,7 @@ import { useDemo } from "../context/DemoContext"
 import { FEATURES, ROLES, ROLE_META, FEATURE_GROUPS } from '../lib/permissions'
 import { useSettings } from '../contexts/SettingsContext'
 import MasterFilter from '../components/ui/MasterFilter'
+import GuidePresentation from './GuidePresentation'
 
 // ── Toggle de permission ──────────────────────────────────────────────────────
 function PermToggle({ value, onChange, disabled, saving }) {
@@ -58,6 +59,9 @@ export default function Admin() {
       { key: 'helpdesk', label: 'Helpdesk' },
       { key: 'natures',  label: 'Natures comptables' },
       { key: 'guidance', label: 'Conseils de guidance' },
+    ],
+    guide: [
+      { key: 'guide', label: 'Guide de présentation' },
     ],
   }
   const sectionOfTab = Object.entries(SECTION_TABS).find(([, tabs]) => tabs.some(t => t.key === tab))?.[0] || 'personnes'
@@ -222,6 +226,7 @@ export default function Admin() {
         { key: 'personnes', label: 'Personnes & accès' },
         { key: 'ecole',     label: 'École' },
         { key: 'modules',   label: 'Modules' },
+        { key: 'guide',     label: 'Guide' },
       ]}
       activeTab={sectionOfTab}
       onTabChange={setSection}
@@ -808,6 +813,13 @@ export default function Admin() {
 
       {/* ── CONSEILS DE GUIDANCE ─────────────────────── */}
       {tab === 'guidance' && <GuidanceAdmin />}
+
+      {/* ── GUIDE DE PRÉSENTATION ────────────────────── */}
+      {tab === 'guide' && (
+        <div className="-mx-6 -mb-6">
+          <GuidePresentation />
+        </div>
+      )}
     </div>
     </>
   )

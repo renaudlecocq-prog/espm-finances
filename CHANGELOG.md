@@ -1,3 +1,11 @@
+## [v1.20.0] — Guide de présentation de la plateforme
+- Nouvelle page GuidePresentation.jsx : infographie complète de la plateforme ESPM+
+- Accessible depuis Admin → onglet "Guide" (section Guide)
+- Présente les 12 modules, 5 rôles, flux principal, stack technique, sécurité et checklists
+- Couleurs adaptées au thème ESPM+ (#2D1B2E / violet #7C3AED)
+- Inspiré du modèle PTB Anderlecht, entièrement adapté au contexte scolaire
+
+
 ## [v1.19.5] — Fix MasterFilter : scroll interne ne ferme plus le panel
 - Le listener scroll sur window ignore désormais les scrolls à l'intérieur du panel
 - Permet de scroller dans les listes de filtres sans les fermer
