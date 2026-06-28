@@ -1,3 +1,11 @@
+## [v1.19.4] — Fix routes URL : /eleves, /soldes, /suivi-social
+- /groupes → /eleves (page Groupes renommée Élèves dans le menu)
+- /eleves → /soldes (page Soldes)
+- /assistant-social → /suivi-social (page Suivi social)
+- Redirects legacy /echelonnements et /organismes mis à jour → /suivi-social
+- Tous les liens internes mis à jour (Home, NotificationBell, FicheEleve, Header, Sidebar)
+
+
 ## [v1.19.3] — Fix filtres : portal position:fixed (dropdown clippé par overflow:hidden)
 - MasterFilter : panel rendu via ReactDOM.createPortal sur document.body
 - Position calculée depuis getBoundingClientRect() du bouton trigger

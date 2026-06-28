@@ -132,15 +132,15 @@ function AppRoutes() {
       <Route path="/mentions-legales" element={<MentionsLegales />} />
       <Route path="/profile" element={<RequireAuth require="mdp"><Layout><Profile /></Layout></RequireAuth>} />
       <Route path="/" element={<RequireAuth><Layout><Home /></Layout></RequireAuth>} />
-      <Route path="/eleves" element={<RequireAuth require="mdp" feature="eleves"><Layout><Eleves /></Layout></RequireAuth>} />
-      <Route path="/groupes" element={<RequireAuth require="mdp" feature="eleves"><Layout><Groupes /></Layout></RequireAuth>} />
+      <Route path="/soldes" element={<RequireAuth require="mdp" feature="eleves"><Layout><Eleves /></Layout></RequireAuth>} />
+      <Route path="/eleves" element={<RequireAuth require="mdp" feature="eleves"><Layout><Groupes /></Layout></RequireAuth>} />
       <Route path="/paiements" element={<RequireAuth require="direction" feature="paiements"><Layout><Paiements /></Layout></RequireAuth>} />
       <Route path="/factures" element={<RequireAuth require="direction" feature="factures"><Layout><Factures /></Layout></RequireAuth>} />
       <Route path="/activites" element={<RequireAuth require="mdp" feature={['activites_full','activites_own']}><Layout><Activites /></Layout></RequireAuth>} />
       <Route path="/articles" element={<RequireAuth require="direction" feature="articles"><Layout><Articles /></Layout></RequireAuth>} />
-      <Route path="/assistant-social" element={<RequireAuth require="direction" feature="suivi_social"><Layout><AssistantSocial /></Layout></RequireAuth>} />
-      <Route path="/echelonnements" element={<Navigate to="/assistant-social" replace />} />
-      <Route path="/organismes" element={<Navigate to="/assistant-social" replace />} />
+      <Route path="/suivi-social" element={<RequireAuth require="direction" feature="suivi_social"><Layout><AssistantSocial /></Layout></RequireAuth>} />
+      <Route path="/echelonnements" element={<Navigate to="/suivi-social" replace />} />
+      <Route path="/organismes" element={<Navigate to="/suivi-social" replace />} />
       <Route path="/admin" element={<RequireAuth require="admin"><Layout><Admin /></Layout></RequireAuth>} />
       <Route path="/helpdesk" element={<RequireAuth require="mdp" feature={['helpdesk','helpdesk_admin']}><Layout><Helpdesk /></Layout></RequireAuth>} />
       <Route path="/helpdesk/:id" element={<RequireAuth require="mdp" feature={['helpdesk','helpdesk_admin']}><Layout><HelpdeskDetail /></Layout></RequireAuth>} />

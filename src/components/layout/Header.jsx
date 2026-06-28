@@ -10,13 +10,13 @@ export default function Header() {
 
   const links = [
     { to: '/',                 label: 'Accueil',        show: true },
-    { to: '/eleves',           label: 'Élèves',         show: isFinancier },
-    { to: '/groupes',          label: 'Groupes',        show: isMdp },
+    { to: '/soldes',           label: 'Élèves',         show: isFinancier },
+    { to: '/eleves',          label: 'Groupes',        show: isMdp },
     { to: '/factures',         label: 'Factures',       show: isFinancier },
     { to: '/paiements',        label: 'Paiements',      show: isFinancier },
     { to: '/activites',        label: 'Activités',      show: isMdp },
     { to: '/articles',         label: 'Articles',       show: isFinancier },
-    { to: '/assistant-social', label: 'Suivi social', show: isFinancier },
+    { to: '/suivi-social', label: 'Suivi social', show: isFinancier },
   ]
 
   const { s } = useSettings()

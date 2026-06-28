@@ -201,13 +201,13 @@ function HomeFinancier() {
         <SectionTitle icon="💰" title="Vue financière" subtitle={`Année scolaire ${as}`} />
         <div className="grid grid-cols-4 gap-4">
           <StatCard icon="⚠️" label="Impayés" value={fmtShort(impayes)}
-            sub="Soldes négatifs cumulés" to="/eleves?solde=negatif" color="red" />
+            sub="Soldes négatifs cumulés" to="/soldes?solde=negatif" color="red" />
           <StatCard icon="📋" label="Échelonnements" value={fmtShort(echMontant)}
-            sub="Montant en cours / non respecté" to="/eleves?suivi=echelonnement" color="orange" />
+            sub="Montant en cours / non respecté" to="/soldes?suivi=echelonnement" color="orange" />
           <StatCard icon="🤝" label="Organismes tiers" value={fmtShort(orgMontant)}
-            sub="Demandes actives (en cours / validé)" to="/eleves?suivi=organisme" color="amber" />
+            sub="Demandes actives (en cours / validé)" to="/soldes?suivi=organisme" color="amber" />
           <StatCard icon="🏦" label="En réserve" value={fmtShort(enReserve)}
-            sub="Soldes positifs cumulés" to="/eleves?solde=positif" color="green" />
+            sub="Soldes positifs cumulés" to="/soldes?solde=positif" color="green" />
         </div>
       </section>
       <section>
@@ -228,18 +228,18 @@ function HomeFinancier() {
           <div>
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Échelonnements</h3>
             <div className="grid grid-cols-3 gap-3">
-              <MiniStat label="En cours" value={echStats.en_cours} to="/assistant-social" color="blue" />
-              <MiniStat label="Non respecté" value={echStats.non_respecte} to="/assistant-social" color="red" />
-              <MiniStat label="Terminé" value={echStats.termine} to="/assistant-social" color="green" />
+              <MiniStat label="En cours" value={echStats.en_cours} to="/suivi-social" color="blue" />
+              <MiniStat label="Non respecté" value={echStats.non_respecte} to="/suivi-social" color="red" />
+              <MiniStat label="Terminé" value={echStats.termine} to="/suivi-social" color="green" />
             </div>
           </div>
           <div>
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Organismes tiers (actifs)</h3>
             <div className="grid grid-cols-4 gap-3">
-              <MiniStat label="CPAS" value={orgStats.CPAS} to="/assistant-social" color="blue" />
-              <MiniStat label="ULB" value={orgStats.ULB} to="/assistant-social" color="indigo" />
-              <MiniStat label="SPJ" value={orgStats.SPJ} to="/assistant-social" color="purple" />
-              <MiniStat label="Autre" value={orgStats.Autre} to="/assistant-social" color="gray" />
+              <MiniStat label="CPAS" value={orgStats.CPAS} to="/suivi-social" color="blue" />
+              <MiniStat label="ULB" value={orgStats.ULB} to="/suivi-social" color="indigo" />
+              <MiniStat label="SPJ" value={orgStats.SPJ} to="/suivi-social" color="purple" />
+              <MiniStat label="Autre" value={orgStats.Autre} to="/suivi-social" color="gray" />
             </div>
           </div>
         </div>

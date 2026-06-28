@@ -7,8 +7,8 @@ import { isMuted } from '../../pages/Profile'
 
 const ENTITY_ROUTES = {
   activite:        '/activites',
-  echelonnement:   '/assistant-social?tab=echelonnements',
-  organisme_tiers: '/assistant-social?tab=organismes',
+  echelonnement:   '/suivi-social?tab=echelonnements',
+  organisme_tiers: '/suivi-social?tab=organismes',
 }
 
 const ENTITY_LABELS = {

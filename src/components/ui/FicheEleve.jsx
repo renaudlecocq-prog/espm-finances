@@ -449,7 +449,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                     <div className={orgs.length > 0 ? 'mb-4' : ''}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Échelonnements</span>
-                        <button onClick={() => { onClose(); navigate(`/assistant-social?tab=echelonnements&eleve=${eleveId}`) }}
+                        <button onClick={() => { onClose(); navigate(`/suivi-social?tab=echelonnements&eleve=${eleveId}`) }}
                           className="flex items-center gap-1 text-xs text-primary dark:text-accent hover:underline">
                           <ExternalLink size={11} /> Gérer
                         </button>
@@ -470,7 +470,7 @@ export default function FicheEleve({ eleveId, onClose }) {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Organismes tiers</span>
-                        <button onClick={() => { onClose(); navigate(`/assistant-social?tab=organismes&eleve=${eleveId}`) }}
+                        <button onClick={() => { onClose(); navigate(`/suivi-social?tab=organismes&eleve=${eleveId}`) }}
                           className="flex items-center gap-1 text-xs text-primary dark:text-accent hover:underline">
                           <ExternalLink size={11} /> Gérer
                         </button>
