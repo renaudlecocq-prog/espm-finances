@@ -99,6 +99,27 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, user
   const [notesLoading, setNotesLoading] = useState(true)
   const [activeCat, setActiveCat]   = useState('anecdotes_proclamation')
 
+  // Suivi des notes lues : { [eleveId]: isoTimestamp }
+  const lsKey = userId ? `espm_notes_seen_${userId}` : null
+  const [seenMap, setSeenMap] = useState(() => {
+    if (!lsKey) return {}
+    try { return JSON.parse(localStorage.getItem(lsKey) || '{}') } catch { return {} }
+  })
+
+  const markStudentSeen = useCallback((eleveId) => {
+    if (!lsKey || !eleveId) return
+    setSeenMap(prev => {
+      const next = { ...prev, [eleveId]: new Date().toISOString() }
+      try { localStorage.setItem(lsKey, JSON.stringify(next)) } catch {}
+      return next
+    })
+  }, [lsKey])
+
+  // Re-marquer comme lu si l'élève est déjà ouvert et les notes rechargent
+  useEffect(() => {
+    if (selectedId && notes.length > 0) markStudentSeen(selectedId)
+  }, [notes]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const loadNotes = useCallback(async () => {
     setNotesLoading(true)
     const { data } = await supabase
@@ -154,7 +175,8 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, user
     const next = id === selectedId ? null : id
     setSelectedId(next)
     setSelectedIdUp(next)
-  }, [selectedId, setSelectedIdUp])
+    if (next) markStudentSeen(next)
+  }, [selectedId, setSelectedIdUp, markStudentSeen])
 
   const filteredEleves = useMemo(() => {
     if (!search) return eleves
@@ -187,7 +209,12 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, user
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {filteredEleves.map(e => {
-            const noteCount = notes.filter(n => n.eleve_id === e.id).length
+            const seenAt = seenMap[e.id] ? new Date(seenMap[e.id]) : new Date(0)
+            const unreadCount = notes.filter(n =>
+              n.eleve_id === e.id &&
+              n.auteur_id !== userId &&
+              new Date(n.created_at) > seenAt
+            ).length
             return (
               <button key={e.id}
                 onClick={() => selectEleve(e.id)}
@@ -205,11 +232,11 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, user
                       {e.prenom?.charAt(0)}{e.nom?.charAt(0)}
                     </div>
                   )}
-                  {noteCount > 0 && (
+                  {unreadCount > 0 && (
                     <span className="absolute -bottom-0.5 -right-0.5 min-w-[16px] h-4 px-0.5
                       bg-accent text-white text-[10px] font-bold rounded-full
                       flex items-center justify-center leading-none ring-1 ring-gray-800">
-                      {noteCount}
+                      {unreadCount}
                     </span>
                   )}
                 </div>
