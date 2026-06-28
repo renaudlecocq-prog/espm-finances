@@ -244,6 +244,7 @@ export function ListeEditor({ liste, canEdit }) {
   const [cells,       setCells]       = useState({})
   const [synced,      setSynced]      = useState(false)
   const [addColModal, setAddColModal] = useState(false)
+  const [renamingCol, setRenamingCol] = useState(null) // {id, name}
   const [saving,      setSaving]      = useState(false)
   const saveTimerRef = useRef(null)
 
@@ -296,6 +297,16 @@ export function ListeEditor({ liste, canEdit }) {
     const arr = doc.getArray('columns')
     const idx = arr.toArray().findIndex(c => c.id === colId)
     if (idx >= 0) arr.delete(idx, 1)
+  }, [])
+
+  const renameColumn = useCallback((colId, newName) => {
+    const doc = ydocRef.current; if (!doc || !newName.trim()) return
+    const arr = doc.getArray('columns')
+    const idx = arr.toArray().findIndex(c => c.id === colId)
+    if (idx < 0) return
+    const col = arr.get(idx)
+    arr.delete(idx, 1)
+    arr.insert(idx, [{ ...col, name: newName.trim() }])
   }, [])
 
   // ── Gestion cellules (custom seulement) ─────────────────────────────────────
@@ -359,12 +370,32 @@ export function ListeEditor({ liste, canEdit }) {
                     minWidth: col.key === 'nom' ? 140 : 110,
                     whiteSpace:'nowrap' }}>
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:4 }}>
-                      <span style={{ overflow:'hidden', textOverflow:'ellipsis' }}>
-                        {(col.type === 'builtin' || col.type === 'group') && (
-                          <span style={{ opacity:0.5, fontSize:9, marginRight:3 }}>🔒</span>
-                        )}
-                        {col.name}
-                      </span>
+                      {col.type === 'custom' && canEdit && renamingCol === col.id ? (
+                        <input
+                          autoFocus
+                          defaultValue={col.name}
+                          onBlur={e => { renameColumn(col.id, e.target.value); setRenamingCol(null) }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') { renameColumn(col.id, e.target.value); setRenamingCol(null) }
+                            if (e.key === 'Escape') setRenamingCol(null)
+                          }}
+                          onClick={e => e.stopPropagation()}
+                          style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.4)',
+                            color:'#fff', borderRadius:4, padding:'2px 5px', fontSize:11, fontWeight:600,
+                            width:90, outline:'none' }}
+                        />
+                      ) : (
+                        <span
+                          title={col.type === 'custom' && canEdit ? 'Double-clic pour renommer' : undefined}
+                          onDoubleClick={() => col.type === 'custom' && canEdit && setRenamingCol(col.id)}
+                          style={{ overflow:'hidden', textOverflow:'ellipsis',
+                            cursor: col.type === 'custom' && canEdit ? 'text' : 'default' }}>
+                          {(col.type === 'builtin' || col.type === 'group') && (
+                            <span style={{ opacity:0.5, fontSize:9, marginRight:3 }}>🔒</span>
+                          )}
+                          {col.name}
+                        </span>
+                      )}
                       {canEdit && (
                         <button onClick={() => removeColumn(col.id)}
                           title="Supprimer"

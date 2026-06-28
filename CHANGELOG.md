@@ -2369,3 +2369,7 @@ git push origin main
 ## [v1.13b] — PageHeader 2 lignes fixes
 - Ligne 1 : titre + actions (strict no-wrap)
 - Ligne 2 : leftActions + tabs + search + filtres + info (scroll horizontal silencieux, jamais de 3e ligne)
+
+## [v1.20.9] — Renommer colonnes personnalisées
+- Double-clic sur un en-tête de colonne custom pour la renommer en ligne
+- Validation par Entrée ou clic ailleurs, annulation par Échap
