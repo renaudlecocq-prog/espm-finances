@@ -1,3 +1,10 @@
+## [v1.20.24] — PWA Phase 1 : site installable sur iOS et Android
+- Installation de vite-plugin-pwa (v1.3.0) avec Workbox generateSW
+- Manifest complet : nom "ESPM+", theme_color #2D1B2E, mode standalone, lang fr
+- Icônes générées : icon-192.png, icon-512.png, apple-touch-icon.png (public/icons/)
+- Cache Workbox : précache assets statiques + NetworkFirst pour les requêtes Supabase
+- index.html : meta theme-color, apple-mobile-web-app-*, viewport-fit=cover
+
 ## [v1.20.23] — Renommage "Économe" → "Comptes"
 - Route /econome → /comptes
 - Label sidebar + titre PageHeader : "Comptes"
