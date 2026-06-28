@@ -140,7 +140,8 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, user
     const q = search.toLowerCase()
     return eleves.filter(e =>
       (e.nom || '').toLowerCase().includes(q) ||
-      (e.prenom || '').toLowerCase().includes(q)
+      (e.prenom || '').toLowerCase().includes(q) ||
+      (e.classe || '').toLowerCase().includes(q)
     )
   }, [eleves, search])
 

@@ -2395,3 +2395,6 @@ git push origin main
 - Nom élève sélectionné dans la liste : blanc en dark mode
 - Nom élève dans l'en-tête droite : text-accent en dark mode
 - Avatar : photo de l'élève si disponible, sinon initiales
+
+## [v1.20.14] — Notes : recherche par classe
+- Le champ de recherche filtre aussi par classe
