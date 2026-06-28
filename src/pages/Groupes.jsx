@@ -41,15 +41,14 @@ function fmtDate(iso) {
     + ' ' + d.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })
 }
 
-function NoteCard({ note, showEleve = false }) {
+function NoteCard({ note, showEleve = false, canManage = false, onEdit, onDelete }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="card p-4 space-y-1.5 hover:border-primary/30 transition-colors cursor-pointer"
-      onClick={() => setOpen(o => !o)}>
+    <div className="card p-4 space-y-1.5 hover:border-primary/30 dark:hover:border-accent/30 transition-colors">
       <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setOpen(o => !o)}>
           {showEleve && (
-            <p className="text-xs font-semibold text-primary mb-0.5">
+            <p className="text-xs font-semibold text-primary dark:text-accent mb-0.5">
               {note.eleve_nom} {note.eleve_prenom}
               <span className="text-gray-400 dark:text-gray-500 font-normal ml-1.5">{note.eleve_classe}</span>
             </p>
@@ -61,19 +60,40 @@ function NoteCard({ note, showEleve = false }) {
             {note.contenu}
           </p>
         </div>
-        <ChevronDown size={14} className={`text-gray-400 flex-shrink-0 mt-0.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {canManage && (
+            <>
+              <button onClick={() => onEdit(note)} title="Modifier"
+                className="p-1 rounded text-gray-400 hover:text-primary dark:hover:text-accent hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button onClick={() => onDelete(note)} title="Supprimer"
+                className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+            </>
+          )}
+          <ChevronDown size={14} className={`text-gray-400 cursor-pointer transition-transform ${open ? 'rotate-180' : ''}`}
+            onClick={() => setOpen(o => !o)} />
+        </div>
       </div>
       <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
         <span>{fmtDate(note.created_at)}</span>
         {note.auteur_nom && <><span>·</span><span>{note.auteur_nom}</span></>}
         <span>·</span>
-        <span className="text-primary/70">{NOTE_CATS.find(c => c.key === note.categorie)?.label ?? note.categorie}</span>
+        <span className="text-primary dark:text-accent opacity-70">{NOTE_CATS.find(c => c.key === note.categorie)?.label ?? note.categorie}</span>
       </div>
     </div>
   )
 }
 
-function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search }) {
+function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, userRole }) {
   const [selectedId, setSelectedId] = useState(null)
   const [notes, setNotes]           = useState([])
   const [notesLoading, setNotesLoading] = useState(true)
@@ -95,6 +115,19 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search }) {
   }, [])
 
   useEffect(() => { loadNotes() }, [loadNotes])
+
+  const [editNote, setEditNote] = useState(null)
+
+  const handleDelete = useCallback(async (note) => {
+    if (!window.confirm('Supprimer cette note ?')) return
+    await supabase.from('eleve_notes').delete().eq('id', note.id)
+    loadNotes()
+  }, [loadNotes])
+
+  const canManageNote = useCallback((note) => {
+    if (userRole === 'direction' || userRole === 'admin' || userRole === 'super_admin') return true
+    return note.auteur_id === userId
+  }, [userId, userRole])
 
   const selectEleve = useCallback((id) => {
     const next = id === selectedId ? null : id
@@ -122,6 +155,7 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search }) {
   NotesPanel._reload = loadNotes
 
   return (
+    <>
     <div className="flex flex-1 gap-0 overflow-hidden min-h-0">
       {/* Colonne gauche */}
       <div className="w-72 flex-shrink-0 border-r border-gray-100 dark:border-gray-700 flex flex-col overflow-hidden">
@@ -174,7 +208,12 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search }) {
                 <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2">
                   Toutes les notes — {notes.length} au total
                 </p>
-                {notes.map(n => <NoteCard key={n.id} note={n} showEleve />)}
+                {notes.map(n => (
+                  <NoteCard key={n.id} note={n} showEleve
+                    canManage={canManageNote(n)}
+                    onEdit={setEditNote}
+                    onDelete={handleDelete} />
+                ))}
               </div>
             )}
           </div>
@@ -194,7 +233,7 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search }) {
                     onClick={() => setActiveCat(cat.key)}
                     className={`px-3 py-1.5 text-xs font-medium rounded-t-md border-b-2 transition-all
                       ${activeCat === cat.key
-                        ? 'border-primary text-primary bg-primary/5'
+                        ? 'border-primary dark:border-accent text-primary dark:text-accent bg-primary/5 dark:bg-accent/10'
                         : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                     {cat.label}
                     <span className="ml-1.5 text-xs opacity-60">
@@ -212,7 +251,12 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search }) {
                 </div>
               ) : (
                 <div className="space-y-3 max-w-2xl">
-                  {rightNotes.map(n => <NoteCard key={n.id} note={n} />)}
+                  {rightNotes.map(n => (
+                    <NoteCard key={n.id} note={n}
+                      canManage={canManageNote(n)}
+                      onEdit={setEditNote}
+                      onDelete={handleDelete} />
+                  ))}
                 </div>
               )}
             </div>
@@ -220,29 +264,44 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search }) {
         )}
       </div>
     </div>
+
+    {editNote && (
+      <NoteModal note={editNote} eleve={{ id: editNote.eleve_id, nom: editNote.eleve_nom, prenom: editNote.eleve_prenom }}
+        onClose={() => setEditNote(null)}
+        onSaved={() => { setEditNote(null); loadNotes() }} />
+    )}
+    </>
   )
 }
 
-function NoteModal({ eleve, user, onClose, onSaved }) {
-  const [titre,   setTitre]   = useState('')
-  const [contenu, setContenu] = useState('')
+function NoteModal({ eleve, user, profile, note: editingNote, onClose, onSaved }) {
+  const [titre,   setTitre]   = useState(editingNote?.titre ?? '')
+  const [contenu, setContenu] = useState(editingNote?.contenu ?? '')
   const [saving,  setSaving]  = useState(false)
   const [error,   setError]   = useState(null)
+  const isEdit = !!editingNote
 
   const handleSave = async () => {
     if (!contenu.trim()) { setError('Le contenu est obligatoire.'); return }
     setSaving(true)
-    const auteurNom = user?.user_metadata?.prenom
-      ? `${user.user_metadata.prenom} ${user.user_metadata.nom ?? ''}`.trim()
+    const auteurNom = profile
+      ? `${profile.prenom ?? ''} ${profile.nom ?? ''}`.trim() || profile.email
       : (user?.email ?? null)
-    const { error: err } = await supabase.from('eleve_notes').insert({
-      eleve_id:  eleve.id,
-      categorie: 'anecdotes_proclamation',
-      titre:     titre.trim() || null,
-      contenu:   contenu.trim(),
-      auteur_id: user?.id ?? null,
-      auteur_nom: auteurNom,
-    })
+    let err
+    if (isEdit) {
+      ;({ error: err } = await supabase.from('eleve_notes')
+        .update({ titre: titre.trim() || null, contenu: contenu.trim() })
+        .eq('id', editingNote.id))
+    } else {
+      ;({ error: err } = await supabase.from('eleve_notes').insert({
+        eleve_id:  eleve.id,
+        categorie: 'anecdotes_proclamation',
+        titre:     titre.trim() || null,
+        contenu:   contenu.trim(),
+        auteur_id: user?.id ?? null,
+        auteur_nom: auteurNom,
+      }))
+    }
     setSaving(false)
     if (err) { setError(err.message); return }
     onSaved()
@@ -253,7 +312,7 @@ function NoteModal({ eleve, user, onClose, onSaved }) {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            <h2 className="font-semibold text-gray-800 dark:text-gray-100">Nouvelle note</h2>
+            <h2 className="font-semibold text-gray-800 dark:text-gray-100">{isEdit ? 'Modifier la note' : 'Nouvelle note'}</h2>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               {eleve.nom} {eleve.prenom} · <span className="text-primary/80">Anecdotes proclamation</span>
             </p>
@@ -281,7 +340,7 @@ function NoteModal({ eleve, user, onClose, onSaved }) {
           <button onClick={onClose} className="btn-ghost px-4 py-2 text-sm">Annuler</button>
           <button onClick={handleSave} disabled={saving}
             className="btn-primary px-5 py-2 text-sm font-semibold disabled:opacity-50">
-            {saving ? 'Enregistrement…' : 'Enregistrer'}
+            {saving ? 'Enregistrement…' : isEdit ? 'Mettre à jour' : 'Enregistrer'}
           </button>
         </div>
       </div>
@@ -290,7 +349,7 @@ function NoteModal({ eleve, user, onClose, onSaved }) {
 }
 
 export default function Groupes() {
-  const { user } = useAuth()
+  const { user, profile, role } = useAuth()
   const [rows,    setRows]    = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('groupes')
@@ -466,6 +525,8 @@ export default function Groupes() {
           onOpenFiche={id => setFicheId(id)}
           setSelectedIdUp={setNotesSelectedId}
           search={notesSearch}
+          userId={user?.id}
+          userRole={role}
         />
       )}
 
@@ -477,6 +538,7 @@ export default function Groupes() {
         <NoteModal
           eleve={selectedNoteEleve}
           user={user}
+          profile={profile}
           onClose={() => setNoteModalOpen(false)}
           onSaved={() => {
             setNoteModalOpen(false)

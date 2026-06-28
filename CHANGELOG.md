@@ -2384,3 +2384,9 @@ git push origin main
   - Sans sélection : toutes les notes, plus récentes en premier
   - Avec sélection : notes par catégorie (Anecdotes proclamation)
   - Bouton "Nouvelle note" dans header quand un élève est sélectionné
+
+## [v1.20.12] — Notes : dark mode + edit/delete + nom auteur
+- Nom d'élève et onglet catégorie visibles en dark mode (text-accent)
+- Boutons éditer/supprimer sur chaque note (selon droits)
+- Affichage du prénom+nom de l'auteur au lieu de l'email
+- Modal en mode édition (pré-remplissage, mise à jour en DB)
