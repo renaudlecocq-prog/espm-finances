@@ -1053,7 +1053,7 @@ function ListeModal({ folder, tab, onClose, onCreate }) {
                               : [...prev, {col: cat.col, val}]
                         )
                         return (
-                          <label key={val} style={{display:'flex',alignItems:'center',gap:8,
+                          <label key={val} onClick={toggle} style={{display:'flex',alignItems:'center',gap:8,
                             padding:'6px 10px',borderRadius:8,cursor:'pointer',
                             backgroundColor:sel?'rgba(45,27,46,0.06)':'transparent',
                             border:`1.5px solid ${sel?'#2D1B2E':'#E5E7EB'}`}}>

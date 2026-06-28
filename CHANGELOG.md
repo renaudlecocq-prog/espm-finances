@@ -1,3 +1,7 @@
+## [v1.20.8] — Fix cases à cocher groupes : onClick manquant
+- onClick={toggle} oublié sur les labels de groupes
+
+
 ## [v1.20.7] — Fix modal Nouvelle liste : scroll rétabli
 - maxHeight + overflowY auto remis sur le contenu (groupes inline, plus de conflit dropdown)
 
