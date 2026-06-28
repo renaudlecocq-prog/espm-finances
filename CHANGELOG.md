@@ -1,3 +1,6 @@
+## [v1.20.20] — Badge notes sur avatar dans NotesPanel
+- Badge overlay positionné en bas-droite de la photo/initiales avec le nombre de notes
+
 ## [v1.20.19] — Fix hooks order (notesEleves useMemo avant early return)
 - Correction erreur React #310 : useMemo appelé après return conditionnel
 
