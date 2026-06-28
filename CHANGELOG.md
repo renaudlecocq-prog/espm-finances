@@ -1,3 +1,7 @@
+## [v1.20.7] — Fix modal Nouvelle liste : scroll rétabli
+- maxHeight + overflowY auto remis sur le contenu (groupes inline, plus de conflit dropdown)
+
+
 ## [v1.20.6] — Nouvelle liste : groupes organisés par catégorie
 - Remplacement du dropdown plat par une grille catégorisée (RLMO, OBS D2, AC D2, Math D3, Sciences D3, Bio-Physique D3, OBS1/2 D3, AC D3)
 - Même structure que le filtre Élèves
