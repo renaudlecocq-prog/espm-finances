@@ -2376,3 +2376,11 @@ git push origin main
 
 ## [v1.20.10] — Icône crayon pour renommer les colonnes
 - Remplace le double-clic par une icône SVG crayon dans l'en-tête des colonnes custom
+
+## [v1.20.11] — Page Élèves : onglets Groupes + Notes
+- Migration DB : table eleve_notes (id, eleve_id, categorie, titre, contenu, auteur, created_at)
+- Onglet "Groupes" : vue existante inchangée
+- Onglet "Notes" : split 1/3 liste élèves / 2/3 notes
+  - Sans sélection : toutes les notes, plus récentes en premier
+  - Avec sélection : notes par catégorie (Anecdotes proclamation)
+  - Bouton "Nouvelle note" dans header quand un élève est sélectionné
