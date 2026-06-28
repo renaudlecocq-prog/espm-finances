@@ -980,7 +980,7 @@ function ListeModal({ folder, tab, onClose, onCreate }) {
   return (
     <div style={{position:'fixed',inset:0,backgroundColor:'rgba(0,0,0,0.5)',
       display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:16}}>
-      <div style={{backgroundColor:'#fff',borderRadius:16,width:'100%',maxWidth:520,
+      <div style={{backgroundColor:'#fff',borderRadius:16,width:'100%',maxWidth:720,
         maxHeight:'90vh',display:'flex',flexDirection:'column',boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}>
 
         {/* Header */}

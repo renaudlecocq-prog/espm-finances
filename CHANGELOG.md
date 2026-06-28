@@ -1,3 +1,7 @@
+## [v1.20.4] — Nouvelle liste : modal plus large (720px)
+- Largeur du modal étape 2 portée à 720px
+
+
 ## [v1.20.3] — Nouvelle liste : dropdowns multi-select Classes + Groupes
 - Interface étape 2 refaite avec deux dropdowns côte à côte (comme Articles)
 - Recherche intégrée dans chaque dropdown
