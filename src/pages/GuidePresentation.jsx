@@ -168,7 +168,7 @@ export default function GuidePresentation() {
           </div>
           <div className="gp-wf-step">
             <div className="gp-wf-num">5</div><div className="gp-wf-icon">📊</div>
-            <div className="gp-wf-name">Rapports &amp; bilans</div><div className="gp-wf-detail">PDF, Excel, Économe</div>
+            <div className="gp-wf-name">Rapports &amp; bilans</div><div className="gp-wf-detail">PDF, Excel, Comptes</div>
           </div>
         </div>
 
@@ -229,7 +229,7 @@ export default function GuidePresentation() {
                 <li>Importer le fichier CSV de relevé Belfius</li>
                 <li>Association automatique ou manuelle aux élèves</li>
                 <li>Mise à jour des soldes en temps réel</li>
-                <li>Récupérer les encodages depuis la page Économe</li>
+                <li>Récupérer les encodages depuis la page Comptes</li>
               </ul>
               <div className="gp-feature-tip"><strong>Format :</strong> Fichier CSV Belfius standard (export depuis l&apos;extranet bancaire).</div>
             </div>
@@ -274,7 +274,7 @@ export default function GuidePresentation() {
           <div className="gp-module-card">
             <div className="gp-module-header">
               <div className="gp-module-icon">🏦</div>
-              <div><div className="gp-module-name">Économe</div><span className="gp-module-role role-fin">econome</span></div>
+              <div><div className="gp-module-name">Comptes</div><span className="gp-module-role role-fin">econome</span></div>
             </div>
             <div className="gp-module-accent" style={{background:'linear-gradient(90deg,#7C3AED,#C4B5FD)'}} />
             <div className="gp-module-body">
@@ -557,7 +557,7 @@ export default function GuidePresentation() {
               ✅ Vérifier les droits d&apos;accès (Admin → Droits)<br />
               ✅ Créer les articles récurrents (minerval, assurance…)<br />
               ✅ Générer les factures de début d&apos;année<br />
-              ✅ Configurer les natures comptables Économe
+              ✅ Configurer les natures comptables Comptes
             </div>
           </div>
           <div className="gp-checklist-card">
@@ -578,8 +578,8 @@ export default function GuidePresentation() {
               ✅ Importer dans Paiements → Import CSV<br />
               ✅ Vérifier les associations non reconnues<br />
               ✅ Contrôler les soldes mis à jour<br />
-              ✅ Encoder les frais fournisseurs (Économe → POP)<br />
-              ✅ Récupérer les encodages Économe → Paiements
+              ✅ Encoder les frais fournisseurs (Comptes → POP)<br />
+              ✅ Récupérer les encodages Comptes → Paiements
             </div>
           </div>
           <div className="gp-checklist-card">

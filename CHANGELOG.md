@@ -1,3 +1,9 @@
+## [v1.20.23] — Renommage "Économe" → "Comptes"
+- Route /econome → /comptes
+- Label sidebar + titre PageHeader : "Comptes"
+- Label feature dans permissions.js (clé `econome` conservée, seul le libellé change)
+- Toutes les mentions UI "Économe" mises à jour : GuidePresentation, Paiements
+
 ## [v1.20.22] — Droits Notes intégrés au système de permissions
 - Deux nouvelles features : `notes_eleves` (voir/créer/modifier ses propres notes) et `notes_manage_all` (modifier/supprimer les notes des autres)
 - Onglet Notes masqué pour le rôle `responsable` via can('notes_eleves')

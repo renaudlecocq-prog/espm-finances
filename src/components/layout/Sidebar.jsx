@@ -149,7 +149,7 @@ function buildGroups(can, isAdmin) {
       icon: 'wallet',
       items: [
         { to: '/articles',         label: 'Articles',     icon: 'articles',  show: can('articles') },
-        { to: '/econome',          label: 'Économe',      icon: 'econome',   show: can('econome') || isAdmin },
+        { to: '/comptes',          label: 'Comptes',      icon: 'econome',   show: can('econome') || isAdmin },
         { to: '/factures',         label: 'Factures',     icon: 'factures',  show: can('factures') },
         { to: '/paiements',        label: 'Paiements',    icon: 'paiements', show: can('paiements') },
         { to: '/soldes',           label: 'Soldes',       icon: 'soldes',    show: can('soldes') },

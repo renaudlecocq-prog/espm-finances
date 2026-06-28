@@ -145,7 +145,7 @@ function AppRoutes() {
       <Route path="/helpdesk" element={<RequireAuth require="mdp" feature={['helpdesk','helpdesk_admin']}><Layout><Helpdesk /></Layout></RequireAuth>} />
       <Route path="/helpdesk/:id" element={<RequireAuth require="mdp" feature={['helpdesk','helpdesk_admin']}><Layout><HelpdeskDetail /></Layout></RequireAuth>} />
       <Route path="/salle-des-profs" element={<RequireAuth require="mdp" feature="salle_profs"><Layout><SalleDProfs /></Layout></RequireAuth>} />
-      <Route path="/econome" element={<RequireAuth require="admin" feature="econome"><Layout><Econome /></Layout></RequireAuth>} />
+      <Route path="/comptes" element={<RequireAuth require="admin" feature="econome"><Layout><Econome /></Layout></RequireAuth>} />
       <Route path="/compositions" element={<RequireAuth require="mdp" feature="compositions"><Layout><Compositions /></Layout></RequireAuth>} />
       <Route path="/conseils-de-guidance" element={<RequireAuth require="mdp" feature="guidance"><Layout><ConseilsDeGuidance /></Layout></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />

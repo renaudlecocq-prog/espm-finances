@@ -17,7 +17,7 @@ export const FEATURES = [
   { key: 'helpdesk_admin',  label: 'Helpdesk — gestion admin',   group: 'Helpdesk',   desc: 'Fermer les tickets, changer le statut, gérer les catégories' },
   // Système
   { key: 'salle_profs',     label: 'Salle des profs',           group: 'Collaboration', desc: 'Accès à la salle des profs et au casier personnel' },
-  { key: 'econome',         label: 'Économe — comptabilité',     group: 'Système',    desc: 'Suivi comptable (Fonctionnement, Élèves, POP, Bilan, Projets)' },
+  { key: 'econome',         label: 'Comptes',                    group: 'Système',    desc: 'Suivi comptable (Fonctionnement, Élèves, POP, Bilan, Projets)' },
   { key: 'compositions',    label: 'Compositions de classes',    group: 'Pédagogie',  desc: 'Outil de composition de classes avec drag-and-drop' },
   { key: 'guidance',         label: 'Conseils de guidance',        group: 'Pédagogie',  desc: 'Encodage collaboratif pendant les conseils de classe, génération de commentaires' },
   { key: 'notes_eleves',     label: 'Notes élèves — voir & écrire', group: 'Pédagogie',  desc: 'Accès à l\'onglet Notes : voir toutes les notes, créer et modifier ses propres notes' },

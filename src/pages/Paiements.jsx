@@ -521,7 +521,7 @@ export default function Paiements() {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:'inline',marginRight:4}}>
               <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5.51"/>
             </svg>
-            Depuis Économe
+            Depuis Comptes
           </button>
 
           <button onClick={() => setShowForm(v => !v)}
@@ -765,8 +765,8 @@ function PendingEconomeModal({ eleves, existingRefs, onClose, onImported }) {
       <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            <h2 className="font-semibold text-gray-800 dark:text-gray-100">Récupérer depuis l'onglet Élèves (Économe)</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Transactions encodées dans Économe, non encore importées ici</p>
+            <h2 className="font-semibold text-gray-800 dark:text-gray-100">Récupérer depuis l'onglet Élèves (Comptes)</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Transactions encodées dans Comptes, non encore importées ici</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
             <X size={18} className="text-gray-500 dark:text-gray-400" />
@@ -779,7 +779,7 @@ function PendingEconomeModal({ eleves, existingRefs, onClose, onImported }) {
           ) : rows.length === 0 ? (
             <div className="text-center py-12 text-gray-400 dark:text-gray-500">
               <p className="font-medium">Aucun encodage en attente</p>
-              <p className="text-sm mt-1">Importez d'abord un CSV dans l'onglet Élèves de la page Économe.</p>
+              <p className="text-sm mt-1">Importez d'abord un CSV dans l'onglet Élèves de la page Comptes.</p>
             </div>
           ) : (
             <table className="w-full text-sm">

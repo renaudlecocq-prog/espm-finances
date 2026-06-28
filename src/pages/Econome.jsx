@@ -860,7 +860,7 @@ export default function Econome() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Économe"
+        title="Comptes"
         subtitle="Suivi comptable — Fonctionnement, Élèves, POP, Bilan, Projets"
         tabs={TABS.map(t => ({ key: t.key, label: t.label }))}
         activeTab={activeTab}
