@@ -1,14 +1,14 @@
 /**
  * ListeEditor — Tableur collaboratif d'élèves
- * Colonnes builtin (nom/prénom/sexe/classe) + colonnes groupe (✓ membership) + colonnes custom
- * Sync temps réel via Yjs + SupabaseYjsProvider
+ * Colonnes builtin (nom/prénom/sexe/classe) + colonnes groupe (depuis colonnes eleves)
+ * + colonnes custom — Sync temps réel via Yjs + SupabaseYjsProvider
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
 import * as Y from 'yjs'
 import { SupabaseYjsProvider } from './SupabaseYjsProvider'
 import { supabase } from '../lib/supabase'
 
-// Colonnes builtin de base (hors groupes)
+// Colonnes builtin de base
 const BUILTIN_DEFS = [
   { key: 'nom',    name: 'Nom',    icon: '🔤' },
   { key: 'prenom', name: 'Prénom', icon: '🏷️' },
@@ -16,20 +16,33 @@ const BUILTIN_DEFS = [
   { key: 'classe', name: 'Classe', icon: '🏫' },
 ]
 
-function getEleveGroupes(e) {
-  const g = e.groupes_ss
-  if (!g) return []
-  if (Array.isArray(g)) return g
-  if (typeof g === 'string') {
-    try { const p = JSON.parse(g); return Array.isArray(p) ? p : [] } catch { return [] }
-  }
-  return []
+// Groupes école — mêmes colonnes que la page Groupes
+const GROUP_DEFS = [
+  { key: 'rlmo',            label: 'RLMO',          computed: true },
+  { key: 'obs_d2',          label: 'OBS D2'         },
+  { key: 'ac_d2',           label: 'AC D2'          },
+  { key: 'math_d3',         label: 'Math D3'        },
+  { key: 'sciences_d3',     label: 'Sciences D3'    },
+  { key: 'bio_physique_d3', label: 'Bio/Physique'   },
+  { key: 'obs1_d3',         label: 'OBS 1 D3'       },
+  { key: 'obs2_d3',         label: 'OBS 2 D3'       },
+  { key: 'ac_d3',           label: 'AC D3'          },
+]
+
+// Colonnes à sélectionner sur la table eleves
+const ELEVE_SELECT = 'id, nom, prenom, sexe, classe, philosophie, groupe_choix_philo, obs_d2, ac_d2, math_d3, sciences_d3, bio_physique_d3, obs1_d3, obs2_d3, ac_d3'
+
+function getEleveRlmo(e) {
+  return [e.philosophie, e.groupe_choix_philo].filter(Boolean).join(' ') || null
 }
 
 function getColValue(eleve, col) {
   if (col.type === 'builtin') return eleve[col.key] ?? ''
-  if (col.type === 'group')   return getEleveGroupes(eleve).includes(col.groupName) ? '✓' : ''
-  return '' // custom — géré via cells map
+  if (col.type === 'group') {
+    if (col.key === 'rlmo') return getEleveRlmo(eleve) ?? ''
+    return eleve[col.key] ?? ''
+  }
+  return '' // custom — géré via cells map Yjs
 }
 
 // ── Cellule éditable ──────────────────────────────────────────────────────────
@@ -71,28 +84,20 @@ function EditableCell({ value, onChange, canEdit }) {
 }
 
 // ── Modal ajout de colonne ────────────────────────────────────────────────────
-function AddColumnModal({ eleves, existingCols, onAdd, onClose }) {
-  const [mode, setMode]           = useState('builtin')   // 'builtin' | 'groups' | 'custom'
+function AddColumnModal({ existingCols, onAdd, onClose }) {
+  const [mode, setMode]             = useState('builtin')
   const [customName, setCustomName] = useState('')
-  const [groupSearch, setGroupSearch] = useState('')
-  const [added, setAdded]         = useState([])   // slugs ajoutés dans cette session
+  const [added, setAdded]           = useState([])
 
-  // Builtins déjà dans la liste
-  const existingBuiltinKeys  = existingCols.filter(c => c.type === 'builtin').map(c => c.key)
-  const existingGroupNames   = existingCols.filter(c => c.type === 'group').map(c => c.groupName)
+  const existingBuiltinKeys = existingCols.filter(c => c.type === 'builtin').map(c => c.key)
+  const existingGroupKeys   = existingCols.filter(c => c.type === 'group').map(c => c.key)
 
   const availableBuiltins = BUILTIN_DEFS.filter(
     d => !existingBuiltinKeys.includes(d.key) && !added.includes(`b_${d.key}`)
   )
-
-  // Groupes uniques des élèves de la liste
-  const allGroups = [...new Set(eleves.flatMap(e => getEleveGroupes(e)))].sort()
-  const availableGroups = allGroups.filter(
-    g => !existingGroupNames.includes(g) && !added.includes(`g_${g}`)
+  const availableGroups = GROUP_DEFS.filter(
+    d => !existingGroupKeys.includes(d.key) && !added.includes(`g_${d.key}`)
   )
-  const filteredGroups = groupSearch
-    ? availableGroups.filter(g => g.toLowerCase().includes(groupSearch.toLowerCase()))
-    : availableGroups
 
   const doAdd = (colDef, slug) => {
     onAdd(colDef)
@@ -103,10 +108,8 @@ function AddColumnModal({ eleves, existingCols, onAdd, onClose }) {
     doAdd({ id:`builtin_${def.key}`, type:'builtin', key:def.key, name:def.name }, `b_${def.key}`)
   }
 
-  const handleGroup = (groupe) => {
-    // Nom court pour l'en-tête (max 28 chars)
-    const shortName = groupe.length > 28 ? groupe.slice(0, 26) + '…' : groupe
-    doAdd({ id:`group_${groupe}`, type:'group', groupName:groupe, name:shortName }, `g_${groupe}`)
+  const handleGroup = (def) => {
+    doAdd({ id:`group_${def.key}`, type:'group', key:def.key, name:def.label }, `g_${def.key}`)
   }
 
   const handleCustom = () => {
@@ -174,41 +177,24 @@ function AddColumnModal({ eleves, existingCols, onAdd, onClose }) {
                 </div>
           )}
 
-          {/* Groupes spécifiques */}
+          {/* Groupes école */}
           {mode === 'groups' && (
-            <div>
-              {allGroups.length === 0
-                ? <div style={{ color:'#9CA3AF', fontSize:13 }}>Aucun groupe trouvé pour les élèves de cette liste.</div>
-                : <>
-                    <input placeholder="Rechercher un groupe…"
-                      value={groupSearch} onChange={e => setGroupSearch(e.target.value)}
-                      style={{ width:'100%', padding:'8px 10px', borderRadius:7, fontSize:12,
-                        border:'1.5px solid #E5E7EB', outline:'none', marginBottom:10, boxSizing:'border-box' }}
-                      onFocus={e => e.target.style.borderColor='#2D1B2E'}
-                      onBlur={e => e.target.style.borderColor='#E5E7EB'}
-                    />
-                    {filteredGroups.length === 0
-                      ? <div style={{ color:'#9CA3AF', fontSize:12 }}>
-                          {availableGroups.length === 0 ? 'Tous les groupes ont déjà été ajoutés.' : 'Aucun résultat.'}
-                        </div>
-                      : <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-                          {filteredGroups.map(g => (
-                            <button key={g} onClick={() => handleGroup(g)}
-                              style={{ padding:'8px 12px', borderRadius:7, border:'1.5px solid #E5E7EB',
-                                background:'#fff', cursor:'pointer', textAlign:'left', fontSize:12,
-                                color:'#374151', display:'flex', alignItems:'center', gap:8 }}
-                              onMouseEnter={e => { e.currentTarget.style.background='#F0FDF4'; e.currentTarget.style.borderColor='#10B981' }}
-                              onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.borderColor='#E5E7EB' }}>
-                              <span style={{ fontSize:14 }}>👥</span>
-                              <span style={{ flex:1 }}>{g}</span>
-                              <span style={{ fontSize:10, color:'#9CA3AF' }}>✓/vide</span>
-                            </button>
-                          ))}
-                        </div>
-                    }
-                  </>
-              }
-            </div>
+            availableGroups.length === 0
+              ? <div style={{ color:'#9CA3AF', fontSize:13 }}>Tous les groupes ont déjà été ajoutés.</div>
+              : <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                  {availableGroups.map(def => (
+                    <button key={def.key} onClick={() => handleGroup(def)}
+                      style={{ padding:'10px 14px', borderRadius:8, border:'1.5px solid #E5E7EB',
+                        background:'#fff', cursor:'pointer', textAlign:'left', fontSize:13,
+                        fontWeight:600, color:'#374151', display:'flex', alignItems:'center', gap:8 }}
+                      onMouseEnter={e => { e.currentTarget.style.background='#F0FDF4'; e.currentTarget.style.borderColor='#10B981' }}
+                      onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.borderColor='#E5E7EB' }}>
+                      <span style={{ fontSize:14 }}>👥</span>
+                      <span style={{ flex:1 }}>{def.label}</span>
+                      <span style={{ fontSize:10, color:'#9CA3AF' }}>lecture seule</span>
+                    </button>
+                  ))}
+                </div>
           )}
 
           {/* Colonne libre */}
@@ -236,7 +222,7 @@ function AddColumnModal({ eleves, existingCols, onAdd, onClose }) {
           )}
         </div>
 
-        {/* Note si des colonnes ont été ajoutées */}
+        {/* Compteur */}
         {added.length > 0 && (
           <div style={{ marginTop:12, padding:'6px 10px', background:'#F0FDF4', borderRadius:7,
             fontSize:12, color:'#15803D', textAlign:'center' }}>
@@ -250,22 +236,22 @@ function AddColumnModal({ eleves, existingCols, onAdd, onClose }) {
 
 // ── Composant principal ───────────────────────────────────────────────────────
 export function ListeEditor({ liste, canEdit }) {
-  const ydocRef   = useRef(null)
-  const provRef   = useRef(null)
+  const ydocRef  = useRef(null)
+  const provRef  = useRef(null)
 
   const [eleves,      setEleves]      = useState([])
-  const [columns,     setColumns]     = useState([])   // [{id, type, key?, groupName?, name}]
-  const [cells,       setCells]       = useState({})   // {eleveId_colId: value} pour custom uniquement
+  const [columns,     setColumns]     = useState([])
+  const [cells,       setCells]       = useState({})
   const [synced,      setSynced]      = useState(false)
   const [addColModal, setAddColModal] = useState(false)
   const [saving,      setSaving]      = useState(false)
-  const saveTimerRef  = useRef(null)
+  const saveTimerRef = useRef(null)
 
   // ── Charger les élèves ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!liste.eleve_ids?.length) { setEleves([]); return }
     supabase.from('eleves')
-      .select('id, nom, prenom, sexe, classe, groupes_ss')
+      .select(ELEVE_SELECT)
       .in('id', liste.eleve_ids)
       .order('classe').order('nom').order('prenom')
       .then(({ data }) => setEleves(data || []))
@@ -323,9 +309,8 @@ export function ListeEditor({ liste, canEdit }) {
 
   // ── Valeur affichée ─────────────────────────────────────────────────────────
   const getCellValue = (eleve, col) => {
-    if (col.type === 'builtin') return getColValue(eleve, col)
-    if (col.type === 'group')   return getColValue(eleve, col)
-    return cells[`${eleve.id}_${col.id}`] ?? ''
+    if (col.type === 'custom') return cells[`${eleve.id}_${col.id}`] ?? ''
+    return getColValue(eleve, col)
   }
 
   if (!synced) {
@@ -371,7 +356,7 @@ export function ListeEditor({ liste, canEdit }) {
                   <th key={col.id} style={{ padding:'7px 10px', textAlign:'left',
                     color:'#fff', fontSize:11, fontWeight:600,
                     borderRight:'1px solid rgba(255,255,255,0.1)',
-                    minWidth: col.type === 'group' ? 90 : col.key === 'nom' ? 140 : 110,
+                    minWidth: col.key === 'nom' ? 140 : 110,
                     whiteSpace:'nowrap' }}>
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:4 }}>
                       <span style={{ overflow:'hidden', textOverflow:'ellipsis' }}>
@@ -416,27 +401,25 @@ export function ListeEditor({ liste, canEdit }) {
                   style={{ backgroundColor: rowIdx % 2 === 0 ? '#fff' : '#F9FAFB' }}
                   onMouseEnter={e => e.currentTarget.style.backgroundColor='#EFF6FF'}
                   onMouseLeave={e => e.currentTarget.style.backgroundColor=rowIdx % 2 === 0 ? '#fff' : '#F9FAFB'}>
-                  {columns.map(col => (
-                    <td key={col.id} style={{ borderBottom:'1px solid #F3F4F6',
-                      borderRight:'1px solid #F3F4F6', padding:0, verticalAlign:'top' }}>
-                      {col.type === 'custom' ? (
-                        <EditableCell
-                          value={getCellValue(eleve, col)}
-                          onChange={val => setCellValue(eleve.id, col.id, val)}
-                          canEdit={canEdit}
-                        />
-                      ) : (
-                        <div style={{ padding:'6px 8px', fontSize:13,
-                          color: col.type === 'group'
-                            ? (getCellValue(eleve, col) ? '#10B981' : '#E5E7EB')
-                            : '#374151',
-                          fontWeight: col.type === 'group' && getCellValue(eleve, col) ? 700 : 400,
-                          textAlign: col.type === 'group' ? 'center' : 'left' }}>
-                          {getCellValue(eleve, col)}
-                        </div>
-                      )}
-                    </td>
-                  ))}
+                  {columns.map(col => {
+                    const val = getCellValue(eleve, col)
+                    return (
+                      <td key={col.id} style={{ borderBottom:'1px solid #F3F4F6',
+                        borderRight:'1px solid #F3F4F6', padding:0, verticalAlign:'top' }}>
+                        {col.type === 'custom' ? (
+                          <EditableCell
+                            value={val}
+                            onChange={v => setCellValue(eleve.id, col.id, v)}
+                            canEdit={canEdit}
+                          />
+                        ) : (
+                          <div style={{ padding:'6px 8px', fontSize:13, color: val ? '#374151' : '#D1D5DB' }}>
+                            {val || '—'}
+                          </div>
+                        )}
+                      </td>
+                    )
+                  })}
                   {canEdit && <td style={{ borderBottom:'1px solid #F3F4F6' }} />}
                 </tr>
               ))}
@@ -455,7 +438,6 @@ export function ListeEditor({ liste, canEdit }) {
 
       {addColModal && (
         <AddColumnModal
-          eleves={eleves}
           existingCols={columns}
           onAdd={addColumn}
           onClose={() => setAddColModal(false)}

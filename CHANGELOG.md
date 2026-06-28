@@ -1,3 +1,10 @@
+## [v1.19.2] — Fix groupes liste : RLMO, OBS D2, AC D2, Math D3… (colonnes eleves)
+- Groupes dans AddColumnModal : utilise maintenant les mêmes colonnes que la page Groupes (RLMO, OBS D2, AC D2, Math D3, Sciences D3, Bio/Physique, OBS 1 D3, OBS 2 D3, AC D3)
+- RLMO calculé depuis philosophie + groupe_choix_philo (identique à Groupes.jsx)
+- Les colonnes groupe affichent la valeur texte du groupe (lecture seule)
+- Plus de dépendance à groupes_ss pour les colonnes groupe de liste
+
+
 ## [v1.19.1] — Fix listes : colonnes groupes + menus + modal persistant
 - AddColumnModal reste ouvert après chaque ajout (bouton Fermer explicite)
 - Nouveau tab "Groupes" dans AddColumnModal : liste tous les groupes spécifiques des élèves (✓ = membre, vide = non-membre), avec recherche
