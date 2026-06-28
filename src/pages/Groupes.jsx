@@ -457,12 +457,12 @@ export default function Groupes() {
     )
   }, [rows, search, filters, sort])
 
-  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
-
   const notesEleves = useMemo(() => {
     if (notesClassFilter.length === 0) return rows
     return rows.filter(r => notesClassFilter.includes(r.classe))
   }, [rows, notesClassFilter])
+
+  if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   const selectedNoteEleve = rows.find(e => e.id === notesSelectedId)
 

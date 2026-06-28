@@ -1,3 +1,6 @@
+## [v1.20.19] — Fix hooks order (notesEleves useMemo avant early return)
+- Correction erreur React #310 : useMemo appelé après return conditionnel
+
 ## [v1.20.18] — Filtre par classe dans l'onglet Notes
 - Bouton Filtres dans l'onglet Notes avec filtre par classe (MasterFilter)
 - Compteur d'élèves dans le sous-titre du PageHeader
