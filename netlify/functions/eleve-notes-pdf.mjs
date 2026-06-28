@@ -160,7 +160,7 @@ export const handler = async (event) => {
 
   .empty-state { text-align:center; color:#9ca3af; font-size:10pt; font-style:italic; padding:12mm 0; }
 
-  .footer { font-size:7pt; color:#bbb; text-align:center; border-top:1px solid #e8e8e8; padding:2mm 0 8mm 0; margin-top:4mm; }
+  .footer { display:flex; justify-content:space-between; align-items:center; font-size:7pt; color:#bbb; border-top:1px solid #e8e8e8; padding:2mm 0 8mm 0; margin-top:4mm; }
 </style>
 </head>
 <body>
@@ -208,7 +208,8 @@ export const handler = async (event) => {
   </div>
 
   <div class="footer">
-    <strong>${esc(ss.school_nom)}</strong> — Document confidentiel à usage interne &nbsp;|&nbsp; Généré depuis <strong>ESPM<span style="color:#E86C00">+</span></strong>
+    <span><strong>${esc(ss.school_nom)}</strong> &nbsp;·&nbsp; ${esc(ss.school_tel_general)} &nbsp;·&nbsp; ${esc(ss.school_email_general)}${ss.school_bce ? ` &nbsp;·&nbsp; BCE N°&nbsp;${esc(ss.school_bce)}` : ''}</span>
+    <span>Document confidentiel &nbsp;|&nbsp; Généré depuis <strong>ESPM<span style="color:#E86C00">+</span></strong></span>
   </div>
 </div>
 </body>

@@ -1,3 +1,6 @@
+## [v1.20.16] — Fix footer PDF notes élève
+- Footer standard : nom école · tél · email · BCE + mention ESPM+
+
 ## [v1.20.15] — PDF notes de suivi par élève
 - Nouvelle Netlify function `eleve-notes-pdf.mjs` : génère un rapport PDF A4 avec toutes les notes d'un élève (header/footer école, photo, groupées par catégorie)
 - Bouton PDF dans l'en-tête droite de l'onglet Notes (visible quand un élève est sélectionné)
