@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { SlidersHorizontal, ChevronDown, X } from 'lucide-react'
 
 /**
  * MasterFilter — dropdown panel with checkbox multi-select per column
+ * Panel rendered via portal (position:fixed) to escape overflow:hidden parents
  */
 
 const isObj = opts => opts?.length > 0 && typeof opts[0] === 'object'
@@ -16,14 +18,43 @@ const getSelected = (filters, key) => {
 }
 
 export default function MasterFilter({ filters, filterDefs, onChange, onClearAll, dark = false }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
+  const [open, setOpen]       = useState(false)
+  const [panelPos, setPanelPos] = useState({ top: 0, left: 0 })
+  const btnRef    = useRef(null)
+  const panelRef  = useRef(null)
 
+  // Position panel under trigger button
+  const openPanel = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      setPanelPos({ top: r.bottom + 8, left: r.left })
+    }
+    setOpen(o => !o)
+  }
+
+  // Close on outside click
   useEffect(() => {
     if (!open) return
-    const close = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    const close = e => {
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        panelRef.current && !panelRef.current.contains(e.target)
+      ) setOpen(false)
+    }
     document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
+  }, [open])
+
+  // Close on scroll or resize
+  useEffect(() => {
+    if (!open) return
+    const close = () => setOpen(false)
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+    }
   }, [open])
 
   const totalActive = filterDefs.reduce((n, d) => n + getSelected(filters, d.key).length, 0)
@@ -33,12 +64,110 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
                : filterDefs.length <= 5  ? 460
                : 560
 
-  return (
-    <div ref={ref} className="relative shrink-0">
+  const panel = open && createPortal(
+    <div
+      ref={panelRef}
+      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl shadow-xl overflow-hidden"
+      style={{ position:'fixed', top: panelPos.top, left: panelPos.left, width: panelW, zIndex: 9999 }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-gray-200 dark:border-gray-600">
+        <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
+          <SlidersHorizontal size={12} className="text-gray-400 dark:text-gray-500" /> Filtrer par colonne
+        </span>
+        {totalActive > 0 && (
+          <button onClick={() => { onClearAll(); setOpen(false) }}
+            className="text-xs text-red-400 dark:text-red-300 hover:text-red-600 font-medium flex items-center gap-1 transition-colors">
+            <X size={11} /> Tout effacer
+          </button>
+        )}
+      </div>
 
-      {/* ── Trigger ─────────────────────────────────────────────────── */}
+      {/* Grid */}
+      <div className="grid gap-x-4 gap-y-4 p-4"
+        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, maxHeight:'70vh', overflowY:'auto' }}>
+        {filterDefs.map(def => {
+          const opts     = def.options || []
+          const selected = getSelected(filters, def.key)
+          const count    = selected.length
+
+          return (
+            <div key={def.key}>
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wide"
+                  style={{ color: count > 0 ? '#2D1B2E' : '#6b7280' }}>
+                  {def.label}
+                </span>
+                {count > 0 && (
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold leading-none">
+                    {count}
+                  </span>
+                )}
+              </div>
+
+              <div
+                className="rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden"
+                style={{ maxHeight: opts.length > 7 ? 196 : 'none', overflowY: opts.length > 7 ? 'auto' : 'visible' }}
+              >
+                {opts.length === 0
+                  ? <p className="text-xs text-gray-400 dark:text-gray-500 px-3 py-2">—</p>
+                  : opts.map((o, i) => {
+                      const val     = isObj(opts) ? o.value : o
+                      const lbl     = isObj(opts) ? o.label  : o
+                      const checked = selected.includes(val)
+                      return (
+                        <div
+                          key={val}
+                          onClick={() => onChange(def.key, val)}
+                          className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer select-none transition-colors ${
+                            i > 0 ? 'border-t border-gray-100 dark:border-gray-700' : ''
+                          } ${checked ? 'bg-primary/10 text-primary' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                        >
+                          <span style={{
+                            flexShrink: 0, width: 16, height: 16, borderRadius: 3,
+                            border: checked ? '2px solid #2D1B2E' : '2px solid #6b7280',
+                            backgroundColor: checked ? '#2D1B2E' : '#ffffff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.1s',
+                          }}>
+                            {checked && (
+                              <svg width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden="true">
+                                <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </span>
+                          <span className={`text-xs leading-snug ${checked ? 'font-medium' : ''}`}>{lbl}</span>
+                        </div>
+                      )
+                    })
+                }
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-600 flex items-center justify-between">
+        <span className="text-[11px] text-gray-400 dark:text-gray-500">
+          {totalActive === 0 ? 'Aucun filtre actif'
+            : `${totalActive} sélection${totalActive > 1 ? 's' : ''} active${totalActive > 1 ? 's' : ''}`}
+        </span>
+        <button onClick={() => setOpen(false)}
+          className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 font-medium transition-colors bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 hover:border-gray-300 rounded-lg px-3 py-1">
+          Fermer
+        </button>
+      </div>
+    </div>,
+    document.body
+  )
+
+  return (
+    <div className="relative shrink-0">
+      {/* ── Trigger ── */}
       <button
-        onClick={() => setOpen(o => !o)}
+        ref={btnRef}
+        onClick={openPanel}
         className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 whitespace-nowrap transition-colors select-none ${
           dark
             ? 'rounded-lg ' + (totalActive > 0 ? 'text-white' : 'text-white/60 hover:text-white/90')
@@ -56,113 +185,7 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
         <ChevronDown size={11} className={`transition-transform duration-150 ${open ? 'rotate-180' : ''} ${totalActive > 0 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`} />
       </button>
 
-      {/* ── Panel ───────────────────────────────────────────────────── */}
-      {open && (
-        <div
-          className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl shadow-xl overflow-hidden"
-          style={{ width: panelW }}
-        >
-
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-gray-200 dark:border-gray-600">
-            <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
-              <SlidersHorizontal size={12} className="text-gray-400 dark:text-gray-500" /> Filtrer par colonne
-            </span>
-            {totalActive > 0 && (
-              <button onClick={() => { onClearAll(); setOpen(false) }}
-                className="text-xs text-red-400 dark:text-red-300 hover:text-red-600 font-medium flex items-center gap-1 transition-colors">
-                <X size={11} /> Tout effacer
-              </button>
-            )}
-          </div>
-
-          {/* Grid */}
-          <div className="grid gap-x-4 gap-y-4 p-4"
-            style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-            {filterDefs.map(def => {
-              const opts     = def.options || []
-              const selected = getSelected(filters, def.key)
-              const count    = selected.length
-
-              return (
-                <div key={def.key}>
-                  {/* Column header */}
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wide"
-                      style={{ color: count > 0 ? '#2D1B2E' : '#6b7280' }}>
-                      {def.label}
-                    </span>
-                    {count > 0 && (
-                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold leading-none">
-                        {count}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Options list — div+onClick, pas d'input natif */}
-                  <div
-                    className="rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden"
-                    style={{ maxHeight: opts.length > 7 ? 196 : 'none', overflowY: opts.length > 7 ? 'auto' : 'visible' }}
-                  >
-                    {opts.length === 0
-                      ? <p className="text-xs text-gray-400 dark:text-gray-500 px-3 py-2">—</p>
-                      : opts.map((o, i) => {
-                          const val     = isObj(opts) ? o.value : o
-                          const lbl     = isObj(opts) ? o.label  : o
-                          const checked = selected.includes(val)
-                          return (
-                            <div
-                              key={val}
-                              onClick={() => onChange(def.key, val)}
-                              className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer select-none transition-colors ${
-                                i > 0 ? 'border-t border-gray-100 dark:border-gray-700' : ''
-                              } ${checked ? 'bg-primary/10 text-primary' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                            >
-                              {/* Custom checkbox — aucun input HTML */}
-                              <span
-                                style={{
-                                  flexShrink: 0,
-                                  width: 16,
-                                  height: 16,
-                                  borderRadius: 3,
-                                  border: checked ? '2px solid #2D1B2E' : '2px solid #6b7280',
-                                  backgroundColor: checked ? '#2D1B2E' : '#ffffff',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  transition: 'all 0.1s',
-                                }}
-                              >
-                                {checked && (
-                                  <svg width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden="true">
-                                    <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                )}
-                              </span>
-                              <span className={`text-xs leading-snug ${checked ? 'font-medium' : ''}`}>{lbl}</span>
-                            </div>
-                          )
-                        })
-                    }
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Footer */}
-          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-600 flex items-center justify-between">
-            <span className="text-[11px] text-gray-400 dark:text-gray-500">
-              {totalActive === 0 ? 'Aucun filtre actif'
-                : `${totalActive} sélection${totalActive > 1 ? 's' : ''} active${totalActive > 1 ? 's' : ''}`}
-            </span>
-            <button onClick={() => setOpen(false)}
-              className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 font-medium transition-colors bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 hover:border-gray-300 rounded-lg px-3 py-1">
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
+      {panel}
     </div>
   )
 }

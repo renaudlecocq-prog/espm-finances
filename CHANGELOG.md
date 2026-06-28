@@ -1,3 +1,10 @@
+## [v1.19.3] — Fix filtres : portal position:fixed (dropdown clippé par overflow:hidden)
+- MasterFilter : panel rendu via ReactDOM.createPortal sur document.body
+- Position calculée depuis getBoundingClientRect() du bouton trigger
+- Fermeture automatique sur scroll/resize (comportement cohérent position:fixed)
+- Corrige les filtres invisibles sur la page Groupes et partout dans PageHeader
+
+
 ## [v1.19.2] — Fix groupes liste : RLMO, OBS D2, AC D2, Math D3… (colonnes eleves)
 - Groupes dans AddColumnModal : utilise maintenant les mêmes colonnes que la page Groupes (RLMO, OBS D2, AC D2, Math D3, Sciences D3, Bio/Physique, OBS 1 D3, OBS 2 D3, AC D3)
 - RLMO calculé depuis philosophie + groupe_choix_philo (identique à Groupes.jsx)
