@@ -2373,3 +2373,6 @@ git push origin main
 ## [v1.20.9] — Renommer colonnes personnalisées
 - Double-clic sur un en-tête de colonne custom pour la renommer en ligne
 - Validation par Entrée ou clic ailleurs, annulation par Échap
+
+## [v1.20.10] — Icône crayon pour renommer les colonnes
+- Remplace le double-clic par une icône SVG crayon dans l'en-tête des colonnes custom
