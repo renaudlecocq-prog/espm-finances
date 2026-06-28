@@ -171,12 +171,17 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, user
                 onClick={() => selectEleve(e.id)}
                 className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all flex items-center gap-3
                   ${selectedId === e.id
-                    ? 'bg-primary/10 border-primary/30 text-primary dark:bg-primary/20'
+                    ? 'bg-primary/10 border-primary/30 text-primary dark:text-white dark:bg-primary/20'
                     : 'bg-white dark:bg-gray-800 border-transparent hover:border-gray-200 dark:hover:border-gray-600 text-gray-700 dark:text-gray-200'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                  ${selectedId === e.id ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
-                  {e.prenom?.charAt(0)}{e.nom?.charAt(0)}
-                </div>
+                {e.photo_url ? (
+                  <img src={e.photo_url} alt={e.prenom}
+                    className={`w-8 h-8 rounded-full object-cover flex-shrink-0 ring-2 ${selectedId === e.id ? 'ring-primary dark:ring-accent' : 'ring-transparent'}`} />
+                ) : (
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
+                    ${selectedId === e.id ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
+                    {e.prenom?.charAt(0)}{e.nom?.charAt(0)}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{e.nom} {e.prenom}</p>
                   <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{e.classe}</p>
@@ -222,7 +227,7 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, user
             <div className="px-5 pt-4 pb-0 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
               <div className="flex items-center gap-2 mb-3">
                 <button onClick={() => onOpenFiche(selectedId)}
-                  className="text-sm font-semibold text-primary hover:underline">
+                  className="text-sm font-semibold text-primary dark:text-accent hover:underline">
                   {selectedEleve?.nom} {selectedEleve?.prenom}
                 </button>
                 <span className="text-xs text-gray-400 dark:text-gray-500">{selectedEleve?.classe}</span>

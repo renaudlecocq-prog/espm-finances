@@ -2390,3 +2390,8 @@ git push origin main
 - Boutons éditer/supprimer sur chaque note (selon droits)
 - Affichage du prénom+nom de l'auteur au lieu de l'email
 - Modal en mode édition (pré-remplissage, mise à jour en DB)
+
+## [v1.20.13] — Notes : dark mode noms + photos élèves
+- Nom élève sélectionné dans la liste : blanc en dark mode
+- Nom élève dans l'en-tête droite : text-accent en dark mode
+- Avatar : photo de l'élève si disponible, sinon initiales
