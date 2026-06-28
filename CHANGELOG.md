@@ -1,3 +1,8 @@
+## [v1.19.5] — Fix MasterFilter : scroll interne ne ferme plus le panel
+- Le listener scroll sur window ignore désormais les scrolls à l'intérieur du panel
+- Permet de scroller dans les listes de filtres sans les fermer
+
+
 ## [v1.19.4] — Fix routes URL : /eleves, /soldes, /suivi-social
 - /groupes → /eleves (page Groupes renommée Élèves dans le menu)
 - /eleves → /soldes (page Soldes)

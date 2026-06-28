@@ -48,7 +48,10 @@ export default function MasterFilter({ filters, filterDefs, onChange, onClearAll
   // Close on scroll or resize
   useEffect(() => {
     if (!open) return
-    const close = () => setOpen(false)
+    const close = (e) => {
+      if (panelRef.current && panelRef.current.contains(e.target)) return
+      setOpen(false)
+    }
     window.addEventListener('scroll', close, true)
     window.addEventListener('resize', close)
     return () => {
