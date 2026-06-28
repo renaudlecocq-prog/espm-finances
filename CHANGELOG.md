@@ -1,3 +1,10 @@
+## [v1.20.22] — Droits Notes intégrés au système de permissions
+- Deux nouvelles features : `notes_eleves` (voir/créer/modifier ses propres notes) et `notes_manage_all` (modifier/supprimer les notes des autres)
+- Onglet Notes masqué pour le rôle `responsable` via can('notes_eleves')
+- `canManageNote` passe par can('notes_manage_all') — direction/admin/super_admin gèrent toutes les notes
+- Permissions seedées en DB : notes_eleves actif pour super_admin/admin/direction/mdp ; notes_manage_all pour super_admin/admin/direction
+- Configurable dans Admin > Droits
+
 ## [v1.20.20] — Badge notes sur avatar dans NotesPanel
 - Badge overlay positionné en bas-droite de la photo/initiales avec le nombre de notes
 

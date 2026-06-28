@@ -93,7 +93,7 @@ function NoteCard({ note, showEleve = false, canManage = false, onEdit, onDelete
   )
 }
 
-function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, userRole }) {
+function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, userRole, canManageAll }) {
   const [selectedId, setSelectedId] = useState(null)
   const [notes, setNotes]           = useState([])
   const [notesLoading, setNotesLoading] = useState(true)
@@ -167,9 +167,9 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, user
   }, [selectedId])
 
   const canManageNote = useCallback((note) => {
-    if (userRole === 'direction' || userRole === 'admin' || userRole === 'super_admin') return true
+    if (canManageAll) return true
     return note.auteur_id === userId
-  }, [userId, userRole])
+  }, [userId, canManageAll])
 
   const selectEleve = useCallback((id) => {
     const next = id === selectedId ? null : id
@@ -417,7 +417,7 @@ function NoteModal({ eleve, user, profile, note: editingNote, onClose, onSaved }
 }
 
 export default function Groupes() {
-  const { user, profile, role } = useAuth()
+  const { user, profile, role, can } = useAuth()
   const [rows,    setRows]    = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('groupes')
@@ -506,7 +506,7 @@ export default function Groupes() {
           : 'Notes par élève'}
         tabs={[
           { key: 'groupes', label: 'Groupes' },
-          { key: 'notes',   label: 'Notes'   },
+          ...(can('notes_eleves') ? [{ key: 'notes', label: 'Notes' }] : []),
         ]}
         activeTab={activeTab}
         onTabChange={tab => {
@@ -536,7 +536,7 @@ export default function Groupes() {
         info={activeTab === 'groupes'
           ? `${filtered.length} résultat${filtered.length !== 1 ? 's' : ''}`
           : `${notesEleves.length} élève${notesEleves.length !== 1 ? 's' : ''}`}
-        actions={activeTab === 'notes' && notesSelectedId ? (
+        actions={activeTab === 'notes' && notesSelectedId && can('notes_eleves') ? (
           <button onClick={() => setNoteModalOpen(true)}
             className="btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold">
             <Plus size={13} /> Nouvelle note
@@ -616,6 +616,7 @@ export default function Groupes() {
           search={notesSearch}
           userId={user?.id}
           userRole={role}
+          canManageAll={can('notes_manage_all')}
         />
       )}
 

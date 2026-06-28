@@ -20,6 +20,8 @@ export const FEATURES = [
   { key: 'econome',         label: 'Économe — comptabilité',     group: 'Système',    desc: 'Suivi comptable (Fonctionnement, Élèves, POP, Bilan, Projets)' },
   { key: 'compositions',    label: 'Compositions de classes',    group: 'Pédagogie',  desc: 'Outil de composition de classes avec drag-and-drop' },
   { key: 'guidance',         label: 'Conseils de guidance',        group: 'Pédagogie',  desc: 'Encodage collaboratif pendant les conseils de classe, génération de commentaires' },
+  { key: 'notes_eleves',     label: 'Notes élèves — voir & écrire', group: 'Pédagogie',  desc: 'Accès à l\'onglet Notes : voir toutes les notes, créer et modifier ses propres notes' },
+  { key: 'notes_manage_all', label: 'Notes élèves — gérer toutes',  group: 'Pédagogie',  desc: 'Modifier et supprimer les notes des autres utilisateurs' },
   { key: 'administration',  label: 'Administration',             group: 'Système',    desc: 'Panneau admin — utilisateurs, droits, synchronisation Smartschool' },
 ]
 
