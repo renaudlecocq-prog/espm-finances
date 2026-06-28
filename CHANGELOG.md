@@ -1,3 +1,8 @@
+## [v1.20.3] — Nouvelle liste : dropdowns multi-select Classes + Groupes
+- Interface étape 2 refaite avec deux dropdowns côte à côte (comme Articles)
+- Recherche intégrée dans chaque dropdown
+
+
 ## [v1.20.2] — Nouvelle liste : sélection par Classes et Groupes
 - Modal étape 2 simplifié : deux sections (Classes + Groupes SS) sans onglets
 - Suppression de la sélection individuelle d'élèves (hors périmètre de l'outil)

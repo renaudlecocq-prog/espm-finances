@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import ReactDOM from 'react-dom'
 import {
   DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors,
@@ -861,12 +861,87 @@ function DocCard({ doc, onOpen, onRename, onMove, onDelete, canEdit }) {
 }
 
 
+
+// ── MultiSearchSelect (réutilisé depuis Articles) ─────────────────────────────
+function MultiSearchSelect({ options, value, onChange, placeholder }) {
+  const [open, setOpen] = useState(false)
+  const [q, setQ] = useState('')
+  const ref = useRef()
+  useEffect(() => {
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+  const filtered = useMemo(() => options.filter(o => o.toLowerCase().includes(q.toLowerCase())), [options, q])
+  const isSelected = v => Array.isArray(value) && value.includes(v)
+  const toggle = v => {
+    const arr = Array.isArray(value) ? value : []
+    onChange(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v])
+  }
+  const selectedOptions = options.filter(o => isSelected(o))
+  return (
+    <div ref={ref} style={{position:'relative'}}>
+      <div onClick={() => setOpen(o => !o)}
+        style={{border:'1.5px solid #E5E7EB',borderRadius:10,padding:'8px 12px',cursor:'pointer',
+          minHeight:38,display:'flex',flexWrap:'wrap',gap:4,alignItems:'center',backgroundColor:'#fff'}}>
+        {selectedOptions.length === 0 && <span style={{color:'#9CA3AF',fontSize:13,flex:1}}>{placeholder}</span>}
+        {selectedOptions.map(o => (
+          <span key={o} style={{display:'flex',alignItems:'center',gap:4,background:'rgba(45,27,46,0.08)',
+            color:'#2D1B2E',fontSize:12,borderRadius:999,padding:'2px 8px',fontWeight:600}}>
+            {o}
+            <button type="button" onClick={e => { e.stopPropagation(); toggle(o) }}
+              style={{background:'none',border:'none',cursor:'pointer',color:'#9CA3AF',fontSize:14,lineHeight:1,padding:0}}>×</button>
+          </span>
+        ))}
+        <svg style={{marginLeft:'auto',flexShrink:0,color:'#9CA3AF'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      {open && (
+        <div style={{position:'absolute',top:'100%',left:0,right:0,marginTop:4,
+          backgroundColor:'#fff',border:'1.5px solid #E5E7EB',borderRadius:10,
+          boxShadow:'0 8px 24px rgba(0,0,0,0.12)',zIndex:100,maxHeight:220,display:'flex',flexDirection:'column'}}>
+          <div style={{padding:'8px 10px',borderBottom:'1px solid #F3F4F6'}}>
+            <div style={{position:'relative'}}>
+              <svg style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',color:'#9CA3AF'}} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input autoFocus value={q} onChange={e => setQ(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                placeholder="Rechercher…"
+                style={{width:'100%',paddingLeft:24,paddingRight:8,paddingTop:5,paddingBottom:5,
+                  fontSize:13,border:'1.5px solid #E5E7EB',borderRadius:8,outline:'none',boxSizing:'border-box'}} />
+            </div>
+          </div>
+          <div style={{overflowY:'auto'}}>
+            {filtered.length === 0 && <p style={{color:'#9CA3AF',fontSize:12,textAlign:'center',padding:'10px 0'}}>Aucun résultat</p>}
+            {filtered.map(o => {
+              const sel = isSelected(o)
+              return (
+                <button key={o} type="button" onClick={() => toggle(o)}
+                  style={{width:'100%',textAlign:'left',padding:'8px 12px',fontSize:13,border:'none',
+                    cursor:'pointer',display:'flex',alignItems:'center',gap:8,
+                    backgroundColor:sel?'rgba(45,27,46,0.04)':'transparent',
+                    color:sel?'#2D1B2E':'#374151',fontWeight:sel?600:400}}>
+                  <span style={{width:16,height:16,borderRadius:4,border:`2px solid ${sel?'#2D1B2E':'#D1D5DB'}`,
+                    display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,
+                    backgroundColor:sel?'#2D1B2E':'transparent'}}>
+                    {sel && <span style={{color:'#fff',fontSize:10,lineHeight:1}}>✓</span>}
+                  </span>
+                  {o}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Modal création liste d'élèves ─────────────────────────────────────────────
 function ListeModal({ folder, tab, onClose, onCreate }) {
   const [step, setStep] = useState(1)     // 1 = nom, 2 = sélection élèves
   const [name, setName] = useState('')
   const [allEleves, setAllEleves] = useState([])
-  const [selected, setSelected] = useState(new Set())
+  const [selClasses, setSelClasses] = useState([])
+  const [selGroupes, setSelGroupes] = useState([])
   const [loading, setLoading] = useState(false)
 
   // Charger tous les élèves au montage
@@ -876,17 +951,6 @@ function ListeModal({ folder, tab, onClose, onCreate }) {
       .then(({ data }) => setAllEleves(data || []))
   }, [])
 
-  // Dériver classes et groupes uniques
-  const classes = [...new Set(allEleves.map(e => e.classe).filter(Boolean))].sort()
-  const groupes = [...new Set(
-    allEleves.flatMap(e => {
-      const g = e.groupes_ss
-      if (!g) return []
-      if (Array.isArray(g)) return g
-      try { const p = JSON.parse(g); return Array.isArray(p) ? p : [] } catch { return [] }
-    })
-  )].sort()
-
   const getEleveGroupes = (e) => {
     const g = e.groupes_ss
     if (!g) return []
@@ -894,16 +958,19 @@ function ListeModal({ folder, tab, onClose, onCreate }) {
     try { const p = JSON.parse(g); return Array.isArray(p) ? p : [] } catch { return [] }
   }
 
-  const toggleClasse = (classe) => {
-    const ids = allEleves.filter(e => e.classe === classe).map(e => e.id)
-    const allSel = ids.every(id => selected.has(id))
-    setSelected(prev => { const n = new Set(prev); ids.forEach(id => allSel ? n.delete(id) : n.add(id)); return n })
-  }
-  const toggleGroupe = (groupe) => {
-    const ids = allEleves.filter(e => getEleveGroupes(e).includes(groupe)).map(e => e.id)
-    const allSel = ids.every(id => selected.has(id))
-    setSelected(prev => { const n = new Set(prev); ids.forEach(id => allSel ? n.delete(id) : n.add(id)); return n })
-  }
+  // Dériver classes et groupes uniques
+  const classes = [...new Set(allEleves.map(e => e.classe).filter(Boolean))].sort()
+  const groupes = [...new Set(
+    allEleves.flatMap(e => getEleveGroupes(e))
+  )].sort()
+
+  // Dériver les IDs sélectionnés depuis selClasses + selGroupes
+  const selected = useMemo(() => {
+    const ids = new Set()
+    selClasses.forEach(c => allEleves.filter(e => e.classe === c).forEach(e => ids.add(e.id)))
+    selGroupes.forEach(g => allEleves.filter(e => getEleveGroupes(e).includes(g)).forEach(e => ids.add(e.id)))
+    return ids
+  }, [selClasses, selGroupes, allEleves])
 
   const handleCreate = () => {
     if (!name.trim()) { setStep(2); return }
@@ -951,58 +1018,19 @@ function ListeModal({ folder, tab, onClose, onCreate }) {
 
           {step === 2 && (
             <div>
-              <div style={{fontSize:13,fontWeight:600,color:'#374151',marginBottom:14}}>
+              <div style={{fontSize:13,fontWeight:600,color:'#374151',marginBottom:16}}>
                 Sélectionner les élèves — <span style={{color:'#2D1B2E'}}>{selected.size} sélectionné{selected.size!==1?'s':''}</span>
               </div>
-
-              {/* Classes */}
-              <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:8}}>📚 Classes</div>
-              <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:18}}>
-                {classes.map(classe => {
-                  const ids = allEleves.filter(e=>e.classe===classe).map(e=>e.id)
-                  const selCount = ids.filter(id=>selected.has(id)).length
-                  const allSel = selCount===ids.length && ids.length>0
-                  return (
-                    <label key={classe} style={{display:'flex',alignItems:'center',gap:12,
-                      padding:'9px 12px',borderRadius:10,border:'1.5px solid',cursor:'pointer',
-                      borderColor:allSel?'#2D1B2E':'#E5E7EB',
-                      backgroundColor:allSel?'rgba(45,27,46,0.04)':'#fff'}}>
-                      <input type="checkbox" checked={allSel} onChange={()=>toggleClasse(classe)}
-                        style={{width:16,height:16,cursor:'pointer',accentColor:'#2D1B2E'}} />
-                      <span style={{fontWeight:600,fontSize:13,color:'#111',flex:1}}>{classe}</span>
-                      <span style={{fontSize:12,color:selCount>0?'#2D1B2E':'#9CA3AF',fontWeight:selCount>0?600:400}}>
-                        {selCount>0?`${selCount}/`+ids.length:ids.length+` élève${ids.length!==1?'s':''}`}
-                      </span>
-                    </label>
-                  )
-                })}
-                {classes.length===0 && <div style={{color:'#9CA3AF',fontSize:13}}>Aucune classe trouvée.</div>}
-              </div>
-
-              {/* Groupes SS */}
-              {groupes.length > 0 && <>
-                <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:8}}>👥 Groupes Smartschool</div>
-                <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                  {groupes.map(groupe => {
-                    const ids = allEleves.filter(e=>getEleveGroupes(e).includes(groupe)).map(e=>e.id)
-                    const selCount = ids.filter(id=>selected.has(id)).length
-                    const allSel = selCount===ids.length && ids.length>0
-                    return (
-                      <label key={groupe} style={{display:'flex',alignItems:'center',gap:12,
-                        padding:'9px 12px',borderRadius:10,border:'1.5px solid',cursor:'pointer',
-                        borderColor:allSel?'#2D1B2E':'#E5E7EB',
-                        backgroundColor:allSel?'rgba(45,27,46,0.04)':'#fff'}}>
-                        <input type="checkbox" checked={allSel} onChange={()=>toggleGroupe(groupe)}
-                          style={{width:16,height:16,cursor:'pointer',accentColor:'#2D1B2E'}} />
-                        <span style={{fontWeight:600,fontSize:13,color:'#111',flex:1}}>{groupe}</span>
-                        <span style={{fontSize:12,color:selCount>0?'#2D1B2E':'#9CA3AF',fontWeight:selCount>0?600:400}}>
-                          {selCount>0?`${selCount}/`+ids.length:ids.length+` élève${ids.length!==1?'s':''}`}
-                        </span>
-                      </label>
-                    )
-                  })}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                <div>
+                  <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:6}}>📚 Classes</div>
+                  <MultiSearchSelect options={classes} value={selClasses} onChange={setSelClasses} placeholder="Choisir des classes…" />
                 </div>
-              </>}
+                <div>
+                  <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:6}}>👥 Groupes SS</div>
+                  <MultiSearchSelect options={groupes} value={selGroupes} onChange={setSelGroupes} placeholder="Choisir des groupes…" />
+                </div>
+              </div>
             </div>
           )}
         </div>
