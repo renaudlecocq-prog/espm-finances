@@ -1,3 +1,8 @@
+## [v1.20.6] — Nouvelle liste : groupes organisés par catégorie
+- Remplacement du dropdown plat par une grille catégorisée (RLMO, OBS D2, AC D2, Math D3, Sciences D3, Bio-Physique D3, OBS1/2 D3, AC D3)
+- Même structure que le filtre Élèves
+
+
 ## [v1.20.5] — Nouvelle liste : fix dropdown qui scroll dans le modal
 - Retrait du overflow auto sur le contenu — le dropdown s'ouvre librement
 

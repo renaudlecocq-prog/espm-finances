@@ -946,31 +946,42 @@ function ListeModal({ folder, tab, onClose, onCreate }) {
 
   // Charger tous les élèves au montage
   useEffect(() => {
-    supabase.from('eleves').select('id,nom,prenom,classe,groupes_ss')
+    supabase.from('eleves').select('id,nom,prenom,classe,philosophie,groupe_choix_philo,obs_d2,ac_d2,math_d3,sciences_d3,bio_physique_d3,obs1_d3,obs2_d3,ac_d3')
       .order('classe').order('nom').order('prenom')
       .then(({ data }) => setAllEleves(data || []))
   }, [])
 
-  const getEleveGroupes = (e) => {
-    const g = e.groupes_ss
-    if (!g) return []
-    if (Array.isArray(g)) return g
-    try { const p = JSON.parse(g); return Array.isArray(p) ? p : [] } catch { return [] }
-  }
+  const getRlmo = (e) => [e.philosophie, e.groupe_choix_philo].filter(Boolean).join(' ') || null
 
-  // Dériver classes et groupes uniques
+  // Catégories de groupes → {label, col, valeurFn}
+  const GROUP_CATS = [
+    { label: 'RLMO',           col: 'rlmo',            fn: e => getRlmo(e) },
+    { label: 'OBS D2',         col: 'obs_d2',           fn: e => e.obs_d2 },
+    { label: 'AC D2',          col: 'ac_d2',            fn: e => e.ac_d2 },
+    { label: 'Math D3',        col: 'math_d3',          fn: e => e.math_d3 },
+    { label: 'Sciences D3',    col: 'sciences_d3',      fn: e => e.sciences_d3 },
+    { label: 'Bio-Physique D3',col: 'bio_physique_d3',  fn: e => e.bio_physique_d3 },
+    { label: 'OBS1 D3',        col: 'obs1_d3',          fn: e => e.obs1_d3 },
+    { label: 'OBS2 D3',        col: 'obs2_d3',          fn: e => e.obs2_d3 },
+    { label: 'AC D3',          col: 'ac_d3',            fn: e => e.ac_d3 },
+  ].map(cat => ({
+    ...cat,
+    values: [...new Set(allEleves.map(cat.fn).filter(Boolean))].sort()
+  })).filter(cat => cat.values.length > 0)
+
+  // Dériver classes uniques
   const classes = [...new Set(allEleves.map(e => e.classe).filter(Boolean))].sort()
-  const groupes = [...new Set(
-    allEleves.flatMap(e => getEleveGroupes(e))
-  )].sort()
 
-  // Dériver les IDs sélectionnés depuis selClasses + selGroupes
+  // Dériver les IDs sélectionnés depuis selClasses + selGroupes {col, val}
   const selected = useMemo(() => {
     const ids = new Set()
     selClasses.forEach(c => allEleves.filter(e => e.classe === c).forEach(e => ids.add(e.id)))
-    selGroupes.forEach(g => allEleves.filter(e => getEleveGroupes(e).includes(g)).forEach(e => ids.add(e.id)))
+    selGroupes.forEach(({ col, val }) => {
+      const cat = GROUP_CATS.find(c => c.col === col)
+      if (cat) allEleves.filter(e => cat.fn(e) === val).forEach(e => ids.add(e.id))
+    })
     return ids
-  }, [selClasses, selGroupes, allEleves])
+  }, [selClasses, selGroupes, allEleves, GROUP_CATS])
 
   const handleCreate = () => {
     if (!name.trim()) { setStep(2); return }
@@ -1021,15 +1032,43 @@ function ListeModal({ folder, tab, onClose, onCreate }) {
               <div style={{fontSize:13,fontWeight:600,color:'#374151',marginBottom:16}}>
                 Sélectionner les élèves — <span style={{color:'#2D1B2E'}}>{selected.size} sélectionné{selected.size!==1?'s':''}</span>
               </div>
+
+              {/* Classes */}
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:6}}>📚 Classes</div>
+                <MultiSearchSelect options={classes} value={selClasses} onChange={setSelClasses} placeholder="Choisir des classes…" />
+              </div>
+
+              {/* Groupes par catégorie */}
+              <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:10}}>👥 Groupes Smartschool</div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                <div>
-                  <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:6}}>📚 Classes</div>
-                  <MultiSearchSelect options={classes} value={selClasses} onChange={setSelClasses} placeholder="Choisir des classes…" />
-                </div>
-                <div>
-                  <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:6}}>👥 Groupes SS</div>
-                  <MultiSearchSelect options={groupes} value={selGroupes} onChange={setSelGroupes} placeholder="Choisir des groupes…" />
-                </div>
+                {GROUP_CATS.map(cat => (
+                  <div key={cat.col}>
+                    <div style={{fontSize:11,fontWeight:600,color:'#6B7280',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.06em'}}>{cat.label}</div>
+                    <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                      {cat.values.map(val => {
+                        const sel = selGroupes.some(g => g.col === cat.col && g.val === val)
+                        const toggle = () => setSelGroupes(prev =>
+                          sel ? prev.filter(g => !(g.col === cat.col && g.val === val))
+                              : [...prev, {col: cat.col, val}]
+                        )
+                        return (
+                          <label key={val} style={{display:'flex',alignItems:'center',gap:8,
+                            padding:'6px 10px',borderRadius:8,cursor:'pointer',
+                            backgroundColor:sel?'rgba(45,27,46,0.06)':'transparent',
+                            border:`1.5px solid ${sel?'#2D1B2E':'#E5E7EB'}`}}>
+                            <span style={{width:15,height:15,borderRadius:4,border:`2px solid ${sel?'#2D1B2E':'#D1D5DB'}`,
+                              display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,
+                              backgroundColor:sel?'#2D1B2E':'transparent'}}>
+                              {sel && <span style={{color:'#fff',fontSize:9,lineHeight:1}}>✓</span>}
+                            </span>
+                            <span style={{fontSize:12,fontWeight:sel?600:400,color:sel?'#2D1B2E':'#374151',flex:1}}>{val}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
