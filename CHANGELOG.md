@@ -1,3 +1,6 @@
+## [v1.20.17] — Fix footer PDF notes collé en bas de page
+- Footer positionné en bas via margin-top:auto (flex column)
+
 ## [v1.20.16] — Fix footer PDF notes élève
 - Footer standard : nom école · tél · email · BCE + mention ESPM+
 

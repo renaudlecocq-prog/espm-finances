@@ -160,7 +160,7 @@ export const handler = async (event) => {
 
   .empty-state { text-align:center; color:#9ca3af; font-size:10pt; font-style:italic; padding:12mm 0; }
 
-  .footer { display:flex; justify-content:space-between; align-items:center; font-size:7pt; color:#bbb; border-top:1px solid #e8e8e8; padding:2mm 0 8mm 0; margin-top:4mm; }
+  .footer { display:flex; justify-content:space-between; align-items:center; font-size:7pt; color:#bbb; border-top:1px solid #e8e8e8; padding:2mm 0 8mm 0; margin-top:auto; }
 </style>
 </head>
 <body>
