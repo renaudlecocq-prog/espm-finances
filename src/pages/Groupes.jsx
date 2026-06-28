@@ -117,12 +117,33 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, user
   useEffect(() => { loadNotes() }, [loadNotes])
 
   const [editNote, setEditNote] = useState(null)
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   const handleDelete = useCallback(async (note) => {
     if (!window.confirm('Supprimer cette note ?')) return
     await supabase.from('eleve_notes').delete().eq('id', note.id)
     loadNotes()
   }, [loadNotes])
+
+  const openPdf = useCallback(async () => {
+    if (!selectedId) return
+    setPdfLoading(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) { alert('Session expirée, veuillez vous reconnecter.'); return }
+      const resp = await fetch(
+        `/.netlify/functions/eleve-notes-pdf?eleveId=${encodeURIComponent(selectedId)}`,
+        { headers: { 'Authorization': `Bearer ${session.access_token}` } }
+      )
+      const body = await resp.text()
+      if (!resp.ok) { alert(`Erreur ${resp.status}: ${body}`); return }
+      const blob = new Blob([body], { type: 'text/html' })
+      const url  = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } finally {
+      setPdfLoading(false)
+    }
+  }, [selectedId])
 
   const canManageNote = useCallback((note) => {
     if (userRole === 'direction' || userRole === 'admin' || userRole === 'super_admin') return true
@@ -232,6 +253,16 @@ function NotesPanel({ eleves, onOpenFiche, setSelectedIdUp, search, userId, user
                   {selectedEleve?.nom} {selectedEleve?.prenom}
                 </button>
                 <span className="text-xs text-gray-400 dark:text-gray-500">{selectedEleve?.classe}</span>
+                <button
+                  onClick={openPdf}
+                  disabled={pdfLoading}
+                  title="Générer PDF des notes"
+                  className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium
+                    bg-primary/5 dark:bg-accent/10 text-primary dark:text-accent
+                    hover:bg-primary/10 dark:hover:bg-accent/20 transition-colors disabled:opacity-50">
+                  <FileText size={13} />
+                  {pdfLoading ? 'Génération…' : 'PDF'}
+                </button>
               </div>
               <div className="flex gap-1">
                 {NOTE_CATS.map(cat => (
