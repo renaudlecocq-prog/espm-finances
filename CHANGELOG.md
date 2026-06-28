@@ -1,3 +1,8 @@
+## [v1.20.2] — Nouvelle liste : sélection par Classes et Groupes
+- Modal étape 2 simplifié : deux sections (Classes + Groupes SS) sans onglets
+- Suppression de la sélection individuelle d'élèves (hors périmètre de l'outil)
+
+
 ## [v1.20.1] — Guide : suppression du footer redondant
 - Le site ayant déjà son propre footer, celui du guide a été retiré
 

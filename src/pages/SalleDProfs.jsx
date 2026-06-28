@@ -865,7 +865,6 @@ function DocCard({ doc, onOpen, onRename, onMove, onDelete, canEdit }) {
 function ListeModal({ folder, tab, onClose, onCreate }) {
   const [step, setStep] = useState(1)     // 1 = nom, 2 = sélection élèves
   const [name, setName] = useState('')
-  const [selectionTab, setSelectionTab] = useState('classes')
   const [allEleves, setAllEleves] = useState([])
   const [selected, setSelected] = useState(new Set())
   const [loading, setLoading] = useState(false)
@@ -895,7 +894,6 @@ function ListeModal({ folder, tab, onClose, onCreate }) {
     try { const p = JSON.parse(g); return Array.isArray(p) ? p : [] } catch { return [] }
   }
 
-  const toggleEleve = (id) => setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   const toggleClasse = (classe) => {
     const ids = allEleves.filter(e => e.classe === classe).map(e => e.id)
     const allSel = ids.every(id => selected.has(id))
@@ -953,117 +951,58 @@ function ListeModal({ folder, tab, onClose, onCreate }) {
 
           {step === 2 && (
             <div>
-              <div style={{fontSize:13,fontWeight:600,color:'#374151',marginBottom:12}}>
+              <div style={{fontSize:13,fontWeight:600,color:'#374151',marginBottom:14}}>
                 Sélectionner les élèves — <span style={{color:'#2D1B2E'}}>{selected.size} sélectionné{selected.size!==1?'s':''}</span>
               </div>
 
-              {/* Tabs */}
-              <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
-                {[['classes','📚 Classes'],['groupes','👥 Groupes'],['individuel','🔍 Individuel']].map(([k,l])=>(
-                  <button key={k} onClick={()=>setSelectionTab(k)}
-                    style={{padding:'6px 14px',borderRadius:8,border:'none',cursor:'pointer',fontSize:12,fontWeight:600,
-                      background:selectionTab===k?'#2D1B2E':'#F3F4F6',
-                      color:selectionTab===k?'#fff':'#6B7280'}}>
-                    {l}
-                  </button>
-                ))}
+              {/* Classes */}
+              <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:8}}>📚 Classes</div>
+              <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:18}}>
+                {classes.map(classe => {
+                  const ids = allEleves.filter(e=>e.classe===classe).map(e=>e.id)
+                  const selCount = ids.filter(id=>selected.has(id)).length
+                  const allSel = selCount===ids.length && ids.length>0
+                  return (
+                    <label key={classe} style={{display:'flex',alignItems:'center',gap:12,
+                      padding:'9px 12px',borderRadius:10,border:'1.5px solid',cursor:'pointer',
+                      borderColor:allSel?'#2D1B2E':'#E5E7EB',
+                      backgroundColor:allSel?'rgba(45,27,46,0.04)':'#fff'}}>
+                      <input type="checkbox" checked={allSel} onChange={()=>toggleClasse(classe)}
+                        style={{width:16,height:16,cursor:'pointer',accentColor:'#2D1B2E'}} />
+                      <span style={{fontWeight:600,fontSize:13,color:'#111',flex:1}}>{classe}</span>
+                      <span style={{fontSize:12,color:selCount>0?'#2D1B2E':'#9CA3AF',fontWeight:selCount>0?600:400}}>
+                        {selCount>0?`${selCount}/`+ids.length:ids.length+` élève${ids.length!==1?'s':''}`}
+                      </span>
+                    </label>
+                  )
+                })}
+                {classes.length===0 && <div style={{color:'#9CA3AF',fontSize:13}}>Aucune classe trouvée.</div>}
               </div>
 
-              {/* Classes */}
-              {selectionTab==='classes' && (
-                <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                  {classes.map(classe => {
-                    const ids = allEleves.filter(e=>e.classe===classe).map(e=>e.id)
-                    const selCount = ids.filter(id=>selected.has(id)).length
-                    const allSel = selCount===ids.length && ids.length>0
-                    return (
-                      <label key={classe} style={{display:'flex',alignItems:'center',gap:12,
-                        padding:'10px 14px',borderRadius:10,border:'1.5px solid',cursor:'pointer',
-                        borderColor:allSel?'#2D1B2E':'#E5E7EB',
-                        backgroundColor:allSel?'rgba(45,27,46,0.04)':'#fff'}}>
-                        <input type="checkbox" checked={allSel} onChange={()=>toggleClasse(classe)}
-                          style={{width:16,height:16,cursor:'pointer',accentColor:'#2D1B2E'}} />
-                        <div style={{flex:1}}>
-                          <span style={{fontWeight:600,fontSize:13,color:'#111'}}>{classe}</span>
-                          <span style={{fontSize:12,color:'#9CA3AF',marginLeft:8}}>{ids.length} élève{ids.length!==1?'s':''}</span>
-                        </div>
-                        {selCount>0 && selCount<ids.length && (
-                          <span style={{fontSize:11,color:'#6B7280',background:'#F3F4F6',padding:'2px 8px',borderRadius:999}}>
-                            {selCount}/{ids.length}
-                          </span>
-                        )}
-                      </label>
-                    )
-                  })}
-                  {classes.length===0 && <div style={{color:'#9CA3AF',fontSize:13}}>Aucune classe trouvée.</div>}
-                </div>
-              )}
-
-              {/* Groupes */}
-              {selectionTab==='groupes' && (
-                <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {/* Groupes SS */}
+              {groupes.length > 0 && <>
+                <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:8}}>👥 Groupes Smartschool</div>
+                <div style={{display:'flex',flexDirection:'column',gap:6}}>
                   {groupes.map(groupe => {
                     const ids = allEleves.filter(e=>getEleveGroupes(e).includes(groupe)).map(e=>e.id)
                     const selCount = ids.filter(id=>selected.has(id)).length
                     const allSel = selCount===ids.length && ids.length>0
                     return (
                       <label key={groupe} style={{display:'flex',alignItems:'center',gap:12,
-                        padding:'10px 14px',borderRadius:10,border:'1.5px solid',cursor:'pointer',
+                        padding:'9px 12px',borderRadius:10,border:'1.5px solid',cursor:'pointer',
                         borderColor:allSel?'#2D1B2E':'#E5E7EB',
                         backgroundColor:allSel?'rgba(45,27,46,0.04)':'#fff'}}>
                         <input type="checkbox" checked={allSel} onChange={()=>toggleGroupe(groupe)}
                           style={{width:16,height:16,cursor:'pointer',accentColor:'#2D1B2E'}} />
-                        <div style={{flex:1}}>
-                          <span style={{fontWeight:600,fontSize:13,color:'#111'}}>{groupe}</span>
-                          <span style={{fontSize:12,color:'#9CA3AF',marginLeft:8}}>{ids.length} élève{ids.length!==1?'s':''}</span>
-                        </div>
-                        {selCount>0 && selCount<ids.length && (
-                          <span style={{fontSize:11,color:'#6B7280',background:'#F3F4F6',padding:'2px 8px',borderRadius:999}}>
-                            {selCount}/{ids.length}
-                          </span>
-                        )}
+                        <span style={{fontWeight:600,fontSize:13,color:'#111',flex:1}}>{groupe}</span>
+                        <span style={{fontSize:12,color:selCount>0?'#2D1B2E':'#9CA3AF',fontWeight:selCount>0?600:400}}>
+                          {selCount>0?`${selCount}/`+ids.length:ids.length+` élève${ids.length!==1?'s':''}`}
+                        </span>
                       </label>
                     )
                   })}
-                  {groupes.length===0 && <div style={{color:'#9CA3AF',fontSize:13}}>Aucun groupe trouvé.</div>}
                 </div>
-              )}
-
-              {/* Individuel */}
-              {selectionTab==='individuel' && (
-                <div>
-                  <input
-                    placeholder="Rechercher un élève…"
-                    onChange={e => {
-                      const q = e.target.value.toLowerCase()
-                      e.target._filter = q
-                      e.target.parentNode.querySelectorAll('[data-eleve]').forEach(el => {
-                        el.style.display = el.dataset.eleve.includes(q) ? '' : 'none'
-                      })
-                    }}
-                    style={{width:'100%',padding:'8px 12px',borderRadius:8,fontSize:13,
-                      border:'1.5px solid #E5E7EB',outline:'none',boxSizing:'border-box',marginBottom:10}}
-                  />
-                  <div style={{display:'flex',flexDirection:'column',gap:4,maxHeight:280,overflowY:'auto'}}>
-                    {allEleves.map(e => (
-                      <label key={e.id}
-                        data-eleve={`${e.nom} ${e.prenom} ${e.classe}`.toLowerCase()}
-                        style={{display:'flex',alignItems:'center',gap:10,
-                          padding:'7px 12px',borderRadius:8,cursor:'pointer',
-                          backgroundColor:selected.has(e.id)?'rgba(45,27,46,0.04)':'transparent'}}
-                        onMouseEnter={el=>!selected.has(e.id)&&(el.currentTarget.style.backgroundColor='#F9FAFB')}
-                        onMouseLeave={el=>!selected.has(e.id)&&(el.currentTarget.style.backgroundColor='transparent')}>
-                        <input type="checkbox" checked={selected.has(e.id)} onChange={()=>toggleEleve(e.id)}
-                          style={{width:15,height:15,cursor:'pointer',accentColor:'#2D1B2E'}} />
-                        <span style={{fontSize:13,fontWeight:selected.has(e.id)?600:400,color:'#111',flex:1}}>
-                          {e.nom} {e.prenom}
-                        </span>
-                        <span style={{fontSize:11,color:'#9CA3AF'}}>{e.classe}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
+              </>}
             </div>
           )}
         </div>
