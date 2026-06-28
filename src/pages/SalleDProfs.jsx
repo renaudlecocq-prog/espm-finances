@@ -981,11 +981,11 @@ function ListeModal({ folder, tab, onClose, onCreate }) {
     <div style={{position:'fixed',inset:0,backgroundColor:'rgba(0,0,0,0.5)',
       display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:16}}>
       <div style={{backgroundColor:'#fff',borderRadius:16,width:'100%',maxWidth:720,
-        maxHeight:'90vh',display:'flex',flexDirection:'column',boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}>
+        display:'flex',flexDirection:'column',boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}>
 
         {/* Header */}
         <div style={{padding:'18px 20px 14px',borderBottom:'1px solid #F3F4F6',
-          display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
           <div>
             <div style={{fontWeight:700,fontSize:15,color:'#111'}}>
               📊 Nouvelle liste d'élèves
@@ -995,7 +995,7 @@ function ListeModal({ folder, tab, onClose, onCreate }) {
           <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9CA3AF',fontSize:20,lineHeight:1}}>×</button>
         </div>
 
-        <div style={{flex:1,overflowY:'auto',padding:'18px 20px'}}>
+        <div style={{padding:'18px 20px',overflow:'visible'}}>
           {step === 1 && (
             <div>
               <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>

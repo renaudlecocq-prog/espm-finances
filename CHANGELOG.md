@@ -1,3 +1,7 @@
+## [v1.20.5] — Nouvelle liste : fix dropdown qui scroll dans le modal
+- Retrait du overflow auto sur le contenu — le dropdown s'ouvre librement
+
+
 ## [v1.20.4] — Nouvelle liste : modal plus large (720px)
 - Largeur du modal étape 2 portée à 720px
 
