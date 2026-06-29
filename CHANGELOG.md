@@ -2597,3 +2597,8 @@ git push origin main
 - Layout.jsx : utilise Tailwind hidden/md:flex au lieu du hook JS pour masquer/montrer Sidebar et MobileNav
 - Corrige l'affichage sur les PWA (Brave) où window.innerWidth peut être incorrect au démarrage
 - useIsMobile : initialisation à false + useEffect, évite les problèmes de timing viewport PWA
+
+## [v1.20.49] — Breakpoint mobile lg (1024px)
+- Layout: passage de md (768px) à lg (1024px) pour masquer la sidebar et afficher la barre mobile
+- useIsMobile: aligné sur (max-width: 1023px)
+- Corrige les appareils dont le viewport CSS dépasse 768px en mode PWA

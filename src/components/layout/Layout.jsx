@@ -5,8 +5,8 @@ import MobileNav from './MobileNav'
 export default function Layout() {
   return (
     <div className="flex h-screen bg-surface overflow-hidden">
-      {/* Sidebar : cachée sur mobile (< md = 768px), visible sur desktop */}
-      <div className="hidden md:flex md:flex-col md:flex-none">
+      {/* Sidebar : cachée sur mobile/tablette (< lg = 1024px), visible sur desktop */}
+      <div className="hidden lg:flex lg:flex-col lg:flex-none">
         <Sidebar />
       </div>
 
@@ -18,13 +18,13 @@ export default function Layout() {
           id="page-main-content"
           className="flex-1 flex flex-col max-w-screen-xl mx-auto w-full
                      px-3 py-4 pb-20
-                     md:px-6 md:py-8 md:pb-8"
+                     lg:px-6 lg:py-8 lg:pb-8"
         >
           <Outlet />
         </main>
 
         {/* Footer : uniquement desktop */}
-        <footer className="hidden md:flex px-6 py-4 border-t border-gray-100 justify-between items-center text-xs text-gray-400 shrink-0">
+        <footer className="hidden lg:flex px-6 py-4 border-t border-gray-100 justify-between items-center text-xs text-gray-400 shrink-0">
           <span>© School Plus</span>
           <Link to="/mentions-legales" className="hover:text-primary transition-colors">
             Mentions légales
@@ -32,8 +32,8 @@ export default function Layout() {
         </footer>
       </div>
 
-      {/* Barre mobile : visible uniquement sur mobile */}
-      <div className="md:hidden">
+      {/* Barre mobile : visible uniquement sur mobile/tablette */}
+      <div className="lg:hidden">
         <MobileNav />
       </div>
     </div>
