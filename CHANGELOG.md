@@ -2553,3 +2553,9 @@ git push origin main
 - FIX : boutons PDF ne s'ouvraient pas sous Brave/Chrome — `window.open()` après `await` était bloqué comme popup. Fix : ouverture synchrone + navigation asynchrone (Factures, FicheEleve, Econome)
 - ADD : toast de feedback après chaque validation de facture — affiche si Smartschool a envoyé ou non
 - Note sécurité : SMARTSCHOOL_TEST_RECIPIENT=175076 confirmé sur production (all contexts) — aucun message ne part aux parents
+
+## [v1.20.42] — Fix scannableCode QR + optimisation sync barcodes
+- Champ UUID corrigé : `scannableCode` (et non `barcodevalue`) dans getUserDetailsByNumber
+- Ne fetche getUserDetailsByNumber QUE pour les élèves sans valeur_scanner en DB (évite timeout sur 670 appels)
+- Ne jamais écraser un valeur_scanner existant avec null lors d'un sync suivant
+- Suppression du debug raw sample dans sync_log (plus nécessaire)
