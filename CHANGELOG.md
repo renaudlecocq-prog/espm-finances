@@ -1,3 +1,10 @@
+## [v1.20.35] — Financier Responsable complet + Fratrie
+- HomeResponsable : onglet Financier affiche la liste complète des factures (cliquables PDF) et paiements, comme FicheEleve
+- HomeResponsable : pastille ● sur l'onglet Financier si solde négatif ou mouvements présents
+- HomeResponsable : chargement des fratries — un responsable lié à Lina voit aussi Ismaël si liés
+- FicheEleve : section Fratrie / Famille liée dans l'onglet Infos (admin/direction) — recherche, ajout et suppression de liens
+- Migration Supabase : table eleve_fraterie avec lien bidirectionnel entre élèves
+
 ## [v1.20.34] — Retrait dark mode, onglet Préférences, sélecteur élève aperçu Responsable
 - ThemeContext.jsx : toujours en mode clair (dark mode désactivé)
 - Profile.jsx : suppression onglet Préférences + toggle thème + import Palette/Home

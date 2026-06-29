@@ -373,7 +373,7 @@ const ECH_PAY = {
   a_venir:   { label:'À venir',   cls:'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',   icon:'◌' },
 }
 function HomeResponsable() {
-  const { user, previewEleveId } = useAuth()
+  const { user, previewEleveId, token } = useAuth()
   const { demoMode } = useDemo()
   const [eleves, setEleves]         = useState([])
   const [activeId, setActiveId]     = useState(null)
@@ -384,6 +384,7 @@ function HomeResponsable() {
   const [loading, setLoading]       = useState(true)
   const [loadingFiche, setLoadingFiche] = useState(false)
   const [activeTabR, setActiveTabR] = useState('info')
+  const [finData, setFinData]       = useState(null)
 
   // Données démo pour l'aperçu responsable (mode démo OU aucun élève lié)
   const DEMO_ELEVES = demoData.responsable_eleve.map(r => r.eleve).filter(Boolean)
@@ -411,16 +412,33 @@ function HomeResponsable() {
       .from('responsable_eleve')
       .select('eleve:eleve_id(id, prenom, nom, classe, date_naissance)')
       .eq('responsable_id', user.id)
-      .then(({ data }) => {
-        const list = (data || []).map(r => r.eleve).filter(Boolean)
-        // Fallback démo si aucun élève lié (ex : admin en aperçu responsable)
-        if (list.length === 0) {
+      .then(async ({ data }) => {
+        const direct = (data || []).map(r => r.eleve).filter(Boolean)
+        if (direct.length === 0) {
           setEleves(DEMO_ELEVES)
           if (DEMO_ELEVES.length > 0) setActiveId(DEMO_ELEVES[0].id)
-        } else {
-          setEleves(list)
-          if (list.length > 0) setActiveId(list[0].id)
+          setLoading(false)
+          return
         }
+        // Charger aussi les frateries
+        const directIds = direct.map(e => e.id)
+        const { data: fratData } = await supabase.from('eleve_fraterie')
+          .select('eleve_id_1, eleve_id_2')
+          .or(directIds.map(id => `eleve_id_1.eq.${id},eleve_id_2.eq.${id}`).join(','))
+        const siblingIds = new Set()
+        ;(fratData || []).forEach(r => {
+          if (!directIds.includes(r.eleve_id_1)) siblingIds.add(r.eleve_id_1)
+          if (!directIds.includes(r.eleve_id_2)) siblingIds.add(r.eleve_id_2)
+        })
+        let all = [...direct]
+        if (siblingIds.size > 0) {
+          const { data: siblings } = await supabase.from('eleves')
+            .select('id, prenom, nom, classe, date_naissance')
+            .in('id', [...siblingIds])
+          all = [...direct, ...(siblings || [])]
+        }
+        setEleves(all)
+        if (all.length > 0) setActiveId(all[0].id)
         setLoading(false)
       })
   }, [user, demoMode, previewEleveId])
@@ -430,6 +448,7 @@ function HomeResponsable() {
     if (!activeId) return
     setLoadingFiche(true)
     setPhoto(null)
+    setFinData(null)
     Promise.all([
       supabase.from('eleves').select('*').eq('id', activeId).single(),
       supabase.from('echelonnements')
@@ -438,11 +457,18 @@ function HomeResponsable() {
       supabase.from('organismes_tiers')
         .select('id,organisme,statut,montant_accorde')
         .eq('eleve_id', activeId),
-    ]).then(([eRes, ecRes, oRes]) => {
+      supabase.from('factures')
+        .select('id, numero, montant, statut, date, batch:batch_id(numero, nom)')
+        .eq('eleve_id', activeId).neq('statut', 'brouillon').order('date', { ascending: false }),
+      supabase.from('paiements')
+        .select('id, date, montant, paye_par, notes')
+        .eq('eleve_id', activeId).order('date', { ascending: false }),
+    ]).then(([eRes, ecRes, oRes, facsRes, paiesRes]) => {
       const e = eRes.data
       setEleve(e)
       setEchs(ecRes.data || [])
       setOrgs(oRes.data || [])
+      setFinData({ factures: facsRes.data || [], paiements: paiesRes.data || [] })
       setLoadingFiche(false)
       if (e?.smartschool_internal_number) {
         fetch('/.netlify/functions/smartschool-photo', {
@@ -485,6 +511,7 @@ function HomeResponsable() {
   ].some(Boolean)
 
   const hasAS = echs.length > 0 || orgs.length > 0
+  const hasFinancier = finData && (finData.factures.length > 0 || finData.paiements.length > 0 || (eleve && (eleve.solde || 0) < 0))
   const majeur = eleve ? isMajeurR(eleve.date_naissance) : false
   const solde = eleve ? (eleve.solde || 0) : 0
 
@@ -554,7 +581,7 @@ function HomeResponsable() {
             </button>
             <button onClick={() => setActiveTabR('financier')}
               className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTabR === 'financier' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
-              Financier
+              Financier {hasFinancier && <span className="ml-1 text-xs text-orange-400">●</span>}
             </button>
           </div>
 
@@ -692,24 +719,75 @@ function HomeResponsable() {
 
           {/* ══ TAB : Financier ══ */}
           {activeTabR === 'financier' && <RSection icon="💶" title="Financier">
-            <div className="flex items-center justify-between py-1">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Solde actuel</span>
-              <span className={`text-xl font-bold ${
-                solde < 0 ? 'text-red-600' : solde > 0 ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'
-              }`}>
+            {/* Solde */}
+            <div className="flex items-center justify-between py-1 mb-3">
+              <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">Solde</span>
+              <span className={`text-base font-bold ${solde < 0 ? 'text-red-600' : solde > 0 ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
                 {fmtEurR(solde)}
               </span>
             </div>
-            {solde < 0 && (
-              <p className="text-xs text-red-500 dark:text-red-400 mt-1.5">
-                Un solde négatif indique un montant dû à l'école. Contactez-nous pour plus d'informations.
-              </p>
-            )}
-            {solde > 0 && (
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1.5">
-                Un solde positif signifie qu'un crédit est disponible sur le compte de votre enfant.
-              </p>
-            )}
+
+            {finData && (() => {
+              const STATUT_FAC = {
+                facture:         { label: 'Facturé',         cls: 'bg-green-100 text-green-700' },
+                ignore:          { label: 'Ignoré',          cls: 'bg-gray-100 text-gray-500' },
+                rappel:          { label: 'Rappel',          cls: 'bg-orange-100 text-orange-700' },
+                mise_en_demeure: { label: 'Mise en demeure', cls: 'bg-red-100 text-red-700' },
+              }
+              const PAYE_PAR = { responsable: 'Responsable', cpas: 'CPAS', ulb: 'ULB', spj: 'SPJ', autre: 'Autre', ecole: 'École', remise: 'Remise' }
+              return (<>
+                {finData.factures.length > 0 && (
+                  <div className="mb-4">
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Factures</span>
+                    <div className="space-y-1.5 mt-2">
+                      {finData.factures.map(f => {
+                        const st = STATUT_FAC[f.statut] || { label: f.statut, cls: 'bg-gray-100 text-gray-500' }
+                        return (
+                          <div key={f.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-gray-700 dark:text-gray-200 truncate text-xs">{f.batch?.nom || f.batch?.numero || '—'}</p>
+                              <p className="text-gray-400 text-[11px] truncate">{f.numero} · {fmtDateR(f.date)}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                              <span className="font-semibold text-gray-700 dark:text-gray-200 tabular-nums text-xs">{fmtEurR(f.montant)}</span>
+                              <a
+                                href={token ? `${window.location.origin}/.netlify/functions/facture-pdf?factureId=${f.id}&token=${token}` : '#'}
+                                target="_blank" rel="noopener noreferrer"
+                                onClick={e => e.stopPropagation()}
+                                title="Imprimer / PDF"
+                                className="text-gray-400 hover:text-primary transition-colors text-xs px-1.5 py-0.5 rounded hover:bg-primary/10"
+                              >🖨</a>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {finData.paiements.length > 0 && (
+                  <div>
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Paiements</span>
+                    <div className="space-y-1.5 mt-2">
+                      {finData.paiements.map(p => (
+                        <div key={p.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-gray-700 dark:text-gray-200 text-xs">Payé par {PAYE_PAR[p.paye_par] || p.paye_par || '—'}</p>
+                            <p className="text-gray-400 text-[11px]">{fmtDateR(p.date)}{p.notes ? ` · ${p.notes}` : ''}</p>
+                          </div>
+                          <span className="font-semibold text-green-600 tabular-nums shrink-0 text-xs">+{fmtEurR(p.montant)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {finData.factures.length === 0 && finData.paiements.length === 0 && (
+                  <p className="text-xs text-gray-400 italic">Aucun mouvement financier.</p>
+                )}
+              </>)
+            })()}
           </RSection>}
 
         </div>
