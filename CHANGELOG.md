@@ -2614,3 +2614,8 @@ git push origin main
 - Layout.jsx : rendu conditionnel JS pur (sidebar vs MobileNav)
 - useIsMobile.js : retourne directement isMobileDevice, sans useEffect
 - Compatible fold, tablette, desktop quel que soit le DPR ou le mode Brave
+
+## [v1.20.52] — Détection mobile maxTouchPoints (fix mode Desktop Brave/Chrome)
+- isMobile.js : ajout du 3e niveau pointer:coarse → UA Android → maxTouchPoints > 0
+- Couvre le cas "Request Desktop Site" activé globalement (Honor Magic V3, foldables)
+- navigator.maxTouchPoints est la seule API non masquable en mode desktop
