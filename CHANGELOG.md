@@ -2446,3 +2446,7 @@ git push origin main
 
 ## [v1.20.14] — Notes : recherche par classe
 - Le champ de recherche filtre aussi par classe
+
+## [v1.20.26] — Footer & Mentions légales SchoolPlus
+- Footer : "© 2026 École Secondaire Plurielle Maritime" → "© School Plus"
+- Mentions légales : logo ESPM remplacé par le lockup officiel School Plus (school-plus-lockup.svg)

@@ -10,7 +10,7 @@ export default function Layout() {
           <Outlet />
         </main>
         <footer className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center text-xs text-gray-400 dark:text-gray-500 shrink-0">
-          <span>© 2026 École Secondaire Plurielle Maritime</span>
+          <span>© School Plus</span>
           <Link to="/mentions-legales" className="hover:text-primary transition-colors">
             Mentions légales
           </Link>

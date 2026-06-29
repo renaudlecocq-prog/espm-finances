@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="200" viewBox="0 0 760 200">
+  <rect x="20" y="34" width="132" height="132" rx="32" fill="#2D1B2E"></rect>
+  <g transform="translate(38 52) scale(0.96)">
+  <polygon points="32,50 68,50 61,68 39,68" fill="#FFFFFF"></polygon>
+  <polygon points="16,44 50,28 84,44 50,60" fill="#FFFFFF"></polygon>
+  <line x1="84" y1="44" x2="84" y2="60" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round"></line>
+  <rect x="81" y="58" width="6" height="13" rx="1.5" fill="#F16410"></rect>
+  <rect x="77.5" y="61.5" width="13" height="6" rx="1.5" fill="#F16410"></rect>
+  </g>
+  <text x="190" y="118" font-family="&#39;Space Grotesk&#39;,Arial,sans-serif" font-size="66" font-weight="700" letter-spacing="-1.5" fill="#2D1B2E">School<tspan fill="#574958" font-weight="500"> Plus</tspan></text>
+</svg>
