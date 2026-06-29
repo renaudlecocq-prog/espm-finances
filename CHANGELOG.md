@@ -2619,3 +2619,7 @@ git push origin main
 - isMobile.js : ajout du 3e niveau pointer:coarse → UA Android → maxTouchPoints > 0
 - Couvre le cas "Request Desktop Site" activé globalement (Honor Magic V3, foldables)
 - navigator.maxTouchPoints est la seule API non masquable en mode desktop
+
+## [v1.20.53] — Fix roleLabel Sidebar (mdp → Pédagogique)
+- Sidebar : mdp affiché "Pédagogique" au lieu de "MdP"
+- Ajout labels manquants : pedagogique, educatif, financier

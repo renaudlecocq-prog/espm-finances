@@ -234,7 +234,10 @@ export default function Sidebar() {
     super_admin: 'Super Admin',
     admin: 'Admin',
     direction: 'Direction',
-    mdp: 'MdP',
+    mdp: 'Pédagogique',
+    pedagogique: 'Pédagogique',
+    educatif: 'Éducatif',
+    financier: 'Financier',
     responsable: 'Responsable',
   }
 
