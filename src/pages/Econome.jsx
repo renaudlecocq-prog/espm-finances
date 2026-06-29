@@ -184,7 +184,7 @@ function ImportModal({ compte, onClose, onImported }) {
   const [annee, setAnnee] = useState(new Date().getFullYear())
   const [existingRefs, setExistingRefs] = useState(new Set())
   const dropRef = useRef()
-  const { profile } = useAuth()
+  const { profile, token} = useAuth()
 
   useEffect(() => {
     supabase.from('comptable_transactions')
@@ -1213,6 +1213,7 @@ const MOIS_FULL = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
 //  Tab Bilan — Vue Couverture élèves + Vue Générale
 // ══════════════════════════════════════════════════════════
 function BilanTab({ natures }) {
+  const { token } = useAuth()
   const [annee, setAnnee] = useState(new Date().getFullYear())
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState(null)
@@ -1318,17 +1319,13 @@ function BilanTab({ natures }) {
         <button onClick={load} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 dark:text-gray-500">
           <RefreshCw size={15} />
         </button>
-        <button
-          onClick={async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-            if (!token) return
-            window.open(`/.netlify/functions/econome-bilan-pdf?annee=${annee}&token=${encodeURIComponent(token)}`, '_blank')
-          }}
+        <a
+          href={token ? `${window.location.origin}/.netlify/functions/econome-bilan-pdf?annee=${annee}&token=${encodeURIComponent(token)}` : '#'}
+          target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
         >
           <FileText size={13} /> PDF Bilan
-        </button>
+        </a>
         {/* Inner tabs */}
         <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1 ml-2">
           {[
@@ -1781,7 +1778,7 @@ function BilanSection({ categorie, lignes, moisActifs, colorClass, negative = fa
 //  Tab Projets — Pâtes, Fancy Fair, Rhétos…
 // ══════════════════════════════════════════════════════════
 function ProjetsTab() {
-  const { profile } = useAuth()
+  const { profile, token } = useAuth()
   const [projets, setProjets] = useState([])
   const [projetId, setProjetId] = useState(null)
   const [lignes, setLignes] = useState([])
@@ -1955,17 +1952,13 @@ function ProjetsTab() {
               className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 px-2 py-1.5 hover:bg-red-50 rounded-lg">
               <Trash2 size={13} /> Supprimer
             </button>
-            <button
-              onClick={async () => {
-                const { data: { session } } = await supabase.auth.getSession()
-                const token = session?.access_token
-                if (!token || !projetId) return
-                window.open(`/.netlify/functions/econome-projet-pdf?projetId=${projetId}&token=${encodeURIComponent(token)}`, '_blank')
-              }}
+            <a
+              href={token && projetId ? `${window.location.origin}/.netlify/functions/econome-projet-pdf?projetId=${projetId}&token=${encodeURIComponent(token)}` : '#'}
+              target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
             >
               <FileText size={13} /> PDF Projet
-            </button>
+            </a>
           </>
         )}
       </div>

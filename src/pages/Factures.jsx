@@ -140,7 +140,7 @@ function ClassFilterPill({ allClasses, excluded, onChange }) {
 
 // ── Modal de facturation ──────────────────────────────────────────────────────
 function FacturationModal({ onClose, onDone }) {
-  const { user } = useAuth()
+  const { user, token} = useAuth()
   const [loading, setLoading]       = useState(true)
   const [generating, setGenerating] = useState(false)
   const [progress, setProgress]     = useState(null)  // { step, current, total }
@@ -505,7 +505,7 @@ function FacturationModal({ onClose, onDone }) {
 
 // ── Liste des batches (niveau 1) ──────────────────────────────────────────────
 function ListeBatches({ onNew, onSelect }) {
-  const { isFinancier } = useAuth()
+  const { isFinancier, token } = useAuth()
   const [batches, setBatches]     = useState([])
   const [loading, setLoading]         = useState(true)
   const [search, setSearch]           = useState('')
@@ -675,14 +675,16 @@ async function callNotify(type, data) {
     })
     const result = await res.json()
     console.log('[notify] réponse:', JSON.stringify(result, null, 2))
+    return result
   } catch (e) {
     console.warn('[notify] erreur (non bloquante):', e.message)
+    return null
   }
 }
 
 // ── Détail d'un batch (niveau 2) ──────────────────────────────────────────────
 function DetailBatch({ batchId, onSelectFacture, onBack }) {
-  const { isFinancier } = useAuth()
+  const { isFinancier, token } = useAuth()
   const [batch, setBatch]     = useState(null)
   const [factures, setFactures] = useState([])
   const [search, setSearch]   = useState('')
@@ -690,6 +692,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
   const [loading, setLoading] = useState(true)
   const [confirm, setConfirm] = useState(null) // { facture }
   const [busy, setBusy]       = useState(false)
+  const [notifMsg, setNotifMsg] = useState(null) // { ok, msg }
   const [impayes, setImpayes] = useState({}) // factureId -> montant impayé
 
   const load = async () => {
@@ -775,9 +778,16 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     setFactures(prev => prev.map(ff => ff.id === f.id ? { ...ff, statut: 'facture' } : ff))
     await supabase.from('factures').update({ statut: 'facture' }).eq('id', f.id)
     await mettreAJourItemsApresApprobation([f.id])
-    // Notification Smartschool (fire-and-forget, non bloquant)
-    // On appelle toujours — la fonction gère le mode test même sans internal_number
+    // Notification Smartschool + feedback toast
     callNotify('facture', { students: [{ internal_number: f.eleve?.smartschool_internal_number || null, nom: f.eleve?.nom, prenom: f.eleve?.prenom }] })
+      .then(r => {
+        if (r?.sent > 0) {
+          setNotifMsg({ ok: true, msg: `Smartschool : ${r.sent} message${r.sent > 1 ? 's' : ''} envoyé${r.sent > 1 ? 's' : ''}` })
+        } else {
+          setNotifMsg({ ok: false, msg: 'Smartschool : aucun message envoyé (vérifier SMARTSCHOOL_ACCESS_CODE)' })
+        }
+        setTimeout(() => setNotifMsg(null), 5000)
+      })
     setBusy(false)
   }
 
@@ -847,15 +857,20 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     // Notifications Smartschool (fire-and-forget, non bloquant)
     // On passe tous les élèves — la fonction gère le mode test même sans internal_number
     const students = toApprove.map(f => ({ internal_number: f.eleve?.smartschool_internal_number || null, nom: f.eleve?.nom, prenom: f.eleve?.prenom }))
-    if (students.length) callNotify('facture', { students })
+    if (students.length) {
+      callNotify('facture', { students }).then(r => {
+        if (r?.sent > 0) {
+          setNotifMsg({ ok: true, msg: `Smartschool : ${r.sent} message${r.sent > 1 ? 's' : ''} envoyé${r.sent > 1 ? 's' : ''}` })
+        } else if (r !== null) {
+          setNotifMsg({ ok: false, msg: 'Smartschool : aucun message envoyé (vérifier SMARTSCHOOL_ACCESS_CODE)' })
+        }
+        setTimeout(() => setNotifMsg(null), 5000)
+      })
+    }
     setBusy(false)
   }
 
-  const handleBatchPDF = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    window.open(`/.netlify/functions/factures-batch-pdf?batchId=${batchId}&token=${session.access_token}`, '_blank')
-  }
+
 
   const nbAttente  = factures.filter(f => f.statut === 'brouillon').length
   const nbValide   = factures.filter(f => f.statut === 'facture').length
@@ -888,11 +903,14 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         </button>
       )}
       {nbValide > 0 && (
-        <button onClick={handleBatchPDF}
+        <a
+          href={token ? `${window.location.origin}/.netlify/functions/factures-batch-pdf?batchId=${batchId}&token=${token}` : '#'}
+          target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors shrink-0"
           style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
           🖨 PDF groupé ({nbValide})
-        </button>
+        </a>
+
       )}
     </>
   )
@@ -1034,6 +1052,16 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         </div>
       )}
     </div>
+    {/* Toast notification Smartschool */}
+    {notifMsg && (
+      <div className={`fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium transition-all
+        ${notifMsg.ok
+          ? 'bg-green-50 dark:bg-green-900/40 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700'
+          : 'bg-amber-50 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700'
+        }`}>
+        {notifMsg.msg}
+      </div>
+    )}
     </div>
   )
 }
@@ -1083,7 +1111,7 @@ function LigneRow({ ligne, onRemove, isFinancier }) {
 }
 
 function DetailFacture({ factureId, onBack }) {
-  const { isFinancier } = useAuth()
+  const { isFinancier, token } = useAuth()
   const { s } = useSettings()
   const [facture, setFacture] = useState(null)
   const [lignes, setLignes]   = useState([])
@@ -1121,11 +1149,7 @@ function DetailFacture({ factureId, onBack }) {
     await load(); setSaving(false)
   }
 
-  const handlePDF = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    window.open(`/.netlify/functions/facture-pdf?factureId=${factureId}&token=${session.access_token}`, '_blank')
-  }
+
 
   const removeLigne = async (ligne, putBack) => {
     await supabase.from('facture_lignes').delete().eq('id', ligne.id)
@@ -1191,7 +1215,7 @@ function DetailFacture({ factureId, onBack }) {
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase">Date</p>
               <p className="font-semibold text-gray-700 dark:text-gray-200">{fmtDate(facture.date)}</p>
             </div>
-            <button onClick={handlePDF} className="btn-secondary text-sm py-1.5 flex items-center gap-1.5">🖨 PDF</button>
+            <a href={token ? `${window.location.origin}/.netlify/functions/facture-pdf?factureId=${factureId}&token=${token}` : '#'} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm py-1.5 flex items-center gap-1.5">🖨 PDF</a>
           </div>
         </div>
         {isFinancier && (facture.statut === 'brouillon' || facture.statut === 'ignore') && (

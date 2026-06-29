@@ -1,3 +1,43 @@
+## [v1.20.33] — FIX Service Worker PWA interceptait les URLs Netlify Functions
+- vite.config.js : ajout navigateFallbackDenylist pour exclure /.netlify/* du SW
+- Cause racine : le SW PWA (installé en v1.20.25) interceptait toutes les navigations
+  vers /.netlify/functions/* et servait index.html au lieu de laisser passer la requête
+- Résultat : tous les PDFs (factures, comptes, suivi social) s'ouvraient sur la page d'accueil
+- Fix : navigateFallbackDenylist: [/^\/\.netlify\//] exclut ces URLs du fallback SW
+
+## [v1.20.32] — FIX token manquant dans BilanTab, ProjetsTab, AssistantSocial
+- Econome.jsx : token non défini dans BilanTab et ProjetsTab → crash /comptes
+- AssistantSocial.jsx : 4 composants convertis de window.open async → <a href target="_blank"> (EchelonnementDetail, TabEchelonnements, OrganismeTiersDetail, TabOrganismesTiers)
+- Tous les boutons PDF utilisent désormais <a href> avec token synchrone depuis AuthContext
+
+## [v1.20.31] — FIX token manquant dans ListeBatches et DetailBatch
+- token absent du destructuring useAuth() dans 2 sous-composants → ReferenceError
+
+## [v1.20.30] — FIX PDF : <a> tag au lieu de window.open
+- Remplacement définitif de tous les boutons PDF par des balises <a href target="_blank">
+- Chrome ne bloque jamais un vrai clic sur un lien, contrairement à window.open()
+- Factures (individuelle + groupée), FicheEleve, Econome (Bilan + Projet)
+- Token pré-calculé depuis AuthContext, aucune opération async dans le clic
+
+## [v1.20.29] — FIX PDF bouton synchrone via token AuthContext
+- `window.open` appelé après async brisait le contexte utilisateur Chrome → popup bloqué silencieusement
+- Fix : `token` stocké dans AuthContext (setToken à chaque session change), utilisé synchrone dans handlePDF
+- Tous les boutons PDF (Factures × 2, FicheEleve, Econome × 2) maintenant 100% synchrones
+
+## [v1.20.28] — FIX URL absolue pour les PDFs (popup Chrome)
+- PDF : `win.location.href` utilisait une URL relative qui dans une fenêtre `about:blank` se résolvait vers `/` → retour à l'accueil
+- Fix : utilisation de `window.location.origin` pour construire l'URL complète dans les 5 emplacements
+
+## [v1.20.27] — FIX PDF popup blocker + toast feedback Smartschool
+- PDF : `window.open()` appelé après `await` bloqué par Chrome hors geste utilisateur
+- Fix : fenêtre ouverte en synchrone, `win.location.href` assigné dans le `.then()`
+- `callNotify` retourne maintenant le résultat (fire-and-forget → async)
+- Toast après validation facture : succès (vert) ou absence (orange)
+
+## [v1.20.26] — Branding SchoolPlus : footer + mentions légales
+- Footer : © École Secondaire Plurielle Maritime → © School Plus
+- Mentions légales : logo ESPM → lockup officiel SchoolPlus
+
 ## [v1.20.25] — Charte graphique SchoolPlus ESPM+
 - Icônes PWA remplacées par les officielles de la charte (toque + fond aubergine)
 - Favicons navigateur : favicon-16.png + favicon-32.png + favicon.svg officiels
@@ -2446,3 +2486,12 @@ git push origin main
 
 ## [v1.20.14] — Notes : recherche par classe
 - Le champ de recherche filtre aussi par classe
+
+## [v1.20.26] — Footer & Mentions légales SchoolPlus
+- Footer : "© 2026 École Secondaire Plurielle Maritime" → "© School Plus"
+- Mentions légales : logo ESPM remplacé par le lockup officiel School Plus (school-plus-lockup.svg)
+
+## [v1.20.27] — FIX PDF popup + feedback Smartschool
+- FIX : boutons PDF ne s'ouvraient pas sous Brave/Chrome — `window.open()` après `await` était bloqué comme popup. Fix : ouverture synchrone + navigation asynchrone (Factures, FicheEleve, Econome)
+- ADD : toast de feedback après chaque validation de facture — affiche si Smartschool a envoyé ou non
+- Note sécurité : SMARTSCHOOL_TEST_RECIPIENT=175076 confirmé sur production (all contexts) — aucun message ne part aux parents

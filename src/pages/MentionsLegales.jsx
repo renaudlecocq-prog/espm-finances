@@ -17,7 +17,7 @@ export default function MentionsLegales() {
         </Link>
 
         <div className="mb-8">
-          <img src="/logo-espm.png" alt="ESPM" className="h-10 mb-4" />
+          <img src="/school-plus-lockup.svg" alt="School Plus" className="h-10 mb-4" />
           <h1 className="text-2xl font-bold text-primary dark:text-white">Mentions légales</h1>
           <p className="text-sm text-primary-lighter dark:text-gray-400 mt-1">Module de gestion financière — <a href="https://espmaritime.netlify.app" className="hover:underline">espmaritime.netlify.app</a></p>
         </div>

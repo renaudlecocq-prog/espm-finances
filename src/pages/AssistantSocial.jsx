@@ -78,7 +78,7 @@ function computeAlertStatus(ech, echeances, paiements) {
 
 // ── Detail Panel ─────────────────────────────────────────────────────────
 function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose, onUpdated, isAllowed, onFicheEleve, onPdf }) {
-  const { user, profile } = useAuth()
+  const { user, profile, token } = useAuth()
   const [echeances, setEcheances] = useState(initEcheances || [])
   const [statut, setStatut]       = useState(ech.statut)
   const [editEch, setEditEch]     = useState(null) // { id, value }
@@ -457,12 +457,14 @@ function EchelonnementDetail({ ech, echeances: initEcheances, paiements, onClose
               onChange={e => { uploadFile(e.target.files[0]); e.target.value = '' }} />
             <div className="flex gap-2 mb-3">
               {/* Bouton générer PDF — 1/4 */}
-              {onPdf && (
-                <button onClick={onPdf} title="Générer le rapport PDF"
-                  className="w-1/4 shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-primary/30 dark:border-accent/30 bg-primary/5 dark:bg-accent/5 hover:bg-primary/10 dark:hover:bg-accent/10 transition-colors p-3 text-primary dark:text-accent">
+              {token && (
+                <a href={`${window.location.origin}/.netlify/functions/echelonnements-rapport-pdf?echId=${ech.id}&token=${token}`}
+                  target="_blank" rel="noopener noreferrer"
+                  title="Générer le rapport PDF"
+                  className="w-1/4 shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-primary/30 dark:border-accent/30 bg-primary/5 dark:bg-accent/5 hover:bg-primary/10 dark:hover:bg-accent/10 transition-colors p-3 text-primary dark:text-accent no-underline">
                   <FileText size={18} />
                   <span className="text-xs font-medium leading-tight text-center">Générer<br/>le rapport</span>
-                </button>
+                </a>
               )}
               {/* Zone drag & drop — 3/4 */}
               <div
@@ -652,6 +654,7 @@ function EchelonnementForm({ eleves, onSaved, onClose }) {
 
 // ── Tab Échelonnements ────────────────────────────────────────────────────
 function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, onToggleFilter, onClearFilters, showForm, onToggleForm }) {
+  const { token } = useAuth()
   const [rows, setRows]                 = useState([])
   const [echeancesMap, setEcheancesMap] = useState({})
   const [paiementsMap, setPaiementsMap] = useState({})
@@ -831,12 +834,14 @@ function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, 
                     )}
                   </td>
                   <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => handlePdfRapport(r.id)}
+                    <a
+                      href={token ? `${window.location.origin}/.netlify/functions/echelonnements-rapport-pdf?echId=${r.id}&token=${token}` : '#'}
+                      target="_blank" rel="noopener noreferrer"
                       title="Générer le PDF"
+                      onClick={e => e.stopPropagation()}
                       className="text-gray-300 dark:text-gray-600 hover:text-primary transition-colors">
                       <FileText size={14} />
-                    </button>
+                    </a>
                   </td>
                   {isAllowed && (
                     <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
@@ -874,7 +879,7 @@ function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, 
 // ── Tab Organismes Tiers ─────────────────────────────────────────────────
 
 function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
-  const { user, profile } = useAuth()
+  const { user, profile, token } = useAuth()
   const eleve = row.eleve || {}
 
   // ── Form fields ─────────────────────────────────────────────────────────
@@ -1277,11 +1282,13 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
                   <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
                     onChange={e => { uploadFile(e.target.files[0]); e.target.value = '' }} />
                   <div className="flex gap-2 mb-3">
-                    <button onClick={handlePdfRapport} title="Générer le rapport PDF"
-                      className="w-1/3 shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-primary/30 dark:border-accent/30 bg-primary/5 dark:bg-accent/5 hover:bg-primary/10 dark:hover:bg-accent/10 transition-colors p-3 text-primary dark:text-accent">
+                    <a href={token ? `${window.location.origin}/.netlify/functions/organismes-tiers-rapport-pdf?otId=${row.id}&token=${token}` : '#'}
+                      target="_blank" rel="noopener noreferrer"
+                      title="Générer le rapport PDF"
+                      className="w-1/3 shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-primary/30 dark:border-accent/30 bg-primary/5 dark:bg-accent/5 hover:bg-primary/10 dark:hover:bg-accent/10 transition-colors p-3 text-primary dark:text-accent no-underline">
                       <FileText size={18} />
                       <span className="text-xs font-medium leading-tight text-center">Générer<br/>le rapport</span>
-                    </button>
+                    </a>
                     <div
                       className={`flex-1 rounded-xl border-2 border-dashed p-3 text-center cursor-pointer transition-colors
                         ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'}`}
@@ -1351,6 +1358,7 @@ function OrganismeTiersDetail({ row, onClose, onUpdated, isAllowed }) {
 }
 
 function TabOrganismesTiers({ isAllowed, openEleveId, search, onSearch, filters, onToggleFilter, onClearFilters, showForm, onToggleForm, showOrgModal, onToggleOrgModal }) {
+  const { token } = useAuth()
   const [rows, setRows]     = useState([])
   const [eleves, setEleves] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1648,10 +1656,14 @@ function TabOrganismesTiers({ isAllowed, openEleveId, search, onSearch, filters,
                 </td>
                 <td className="px-3 py-2.5"><Badge val={r.statut} map={STATUT_OT} /></td>
                 <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => handlePdfOT(r.id)} title="Générer le rapport PDF"
+                  <a
+                    href={token ? `${window.location.origin}/.netlify/functions/organismes-tiers-rapport-pdf?otId=${r.id}&token=${token}` : '#'}
+                    target="_blank" rel="noopener noreferrer"
+                    title="Générer le rapport PDF"
+                    onClick={e => e.stopPropagation()}
                     className="text-gray-300 dark:text-gray-600 hover:text-primary transition-colors">
                     <FileText size={14} />
-                  </button>
+                  </a>
                 </td>
                 {isAllowed && (
                   <td className="px-2 py-2.5" onClick={e => e.stopPropagation()}>
