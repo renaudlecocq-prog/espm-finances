@@ -1,3 +1,8 @@
+## [v1.20.32] — FIX token manquant dans BilanTab, ProjetsTab, AssistantSocial
+- Econome.jsx : token non défini dans BilanTab et ProjetsTab → crash /comptes
+- AssistantSocial.jsx : 4 composants convertis de window.open async → <a href target="_blank"> (EchelonnementDetail, TabEchelonnements, OrganismeTiersDetail, TabOrganismesTiers)
+- Tous les boutons PDF utilisent désormais <a href> avec token synchrone depuis AuthContext
+
 ## [v1.20.31] — FIX token manquant dans ListeBatches et DetailBatch
 - token absent du destructuring useAuth() dans 2 sous-composants → ReferenceError
 

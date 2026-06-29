@@ -1213,6 +1213,7 @@ const MOIS_FULL = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
 //  Tab Bilan — Vue Couverture élèves + Vue Générale
 // ══════════════════════════════════════════════════════════
 function BilanTab({ natures }) {
+  const { token } = useAuth()
   const [annee, setAnnee] = useState(new Date().getFullYear())
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState(null)
@@ -1777,7 +1778,7 @@ function BilanSection({ categorie, lignes, moisActifs, colorClass, negative = fa
 //  Tab Projets — Pâtes, Fancy Fair, Rhétos…
 // ══════════════════════════════════════════════════════════
 function ProjetsTab() {
-  const { profile } = useAuth()
+  const { profile, token } = useAuth()
   const [projets, setProjets] = useState([])
   const [projetId, setProjetId] = useState(null)
   const [lignes, setLignes] = useState([])
