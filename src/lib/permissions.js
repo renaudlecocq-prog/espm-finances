@@ -30,12 +30,13 @@ export const FEATURE_KEYS = FEATURES.map(f => f.key)
 
 export const FEATURE_GROUPS = [...new Set(FEATURES.map(f => f.group))]
 
-export const ROLES = ['super_admin', 'admin', 'direction', 'mdp', 'responsable']
+export const ROLES = ['super_admin', 'admin', 'direction', 'pedagogique', 'educatif', 'responsable']
 
 export const ROLE_META = {
-  super_admin: { label: 'Super Admin', color: 'bg-purple-100 text-purple-700 border border-purple-200', desc: 'Accès total + gestion des autres super admins. Réservé à SchoolPlus.', dot: 'bg-purple-500', avatarBg: '#7c3aed' },
-  admin:       { label: 'Admin',       color: 'bg-red-100 text-red-700 border border-red-200',       desc: 'Accès total — gestion des utilisateurs, toutes les données.',          dot: 'bg-red-500',    avatarBg: '#ef4444' },
-  direction:   { label: 'Direction',   color: 'bg-blue-100 text-blue-700 border border-blue-200',    desc: 'Accès financier complet — factures, paiements, élèves, organismes.',   dot: 'bg-blue-500',   avatarBg: '#3b82f6' },
-  mdp:         { label: 'MdP',         color: 'bg-green-100 text-green-700 border border-green-200', desc: 'Membres du personnel — activités et helpdesk.',                         dot: 'bg-green-500',  avatarBg: '#22c55e' },
-  responsable: { label: 'Responsable', color: 'bg-gray-100 text-gray-600 border border-gray-200',    desc: 'Parents / élèves majeurs — tableau de bord enfants uniquement.',       dot: 'bg-gray-400',   avatarBg: '#9ca3af' },
+  super_admin: { label: 'Super Admin',  color: 'bg-purple-100 text-purple-700 border border-purple-200', desc: 'Accès total + gestion des autres super admins. Réservé à SchoolPlus.',          dot: 'bg-purple-500', avatarBg: '#7c3aed' },
+  admin:       { label: 'Admin',        color: 'bg-red-100 text-red-700 border border-red-200',           desc: 'Accès total — gestion des utilisateurs, toutes les données.',                  dot: 'bg-red-500',    avatarBg: '#ef4444' },
+  direction:   { label: 'Direction',    color: 'bg-blue-100 text-blue-700 border border-blue-200',        desc: 'Accès financier complet — factures, paiements, élèves, organismes.',           dot: 'bg-blue-500',   avatarBg: '#3b82f6' },
+  pedagogique: { label: 'Pédagogique',  color: 'bg-green-100 text-green-700 border border-green-200',    desc: 'Membres du personnel pédagogique — activités, compositions, helpdesk.',        dot: 'bg-green-500',  avatarBg: '#22c55e' },
+  educatif:    { label: 'Éducatif',     color: 'bg-amber-100 text-amber-700 border border-amber-200',    desc: 'Équipe éducative — activités, salle des profs, helpdesk.',                     dot: 'bg-amber-500',  avatarBg: '#f59e0b' },
+  responsable: { label: 'Responsable',  color: 'bg-gray-100 text-gray-600 border border-gray-200',       desc: 'Parents / élèves majeurs — tableau de bord enfants uniquement.',              dot: 'bg-gray-400',   avatarBg: '#9ca3af' },
 }

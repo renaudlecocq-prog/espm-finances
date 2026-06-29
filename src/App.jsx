@@ -33,7 +33,7 @@ function RequireAuth({ children, require = 'user', feature = null }) {
   if (!user) return <Navigate to="/login" replace />
   if (require === 'admin'     && !['admin','super_admin'].includes(role))                                    return <Navigate to="/" replace />
   if (require === 'direction' && !['admin','super_admin','direction'].includes(effectiveRole))               return <Navigate to="/" replace />
-  if (require === 'mdp'       && !['admin','super_admin','direction','mdp'].includes(effectiveRole))         return <Navigate to="/" replace />
+  if (require === 'mdp'       && !['admin','super_admin','direction','pedagogique','educatif'].includes(effectiveRole))         return <Navigate to="/" replace />
   // Vérification par feature — s'applique aux non-admins ET aux admins en mode aperçu
   if (feature && (!['admin','super_admin'].includes(role) || viewAsRole)) {
     const features = Array.isArray(feature) ? feature : [feature]
@@ -45,7 +45,8 @@ function RequireAuth({ children, require = 'user', feature = null }) {
 const DEMO_ROLES = [
   { key: null,          label: 'Admin' },
   { key: 'direction',   label: 'Direction' },
-  { key: 'mdp',         label: 'MdP' },
+  { key: 'pedagogique', label: 'Pédagogique' },
+  { key: 'educatif',    label: 'Éducatif' },
   { key: 'responsable', label: 'Responsable' },
 ]
 
@@ -123,7 +124,7 @@ function Layout({ children }) {
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-orange-500 text-white px-4 py-2.5 flex items-center gap-3 text-sm shadow-[0_-4px_12px_rgba(0,0,0,0.15)]">
           <span>👁</span>
           <span className="shrink-0">Aperçu en tant que <strong>
-            {{ direction: 'Direction', mdp: 'Membre du personnel', responsable: 'Responsable' }[previewRole] || previewRole}
+            {{ direction: 'Direction', pedagogique: 'Pédagogique', educatif: 'Éducatif', responsable: 'Responsable' }[previewRole] || previewRole}
           </strong></span>
           {previewRole === 'responsable' && allEleves.length > 0 && (
             <select

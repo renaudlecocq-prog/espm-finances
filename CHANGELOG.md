@@ -2559,3 +2559,11 @@ git push origin main
 - Ne fetche getUserDetailsByNumber QUE pour les élèves sans valeur_scanner en DB (évite timeout sur 670 appels)
 - Ne jamais écraser un valeur_scanner existant avec null lors d'un sync suivant
 - Suppression du debug raw sample dans sync_log (plus nécessaire)
+
+## [v1.20.43] — Nouveaux rôles Pédagogique + Éducatif
+- Rôle `mdp` renommé en `Pédagogique` (pedagogique) partout dans le code et la DB
+- Nouveau rôle `Éducatif` (educatif) créé — même droits par défaut que Pédagogique, ajustables via la matrice
+- 8 profils existants migrés automatiquement de `mdp` → `pedagogique`
+- Fix matrice droits : toggleRolePerm gère maintenant les nouvelles lignes (insert + update state)
+- Retrait de la notice "La colonne Admin est verrouillée" (Admin absent de la matrice)
+- Boutons aperçu Admin mis à jour (Pédagogique + Éducatif)
