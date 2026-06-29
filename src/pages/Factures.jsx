@@ -140,7 +140,7 @@ function ClassFilterPill({ allClasses, excluded, onChange }) {
 
 // ── Modal de facturation ──────────────────────────────────────────────────────
 function FacturationModal({ onClose, onDone }) {
-  const { user } = useAuth()
+  const { user, token} = useAuth()
   const [loading, setLoading]       = useState(true)
   const [generating, setGenerating] = useState(false)
   const [progress, setProgress]     = useState(null)  // { step, current, total }
@@ -871,11 +871,8 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
   }
 
   const handleBatchPDF = () => {
-    const win = window.open('', '_blank')
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { win?.close(); return }
-      if (win) win.location.href = `${window.location.origin}/.netlify/functions/factures-batch-pdf?batchId=${batchId}&token=${session.access_token}`
-    })
+    if (!token) return
+    window.open(`${window.location.origin}/.netlify/functions/factures-batch-pdf?batchId=${batchId}&token=${token}`, '_blank')
   }
 
   const nbAttente  = factures.filter(f => f.statut === 'brouillon').length
@@ -1115,7 +1112,7 @@ function LigneRow({ ligne, onRemove, isFinancier }) {
 }
 
 function DetailFacture({ factureId, onBack }) {
-  const { isFinancier } = useAuth()
+  const { isFinancier, token } = useAuth()
   const { s } = useSettings()
   const [facture, setFacture] = useState(null)
   const [lignes, setLignes]   = useState([])
@@ -1154,11 +1151,8 @@ function DetailFacture({ factureId, onBack }) {
   }
 
   const handlePDF = () => {
-    const win = window.open('', '_blank')
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { win?.close(); return }
-      if (win) win.location.href = `${window.location.origin}/.netlify/functions/facture-pdf?factureId=${factureId}&token=${session.access_token}`
-    })
+    if (!token) return
+    window.open(`${window.location.origin}/.netlify/functions/facture-pdf?factureId=${factureId}&token=${token}`, '_blank')
   }
 
   const removeLigne = async (ligne, putBack) => {

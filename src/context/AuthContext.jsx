@@ -10,6 +10,7 @@ export function AuthProvider({ children }) {
   const [role,        setRole]        = useState(null)
   const [loading,     setLoading]     = useState(true)
   const [viewAsRole,  setViewAsRole]  = useState(null)
+  const [token,        setToken]        = useState(null)
   const [permissions,        setPermissions]        = useState({})   // { feature: boolean }
   const [previewPermissions, setPreviewPermissions] = useState({})   // permissions du rôle aperçu
   const channelRef = useRef(null)
@@ -100,11 +101,13 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
+      setToken(session?.access_token ?? null)
       if (session?.user) fetchRole(session.user.id)
       else setLoading(false)
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      setToken(session?.access_token ?? null)
       if (session?.user) fetchRole(session.user.id)
       else {
         setProfile(null); setRole(null); setPermissions({})
@@ -143,7 +146,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, profile, role, loading, permissions,
+      user, profile, role, loading, permissions, token,
       isSuperAdmin, isAdmin, isFinancier, isMdp, isMdpOnly,
       can,
       viewAsRole, setViewAsRole, effectiveRole,

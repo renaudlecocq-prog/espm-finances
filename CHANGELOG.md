@@ -1,3 +1,8 @@
+## [v1.20.29] — FIX PDF bouton synchrone via token AuthContext
+- `window.open` appelé après async brisait le contexte utilisateur Chrome → popup bloqué silencieusement
+- Fix : `token` stocké dans AuthContext (setToken à chaque session change), utilisé synchrone dans handlePDF
+- Tous les boutons PDF (Factures × 2, FicheEleve, Econome × 2) maintenant 100% synchrones
+
 ## [v1.20.28] — FIX URL absolue pour les PDFs (popup Chrome)
 - PDF : `win.location.href` utilisait une URL relative qui dans une fenêtre `about:blank` se résolvait vers `/` → retour à l'accueil
 - Fix : utilisation de `window.location.origin` pour construire l'URL complète dans les 5 emplacements

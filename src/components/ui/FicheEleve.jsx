@@ -74,7 +74,7 @@ const PAYE_PAR_LABELS = { responsable: 'Responsable', cpas: 'CPAS', ulb: 'ULB', 
 
 // ── Main component ─────────────────────────────────────────────────────────
 export default function FicheEleve({ eleveId, onClose }) {
-  const { user, profile, isAdmin, isFinancier } = useAuth()
+  const { user, profile, isAdmin, isFinancier, token} = useAuth()
   const navigate = useNavigate()
   const canSeeRestricted = isAdmin || isFinancier
 
@@ -90,11 +90,8 @@ export default function FicheEleve({ eleveId, onClose }) {
   const [finData, setFinData] = useState(null)  // { factures, paiements }
 
   const handlePDF = (factureId) => {
-    const win = window.open('', '_blank')
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { win?.close(); return }
-      if (win) win.location.href = `${window.location.origin}/.netlify/functions/facture-pdf?factureId=${factureId}&token=${session.access_token}`
-    })
+    if (!token) return
+    window.open(`${window.location.origin}/.netlify/functions/facture-pdf?factureId=${factureId}&token=${token}`, '_blank')
   }
   const [activeTab, setActiveTab] = useState('info')
 
