@@ -1319,11 +1319,13 @@ function BilanTab({ natures }) {
           <RefreshCw size={15} />
         </button>
         <button
-          onClick={async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-            if (!token) return
-            window.open(`/.netlify/functions/econome-bilan-pdf?annee=${annee}&token=${encodeURIComponent(token)}`, '_blank')
+          onClick={() => {
+            const win = window.open('', '_blank')
+            supabase.auth.getSession().then(({ data: { session } }) => {
+              const token = session?.access_token
+              if (!token) { win?.close(); return }
+              if (win) win.location.href = `/.netlify/functions/econome-bilan-pdf?annee=${annee}&token=${encodeURIComponent(token)}`
+            })
           }}
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
         >
@@ -1956,11 +1958,13 @@ function ProjetsTab() {
               <Trash2 size={13} /> Supprimer
             </button>
             <button
-              onClick={async () => {
-                const { data: { session } } = await supabase.auth.getSession()
-                const token = session?.access_token
-                if (!token || !projetId) return
-                window.open(`/.netlify/functions/econome-projet-pdf?projetId=${projetId}&token=${encodeURIComponent(token)}`, '_blank')
+              onClick={() => {
+                const win = window.open('', '_blank')
+                supabase.auth.getSession().then(({ data: { session } }) => {
+                  const token = session?.access_token
+                  if (!token || !projetId) { win?.close(); return }
+                  if (win) win.location.href = `/.netlify/functions/econome-projet-pdf?projetId=${projetId}&token=${encodeURIComponent(token)}`
+                })
               }}
               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
             >

@@ -89,10 +89,12 @@ export default function FicheEleve({ eleveId, onClose }) {
   const [editNoteVal, setEditNoteVal] = useState('')
   const [finData, setFinData] = useState(null)  // { factures, paiements }
 
-  const handlePDF = async (factureId) => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    window.open(`/.netlify/functions/facture-pdf?factureId=${factureId}&token=${session.access_token}`, '_blank')
+  const handlePDF = (factureId) => {
+    const win = window.open('', '_blank')
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { win?.close(); return }
+      if (win) win.location.href = `/.netlify/functions/facture-pdf?factureId=${factureId}&token=${session.access_token}`
+    })
   }
   const [activeTab, setActiveTab] = useState('info')
 

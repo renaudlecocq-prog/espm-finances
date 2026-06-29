@@ -2450,3 +2450,8 @@ git push origin main
 ## [v1.20.26] — Footer & Mentions légales SchoolPlus
 - Footer : "© 2026 École Secondaire Plurielle Maritime" → "© School Plus"
 - Mentions légales : logo ESPM remplacé par le lockup officiel School Plus (school-plus-lockup.svg)
+
+## [v1.20.27] — FIX PDF popup + feedback Smartschool
+- FIX : boutons PDF ne s'ouvraient pas sous Brave/Chrome — `window.open()` après `await` était bloqué comme popup. Fix : ouverture synchrone + navigation asynchrone (Factures, FicheEleve, Econome)
+- ADD : toast de feedback après chaque validation de facture — affiche si Smartschool a envoyé ou non
+- Note sécurité : SMARTSCHOOL_TEST_RECIPIENT=175076 confirmé sur production (all contexts) — aucun message ne part aux parents
