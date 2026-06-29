@@ -2629,3 +2629,9 @@ git push origin main
 - Connexion via Smartschool OAuth réinitialisait le rôle au rôle Smartschool (ex: mdp)
 - Fix : PROTECTED_ROLES = ['super_admin', 'admin', 'direction', 'financier', 'educatif', 'pedagogique']
 - Rôle de Renaud Lecocq restauré manuellement en super_admin en base
+
+## [v1.20.56] — Toggle manuel mobile/desktop (fix Honor Magic V3)
+- isMobile.js : override localStorage prioritaire (espm_layout_mode: mobile|desktop|auto)
+- Layout.jsx : bouton 📱/💻 discret en bas à droite pour forcer le mode
+- setLayoutMode() : change le mode et recharge la page
+- Fallback automatique si aucun override défini

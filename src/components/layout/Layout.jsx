@@ -1,28 +1,22 @@
 import { Outlet, Link } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
-import { isMobileDevice } from '../../lib/isMobile'
+import { isMobileDevice, setLayoutMode } from '../../lib/isMobile'
 
-// DEBUG TEMPORAIRE — à supprimer après diagnostic
-function DebugBar() {
-  const lines = [
-    `pointer:coarse = ${window.matchMedia('(pointer: coarse)').matches}`,
-    `any-pointer:coarse = ${window.matchMedia('(any-pointer: coarse)').matches}`,
-    `hover:none = ${window.matchMedia('(hover: none)').matches}`,
-    `maxTouchPoints = ${navigator.maxTouchPoints}`,
-    `innerWidth = ${window.innerWidth}`,
-    `screen.width = ${window.screen.width}`,
-    `isMobile = ${isMobileDevice}`,
-    `UA = ${navigator.userAgent.slice(0, 60)}`,
-  ]
+function LayoutToggle() {
   return (
-    <div style={{
-      background: '#111', color: '#4f4', fontSize: 11,
-      padding: '6px 8px', fontFamily: 'monospace', lineHeight: 1.6,
-      borderBottom: '2px solid #4f4', flexShrink: 0
-    }}>
-      {lines.map((l, i) => <div key={i}>{l}</div>)}
-    </div>
+    <button
+      onClick={() => setLayoutMode(isMobileDevice ? 'desktop' : 'mobile')}
+      title={isMobileDevice ? 'Passer en mode desktop' : 'Passer en mode mobile'}
+      style={{
+        position: 'fixed', bottom: isMobileDevice ? 70 : 16, right: 12,
+        zIndex: 999, background: '#2D1B2E', color: '#fff',
+        border: '1px solid #F16410', borderRadius: 20,
+        padding: '4px 10px', fontSize: 11, cursor: 'pointer', opacity: 0.7
+      }}
+    >
+      {isMobileDevice ? '💻' : '📱'}
+    </button>
   )
 }
 
@@ -35,8 +29,6 @@ export default function Layout() {
         id="page-content-scroll"
         className="flex-1 flex flex-col min-w-0 overflow-y-auto"
       >
-        <DebugBar />
-
         <main
           id="page-main-content"
           className={`flex-1 flex flex-col max-w-screen-xl mx-auto w-full ${
@@ -57,6 +49,7 @@ export default function Layout() {
       </div>
 
       {isMobileDevice && <MobileNav />}
+      <LayoutToggle />
     </div>
   )
 }

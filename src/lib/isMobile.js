@@ -1,26 +1,30 @@
 /**
- * Détection mobile — 3 niveaux de fallback pour couvrir les navigateurs
- * en mode "Desktop site" (comme Brave/Chrome sur foldable Honor Magic V3).
- *
- * 1. pointer:coarse — cas standard (touch primary)
- * 2. UA Android/iOS  — mode desktop partiel (viewport modifié mais UA conservé)
- * 3. maxTouchPoints > 0 — mode desktop complet avec UA spoofé
- *    (invariant : un vrai desktop sans écran tactile aura toujours 0)
+ * Détection mobile avec override manuel (localStorage).
+ * Sur les foldables/HarmonyOS, toutes les APIs automatiques peuvent échouer.
+ * L'override manuel est prioritaire et persistant.
  */
 function detectMobile() {
   if (typeof window === 'undefined') return false
 
-  // 1. Pointeur tactile primaire
+  // Override manuel prioritaire
+  const override = localStorage.getItem('espm_layout_mode')
+  if (override === 'mobile') return true
+  if (override === 'desktop') return false
+
+  // Détections automatiques (best-effort)
   if (window.matchMedia('(pointer: coarse)').matches) return true
-
-  // 2. User-Agent Android/iOS (présent même en mode desktop standard)
+  if (window.matchMedia('(any-pointer: coarse)').matches) return true
   if (/android|iphone|ipad|ipod/i.test(navigator.userAgent)) return true
-
-  // 3. Appareil tactile — couvre le mode "Request Desktop Site" total
-  //    Un desktop sans écran tactile retourne 0
   if (navigator.maxTouchPoints > 0) return true
 
   return false
 }
 
 export const isMobileDevice = detectMobile()
+
+export function setLayoutMode(mode) {
+  // mode: 'mobile' | 'desktop' | null (auto)
+  if (mode === null) localStorage.removeItem('espm_layout_mode')
+  else localStorage.setItem('espm_layout_mode', mode)
+  window.location.reload()
+}
