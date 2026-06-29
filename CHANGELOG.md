@@ -1,3 +1,10 @@
+## [v1.20.34] — Retrait dark mode, onglet Préférences, sélecteur élève aperçu Responsable
+- ThemeContext.jsx : toujours en mode clair (dark mode désactivé)
+- Profile.jsx : suppression onglet Préférences + toggle thème + import Palette/Home
+- App.jsx : sélecteur d'élève dans la bannière aperçu Responsable
+- AuthContext.jsx : ajout previewEleveId / setPreviewEleveId
+- Home.jsx : HomeResponsable utilise previewEleveId si défini (aperçu admin)
+
 ## [v1.20.33] — FIX Service Worker PWA interceptait les URLs Netlify Functions
 - vite.config.js : ajout navigateFallbackDenylist pour exclure /.netlify/* du SW
 - Cause racine : le SW PWA (installé en v1.20.25) interceptait toutes les navigations

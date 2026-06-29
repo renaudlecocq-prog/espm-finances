@@ -373,7 +373,7 @@ const ECH_PAY = {
   a_venir:   { label:'À venir',   cls:'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',   icon:'◌' },
 }
 function HomeResponsable() {
-  const { user } = useAuth()
+  const { user, previewEleveId } = useAuth()
   const { demoMode } = useDemo()
   const [eleves, setEleves]         = useState([])
   const [activeId, setActiveId]     = useState(null)
@@ -398,6 +398,15 @@ function HomeResponsable() {
       setLoading(false)
       return
     }
+    // En aperçu admin : si un élève a été sélectionné dans la bannière, l'utiliser directement
+    if (previewEleveId) {
+      supabase.from('eleves').select('id, prenom, nom, classe, date_naissance').eq('id', previewEleveId).single()
+        .then(({ data }) => {
+          if (data) { setEleves([data]); setActiveId(data.id) }
+          setLoading(false)
+        })
+      return
+    }
     supabase
       .from('responsable_eleve')
       .select('eleve:eleve_id(id, prenom, nom, classe, date_naissance)')
@@ -414,7 +423,7 @@ function HomeResponsable() {
         }
         setLoading(false)
       })
-  }, [user, demoMode])
+  }, [user, demoMode, previewEleveId])
 
   // Charger la fiche complète de l'enfant sélectionné
   useEffect(() => {

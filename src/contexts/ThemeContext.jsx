@@ -1,21 +1,11 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext } from 'react'
 
 const ThemeContext = createContext({ dark: false, toggle: () => {} })
 
 export function ThemeProvider({ children }) {
-  const [dark, setDark] = useState(() => {
-    try { return localStorage.getItem('espm-theme') === 'dark' }
-    catch { return false }
-  })
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark)
-    try { localStorage.setItem('espm-theme', dark ? 'dark' : 'light') }
-    catch {}
-  }, [dark])
-
+  // Dark mode supprimé — toujours en mode clair
   return (
-    <ThemeContext.Provider value={{ dark, toggle: () => setDark(d => !d) }}>
+    <ThemeContext.Provider value={{ dark: false, toggle: () => {} }}>
       {children}
     </ThemeContext.Provider>
   )
