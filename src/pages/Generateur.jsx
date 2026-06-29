@@ -85,9 +85,19 @@ export default function Generateur() {
     if (selected.size === 0) return
     setGenerating(true)
     try {
-      const ids = [...selected].join(',')
-      const url = `/.netlify/functions/carte-etudiant-pdf?ids=${encodeURIComponent(ids)}&token=${encodeURIComponent(token)}`
-      window.open(url, '_blank')
+      const res = await fetch('/.netlify/functions/carte-etudiant-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [...selected], token }),
+      })
+      if (!res.ok) { alert('Erreur génération PDF : ' + res.status); return }
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = 'cartes-etudiants.pdf'
+      a.click()
+      URL.revokeObjectURL(url)
     } finally {
       setGenerating(false)
     }

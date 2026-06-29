@@ -2567,3 +2567,8 @@ git push origin main
 - Fix matrice droits : toggleRolePerm gère maintenant les nouvelles lignes (insert + update state)
 - Retrait de la notice "La colonne Admin est verrouillée" (Admin absent de la matrice)
 - Boutons aperçu Admin mis à jour (Pédagogique + Éducatif)
+
+## [v1.20.44] — Fix HTTP 414 génération cartes (POST + blob download)
+- carte-etudiant-pdf : GET → POST avec body JSON (IDs en body, pas en query string)
+- Generateur.jsx : fetch blob + download automatique au lieu de window.open
+- Limite portée à 700 élèves par génération
