@@ -247,11 +247,20 @@ export default function Sidebar() {
         className="flex items-center h-14 px-3 shrink-0"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
       >
-        <Link to="/" className="flex items-center gap-2 flex-1 min-w-0">
-          <img src="/logo-ecole.svg" alt="ESPM" style={{ height: 28, width: 28, flexShrink: 0 }} />
+        <Link to="/" className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+          {/* Icône toque — toujours visible */}
+          <img
+            src="/icons/icon-192.png"
+            alt="ESPM+"
+            style={{ height: 32, width: 32, flexShrink: 0, borderRadius: 8 }}
+          />
+          {/* Texte ESPM+ — masqué en mode réduit */}
           {!collapsed && (
-            <span className="text-white font-bold text-base tracking-wide whitespace-nowrap">
-              ESPM<span style={{ color: '#E86C00' }}>+</span>
+            <span
+              className="whitespace-nowrap text-white text-lg font-bold tracking-tight leading-none"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            >
+              ESPM<span style={{ color: '#F16410' }}>+</span>
             </span>
           )}
         </Link>

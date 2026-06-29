@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="470" height="128" viewBox="0 0 470 128">
+  <rect x="16" y="16" width="96" height="96" rx="23" fill="#2D1B2E"></rect>
+  <g transform="translate(29.9 29.9) scale(0.6816)"><polygon points="32,50 68,50 61,68 39,68" fill="#FFFFFF"></polygon><polygon points="16,44 50,28 84,44 50,60" fill="#FFFFFF"></polygon><line x1="84" y1="44" x2="84" y2="60" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round"></line><rect x="81" y="58" width="6" height="13" rx="1.5" fill="#F16410"></rect><rect x="77.5" y="61.5" width="13" height="6" rx="1.5" fill="#F16410"></rect></g>
+  <text x="134" y="64" dominant-baseline="central" font-family="&#39;Space Grotesk&#39;,Arial,sans-serif" font-size="64" font-weight="700" letter-spacing="-1" fill="#FFFFFF">ESPM<tspan fill="#F16410">+</tspan></text>
+</svg>

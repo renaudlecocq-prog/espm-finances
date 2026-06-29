@@ -1,3 +1,10 @@
+## [v1.20.25] — Charte graphique SchoolPlus ESPM+
+- Icônes PWA remplacées par les officielles de la charte (toque + fond aubergine)
+- Favicons navigateur : favicon-16.png + favicon-32.png + favicon.svg officiels
+- Couleur accent : #B89AAB → #F16410 (orange SchoolPlus) dans tailwind.config.js
+- Police Space Grotesk (Google Fonts 600/700) chargée pour le logo sidebar
+- Sidebar : logo ESPM+ redesigné — icône carrée arrondie + "ESPM+" en Space Grotesk bold, "+" en orange #F16410
+
 ## [v1.20.24] — PWA Phase 1 : site installable sur iOS et Android
 - Installation de vite-plugin-pwa (v1.3.0) avec Workbox generateSW
 - Manifest complet : nom "ESPM+", theme_color #2D1B2E, mode standalone, lang fr
