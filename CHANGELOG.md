@@ -2572,3 +2572,9 @@ git push origin main
 - carte-etudiant-pdf : GET → POST avec body JSON (IDs en body, pas en query string)
 - Generateur.jsx : fetch blob + download automatique au lieu de window.open
 - Limite portée à 700 élèves par génération
+
+## [v1.20.45] — Générateur : sélection forcée par classe
+- La sélection d'élèves est désormais bloquée tant qu'aucune classe n'est choisie
+- Message explicatif + état vide illustré quand aucune classe n'est sélectionnée
+- La sélection est réinitialisée automatiquement au changement de classe
+- Nom du PDF inclut le nom de la classe (ex: cartes-1A.pdf)
