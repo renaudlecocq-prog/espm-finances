@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react'
 
-const MOBILE_BREAKPOINT = 768
-
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT
-  )
+  // Commence à false, se met à jour dès le premier effet
+  // Évite les problèmes d'initialisation du viewport PWA
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const mq = window.matchMedia('(max-width: 767px)')
+    setIsMobile(mq.matches)
     const handler = (e) => setIsMobile(e.matches)
     mq.addEventListener('change', handler)
-    setIsMobile(mq.matches)
     return () => mq.removeEventListener('change', handler)
   }, [])
 

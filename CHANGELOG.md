@@ -2592,3 +2592,8 @@ git push origin main
 - Compositions, Générateur, Module Économe : page "non disponible sur mobile"
 - Activités : lecture seule sur mobile (boutons +Activité et Rapport PDF masqués)
 - Salle des profs : grille adaptée en 1 colonne, kanban avec scroll horizontal natif et touch scrolling iOS
+
+## [v1.20.48] — Fix mobile : CSS media queries pures pour la navigation
+- Layout.jsx : utilise Tailwind hidden/md:flex au lieu du hook JS pour masquer/montrer Sidebar et MobileNav
+- Corrige l'affichage sur les PWA (Brave) où window.innerWidth peut être incorrect au démarrage
+- useIsMobile : initialisation à false + useEffect, évite les problèmes de timing viewport PWA
