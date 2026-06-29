@@ -1,3 +1,61 @@
+## [v1.20.41] — Debug sync : raw sample getUserDetailsByNumber dans sync_log
+
+- Stocke le raw object du premier utilisateur dans sync_log.details pour identifier le vrai nom du champ barcodevalue
+
+## [v1.20.40] — Sync : barcodevalue via getUserDetailsByNumber
+
+- FIX valeur_scanner (QR carte étudiant) : getAllAccountsExtended ne retourne pas le barcodevalue
+- Ajout appels getUserDetailsByNumber (lots de 20 parallèles) pour récupérer le barcodevalue de chaque élève
+- valeur_scanner = UUID Smartschool exclusivement (plus de fallback sur internal_number)
+- Debug : _debug_getUserDetailsByNumber_keys dans la réponse sync pour identifier les noms de champs
+
+## [v1.20.39] — Cartes etudiant : PDF binaire pages 69.8x54mm
+
+- Remplace HTML+window.print() par un vrai PDF binaire (pdf-lib)
+- Pages exactement 197.9x153.1pt (69.8x54mm) — compatibles Dymo LabelWriter
+- QR code genere via matrice pure JS (qrcode.create, sans canvas)
+- QR lit valeur_scanner (UUID Smartschool) ; fallback smartschool_internal_number
+- Recto : logo mono, annee scolaire, photo, champs 2x2, cases Sortie/Licenciements
+- Verso : QR centre + matricule + bandeau ESPM+
+- Ajout dependances pdf-lib + qrcode dans package.json
+
+## [v1.20.38] — Générateur : 3 correctifs
+
+- FIX auth "Non autorisé" dans carte-etudiant-pdf.mjs (pattern createClient + getUser(token))
+- FIX sync Smartschool : champ "Licenciements" (pluriel) ajouté en priorité
+- UX Générateur : recherche + filtre classe déplacés dans le PageHeader (cohérent avec les autres pages)
+- Bouton "Imprimer les cartes" dans le PageHeader avec compteur pages intégré
+
+## [v1.20.37] — Générateur de documents · Carte d'étudiant
+
+- **Nouvelle section "Administration"** dans la sidebar (même niveau que Vie de l'école et Financier)
+- **Page Générateur** : liste des documents disponibles, sélection multi-élèves avec filtres (classe, recherche)
+- **Carte d'étudiant** : génération PDF imprimable au format Dymo LabelWriter 69,8 × 54 mm
+  - Recto : logo mono, année scolaire, photo, nom/prénom, année d'étude, matricule, cases Sortie à midi + Licenciements
+  - Verso : QR code (valeur_scanner) + matricule + bandeau ESPM+
+  - 2 pages par élève (recto + verso) — compatible imprimante thermique monochrome
+- **Migration DB** : colonnes `sortie_midi` (boolean), `licenciement` (boolean), `valeur_scanner` (text) sur la table `eleves`
+- **Sync Smartschool** : extraction de `sortie_midi`, `licenciement`, `valeur_scanner` depuis les champs profil Smartschool
+- **Logo mono** copié dans `public/` pour la génération des cartes
+- Permissions : nouvelle feature `generateur` dans `permissions.js`
+
+## [v1.20.36] — Fix aperçu Responsable : fratries visibles
+- HomeResponsable (aperçu admin) : le sélecteur d'élève charge maintenant aussi les fratries liées — les deux onglets Lina + Ismaël apparaissent ensemble
+
+## [v1.20.35] — Financier Responsable complet + Fratrie
+- HomeResponsable : onglet Financier affiche la liste complète des factures (cliquables PDF) et paiements, comme FicheEleve
+- HomeResponsable : pastille ● sur l'onglet Financier si solde négatif ou mouvements présents
+- HomeResponsable : chargement des fratries — un responsable lié à Lina voit aussi Ismaël si liés
+- FicheEleve : section Fratrie / Famille liée dans l'onglet Infos (admin/direction) — recherche, ajout et suppression de liens
+- Migration Supabase : table eleve_fraterie avec lien bidirectionnel entre élèves
+
+## [v1.20.34] — Retrait dark mode, onglet Préférences, sélecteur élève aperçu Responsable
+- ThemeContext.jsx : toujours en mode clair (dark mode désactivé)
+- Profile.jsx : suppression onglet Préférences + toggle thème + import Palette/Home
+- App.jsx : sélecteur d'élève dans la bannière aperçu Responsable
+- AuthContext.jsx : ajout previewEleveId / setPreviewEleveId
+- Home.jsx : HomeResponsable utilise previewEleveId si défini (aperçu admin)
+
 ## [v1.20.33] — FIX Service Worker PWA interceptait les URLs Netlify Functions
 - vite.config.js : ajout navigateFallbackDenylist pour exclure /.netlify/* du SW
 - Cause racine : le SW PWA (installé en v1.20.25) interceptait toutes les navigations
@@ -2495,3 +2553,9 @@ git push origin main
 - FIX : boutons PDF ne s'ouvraient pas sous Brave/Chrome — `window.open()` après `await` était bloqué comme popup. Fix : ouverture synchrone + navigation asynchrone (Factures, FicheEleve, Econome)
 - ADD : toast de feedback après chaque validation de facture — affiche si Smartschool a envoyé ou non
 - Note sécurité : SMARTSCHOOL_TEST_RECIPIENT=175076 confirmé sur production (all contexts) — aucun message ne part aux parents
+
+## [v1.20.42] — Fix scannableCode QR + optimisation sync barcodes
+- Champ UUID corrigé : `scannableCode` (et non `barcodevalue`) dans getUserDetailsByNumber
+- Ne fetche getUserDetailsByNumber QUE pour les élèves sans valeur_scanner en DB (évite timeout sur 670 appels)
+- Ne jamais écraser un valeur_scanner existant avec null lors d'un sync suivant
+- Suppression du debug raw sample dans sync_log (plus nécessaire)

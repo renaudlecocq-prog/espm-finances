@@ -91,6 +91,10 @@ export default function FicheEleve({ eleveId, onClose }) {
 
 
   const [activeTab, setActiveTab] = useState('info')
+  const [fraterie, setFraterie]   = useState([])       // élèves liés
+  const [fraterieSearch, setFraterieSearch] = useState('')
+  const [fraterieAll, setFraterieAll]       = useState([])  // tous les élèves pour sélection
+  const [fraterieLoading, setFraterieLoading] = useState(false)
 
   const load = useCallback(async () => {
     if (!eleveId) return
@@ -140,6 +144,21 @@ export default function FicheEleve({ eleveId, onClose }) {
         factures: facsRes?.data || [],
         paiements: paiesRes?.data || [],
       })
+    }
+    // Fraterie
+    if (canSeeRestricted) {
+      supabase.from('eleve_fraterie')
+        .select('eleve_id_1, eleve_id_2')
+        .or(`eleve_id_1.eq.${eleveId},eleve_id_2.eq.${eleveId}`)
+        .then(({ data }) => {
+          if (!data) return
+          const siblingsIds = data.map(r => r.eleve_id_1 === eleveId ? r.eleve_id_2 : r.eleve_id_1)
+          if (siblingsIds.length === 0) { setFraterie([]); return }
+          supabase.from('eleves').select('id, prenom, nom, classe').in('id', siblingsIds)
+            .then(({ data: eleves }) => setFraterie(eleves || []))
+        })
+      supabase.from('eleves').select('id, prenom, nom, classe').order('nom')
+        .then(({ data }) => setFraterieAll((data || []).filter(e => e.id !== eleveId)))
     }
     setLoading(false)
   }, [eleveId, canSeeRestricted])
@@ -349,6 +368,74 @@ export default function FicheEleve({ eleveId, onClose }) {
                   ))}
                 </Section>
               )}
+
+              {/* ── Fraterie ── */}
+              {canSeeRestricted && (() => {
+                const filtered = fraterieAll.filter(e =>
+                  !fraterie.some(s => s.id === e.id) &&
+                  `${e.prenom} ${e.nom} ${e.classe || ''}`.toLowerCase().includes(fraterieSearch.toLowerCase())
+                )
+                const addSibling = async (sibling) => {
+                  setFraterieLoading(true)
+                  // Insert both directions to keep constraint satisfied (unique pair)
+                  const pair = [eleveId, sibling.id].sort()
+                  await supabase.from('eleve_fraterie').upsert({ eleve_id_1: pair[0], eleve_id_2: pair[1] }, { onConflict: 'eleve_id_1,eleve_id_2' })
+                  setFraterie(prev => [...prev, sibling])
+                  setFraterieSearch('')
+                  setFraterieLoading(false)
+                }
+                const removeSibling = async (sibling) => {
+                  setFraterieLoading(true)
+                  const pair = [eleveId, sibling.id].sort()
+                  await supabase.from('eleve_fraterie')
+                    .delete()
+                    .eq('eleve_id_1', pair[0]).eq('eleve_id_2', pair[1])
+                  setFraterie(prev => prev.filter(s => s.id !== sibling.id))
+                  setFraterieLoading(false)
+                }
+                return (
+                  <Section icon="👨‍👩‍👧‍👦" title="Fratrie / Famille liée">
+                    {fraterie.length > 0 && (
+                      <div className="space-y-1.5 mb-3">
+                        {fraterie.map(s => (
+                          <div key={s.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{s.prenom} {s.nom}</span>
+                            <div className="flex items-center gap-2">
+                              {s.classe && <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{s.classe}</span>}
+                              <button onClick={() => removeSibling(s)} title="Retirer le lien" className="text-gray-400 hover:text-red-500 transition-colors text-sm">✕</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={fraterieSearch}
+                        onChange={e => setFraterieSearch(e.target.value)}
+                        placeholder="Rechercher un élève à lier…"
+                        className="input text-sm w-full pr-8"
+                      />
+                      {fraterieLoading && <span className="absolute right-2 top-2 text-gray-400 text-xs">…</span>}
+                    </div>
+                    {fraterieSearch.length >= 1 && (
+                      <div className="mt-1 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-40 overflow-y-auto">
+                        {filtered.slice(0, 10).map(e => (
+                          <button key={e.id} onClick={() => addSibling(e)}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-primary/5 dark:hover:bg-primary/10 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 last:border-0">
+                            <span className="font-medium text-gray-700 dark:text-gray-200">{e.prenom} {e.nom}</span>
+                            {e.classe && <span className="text-xs text-gray-400">{e.classe}</span>}
+                          </button>
+                        ))}
+                        {filtered.length === 0 && <p className="px-3 py-2 text-xs text-gray-400 italic">Aucun résultat</p>}
+                      </div>
+                    )}
+                    {fraterie.length === 0 && fraterieSearch.length === 0 && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 italic mt-1">Aucun élève lié. Recherchez un élève ci-dessus pour créer un lien familial.</p>
+                    )}
+                  </Section>
+                )
+              })()}
             </>)}
 
             {/* ══ TAB 2 : Appels ═══════════════════════════════════════ */}

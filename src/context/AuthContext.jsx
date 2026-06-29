@@ -10,6 +10,7 @@ export function AuthProvider({ children }) {
   const [role,        setRole]        = useState(null)
   const [loading,     setLoading]     = useState(true)
   const [viewAsRole,  setViewAsRole]  = useState(null)
+  const [previewEleveId, setPreviewEleveId] = useState(null)
   const [token,        setToken]        = useState(null)
   const [permissions,        setPermissions]        = useState({})   // { feature: boolean }
   const [previewPermissions, setPreviewPermissions] = useState({})   // permissions du rôle aperçu
@@ -151,6 +152,7 @@ export function AuthProvider({ children }) {
       can,
       viewAsRole, setViewAsRole, effectiveRole,
       previewRole: viewAsRole, setPreviewRole: setViewAsRole,
+      previewEleveId, setPreviewEleveId,
       signIn: (e, p) => supabase.auth.signInWithPassword({ email: e, password: p }).then(({ error }) => error)
     }}>
       {children}

@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { supabase } from './lib/supabase'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { DemoProvider, useDemo } from './context/DemoContext'
 import { SettingsProvider, useSettings } from './contexts/SettingsContext'
@@ -22,6 +24,7 @@ import Compositions from './pages/Compositions'
 import ConseilsDeGuidance from './pages/ConseilsDeGuidance'
 import HelpdeskDetail from './pages/HelpdeskDetail'
 import MentionsLegales from './pages/MentionsLegales'
+import Generateur from './pages/Generateur'
 import Profile from './pages/Profile'
 
 function RequireAuth({ children, require = 'user', feature = null }) {
@@ -47,9 +50,22 @@ const DEMO_ROLES = [
 ]
 
 function Layout({ children }) {
-  const { previewRole, setPreviewRole, role } = useAuth()
+  const { previewRole, setPreviewRole, role, previewEleveId, setPreviewEleveId } = useAuth()
   const { demoMode, toggleDemo } = useDemo()
   const { s } = useSettings()
+  const [allEleves, setAllEleves] = useState([])
+
+  // Charger les élèves quand on passe en aperçu Responsable
+  useEffect(() => {
+    if (previewRole === 'responsable' && allEleves.length === 0) {
+      supabase.from('eleves').select('id, prenom, nom, classe').order('nom').then(({ data }) => {
+        setAllEleves(data || [])
+        // Sélectionner le premier par défaut
+        if (!previewEleveId && data && data.length > 0) setPreviewEleveId(data[0].id)
+      })
+    }
+    if (!previewRole) { setPreviewEleveId(null) }
+  }, [previewRole])
 
   return (
     <div className="flex h-screen bg-surface dark:bg-gray-950 overflow-hidden">
@@ -104,15 +120,28 @@ function Layout({ children }) {
 
       {/* ── Bannière aperçu de rôle (hors mode démo) ── */}
       {previewRole && !demoMode && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-orange-500 text-white px-4 py-2.5 flex items-center justify-between text-sm shadow-[0_-4px_12px_rgba(0,0,0,0.15)]">
-          <span className="flex items-center gap-2">
-            <span>👁</span>
-            <span>Aperçu en tant que <strong>
-              {{ direction: 'Direction', mdp: 'Membre du personnel', responsable: 'Responsable' }[previewRole] || previewRole}
-            </strong> — les menus et accès reflètent ce rôle</span>
-          </span>
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-orange-500 text-white px-4 py-2.5 flex items-center gap-3 text-sm shadow-[0_-4px_12px_rgba(0,0,0,0.15)]">
+          <span>👁</span>
+          <span className="shrink-0">Aperçu en tant que <strong>
+            {{ direction: 'Direction', mdp: 'Membre du personnel', responsable: 'Responsable' }[previewRole] || previewRole}
+          </strong></span>
+          {previewRole === 'responsable' && allEleves.length > 0 && (
+            <select
+              value={previewEleveId || ''}
+              onChange={e => setPreviewEleveId(e.target.value)}
+              className="bg-white/20 text-white text-xs font-semibold rounded-lg px-2 py-1 border border-white/30 focus:outline-none max-w-[200px]"
+            >
+              {allEleves.map(e => (
+                <option key={e.id} value={e.id} style={{ color: '#333' }}>
+                  {e.prenom} {e.nom}{e.classe ? ` — ${e.classe}` : ''}
+                </option>
+              ))}
+            </select>
+          )}
+          <span className="text-white/70 text-xs hidden sm:inline">— les menus et accès reflètent ce rôle</span>
+          <div className="flex-1" />
           <button onClick={() => setPreviewRole(null)}
-            className="bg-white dark:bg-gray-800 text-orange-600 dark:text-orange-400 font-semibold px-3 py-1 rounded-lg text-xs hover:bg-orange-50 transition-colors ml-4 shrink-0">
+            className="bg-white text-orange-600 font-semibold px-3 py-1 rounded-lg text-xs hover:bg-orange-50 transition-colors shrink-0">
             Quitter l'aperçu
           </button>
         </div>
@@ -142,6 +171,7 @@ function AppRoutes() {
       <Route path="/echelonnements" element={<Navigate to="/suivi-social" replace />} />
       <Route path="/organismes" element={<Navigate to="/suivi-social" replace />} />
       <Route path="/admin" element={<RequireAuth require="admin"><Layout><Admin /></Layout></RequireAuth>} />
+      <Route path="/generateur" element={<RequireAuth feature="generateur"><Layout><Generateur /></Layout></RequireAuth>} />
       <Route path="/helpdesk" element={<RequireAuth require="mdp" feature={['helpdesk','helpdesk_admin']}><Layout><Helpdesk /></Layout></RequireAuth>} />
       <Route path="/helpdesk/:id" element={<RequireAuth require="mdp" feature={['helpdesk','helpdesk_admin']}><Layout><HelpdeskDetail /></Layout></RequireAuth>} />
       <Route path="/salle-des-profs" element={<RequireAuth require="mdp" feature="salle_profs"><Layout><SalleDProfs /></Layout></RequireAuth>} />

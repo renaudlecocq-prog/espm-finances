@@ -23,6 +23,7 @@ export const FEATURES = [
   { key: 'notes_eleves',     label: 'Notes élèves — voir & écrire', group: 'Pédagogie',  desc: 'Accès à l\'onglet Notes : voir toutes les notes, créer et modifier ses propres notes' },
   { key: 'notes_manage_all', label: 'Notes élèves — gérer toutes',  group: 'Pédagogie',  desc: 'Modifier et supprimer les notes des autres utilisateurs' },
   { key: 'administration',  label: 'Administration',             group: 'Système',    desc: 'Panneau admin — utilisateurs, droits, synchronisation Smartschool' },
+  { key: 'generateur',      label: 'Générateur de documents',    group: 'Outils',     desc: "Génération de cartes d'étudiant et autres documents imprimables" },
 ]
 
 export const FEATURE_KEYS = FEATURES.map(f => f.key)
