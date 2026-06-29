@@ -6,6 +6,8 @@ import { DemoProvider, useDemo } from './context/DemoContext'
 import { SettingsProvider, useSettings } from './contexts/SettingsContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import Sidebar from './components/layout/Sidebar'
+import MobileNav from './components/layout/MobileNav'
+import { isMobileDevice, setLayoutMode } from './lib/isMobile'
 import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
 import Home from './pages/Home'
@@ -50,6 +52,23 @@ const DEMO_ROLES = [
   { key: 'responsable', label: 'Responsable' },
 ]
 
+function LayoutToggle() {
+  return (
+    <button
+      onClick={() => setLayoutMode(isMobileDevice ? 'desktop' : 'mobile')}
+      title={isMobileDevice ? 'Passer en mode desktop' : 'Passer en mode mobile'}
+      style={{
+        position: 'fixed', bottom: isMobileDevice ? 80 : 16, right: 12,
+        zIndex: 1000, background: '#2D1B2E', color: '#fff',
+        border: '2px solid #F16410', borderRadius: 20,
+        padding: '6px 12px', fontSize: 12, cursor: 'pointer', opacity: 0.85
+      }}
+    >
+      {isMobileDevice ? '💻 Desktop' : '📱 Mobile'}
+    </button>
+  )
+}
+
 function Layout({ children }) {
   const { previewRole, setPreviewRole, role, previewEleveId, setPreviewEleveId } = useAuth()
   const { demoMode, toggleDemo } = useDemo()
@@ -70,21 +89,24 @@ function Layout({ children }) {
 
   return (
     <div className="flex h-screen bg-surface dark:bg-gray-950 overflow-hidden">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {!isMobileDevice && <Sidebar />}
+      <div className={`flex-1 flex flex-col min-w-0 overflow-hidden`}>
         <main
           className="flex-1 min-h-0 overflow-y-auto"
           style={demoMode ? { paddingBottom: '3rem' } : {}}
         >
           {children}
         </main>
-        <footer className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center text-xs text-gray-400 dark:text-gray-500 shrink-0">
+        {!isMobileDevice && <footer className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center text-xs text-gray-400 dark:text-gray-500 shrink-0">
           <span>© 2026 {s('school_nom')} · v{__APP_VERSION__}</span>
           <Link to="/mentions-legales" className="hover:text-primary transition-colors">
             Mentions légales
           </Link>
-        </footer>
+        </footer>}
       </div>
+
+      {isMobileDevice && <MobileNav />}
+      <LayoutToggle />
 
       {/* ── Bannière mode démo (avec switcher de rôle) ── */}
       {demoMode && (

@@ -2635,3 +2635,8 @@ git push origin main
 - Layout.jsx : bouton 📱/💻 discret en bas à droite pour forcer le mode
 - setLayoutMode() : change le mode et recharge la page
 - Fallback automatique si aucun override défini
+
+## [v1.20.57] — Fix toggle mobile : bouton dans le bon Layout (App.jsx)
+- Le toggle 📱 Mobile / 💻 Desktop était dans src/components/layout/Layout.jsx qui n'est pas utilisé
+- Déplacé dans le Layout réel de src/App.jsx (celui utilisé par toutes les routes)
+- MobileNav et isMobileDevice branchés sur le bon composant
