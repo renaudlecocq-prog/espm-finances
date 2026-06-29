@@ -2578,3 +2578,9 @@ git push origin main
 - Message explicatif + état vide illustré quand aucune classe n'est sélectionnée
 - La sélection est réinitialisée automatiquement au changement de classe
 - Nom du PDF inclut le nom de la classe (ex: cartes-1A.pdf)
+
+## [v1.20.46] — PWA : icônes corrigées (any + maskable séparés)
+- Sépare les icônes PWA en deux entrées distinctes : `any` (iOS/coins arrondis) et `maskable` (Android/masque circulaire)
+- Génère icon-maskable-192.png et icon-maskable-512.png avec fond plein et symbole centré dans la safe zone
+- Corrige l'affichage de l'icône installée sur mobile (plus de distorsion du masque Android)
+- Met à jour apple-touch-icon.png à 180px précis
