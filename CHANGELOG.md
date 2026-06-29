@@ -1,3 +1,13 @@
+## [v1.20.39] — Cartes etudiant : PDF binaire pages 69.8x54mm
+
+- Remplace HTML+window.print() par un vrai PDF binaire (pdf-lib)
+- Pages exactement 197.9x153.1pt (69.8x54mm) — compatibles Dymo LabelWriter
+- QR code genere via matrice pure JS (qrcode.create, sans canvas)
+- QR lit valeur_scanner (UUID Smartschool) ; fallback smartschool_internal_number
+- Recto : logo mono, annee scolaire, photo, champs 2x2, cases Sortie/Licenciements
+- Verso : QR centre + matricule + bandeau ESPM+
+- Ajout dependances pdf-lib + qrcode dans package.json
+
 ## [v1.20.38] — Générateur : 3 correctifs
 
 - FIX auth "Non autorisé" dans carte-etudiant-pdf.mjs (pattern createClient + getUser(token))

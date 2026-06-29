@@ -1,107 +1,236 @@
 // carte-etudiant-pdf.mjs
-// GET /.netlify/functions/carte-etudiant-pdf?ids=UUID,UUID,...&token=SUPABASE_JWT
-// Retourne une page HTML auto-print avec les cartes d'étudiant (69.8 × 54 mm)
-// Format Dymo LabelWriter — monochrome — recto + verso par étudiant
+// GET /.netlify/functions/carte-etudiant-pdf?ids=UUID,...&token=JWT
+// Génère un PDF binaire avec pages exactement 69.8 × 54 mm (Dymo LabelWriter)
+// 2 pages par élève : recto (photo + champs + cases) + verso (QR + matricule)
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient }                    from '@supabase/supabase-js'
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import QRCode                               from 'qrcode'
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://iubxalsakqljilydnqss.supabase.co'
 const SUPABASE_SRK = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-function esc(s) {
-  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-}
+// ── Constantes géométriques ──────────────────────────────────────────────────
+// 1mm = 2.8346pt  — pages Dymo : 69.8mm × 54mm
+const PW  = 197.9   // 69.8mm en pt
+const PH  = 153.1   // 54mm en pt
+const MM  = 2.8346  // pt par mm
+const PAD = 9.6     // padding horizontal standard
 
+// Zones recto
+const HEADER_H = 34.6  // 12.2mm — logo + année
+const PERMS_H  = 31.0  // 10.9mm — sortie midi + licenciements
+const BODY_Y   = PERMS_H
+const BODY_H   = PH - HEADER_H - PERMS_H   // 87.5pt ≈ 30.9mm
+
+// Zone verso
+const BRAND_H  = 22.7  // 8mm — bandeau ESPM+
+const QR_SIZE  = 27 * MM  // 76.5pt
+
+// Couleurs
+const BLK  = rgb(0, 0, 0)
+const WHT  = rgb(1, 1, 1)
+const LGRY = rgb(0.94, 0.94, 0.94)
+const MGRY = rgb(0.42, 0.42, 0.42)
+
+// ── Utilitaires ──────────────────────────────────────────────────────────────
 function anneeScolaire() {
-  const now = new Date()
-  const m = now.getMonth() + 1
-  const y = now.getFullYear()
-  return m >= 8 ? `${y}-${y + 1}` : `${y - 1}-${y}`
+  const m = new Date().getMonth() + 1, y = new Date().getFullYear()
+  return m >= 8 ? `${y}-${y+1}` : `${y-1}-${y}`
 }
 
 function getAnneeEtude(classe) {
-  if (!classe) return '—'
-  const match = classe.match(/^(\d)/)
-  if (!match) return classe
-  const n = parseInt(match[1])
-  const suf = n === 1 ? 'ère' : 'ème'
-  return `${n}${suf} année`
+  if (!classe) return '-'
+  const n = parseInt((classe.match(/^(\d)/) || [])[1])
+  if (!n) return classe
+  return `${n}${n === 1 ? 'ere' : 'eme'} annee`
 }
 
-function renderRecto(e, annee, logoUrl) {
-  const sortieMidi = e.sortie_midi === true
-  const licencie   = e.licenciement === true
-  const hasSortie  = e.sortie_midi !== null && e.sortie_midi !== undefined
-  const hasLic     = e.licenciement !== null && e.licenciement !== undefined
-
-  const chkSortieOui = sortieMidi                ? 'check__box check__box--filled' : 'check__box'
-  const chkSortieNon = !sortieMidi && hasSortie  ? 'check__box check__box--filled' : 'check__box'
-  const chkLicOui    = licencie                  ? 'check__box check__box--filled' : 'check__box'
-  const chkLicNon    = !licencie  && hasLic      ? 'check__box check__box--filled' : 'check__box'
-
-  const photoHtml = e.photo_url
-    ? `<img src="${esc(e.photo_url)}" alt="Photo" crossorigin="anonymous">`
-    : `<span class="ph">Photo</span>`
-
-  return `<article class="card card--mono">
-  <div class="card__header">
-    <img class="card__logo" src="${esc(logoUrl)}" alt="ESPM">
-    <span class="card__annee">${esc(annee)}</span>
-  </div>
-  <div class="card__body">
-    <div class="card__photo">${photoHtml}</div>
-    <div class="card__fields">
-      <div class="field"><span class="field__label">Prénom</span><span class="field__value">${esc(e.prenom)}</span></div>
-      <div class="field"><span class="field__label">Nom</span><span class="field__value">${esc(e.nom)}</span></div>
-      <div class="field"><span class="field__label">Année</span><span class="field__value">${esc(getAnneeEtude(e.classe))}</span></div>
-      <div class="field"><span class="field__label">Matricule</span><span class="field__value field__value--mono">${esc(e.matricule || '—')}</span></div>
-    </div>
-  </div>
-  <div class="card__perms">
-    <div class="perm">
-      <span class="perm__label">Sortie à midi</span>
-      <div class="checks">
-        <span class="check"><span class="${chkSortieOui}"></span><span class="check__txt">Oui</span></span>
-        <span class="check"><span class="${chkSortieNon}"></span><span class="check__txt">Non</span></span>
-      </div>
-    </div>
-    <div class="perm">
-      <span class="perm__label">Licenciements</span>
-      <div class="checks">
-        <span class="check"><span class="${chkLicOui}"></span><span class="check__txt">Oui</span></span>
-        <span class="check"><span class="${chkLicNon}"></span><span class="check__txt">Non</span></span>
-      </div>
-    </div>
-  </div>
-</article>`
+// Supprimer les caractères hors WinAnsi (garde accents français standard)
+function safe(s) {
+  if (!s) return '-'
+  return String(s)
+    .replace(/’/g, "'").replace(/‘/g, "'")
+    .replace(/“|”/g, '"').replace(/–|—/g, '-')
+    .replace(/[^\x20-\xFF]/g, '?')
 }
 
-function renderVerso(e) {
-  const qrValue = e.valeur_scanner || e.smartschool_internal_number || e.matricule || e.id
-  return `<article class="card card--mono js-verso" data-qr="${esc(qrValue)}" data-mat="${esc(e.matricule || '')}">
-  <div class="card__verso">
-    <div class="card__qr js-qr"></div>
-    <div class="matricule">
-      <div class="matricule__label">Matricule</div>
-      <div class="matricule__value">${esc(e.matricule || '—')}</div>
-    </div>
-  </div>
-  <div class="brand">
-    <div class="brand__tile">
-      <svg viewBox="0 0 100 100">
-        <polygon points="32,50 68,50 61,68 39,68" fill="#fff"/>
-        <polygon points="16,44 50,28 84,44 50,60" fill="#fff"/>
-        <line x1="84" y1="44" x2="84" y2="60" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
-        <rect x="81" y="58" width="6" height="13" rx="1.5" fill="#fff"/>
-        <rect x="77.5" y="61.5" width="13" height="6" rx="1.5" fill="#fff"/>
-      </svg>
-    </div>
-    <span class="brand__word">ESPM+</span>
-    <span class="brand__school">École Secondaire<br>Plurielle Maritime</span>
-  </div>
-</article>`
+async function fetchBytes(url) {
+  try {
+    const r = await fetch(url)
+    if (!r.ok) return null
+    return new Uint8Array(await r.arrayBuffer())
+  } catch { return null }
 }
 
+// Dessin QR code via matrice pure JS (pas de canvas)
+function drawQR(page, value, x, y, size) {
+  const qr   = QRCode.create(String(value), { errorCorrectionLevel: 'M' })
+  const mods = qr.modules
+  const n    = mods.size
+  const cell = size / n
+
+  page.drawRectangle({ x, y, width: size, height: size, color: WHT })
+  for (let row = 0; row < n; row++) {
+    for (let col = 0; col < n; col++) {
+      if (mods.data[row * n + col]) {
+        page.drawRectangle({
+          x: x + col * cell,
+          y: y + (n - 1 - row) * cell,
+          width: cell + 0.1,
+          height: cell + 0.1,
+          color: BLK,
+        })
+      }
+    }
+  }
+}
+
+// ── Page RECTO ───────────────────────────────────────────────────────────────
+async function buildRecto(pdfDoc, e, annee, fb, fr) {
+  const page = pdfDoc.addPage([PW, PH])
+
+  // Fond blanc + bordure
+  page.drawRectangle({ x: 0, y: 0, width: PW, height: PH, color: WHT })
+  page.drawRectangle({ x: 0.4, y: 0.4, width: PW - 0.8, height: PH - 0.8,
+    borderColor: BLK, borderWidth: 0.85 })
+
+  // ── Header ─────────────────────────────────────────────────────────────────
+  const headerY = PH - HEADER_H
+  page.drawLine({ start: {x:0, y:headerY}, end: {x:PW, y:headerY}, thickness: 0.85, color: BLK })
+
+  // Logo
+  if (e._logo) {
+    try {
+      const img = await pdfDoc.embedPng(e._logo)
+      const h = 19.5, w = img.width * (h / img.height)
+      page.drawImage(img, { x: PAD, y: headerY + (HEADER_H - h) / 2, width: w, height: h })
+    } catch {}
+  }
+
+  // Année scolaire
+  const aw = fb.widthOfTextAtSize(annee, 6)
+  page.drawText(annee, { x: PW - PAD - aw, y: headerY + (HEADER_H - 6) / 2, size: 6, font: fb, color: MGRY })
+
+  // ── Zone permissions ───────────────────────────────────────────────────────
+  page.drawLine({ start: {x:0, y:PERMS_H}, end: {x:PW, y:PERMS_H}, thickness: 0.85, color: BLK })
+
+  function drawPerm(label, val, hasVal, px) {
+    page.drawText(label, { x: px, y: PERMS_H - 9.5, size: 4.5, font: fb, color: BLK })
+    const BOX = 5.4, CY = 3.2
+    // Oui
+    page.drawRectangle({ x: px, y: CY, width: BOX, height: BOX, borderColor: BLK, borderWidth: 0.85 })
+    if (hasVal && val === true)  page.drawRectangle({ x: px+1.1, y: CY+1.1, width: BOX-2.2, height: BOX-2.2, color: BLK })
+    page.drawText('Oui', { x: px + BOX + 2, y: CY + 0.5, size: 5.4, font: fb, color: BLK })
+    // Non
+    const nX = px + BOX + 14
+    page.drawRectangle({ x: nX, y: CY, width: BOX, height: BOX, borderColor: BLK, borderWidth: 0.85 })
+    if (hasVal && val === false) page.drawRectangle({ x: nX+1.1, y: CY+1.1, width: BOX-2.2, height: BOX-2.2, color: BLK })
+    page.drawText('Non', { x: nX + BOX + 2, y: CY + 0.5, size: 5.4, font: fb, color: BLK })
+  }
+
+  const hasSortie = e.sortie_midi !== null && e.sortie_midi !== undefined
+  const hasLic    = e.licenciement !== null && e.licenciement !== undefined
+  drawPerm('SORTIE A MIDI',  e.sortie_midi,  hasSortie, PAD)
+  drawPerm('LICENCIEMENTS',  e.licenciement, hasLic,    PW / 2 + 5)
+
+  // ── Photo ──────────────────────────────────────────────────────────────────
+  const PS = 22 * MM  // 62.4pt
+  const PX = PAD
+  const PY = BODY_Y + (BODY_H - PS) / 2
+
+  page.drawRectangle({ x: PX, y: PY, width: PS, height: PS, color: LGRY, borderColor: BLK, borderWidth: 0.85 })
+
+  if (e._photo) {
+    try {
+      let img
+      try { img = await pdfDoc.embedJpg(e._photo) } catch { img = await pdfDoc.embedPng(e._photo) }
+      const d = img.scaleToFit(PS - 1.6, PS - 1.6)
+      page.drawImage(img, {
+        x: PX + 0.8 + (PS - 1.6 - d.width) / 2,
+        y: PY + 0.8 + (PS - 1.6 - d.height) / 2,
+        width: d.width, height: d.height,
+      })
+    } catch {}
+  }
+
+  // ── Champs 2×2 ─────────────────────────────────────────────────────────────
+  const FX = PX + PS + 9.6
+  const FW = PW - FX - PAD
+  const CW = FW / 2
+  const CH = BODY_H / 2
+
+  const fields = [
+    { lbl: 'PRENOM',    val: safe(e.prenom) },
+    { lbl: 'NOM',       val: safe(e.nom) },
+    { lbl: 'ANNEE',     val: getAnneeEtude(e.classe) },
+    { lbl: 'MATRICULE', val: safe(e.matricule) },
+  ]
+
+  fields.forEach(({ lbl, val }, i) => {
+    const col = i % 2, row = Math.floor(i / 2)
+    const fx  = FX + col * CW
+    const fy  = BODY_Y + BODY_H - (row + 1) * CH
+
+    page.drawText(lbl, { x: fx, y: fy + CH * 0.62, size: 4.8, font: fb, color: BLK })
+
+    // Adapter la taille si le texte est trop long
+    let vSize = 9.5
+    let v = val
+    while (v.length > 1 && fb.widthOfTextAtSize(v, vSize) > CW - 3) {
+      vSize -= 0.5
+      if (vSize < 7) { v = v.slice(0, -1); vSize = 9.5 }
+    }
+    page.drawText(v, { x: fx, y: fy + CH * 0.2, size: vSize, font: fb, color: BLK })
+  })
+}
+
+// ── Page VERSO ───────────────────────────────────────────────────────────────
+async function buildVerso(pdfDoc, e, fb) {
+  const page = pdfDoc.addPage([PW, PH])
+
+  page.drawRectangle({ x: 0, y: 0, width: PW, height: PH, color: WHT })
+  page.drawRectangle({ x: 0.4, y: 0.4, width: PW - 0.8, height: PH - 0.8,
+    borderColor: BLK, borderWidth: 0.85 })
+
+  // ── Bandeau ESPM+ ──────────────────────────────────────────────────────────
+  page.drawLine({ start: {x:0, y:BRAND_H}, end: {x:PW, y:BRAND_H}, thickness: 0.85, color: BLK })
+
+  const TILE = 14.2, tX = PAD, tY = (BRAND_H - TILE) / 2
+  page.drawRectangle({ x: tX, y: tY, width: TILE, height: TILE, color: BLK })
+  page.drawText('E+', { x: tX + 1.8, y: tY + 4.5, size: 6.5, font: fb, color: WHT })
+  page.drawText('ESPM+', { x: tX + TILE + 4, y: tY + 4.5, size: 8.5, font: fb, color: BLK })
+
+  const s1 = 'ECOLE SECONDAIRE', s2 = 'PLURIELLE MARITIME'
+  const sw = Math.max(fb.widthOfTextAtSize(s1, 4.5), fb.widthOfTextAtSize(s2, 4.5))
+  page.drawText(s1, { x: PW - PAD - sw, y: tY + 9.5, size: 4.5, font: fb, color: BLK })
+  page.drawText(s2, { x: PW - PAD - sw, y: tY + 3.5, size: 4.5, font: fb, color: BLK })
+
+  // ── QR + matricule ─────────────────────────────────────────────────────────
+  // Layout (bas vers haut): mat_value(14pt) + gap(3) + mat_label(5pt) + gap(7) + QR(76.5pt)
+  const ZONE_H  = PH - BRAND_H
+  const TOTAL_H = 14 + 3 + 5 + 7 + QR_SIZE
+  const startY  = BRAND_H + (ZONE_H - TOTAL_H) / 2
+
+  // Valeur matricule
+  const matVal  = safe(e.matricule)
+  const matVSz  = 12
+  const matVW   = fb.widthOfTextAtSize(matVal, matVSz)
+  page.drawText(matVal, { x: (PW - matVW) / 2, y: startY, size: matVSz, font: fb, color: BLK })
+
+  // Label matricule
+  const matLbl  = 'MATRICULE'
+  const matLW   = fb.widthOfTextAtSize(matLbl, 5)
+  page.drawText(matLbl, { x: (PW - matLW) / 2, y: startY + 14 + 3, size: 5, font: fb, color: BLK })
+
+  // QR code — valeur depuis valeur_scanner, sinon smartschool_internal_number
+  const qrVal = e.valeur_scanner || e.smartschool_internal_number || e.matricule || e.id
+  const qrY   = startY + 14 + 3 + 5 + 7
+  const qrX   = (PW - QR_SIZE) / 2
+  drawQR(page, qrVal, qrX, qrY, QR_SIZE)
+}
+
+// ── Handler principal ─────────────────────────────────────────────────────────
 export default async function handler(req) {
   if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
 
@@ -109,190 +238,56 @@ export default async function handler(req) {
   const ids   = url.searchParams.get('ids')
   const token = url.searchParams.get('token')
 
-  if (!ids || !token) return new Response('Paramètres manquants', { status: 400 })
+  if (!ids || !token) return new Response('Parametres manquants', { status: 400 })
 
   const baseUrl = process.env.URL || `https://${req.headers.get('host')}`
 
-  // Authentifier via le token utilisateur (pattern identique aux autres fonctions PDF)
+  // Auth
   const sb = createClient(SUPABASE_URL, SUPABASE_SRK)
   const { data: { user }, error: authErr } = await sb.auth.getUser(token)
-  if (authErr || !user) return new Response('Non autorisé', { status: 401 })
-  const idList = ids.split(',').map(s => s.trim()).filter(Boolean).slice(0, 200)
+  if (authErr || !user) return new Response('Non autorise', { status: 401 })
 
+  // Données élèves
+  const idList = ids.split(',').map(s => s.trim()).filter(Boolean).slice(0, 200)
   const { data: eleves, error } = await sb.from('eleves')
     .select('id, nom, prenom, matricule, classe, photo_url, smartschool_internal_number, sortie_midi, licenciement, valeur_scanner')
-    .in('id', idList)
-    .order('nom').order('prenom')
+    .in('id', idList).order('nom').order('prenom')
 
-  if (error || !eleves) return new Response('Erreur lors du chargement des élèves', { status: 500 })
+  if (error || !eleves) return new Response('Erreur chargement eleves', { status: 500 })
 
-  const annee   = anneeScolaire()
-  const logoUrl = baseUrl + '/logo-ecole-mono.png'
+  // Logo (une seule fois)
+  const logoBytes = await fetchBytes(`${baseUrl}/logo-ecole-mono.png`)
 
-  const pages = eleves.map(e => renderRecto(e, annee, logoUrl) + '\n' + renderVerso(e)).join('\n')
-
-  const html = `<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="utf-8">
-<title>Cartes étudiants — ${annee}</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"><\/script>
-<style>
-  :root { --aubergine:#2D1B2E; --orange:#F16410; }
-  *{ box-sizing:border-box; margin:0; padding:0; }
-
-  @media screen {
-    body { background:#E8E5E7; padding:20px; display:flex; flex-wrap:wrap; gap:16px; }
-  }
-  @media print {
-    body { background:#fff; padding:0; margin:0; }
-    .card { page-break-after:always; }
-    .card:last-child { page-break-after:avoid; }
-  }
-  @page { size:69.8mm 54mm; margin:0; }
-
-  .card {
-    width:69.8mm; height:54mm;
-    border:0.3mm solid #000;
-    background:#fff; color:#000;
-    display:flex; flex-direction:column;
-    overflow:hidden;
-    font-family:'Space Grotesk', Arial, sans-serif;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact;
+  // Photos (par lots de 10)
+  for (let i = 0; i < eleves.length; i += 10) {
+    await Promise.all(eleves.slice(i, i + 10).map(async e => {
+      e._logo  = logoBytes
+      if (e.photo_url) e._photo = await fetchBytes(e.photo_url)
+    }))
   }
 
-  /* Header */
-  .card__header {
-    height:11mm; flex:none;
-    display:flex; align-items:center; justify-content:space-between;
-    padding:0 3.4mm;
-    border-bottom:0.35mm solid #000;
-  }
-  .card__logo { height:7mm; width:auto; display:block; }
-  .card__annee {
-    font-family:'Space Mono', monospace;
-    font-size:5pt; font-weight:700;
-    letter-spacing:.06em; color:#555;
+  // Génération PDF
+  const pdfDoc  = await PDFDocument.create()
+  pdfDoc.setTitle(`Cartes etudiants ${anneeScolaire()}`)
+  pdfDoc.setCreator('ESPM+')
+
+  const fb = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const fr = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const annee = anneeScolaire()
+
+  for (const e of eleves) {
+    await buildRecto(pdfDoc, e, annee, fb, fr)
+    await buildVerso(pdfDoc, e, fb)
   }
 
-  /* Corps */
-  .card__body {
-    flex:1; display:flex; align-items:center;
-    gap:3.4mm; padding:0 3.4mm;
-  }
-  .card__photo {
-    width:22mm; height:22mm; border-radius:50%;
-    border:0.4mm solid #000; flex:none;
-    display:flex; align-items:center; justify-content:center;
-    overflow:hidden; position:relative; background:#f5f5f5;
-  }
-  .card__photo .ph { font-size:5pt; letter-spacing:.12em; text-transform:uppercase; color:#999; }
-  .card__photo img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  const pdfBytes = await pdfDoc.save()
 
-  .card__fields {
-    flex:1; display:grid; grid-template-columns:1fr 1fr;
-    gap:2.4mm 3mm; align-content:center;
-  }
-  .field { display:flex; flex-direction:column; gap:0.5mm; min-width:0; }
-  .field__label {
-    font-weight:600; font-size:4.6pt;
-    letter-spacing:.11em; text-transform:uppercase;
-    line-height:1; color:#000;
-  }
-  .field__value { font-weight:700; font-size:9pt; line-height:1.02; color:#000; }
-  .field__value--mono { font-family:'Space Mono',monospace; font-size:8pt; letter-spacing:.02em; }
-
-  /* Autorisations */
-  .card__perms {
-    flex:none; display:flex; align-items:center;
-    justify-content:space-between; gap:2mm;
-    padding:2.2mm 3.4mm;
-    border-top:0.35mm solid #000;
-  }
-  .perm { display:flex; flex-direction:column; gap:1.1mm; }
-  .perm__label { font-weight:700; font-size:4.5pt; letter-spacing:.1em; text-transform:uppercase; color:#000; }
-  .checks { display:flex; align-items:center; gap:2.8mm; }
-  .check { display:inline-flex; align-items:center; gap:1mm; }
-  .check__box {
-    width:1.9mm; height:1.9mm;
-    border:0.3mm solid #000; border-radius:0.3mm;
-    background:transparent; flex:none;
-  }
-  .check__box--filled { background:#000; }
-  .check__txt { font-weight:700; font-size:5.4pt; color:#000; line-height:1; }
-
-  /* Verso */
-  .card__verso {
-    flex:1; display:flex; flex-direction:column;
-    align-items:center; justify-content:center;
-    padding:3mm 3.4mm 1mm;
-  }
-  .card__qr { width:27mm; height:27mm; flex:none; }
-  .card__qr img { width:100%; height:100%; display:block; }
-  .matricule { text-align:center; margin-top:2.2mm; }
-  .matricule__label {
-    font-weight:700; font-size:5pt;
-    letter-spacing:.2em; text-transform:uppercase;
-    line-height:1; color:#000;
-  }
-  .matricule__value {
-    font-family:'Space Mono',monospace;
-    font-weight:700; font-size:12pt;
-    letter-spacing:.07em; line-height:1; margin-top:1mm; color:#000;
-  }
-
-  /* Bandeau ESPM+ verso */
-  .brand {
-    flex:none; display:flex; align-items:center;
-    gap:1.4mm; padding:2.4mm 3.4mm;
-    border-top:0.35mm solid #000;
-  }
-  .brand__tile {
-    width:5mm; height:5mm; border-radius:1.2mm;
-    display:flex; align-items:center; justify-content:center;
-    flex:none; background:#000;
-  }
-  .brand__tile svg { width:72%; height:72%; }
-  .brand__word { font-weight:700; font-size:8pt; letter-spacing:-.01em; color:#000; }
-  .brand__school {
-    margin-left:auto; font-family:'Space Mono',monospace;
-    font-size:4.6pt; letter-spacing:.13em;
-    text-transform:uppercase; line-height:1.3;
-    text-align:right; color:#000;
-  }
-<\/style>
-<\/head>
-<body>
-${pages}
-<script>
-(function() {
-  function makeQR() {
-    if (!window.QRCode) { return setTimeout(makeQR, 100); }
-    document.querySelectorAll('.js-verso').forEach(function(verso) {
-      var val = verso.getAttribute('data-qr');
-      if (!val) return;
-      var box = verso.querySelector('.js-qr');
-      if (!box) return;
-      var tmp = document.createElement('div');
-      tmp.style.cssText = 'position:absolute;left:-9999px;top:0;';
-      document.body.appendChild(tmp);
-      new QRCode(tmp, { text: val, width: 540, height: 540, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M });
-      var cv = tmp.querySelector('canvas');
-      var data = cv ? cv.toDataURL('image/png') : ((tmp.querySelector('img') || {}).src);
-      document.body.removeChild(tmp);
-      if (data) { box.innerHTML = '<img src="' + data + '" alt="QR">'; }
-    });
-    setTimeout(function() { window.print(); }, 500);
-  }
-  document.addEventListener('DOMContentLoaded', makeQR);
-})();
-<\/script>
-<\/body>
-<\/html>`
-
-  return new Response(html, {
+  return new Response(pdfBytes, {
     status: 200,
-    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="cartes-etudiants-${annee}.pdf"`,
+      'Cache-Control': 'no-store',
+    },
   })
 }
