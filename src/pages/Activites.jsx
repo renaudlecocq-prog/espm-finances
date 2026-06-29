@@ -5,6 +5,7 @@ import Commentaires from '../components/ui/Commentaires'
 import { useAuth } from '../context/AuthContext'
 import { Search, X, FileText, Receipt, ChevronDown, Plus, Loader2, Trash2, CheckCheck, ChevronLeft } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const fmt = n => Number(n || 0).toFixed(2) + ' €'
 const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-BE') : '—'
@@ -2009,6 +2010,7 @@ function DocsModal({ row, categorie, onClose, onDocsChanged }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function Activites() {
+  const isMobile = useIsMobile()
   const { user, isAdmin, isFinancier, isMdp } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [data, setData]           = useState([])
@@ -2313,7 +2315,7 @@ export default function Activites() {
       searchPlaceholder="Rechercher par titre, staff, classe, groupe, élève…"
       info={`${displayed.length} résultat${displayed.length !== 1 ? 's' : ''}`}
       actions={
-        (isAdmin || isFinancier) || canCreate ? (
+        !isMobile && ((isAdmin || isFinancier) || canCreate) ? (
           <>
             {(isAdmin || isFinancier) && (
               <button onClick={generatePDF}

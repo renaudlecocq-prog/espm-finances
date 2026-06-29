@@ -1,3 +1,5 @@
+import { useIsMobile } from "../hooks/useIsMobile"
+import MobileUnavailable from "../components/layout/MobileUnavailable"
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -26,6 +28,8 @@ function CardIcon() {
 
 // ── Composant principal ───────────────────────────────────────────────────────
 export default function Generateur() {
+  const isMobile = useIsMobile()
+  if (isMobile) return <MobileUnavailable pageName="Générateur de documents" />
   const { token } = useAuth()
 
   const [eleves, setEleves]             = useState([])

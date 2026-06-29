@@ -2584,3 +2584,11 @@ git push origin main
 - Génère icon-maskable-192.png et icon-maskable-512.png avec fond plein et symbole centré dans la safe zone
 - Corrige l'affichage de l'icône installée sur mobile (plus de distorsion du masque Android)
 - Met à jour apple-touch-icon.png à 180px précis
+
+## [v1.20.47] — Version mobile : barre de navigation basse
+- Barre de navigation fixe en bas de l'écran sur mobile (< 768px) : Accueil, Élèves, Helpdesk, Salle des profs, + Plus
+- Tiroir "Plus" (slide-up) pour accéder aux autres pages : Activités, Paiements, Factures, Suivi social, Guidance, Articles, Profil
+- Sidebar masquée sur mobile, padding bottom automatique pour éviter la superposition
+- Compositions, Générateur, Module Économe : page "non disponible sur mobile"
+- Activités : lecture seule sur mobile (boutons +Activité et Rapport PDF masqués)
+- Salle des profs : grille adaptée en 1 colonne, kanban avec scroll horizontal natif et touch scrolling iOS

@@ -1,3 +1,5 @@
+import { useIsMobile } from "../hooks/useIsMobile"
+import MobileUnavailable from "../components/layout/MobileUnavailable"
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -839,6 +841,8 @@ const TABS = [
 ]
 
 export default function Econome() {
+  const isMobile = useIsMobile()
+  if (isMobile) return <MobileUnavailable pageName="Module Économe" />
   const { isAdmin } = useAuth()
   const [activeTab, setActiveTab] = useState('fonctionnement')
   const [natures, setNatures] = useState([])
