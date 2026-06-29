@@ -24,6 +24,7 @@ import Compositions from './pages/Compositions'
 import ConseilsDeGuidance from './pages/ConseilsDeGuidance'
 import HelpdeskDetail from './pages/HelpdeskDetail'
 import MentionsLegales from './pages/MentionsLegales'
+import Generateur from './pages/Generateur'
 import Profile from './pages/Profile'
 
 function RequireAuth({ children, require = 'user', feature = null }) {
@@ -170,6 +171,7 @@ function AppRoutes() {
       <Route path="/echelonnements" element={<Navigate to="/suivi-social" replace />} />
       <Route path="/organismes" element={<Navigate to="/suivi-social" replace />} />
       <Route path="/admin" element={<RequireAuth require="admin"><Layout><Admin /></Layout></RequireAuth>} />
+      <Route path="/generateur" element={<RequireAuth feature="generateur"><Layout><Generateur /></Layout></RequireAuth>} />
       <Route path="/helpdesk" element={<RequireAuth require="mdp" feature={['helpdesk','helpdesk_admin']}><Layout><Helpdesk /></Layout></RequireAuth>} />
       <Route path="/helpdesk/:id" element={<RequireAuth require="mdp" feature={['helpdesk','helpdesk_admin']}><Layout><HelpdeskDetail /></Layout></RequireAuth>} />
       <Route path="/salle-des-profs" element={<RequireAuth require="mdp" feature="salle_profs"><Layout><SalleDProfs /></Layout></RequireAuth>} />

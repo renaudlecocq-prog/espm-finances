@@ -1,3 +1,16 @@
+## [v1.20.37] — Générateur de documents · Carte d'étudiant
+
+- **Nouvelle section "Administration"** dans la sidebar (même niveau que Vie de l'école et Financier)
+- **Page Générateur** : liste des documents disponibles, sélection multi-élèves avec filtres (classe, recherche)
+- **Carte d'étudiant** : génération PDF imprimable au format Dymo LabelWriter 69,8 × 54 mm
+  - Recto : logo mono, année scolaire, photo, nom/prénom, année d'étude, matricule, cases Sortie à midi + Licenciements
+  - Verso : QR code (valeur_scanner) + matricule + bandeau ESPM+
+  - 2 pages par élève (recto + verso) — compatible imprimante thermique monochrome
+- **Migration DB** : colonnes `sortie_midi` (boolean), `licenciement` (boolean), `valeur_scanner` (text) sur la table `eleves`
+- **Sync Smartschool** : extraction de `sortie_midi`, `licenciement`, `valeur_scanner` depuis les champs profil Smartschool
+- **Logo mono** copié dans `public/` pour la génération des cartes
+- Permissions : nouvelle feature `generateur` dans `permissions.js`
+
 ## [v1.20.36] — Fix aperçu Responsable : fratries visibles
 - HomeResponsable (aperçu admin) : le sélecteur d'élève charge maintenant aussi les fratries liées — les deux onglets Lina + Ismaël apparaissent ensemble
 

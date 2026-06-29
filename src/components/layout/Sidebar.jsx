@@ -96,6 +96,16 @@ const ICONS = {
     <path d="M1 10h22"/>
     <circle cx="17" cy="15" r="1.5" fill="currentColor" stroke="none"/>
   </>),
+  admin_tools: (<>
+    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+    <path d="M2 17l10 5 10-5"/>
+    <path d="M2 12l10 5 10-5"/>
+  </>),
+  generateur: (<>
+    <rect x="3" y="3" width="18" height="18" rx="2"/>
+    <path d="M9 9h6M9 13h6M9 17h4"/>
+    <path d="M3 7h18"/>
+  </>),
 }
 
 function SvgIcon({ name, size = 18 }) {
@@ -154,6 +164,14 @@ function buildGroups(can, isAdmin) {
         { to: '/paiements',        label: 'Paiements',    icon: 'paiements', show: can('paiements') },
         { to: '/soldes',           label: 'Soldes',       icon: 'soldes',    show: can('soldes') },
         { to: '/suivi-social', label: 'Suivi social', icon: 'social',    show: can('suivi_social') },
+      ],
+    },
+    {
+      key: 'admin_tools',
+      label: 'Administration',
+      icon: 'admin_tools',
+      items: [
+        { to: '/generateur', label: 'Générateur', icon: 'generateur', show: can('generateur') || isAdmin },
       ],
     },
   ]

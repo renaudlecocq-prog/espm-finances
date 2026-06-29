@@ -176,8 +176,22 @@ export default async function handler(req) {
       const geslacht = String(a.geslacht || a.sex || "").trim().toLowerCase()
       const sexe = geslacht === "m" ? "M" : geslacht === "v" || geslacht === "f" ? "F" : geslacht === "x" ? "X" : null
 
+      // Sortie à midi, Licenciement, Valeur à scanner (carte d'étudiant)
+      const sortie_raw = a['Sortie à midi'] ?? a['sortie_midi'] ?? null
+      const sortie_midi = sortie_raw === true ? true : sortie_raw === false ? false
+        : typeof sortie_raw === 'string' ? (sortie_raw.trim().toLowerCase() === 'oui' || sortie_raw.trim() === '1') : null
+      const lic_raw = a['Licenciement'] ?? a['licenciement'] ?? null
+      const licenciement = lic_raw === true ? true : lic_raw === false ? false
+        : typeof lic_raw === 'string' ? (lic_raw.trim().toLowerCase() === 'oui' || lic_raw.trim() === '1') : null
+      const valeur_scanner = String(
+        a["Valeur à scanner afin d'identifier l'élève"] ??
+        a['Valeur à scanner'] ?? a['valeur_scanner'] ??
+        a['barcodevalue'] ?? a['barcodeValue'] ??
+        smartschool_internal_number ?? ''
+      ).trim() || null
+
       if (isEleve) {
-        elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, groupes_ss, amenagements_raisonnables, sexe, actif: true })
+        elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, groupes_ss, amenagements_raisonnables, sexe, sortie_midi, licenciement, valeur_scanner, actif: true })
       } else {
         personnelRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, actif: true })
       }
