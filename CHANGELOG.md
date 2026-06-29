@@ -2640,3 +2640,6 @@ git push origin main
 - Le toggle 📱 Mobile / 💻 Desktop était dans src/components/layout/Layout.jsx qui n'est pas utilisé
 - Déplacé dans le Layout réel de src/App.jsx (celui utilisé par toutes les routes)
 - MobileNav et isMobileDevice branchés sur le bon composant
+
+## [v1.20.58] — Supprimer Layout.jsx orphelin
+- src/components/layout/Layout.jsx supprimé (jamais importé, remplacé par Layout dans App.jsx)
