@@ -1,3 +1,10 @@
+## [v1.20.38] — Générateur : 3 correctifs
+
+- FIX auth "Non autorisé" dans carte-etudiant-pdf.mjs (pattern createClient + getUser(token))
+- FIX sync Smartschool : champ "Licenciements" (pluriel) ajouté en priorité
+- UX Générateur : recherche + filtre classe déplacés dans le PageHeader (cohérent avec les autres pages)
+- Bouton "Imprimer les cartes" dans le PageHeader avec compteur pages intégré
+
 ## [v1.20.37] — Générateur de documents · Carte d'étudiant
 
 - **Nouvelle section "Administration"** dans la sidebar (même niveau que Vie de l'école et Financier)

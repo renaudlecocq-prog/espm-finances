@@ -113,13 +113,10 @@ export default async function handler(req) {
 
   const baseUrl = process.env.URL || `https://${req.headers.get('host')}`
 
-  // Authentifier via le token utilisateur
-  const sbUser = createClient(SUPABASE_URL, token, { auth: { persistSession: false } })
-  const { data: { user }, error: authErr } = await sbUser.auth.getUser()
+  // Authentifier via le token utilisateur (pattern identique aux autres fonctions PDF)
+  const sb = createClient(SUPABASE_URL, SUPABASE_SRK)
+  const { data: { user }, error: authErr } = await sb.auth.getUser(token)
   if (authErr || !user) return new Response('Non autorisé', { status: 401 })
-
-  // Récupérer les données élèves
-  const sb = createClient(SUPABASE_URL, SUPABASE_SRK, { auth: { persistSession: false } })
   const idList = ids.split(',').map(s => s.trim()).filter(Boolean).slice(0, 200)
 
   const { data: eleves, error } = await sb.from('eleves')
