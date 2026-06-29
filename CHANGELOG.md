@@ -1,3 +1,6 @@
+## [v1.20.31] — FIX token manquant dans ListeBatches et DetailBatch
+- token absent du destructuring useAuth() dans 2 sous-composants → ReferenceError
+
 ## [v1.20.30] — FIX PDF : <a> tag au lieu de window.open
 - Remplacement définitif de tous les boutons PDF par des balises <a href target="_blank">
 - Chrome ne bloque jamais un vrai clic sur un lien, contrairement à window.open()

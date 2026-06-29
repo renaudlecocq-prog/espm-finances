@@ -505,7 +505,7 @@ function FacturationModal({ onClose, onDone }) {
 
 // ── Liste des batches (niveau 1) ──────────────────────────────────────────────
 function ListeBatches({ onNew, onSelect }) {
-  const { isFinancier } = useAuth()
+  const { isFinancier, token } = useAuth()
   const [batches, setBatches]     = useState([])
   const [loading, setLoading]         = useState(true)
   const [search, setSearch]           = useState('')
@@ -684,7 +684,7 @@ async function callNotify(type, data) {
 
 // ── Détail d'un batch (niveau 2) ──────────────────────────────────────────────
 function DetailBatch({ batchId, onSelectFacture, onBack }) {
-  const { isFinancier } = useAuth()
+  const { isFinancier, token } = useAuth()
   const [batch, setBatch]     = useState(null)
   const [factures, setFactures] = useState([])
   const [search, setSearch]   = useState('')
