@@ -2623,3 +2623,9 @@ git push origin main
 ## [v1.20.53] — Fix roleLabel Sidebar (mdp → Pédagogique)
 - Sidebar : mdp affiché "Pédagogique" au lieu de "MdP"
 - Ajout labels manquants : pedagogique, educatif, financier
+
+## [v1.20.54] — FIX CRITIQUE : PROTECTED_ROLES dans smartschool-callback
+- Bug : super_admin (et direction, educatif, pedagogique) non protégés contre l'écrasement Smartschool
+- Connexion via Smartschool OAuth réinitialisait le rôle au rôle Smartschool (ex: mdp)
+- Fix : PROTECTED_ROLES = ['super_admin', 'admin', 'direction', 'financier', 'educatif', 'pedagogique']
+- Rôle de Renaud Lecocq restauré manuellement en super_admin en base
