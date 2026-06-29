@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 export function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 1023px)')
+    const mq = window.matchMedia('(max-width: 1279px)')
     setIsMobile(mq.matches)
     const handler = (e) => setIsMobile(e.matches)
     mq.addEventListener('change', handler)

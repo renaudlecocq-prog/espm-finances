@@ -2602,3 +2602,8 @@ git push origin main
 - Layout: passage de md (768px) à lg (1024px) pour masquer la sidebar et afficher la barre mobile
 - useIsMobile: aligné sur (max-width: 1023px)
 - Corrige les appareils dont le viewport CSS dépasse 768px en mode PWA
+
+## [v1.20.50] — Breakpoint mobile xl (1280px) — compatibilité téléphone fold
+- Layout: passage à xl (1280px) pour couvrir les foldables (écran intérieur ~860px CSS)
+- useIsMobile: aligné sur (max-width: 1279px)
+- Seuls les desktops ≥ 1280px CSS affichent la sidebar
