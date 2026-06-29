@@ -224,6 +224,7 @@ export default async function handler(req) {
     const barcodeMap  = new Map()
     const studentNums = elevesRows.map(r => r.smartschool_internal_number).filter(Boolean)
     let debugUserDetailKeys = []
+    let debugRawSample = null  // raw object du premier élève pour debug
 
     for (let i = 0; i < studentNums.length; i += CONCURRENCY) {
       const batch = studentNums.slice(i, i + CONCURRENCY)
@@ -235,11 +236,16 @@ export default async function handler(req) {
           if (!d || typeof d !== 'object') return null
           const obj = Array.isArray(d) ? d[0] : d
           if (!obj) return null
-          // Debug keys pour le premier lot seulement
-          if (i === 0 && debugUserDetailKeys.length === 0) {
+          // Capturer le raw object du premier élève traité
+          if (debugRawSample === null) {
+            debugRawSample = obj
             debugUserDetailKeys = Object.keys(obj).sort()
           }
-          const bv = obj.barcodevalue || obj.barcodeValue || obj.barcode_value || obj.scancode || null
+          // Chercher le barcodevalue sous tous les noms possibles
+          const bv = obj.barcodevalue || obj.barcodeValue || obj.barcode_value || obj.scancode
+            || obj['barcodevalue'] || obj['Barcodevalue']
+            || (typeof obj.extrafields === 'object' && obj.extrafields?.barcodevalue)
+            || null
           return bv ? { num, bv } : null
         } catch { return null }
       }))
@@ -284,7 +290,11 @@ export default async function handler(req) {
       status:             'success',
       eleves_upserted:    elevesCount,
       personnel_upserted: personnelCount,
-      details:            `OK — ${elevesCount} élèves, ${personnelCount} personnel, ${barcodesFetched} barcodes`,
+      details:            JSON.stringify({
+        msg: `OK — ${elevesCount} élèves, ${personnelCount} personnel, ${barcodesFetched} barcodes`,
+        getUserDetailsByNumber_keys: debugUserDetailKeys,
+        sample_raw: debugRawSample,
+      }),
     })
 
     // Debug : clés getAllAccountsExtended (premier élève) + getUserDetailsByNumber

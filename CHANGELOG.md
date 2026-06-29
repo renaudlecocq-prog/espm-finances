@@ -1,3 +1,7 @@
+## [v1.20.41] — Debug sync : raw sample getUserDetailsByNumber dans sync_log
+
+- Stocke le raw object du premier utilisateur dans sync_log.details pour identifier le vrai nom du champ barcodevalue
+
 ## [v1.20.40] — Sync : barcodevalue via getUserDetailsByNumber
 
 - FIX valeur_scanner (QR carte étudiant) : getAllAccountsExtended ne retourne pas le barcodevalue
