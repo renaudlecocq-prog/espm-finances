@@ -1318,16 +1318,13 @@ function BilanTab({ natures }) {
         <button onClick={load} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 dark:text-gray-500">
           <RefreshCw size={15} />
         </button>
-        <button
-          onClick={() => {
-            const t = token
-            if (!t) return
-            window.open(`${window.location.origin}/.netlify/functions/econome-bilan-pdf?annee=${annee}&token=${encodeURIComponent(t)}`, '_blank')
-          }}
+        <a
+          href={token ? `${window.location.origin}/.netlify/functions/econome-bilan-pdf?annee=${annee}&token=${encodeURIComponent(token)}` : '#'}
+          target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
         >
           <FileText size={13} /> PDF Bilan
-        </button>
+        </a>
         {/* Inner tabs */}
         <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1 ml-2">
           {[
@@ -1954,16 +1951,13 @@ function ProjetsTab() {
               className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 px-2 py-1.5 hover:bg-red-50 rounded-lg">
               <Trash2 size={13} /> Supprimer
             </button>
-            <button
-              onClick={() => {
-                const t = token
-                if (!t || !projetId) return
-                window.open(`${window.location.origin}/.netlify/functions/econome-projet-pdf?projetId=${projetId}&token=${encodeURIComponent(t)}`, '_blank')
-              }}
+            <a
+              href={token && projetId ? `${window.location.origin}/.netlify/functions/econome-projet-pdf?projetId=${projetId}&token=${encodeURIComponent(token)}` : '#'}
+              target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
             >
               <FileText size={13} /> PDF Projet
-            </button>
+            </a>
           </>
         )}
       </div>

@@ -870,10 +870,7 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
     setBusy(false)
   }
 
-  const handleBatchPDF = () => {
-    if (!token) return
-    window.open(`${window.location.origin}/.netlify/functions/factures-batch-pdf?batchId=${batchId}&token=${token}`, '_blank')
-  }
+
 
   const nbAttente  = factures.filter(f => f.statut === 'brouillon').length
   const nbValide   = factures.filter(f => f.statut === 'facture').length
@@ -906,11 +903,13 @@ function DetailBatch({ batchId, onSelectFacture, onBack }) {
         </button>
       )}
       {nbValide > 0 && (
-        <button onClick={handleBatchPDF}
+        <a
+          href={token ? `${window.location.origin}/.netlify/functions/factures-batch-pdf?batchId=${batchId}&token=${token}` : '#'}
+          target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors shrink-0"
           style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.80)' }}>
           🖨 PDF groupé ({nbValide})
-        </button>
+        </a>
 
       )}
     </>
@@ -1150,10 +1149,7 @@ function DetailFacture({ factureId, onBack }) {
     await load(); setSaving(false)
   }
 
-  const handlePDF = () => {
-    if (!token) return
-    window.open(`${window.location.origin}/.netlify/functions/facture-pdf?factureId=${factureId}&token=${token}`, '_blank')
-  }
+
 
   const removeLigne = async (ligne, putBack) => {
     await supabase.from('facture_lignes').delete().eq('id', ligne.id)
@@ -1219,7 +1215,7 @@ function DetailFacture({ factureId, onBack }) {
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase">Date</p>
               <p className="font-semibold text-gray-700 dark:text-gray-200">{fmtDate(facture.date)}</p>
             </div>
-            <button onClick={handlePDF} className="btn-secondary text-sm py-1.5 flex items-center gap-1.5">🖨 PDF</button>
+            <a href={token ? `${window.location.origin}/.netlify/functions/facture-pdf?factureId=${factureId}&token=${token}` : '#'} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm py-1.5 flex items-center gap-1.5">🖨 PDF</a>
           </div>
         </div>
         {isFinancier && (facture.statut === 'brouillon' || facture.statut === 'ignore') && (

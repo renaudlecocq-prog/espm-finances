@@ -1,3 +1,9 @@
+## [v1.20.30] — FIX PDF : <a> tag au lieu de window.open
+- Remplacement définitif de tous les boutons PDF par des balises <a href target="_blank">
+- Chrome ne bloque jamais un vrai clic sur un lien, contrairement à window.open()
+- Factures (individuelle + groupée), FicheEleve, Econome (Bilan + Projet)
+- Token pré-calculé depuis AuthContext, aucune opération async dans le clic
+
 ## [v1.20.29] — FIX PDF bouton synchrone via token AuthContext
 - `window.open` appelé après async brisait le contexte utilisateur Chrome → popup bloqué silencieusement
 - Fix : `token` stocké dans AuthContext (setToken à chaque session change), utilisé synchrone dans handlePDF
