@@ -93,7 +93,7 @@ export default function FicheEleve({ eleveId, onClose }) {
     const win = window.open('', '_blank')
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { win?.close(); return }
-      if (win) win.location.href = `/.netlify/functions/facture-pdf?factureId=${factureId}&token=${session.access_token}`
+      if (win) win.location.href = `${window.location.origin}/.netlify/functions/facture-pdf?factureId=${factureId}&token=${session.access_token}`
     })
   }
   const [activeTab, setActiveTab] = useState('info')

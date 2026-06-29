@@ -1,3 +1,17 @@
+## [v1.20.28] — FIX URL absolue pour les PDFs (popup Chrome)
+- PDF : `win.location.href` utilisait une URL relative qui dans une fenêtre `about:blank` se résolvait vers `/` → retour à l'accueil
+- Fix : utilisation de `window.location.origin` pour construire l'URL complète dans les 5 emplacements
+
+## [v1.20.27] — FIX PDF popup blocker + toast feedback Smartschool
+- PDF : `window.open()` appelé après `await` bloqué par Chrome hors geste utilisateur
+- Fix : fenêtre ouverte en synchrone, `win.location.href` assigné dans le `.then()`
+- `callNotify` retourne maintenant le résultat (fire-and-forget → async)
+- Toast après validation facture : succès (vert) ou absence (orange)
+
+## [v1.20.26] — Branding SchoolPlus : footer + mentions légales
+- Footer : © École Secondaire Plurielle Maritime → © School Plus
+- Mentions légales : logo ESPM → lockup officiel SchoolPlus
+
 ## [v1.20.25] — Charte graphique SchoolPlus ESPM+
 - Icônes PWA remplacées par les officielles de la charte (toque + fond aubergine)
 - Favicons navigateur : favicon-16.png + favicon-32.png + favicon.svg officiels
