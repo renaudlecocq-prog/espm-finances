@@ -1,3 +1,10 @@
+## [v1.20.40] — Sync : barcodevalue via getUserDetailsByNumber
+
+- FIX valeur_scanner (QR carte étudiant) : getAllAccountsExtended ne retourne pas le barcodevalue
+- Ajout appels getUserDetailsByNumber (lots de 20 parallèles) pour récupérer le barcodevalue de chaque élève
+- valeur_scanner = UUID Smartschool exclusivement (plus de fallback sur internal_number)
+- Debug : _debug_getUserDetailsByNumber_keys dans la réponse sync pour identifier les noms de champs
+
 ## [v1.20.39] — Cartes etudiant : PDF binaire pages 69.8x54mm
 
 - Remplace HTML+window.print() par un vrai PDF binaire (pdf-lib)

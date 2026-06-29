@@ -59,7 +59,7 @@ async function insertSyncLog(url, key, data) {
   }).catch(() => {})
 }
 
-// ── SOAP helper ─────────────────────────────────────────────────────────────
+// ── SOAP helpers ─────────────────────────────────────────────────────────────
 
 async function soapCall(apiUrl, accessCode, method) {
   // getAllAccountsExtended nécessite code + recursive explicites (Smartschool v2026)
@@ -90,17 +90,39 @@ async function soapCall(apiUrl, accessCode, method) {
   return res.text()
 }
 
+// getUserDetailsByNumber — retourne le barcodevalue (valeur à scanner) absent de getAllAccountsExtended
+async function soapGetUserByNumber(apiUrl, accessCode, number) {
+  const envelope = `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:soa="http://www.smartschool.be/webservices">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <soa:getUserDetailsByNumber>
+      <soa:accesscode>${accessCode}</soa:accesscode>
+      <soa:number>${number}</soa:number>
+    </soa:getUserDetailsByNumber>
+  </soapenv:Body>
+</soapenv:Envelope>`
+  const res = await fetch(apiUrl, {
+    method:  'POST',
+    headers: { 'Content-Type': 'text/xml; charset=utf-8', SOAPAction: '"urn:getUserDetailsByNumber"' },
+    body: envelope,
+  })
+  if (!res.ok) return null
+  return res.text()
+}
+
 // Extract JSON payload from SOAP <return> tag (handles CDATA)
 function extractJson(xml) {
   const m = xml.match(/<[^:>]+:return[^>]*>([\s\S]*?)<\/[^:>]+:return>/i)
       || xml.match(/<return[^>]*>([\s\S]*?)<\/return>/i)
-  if (!m) return []
+  if (!m) return null
   let raw = m[1].trim()
   const cdata = raw.match(/<!\[CDATA\[([\s\S]*?)\]\]>/)
   if (cdata) raw = cdata[1].trim()
   // Smartschool sometimes returns error codes as plain integers
-  if (/^-?\d+$/.test(raw)) throw new Error(`Smartschool error code: ${raw}`)
-  try { return JSON.parse(raw) } catch { return [] }
+  if (/^-?\d+$/.test(raw)) return null
+  try { return JSON.parse(raw) } catch { return null }
 }
 
 // ── Main ────────────────────────────────────────────────────────────────────
@@ -127,7 +149,7 @@ export default async function handler(req) {
     // ── Fetch all accounts via getAllAccountsExtended ───────────────────────
     const xml      = await soapCall(SS_URL, SS_CODE, 'getAllAccountsExtended')
     const accounts = extractJson(xml)
-    const list     = Array.isArray(accounts) ? accounts : Object.values(accounts)
+    const list     = Array.isArray(accounts) ? accounts : (accounts ? Object.values(accounts) : [])
 
     if (!list.length) throw new Error('Aucun compte retourné par Smartschool')
 
@@ -176,25 +198,58 @@ export default async function handler(req) {
       const geslacht = String(a.geslacht || a.sex || "").trim().toLowerCase()
       const sexe = geslacht === "m" ? "M" : geslacht === "v" || geslacht === "f" ? "F" : geslacht === "x" ? "X" : null
 
-      // Sortie à midi, Licenciement, Valeur à scanner (carte d'étudiant)
+      // Sortie à midi, Licenciement
       const sortie_raw = a['Sortie à midi'] ?? a['sortie_midi'] ?? null
       const sortie_midi = sortie_raw === true ? true : sortie_raw === false ? false
         : typeof sortie_raw === 'string' ? (sortie_raw.trim().toLowerCase() === 'oui' || sortie_raw.trim() === '1') : null
       const lic_raw = a['Licenciements'] ?? a['Licenciement'] ?? a['licenciement'] ?? null
       const licenciement = lic_raw === true ? true : lic_raw === false ? false
         : typeof lic_raw === 'string' ? (lic_raw.trim().toLowerCase() === 'oui' || lic_raw.trim() === '1') : null
-      const valeur_scanner = String(
-        a["Valeur à scanner afin d'identifier l'élève"] ??
-        a['Valeur à scanner'] ?? a['valeur_scanner'] ??
-        a['barcodevalue'] ?? a['barcodeValue'] ??
-        smartschool_internal_number ?? ''
-      ).trim() || null
+
+      // valeur_scanner : sera peuplé par getUserDetailsByNumber (barcodevalue)
+      // getAllAccountsExtended ne retourne pas ce champ — on le laisse null ici
+      const valeur_scanner = null
 
       if (isEleve) {
         elevesRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, classe, groupes_ss, amenagements_raisonnables, sexe, sortie_midi, licenciement, valeur_scanner, actif: true })
       } else {
         personnelRows.push({ smartschool_username, smartschool_internal_number, nom, prenom, email, actif: true })
       }
+    }
+
+    // ── Fetch barcodevalue via getUserDetailsByNumber ─────────────────────
+    // getAllAccountsExtended ne retourne PAS le barcodevalue (valeur à scanner QR).
+    // On appelle getUserDetailsByNumber pour chaque élève en lots de 20 parallèles.
+    const CONCURRENCY = 20
+    const barcodeMap  = new Map()
+    const studentNums = elevesRows.map(r => r.smartschool_internal_number).filter(Boolean)
+    let debugUserDetailKeys = []
+
+    for (let i = 0; i < studentNums.length; i += CONCURRENCY) {
+      const batch = studentNums.slice(i, i + CONCURRENCY)
+      const results = await Promise.all(batch.map(async num => {
+        try {
+          const xml = await soapGetUserByNumber(SS_URL, SS_CODE, num)
+          if (!xml) return null
+          const d = extractJson(xml)
+          if (!d || typeof d !== 'object') return null
+          const obj = Array.isArray(d) ? d[0] : d
+          if (!obj) return null
+          // Debug keys pour le premier lot seulement
+          if (i === 0 && debugUserDetailKeys.length === 0) {
+            debugUserDetailKeys = Object.keys(obj).sort()
+          }
+          const bv = obj.barcodevalue || obj.barcodeValue || obj.barcode_value || obj.scancode || null
+          return bv ? { num, bv } : null
+        } catch { return null }
+      }))
+      for (const r of results) { if (r) barcodeMap.set(r.num, r.bv) }
+    }
+
+    // Injecter barcodevalue dans chaque ligne élève
+    for (const row of elevesRows) {
+      const bv = barcodeMap.get(row.smartschool_internal_number)
+      if (bv) row.valeur_scanner = bv
     }
 
     // ── Upsert élèves ──────────────────────────────────────────────────────
@@ -222,23 +277,25 @@ export default async function handler(req) {
       personnelCount = personnelRows.length
     }
 
+    const barcodesFetched = barcodeMap.size
+
     await insertSyncLog(SUPABASE_URL, SUPABASE_KEY, {
       type:               'sync',
       status:             'success',
       eleves_upserted:    elevesCount,
       personnel_upserted: personnelCount,
-      details:            `OK — ${elevesCount} élèves, ${personnelCount} personnel`,
+      details:            `OK — ${elevesCount} élèves, ${personnelCount} personnel, ${barcodesFetched} barcodes`,
     })
 
-    // Debug : identifier les champs photo/foto dans les données brutes Smartschool
+    // Debug : clés getAllAccountsExtended (premier élève) + getUserDetailsByNumber
     const firstEleve = list.find(a => String(a.basisrol ?? '').trim() === '1')
     const sampleKeys = firstEleve ? Object.keys(firstEleve).sort() : []
-    const photoKeys  = sampleKeys.filter(k => /photo|foto|picture|image|bild|profi/i.test(k))
 
     return new Response(JSON.stringify({
       success: true, eleves: elevesCount, personnel: personnelCount,
-      _debug_sample_keys: sampleKeys,
-      _debug_photo_keys: photoKeys,
+      barcodes_fetched: barcodesFetched,
+      _debug_getAllAccountsExtended_keys: sampleKeys,
+      _debug_getUserDetailsByNumber_keys: debugUserDetailKeys,
     }), { status: 200, headers })
 
   } catch (err) {
