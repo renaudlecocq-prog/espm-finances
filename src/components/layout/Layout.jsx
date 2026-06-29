@@ -2,9 +2,11 @@ import { Outlet, Link } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import { isMobileDevice } from '../../lib/isMobile'
+import DebugMobile from './DebugMobile'
 
 export default function Layout() {
   return (
+    <><DebugMobile />
     <div className="flex h-screen bg-surface overflow-hidden">
       {/* Sidebar : uniquement sur desktop (pointer:fine) */}
       {!isMobileDevice && <Sidebar />}
