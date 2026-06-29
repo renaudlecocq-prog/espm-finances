@@ -1,3 +1,10 @@
+## [v1.20.33] — FIX Service Worker PWA interceptait les URLs Netlify Functions
+- vite.config.js : ajout navigateFallbackDenylist pour exclure /.netlify/* du SW
+- Cause racine : le SW PWA (installé en v1.20.25) interceptait toutes les navigations
+  vers /.netlify/functions/* et servait index.html au lieu de laisser passer la requête
+- Résultat : tous les PDFs (factures, comptes, suivi social) s'ouvraient sur la page d'accueil
+- Fix : navigateFallbackDenylist: [/^\/\.netlify\//] exclut ces URLs du fallback SW
+
 ## [v1.20.32] — FIX token manquant dans BilanTab, ProjetsTab, AssistantSocial
 - Econome.jsx : token non défini dans BilanTab et ProjetsTab → crash /comptes
 - AssistantSocial.jsx : 4 composants convertis de window.open async → <a href target="_blank"> (EchelonnementDetail, TabEchelonnements, OrganismeTiersDetail, TabOrganismesTiers)
