@@ -399,13 +399,27 @@ function HomeResponsable() {
       setLoading(false)
       return
     }
-    // En aperçu admin : si un élève a été sélectionné dans la bannière, l'utiliser directement
+    // En aperçu admin : charger l'élève sélectionné + ses fratries
     if (previewEleveId) {
-      supabase.from('eleves').select('id, prenom, nom, classe, date_naissance').eq('id', previewEleveId).single()
-        .then(({ data }) => {
-          if (data) { setEleves([data]); setActiveId(data.id) }
-          setLoading(false)
-        })
+      ;(async () => {
+        const { data: eleve } = await supabase.from('eleves')
+          .select('id, prenom, nom, classe, date_naissance').eq('id', previewEleveId).single()
+        if (!eleve) { setLoading(false); return }
+        // Charger fratries
+        const { data: fratData } = await supabase.from('eleve_fraterie')
+          .select('eleve_id_1, eleve_id_2')
+          .or(`eleve_id_1.eq.${previewEleveId},eleve_id_2.eq.${previewEleveId}`)
+        const siblingIds = (fratData || []).map(r => r.eleve_id_1 === previewEleveId ? r.eleve_id_2 : r.eleve_id_1)
+        let all = [eleve]
+        if (siblingIds.length > 0) {
+          const { data: siblings } = await supabase.from('eleves')
+            .select('id, prenom, nom, classe, date_naissance').in('id', siblingIds)
+          all = [eleve, ...(siblings || [])]
+        }
+        setEleves(all)
+        setActiveId(eleve.id)
+        setLoading(false)
+      })()
       return
     }
     supabase

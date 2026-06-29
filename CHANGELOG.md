@@ -1,3 +1,6 @@
+## [v1.20.36] — Fix aperçu Responsable : fratries visibles
+- HomeResponsable (aperçu admin) : le sélecteur d'élève charge maintenant aussi les fratries liées — les deux onglets Lina + Ismaël apparaissent ensemble
+
 ## [v1.20.35] — Financier Responsable complet + Fratrie
 - HomeResponsable : onglet Financier affiche la liste complète des factures (cliquables PDF) et paiements, comme FicheEleve
 - HomeResponsable : pastille ● sur l'onglet Financier si solde négatif ou mouvements présents
