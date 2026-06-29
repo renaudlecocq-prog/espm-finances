@@ -1,13 +1,9 @@
-import { useState, useEffect } from 'react'
+import { isMobileDevice } from '../lib/isMobile'
 
+/**
+ * Hook mobile — retourne la valeur synchrone de isMobileDevice.
+ * Pas de useEffect, pas de timing issue.
+ */
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 1279px)')
-    setIsMobile(mq.matches)
-    const handler = (e) => setIsMobile(e.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-  return isMobile
+  return isMobileDevice
 }

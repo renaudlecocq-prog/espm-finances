@@ -2607,3 +2607,10 @@ git push origin main
 - Layout: passage à xl (1280px) pour couvrir les foldables (écran intérieur ~860px CSS)
 - useIsMobile: aligné sur (max-width: 1279px)
 - Seuls les desktops ≥ 1280px CSS affichent la sidebar
+
+## [v1.20.51] — Détection mobile pointer:coarse (Honor Magic V3 fix)
+- Abandonne les breakpoints CSS width (trop sensibles au DPR/viewport fold)
+- Nouvelle lib isMobile.js : détection synchrone via pointer:coarse + UA fallback
+- Layout.jsx : rendu conditionnel JS pur (sidebar vs MobileNav)
+- useIsMobile.js : retourne directement isMobileDevice, sans useEffect
+- Compatible fold, tablette, desktop quel que soit le DPR ou le mode Brave
