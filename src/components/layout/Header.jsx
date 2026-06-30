@@ -22,7 +22,7 @@ export default function Header() {
   const { s } = useSettings()
   const logout = async () => { await supabase.auth.signOut(); navigate('/login') }
 
-  const roleLabel = { admin: 'Admin', financier: 'Financier', mdp: 'MdP', responsable: 'Responsable' }
+  const roleLabel = { admin: 'Admin', financier: 'Financier', pedagogique: 'Pédagogique', educatif: 'Éducatif', mdp: 'MdP', responsable: 'Responsable' }
 
   const navClass = (to) => {
     const active = location.pathname === to || (to !== '/' && location.pathname.startsWith(to))

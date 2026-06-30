@@ -15,6 +15,7 @@ import PageHeader from '../components/ui/PageHeader'
 import { CollabEditor } from '../salle/CollabEditor'
 import { ListeEditor } from '../salle/ListeEditor'
 import { supabase as supabaseClient } from '../lib/supabase'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const COLORS = [
   '#6366F1','#8B5CF6','#EC4899','#EF4444','#F97316',
@@ -1161,6 +1162,7 @@ function TypeFilter({ subFolders, items, boards, docs, listes, value, onChange }
 
 // ── Composant principal ───────────────────────────────────────────────────────
 export default function SalleDProfs() {
+  const isMobile = useIsMobile()
   const { user, isAdmin } = useAuth()
 
   // Navigation
@@ -1676,7 +1678,7 @@ export default function SalleDProfs() {
             <DndContext sensors={sensors} collisionDetection={closestCenter}
               onDragStart={handleRootDragStart} onDragEnd={handleRootDragEnd}>
               <SortableContext items={allItems.map(i => i._sortId)} strategy={rectSortingStrategy}>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:18}}>
+                <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(auto-fill,minmax(220px,1fr))',gap:isMobile?12:18}}>
                   {allItems.map(item => item._itemType === 'folder' ? (
                     <SortableFolderCard key={`folder-${item.id}`} folder={item}
                       previews={folderPreviews[item.id]} stats={folderStats[item.id]}
@@ -1742,7 +1744,7 @@ export default function SalleDProfs() {
               <DndContext sensors={sensors} collisionDetection={closestCenter}
                 onDragStart={handleItemDragStart} onDragEnd={handleItemDragEnd}>
                 <SortableContext items={filteredItems.map(i => `item-${i.id}`)} strategy={rectSortingStrategy}>
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14}}>
+                  <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(auto-fill,minmax(200px,1fr))',gap:isMobile?10:14}}>
                     {filteredSubFolders.map(sf=>(
                       <FolderCard key={sf.id} folder={sf} compact
                         previews={subPreviews[sf.id]} stats={subStats[sf.id]}
@@ -1767,7 +1769,7 @@ export default function SalleDProfs() {
               </DndContext>
               {/* Boards dans le dossier */}
               {(typeFilter==='all'||typeFilter==='kanban') && folderBoards.length>0 && (
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14,marginTop:14}}>
+                <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(auto-fill,minmax(200px,1fr))',gap:isMobile?10:14,marginTop:14}}>
                   {folderBoards.map(board=>(
                     <TrelloBoardCard key={board.id} board={board}
                       onOpen={()=>setOpenBoard(board)} onEdit={()=>setEditBoard(board)}
@@ -1779,7 +1781,7 @@ export default function SalleDProfs() {
               )}
               {/* Listes d'élèves dans le dossier */}
               {(typeFilter==='all'||typeFilter==='liste') && folderListes.length>0 && (
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14,marginTop:14}}>
+                <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(auto-fill,minmax(200px,1fr))',gap:isMobile?10:14,marginTop:14}}>
                   {folderListes.map(liste=>(
                     <ListeCard key={liste.id} liste={liste}
                       onOpen={()=>setOpenListe(liste)}
@@ -1792,7 +1794,7 @@ export default function SalleDProfs() {
               )}
               {/* Docs collaboratifs dans le dossier */}
               {(typeFilter==='all'||typeFilter==='collab') && folderDocs.length>0 && (
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14,marginTop:14}}>
+                <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(auto-fill,minmax(200px,1fr))',gap:isMobile?10:14,marginTop:14}}>
                   {folderDocs.map(doc=>(
                     <DocCard key={doc.id} doc={doc}
                       onOpen={()=>setOpenColDoc(doc)}

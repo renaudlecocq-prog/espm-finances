@@ -792,7 +792,7 @@ export default function TrelloBoardView({ board, onBack, triggerAddList, onAddLi
     <div style={{ height: '100%' }}>
       {/* Board body */}
       <div style={{
-        display: 'flex', gap: 14, overflowX: 'auto', padding: '20px 24px',
+        display: 'flex', gap: 14, overflowX: 'auto', WebkitOverflowScrolling: 'touch', padding: '20px 12px',
         alignItems: 'flex-start', minHeight: 'calc(100vh - 140px)',
         background: `linear-gradient(135deg, ${board.color}15 0%, transparent 60%)`,
       }}>

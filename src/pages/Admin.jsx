@@ -75,7 +75,7 @@ export default function Admin() {
   const [syncing, setSyncing]     = useState(false)
   const [inviteModal, setInviteModal] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole]   = useState('mdp')
+  const [inviteRole, setInviteRole]   = useState('pedagogique')
   const [inviteMsg, setInviteMsg]     = useState('')
   const [roleFilter, setRoleFilter]   = useState(null)
   const [userSearch, setUserSearch]   = useState('')
@@ -111,7 +111,11 @@ export default function Admin() {
     setPermSaving(key)
     await supabase.from('role_permissions')
       .upsert({ role, feature, enabled: newVal, updated_at: new Date().toISOString() }, { onConflict: 'role,feature' })
-    setRolePermsData(prev => prev.map(p => p.role === role && p.feature === feature ? { ...p, enabled: newVal } : p))
+    setRolePermsData(prev => {
+      const exists = prev.some(p => p.role === role && p.feature === feature)
+      if (exists) return prev.map(p => p.role === role && p.feature === feature ? { ...p, enabled: newVal } : p)
+      return [...prev, { role, feature, enabled: newVal }]
+    })
     setPermSaving(null)
   }
 
@@ -411,7 +415,7 @@ export default function Admin() {
               <span className="text-xs font-semibold text-orange-700 dark:text-orange-300 uppercase tracking-wide">Aperçu — Voir le site en tant que</span>
             </div>
             <div className="flex gap-2 flex-wrap items-center">
-              {['direction','mdp','responsable'].map(r => {
+              {['direction','pedagogique','educatif','responsable'].map(r => {
                 const m = ROLE_META[r]
                 return (
                   <button key={r} onClick={() => setPreviewRole(previewRole === r ? null : r)}
@@ -489,9 +493,7 @@ export default function Admin() {
                 </tbody>
               </table>
             </div>
-            <div className="px-5 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 flex items-center gap-2">
-              <Lock size={11} /> La colonne Admin est verrouillée — un administrateur dispose toujours de tous les droits.
-            </div>
+
           </div>
 
           {/* Exceptions individuelles */}
@@ -907,7 +909,7 @@ export function HelpdeskAdmin() {
           <div style={{ fontSize: 12, color: dark ? '#9CA3AF' : '#6B7280' }}>Gérez les catégories de tickets et leurs formulaires</div>
         </div>
         <button onClick={() => setEditCat({ nom:'', description:'', icone:'ticket', couleur:'#6B4A73',
-          form_fields:[], rapporteur_roles:['admin','direction','mdp'], agent_roles:['admin'] })}
+          form_fields:[], rapporteur_roles:['admin','direction','pedagogique','educatif'], agent_roles:['admin'] })}
           style={{ padding: '9px 18px', borderRadius: 8, border: 'none', backgroundColor: '#2D1B2E',
             color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
           + Nouvelle catégorie

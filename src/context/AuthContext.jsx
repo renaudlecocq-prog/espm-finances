@@ -142,8 +142,8 @@ export function AuthProvider({ children }) {
   const isSuperAdmin = effectiveRole === 'super_admin'
   const isAdmin     = ['admin', 'super_admin'].includes(effectiveRole)
   const isFinancier = ['admin', 'super_admin', 'direction'].includes(effectiveRole)
-  const isMdp       = ['admin', 'super_admin', 'direction', 'mdp'].includes(effectiveRole)
-  const isMdpOnly   = effectiveRole === 'mdp'
+  const isMdp       = ['admin', 'super_admin', 'direction', 'pedagogique', 'educatif'].includes(effectiveRole)
+  const isMdpOnly   = ['pedagogique', 'educatif'].includes(effectiveRole)
 
   return (
     <AuthContext.Provider value={{

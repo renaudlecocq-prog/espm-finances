@@ -1,3 +1,5 @@
+import { useIsMobile } from "../hooks/useIsMobile"
+import MobileUnavailable from "../components/layout/MobileUnavailable"
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -26,16 +28,21 @@ function CardIcon() {
 
 // ── Composant principal ───────────────────────────────────────────────────────
 export default function Generateur() {
+  const isMobile = useIsMobile()
+  if (isMobile) return <MobileUnavailable pageName="Générateur de documents" />
   const { token } = useAuth()
 
-  const [eleves, setEleves]           = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [search, setSearch]           = useState('')
+  const [eleves, setEleves]             = useState([])
+  const [loading, setLoading]           = useState(true)
+  const [search, setSearch]             = useState('')
   const [filterClasse, setFilterClasse] = useState('all')
-  const [selected, setSelected]       = useState(new Set())
-  const [generating, setGenerating]   = useState(false)
+  const [selected, setSelected]         = useState(new Set())
+  const [generating, setGenerating]     = useState(false)
 
   useEffect(() => { loadEleves() }, [])
+
+  // Reset sélection à chaque changement de classe
+  useEffect(() => { setSelected(new Set()) }, [filterClasse])
 
   async function loadEleves() {
     setLoading(true)
@@ -51,6 +58,8 @@ export default function Generateur() {
   // ── Dérivés ─────────────────────────────────────────────────────────────────
   const classes = [...new Set(eleves.map(e => e.classe).filter(Boolean))].sort()
 
+  const classeSelectionnee = filterClasse !== 'all'
+
   const filtered = eleves.filter(e => {
     const q = search.toLowerCase()
     const matchSearch = !q ||
@@ -61,17 +70,19 @@ export default function Generateur() {
     return matchSearch && matchClasse
   })
 
-  const allFilteredIds     = filtered.map(e => e.id)
-  const allFilteredSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selected.has(id))
-  const selectedCount      = selected.size
-  const pageCount          = selectedCount * 2
+  const allFilteredIds      = filtered.map(e => e.id)
+  const allFilteredSelected = classeSelectionnee && allFilteredIds.length > 0 && allFilteredIds.every(id => selected.has(id))
+  const selectedCount       = selected.size
+  const pageCount           = selectedCount * 2
 
-  // ── Sélection ───────────────────────────────────────────────────────────────
+  // ── Sélection — bloquée si aucune classe choisie ──────────────────────────
   function toggleOne(id) {
+    if (!classeSelectionnee) return
     setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   }
 
   function toggleAll() {
+    if (!classeSelectionnee) return
     const allSel = allFilteredIds.every(id => selected.has(id))
     setSelected(prev => {
       const n = new Set(prev)
@@ -82,12 +93,22 @@ export default function Generateur() {
 
   // ── Génération ───────────────────────────────────────────────────────────────
   async function genererCartes() {
-    if (selected.size === 0) return
+    if (selected.size === 0 || !classeSelectionnee) return
     setGenerating(true)
     try {
-      const ids = [...selected].join(',')
-      const url = `/.netlify/functions/carte-etudiant-pdf?ids=${encodeURIComponent(ids)}&token=${encodeURIComponent(token)}`
-      window.open(url, '_blank')
+      const res = await fetch('/.netlify/functions/carte-etudiant-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [...selected], token }),
+      })
+      if (!res.ok) { alert('Erreur génération PDF : ' + res.status); return }
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `cartes-${filterClasse.replace(/\s+/g, '-')}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
     } finally {
       setGenerating(false)
     }
@@ -99,7 +120,7 @@ export default function Generateur() {
     backgroundColor: 'rgba(255,255,255,0.09)',
     border: '1px solid rgba(255,255,255,0.11)',
     color: 'white', padding: '0 8px', outline: 'none', cursor: 'pointer',
-    appearance: 'none', WebkitAppearance: 'none', minWidth: '130px',
+    appearance: 'none', WebkitAppearance: 'none', minWidth: '150px',
   }
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
@@ -113,7 +134,7 @@ export default function Generateur() {
         searchPlaceholder="Rechercher un élève…"
         filters={
           <select value={filterClasse} onChange={e => setFilterClasse(e.target.value)} style={selectStyle}>
-            <option value="all" style={{ background: '#2D1B2E' }}>Toutes les classes</option>
+            <option value="all" style={{ background: '#2D1B2E' }}>— Choisir une classe —</option>
             {classes.map(c => (
               <option key={c} value={c} style={{ background: '#2D1B2E' }}>{c}</option>
             ))}
@@ -121,7 +142,7 @@ export default function Generateur() {
         }
         actions={
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {selectedCount > 0 && (
+            {classeSelectionnee && selectedCount > 0 && (
               <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)', whiteSpace: 'nowrap' }}>
                 <strong style={{ color: 'white' }}>{selectedCount}</strong> élève{selectedCount > 1 ? 's' : ''} ·{' '}
                 <strong style={{ color: 'white' }}>{pageCount}</strong> page{pageCount > 1 ? 's' : ''}
@@ -129,13 +150,14 @@ export default function Generateur() {
             )}
             <button
               onClick={genererCartes}
-              disabled={selectedCount === 0 || generating}
+              disabled={selectedCount === 0 || generating || !classeSelectionnee}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
                 height: '28px', padding: '0 12px', borderRadius: '8px',
-                fontSize: '12px', fontWeight: '600', cursor: selectedCount === 0 ? 'default' : 'pointer',
-                backgroundColor: selectedCount === 0 ? 'rgba(255,255,255,0.1)' : '#F16410',
-                color: selectedCount === 0 ? 'rgba(255,255,255,0.35)' : 'white',
+                fontSize: '12px', fontWeight: '600',
+                cursor: (selectedCount === 0 || !classeSelectionnee) ? 'default' : 'pointer',
+                backgroundColor: (selectedCount === 0 || !classeSelectionnee) ? 'rgba(255,255,255,0.1)' : '#F16410',
+                color: (selectedCount === 0 || !classeSelectionnee) ? 'rgba(255,255,255,0.35)' : 'white',
                 border: 'none', transition: 'background 0.15s',
               }}
             >
@@ -145,7 +167,7 @@ export default function Generateur() {
                 <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
                 <rect x="6" y="14" width="12" height="8"/>
               </svg>
-              Imprimer les cartes
+              {generating ? 'Génération…' : 'Imprimer les cartes'}
             </button>
           </div>
         }
@@ -166,18 +188,32 @@ export default function Generateur() {
 
         {/* Panneau droit — liste des élèves */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Bandeau info format */}
-          <div className="flex items-center gap-2 px-5 py-2 bg-amber-50 border-b border-amber-100 flex-none">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none"
-              stroke="#b45309" strokeWidth="2" strokeLinecap="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <span className="text-xs text-amber-700">
-              Format 69,8 × 54 mm — Dymo LabelWriter monochrome · 2 pages par carte (recto + verso)
-            </span>
-          </div>
+          {/* Bandeau info */}
+          {!classeSelectionnee ? (
+            <div className="flex items-center gap-2 px-5 py-3 bg-blue-50 border-b border-blue-100 flex-none">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                stroke="#2563eb" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span className="text-xs text-blue-700">
+                Sélectionnez une classe dans le filtre ci-dessus pour pouvoir choisir des élèves.
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-5 py-2 bg-amber-50 border-b border-amber-100 flex-none">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none"
+                stroke="#b45309" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span className="text-xs text-amber-700">
+                Format 69,8 × 54 mm — Dymo LabelWriter monochrome · 2 pages par carte (recto + verso)
+              </span>
+            </div>
+          )}
 
           {/* Table */}
           <div className="flex-1 overflow-y-auto">
@@ -188,6 +224,17 @@ export default function Generateur() {
                   <path d="M21 12a9 9 0 11-6.219-8.56"/>
                 </svg>
                 Chargement…
+              </div>
+            ) : !classeSelectionnee ? (
+              <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none"
+                  stroke="currentColor" strokeWidth="1.2">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18"/>
+                  <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+                </svg>
+                <p className="text-sm font-medium text-gray-500">Choisissez une classe pour commencer</p>
+                <p className="text-xs text-gray-400">Les cartes sont générées classe par classe</p>
               </div>
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -206,6 +253,7 @@ export default function Generateur() {
                         type="checkbox"
                         checked={allFilteredSelected}
                         onChange={toggleAll}
+                        disabled={!classeSelectionnee}
                         className="accent-[#2D1B2E] w-4 h-4 cursor-pointer"
                       />
                     </th>
@@ -223,7 +271,9 @@ export default function Generateur() {
                       <tr
                         key={e.id}
                         onClick={() => toggleOne(e.id)}
-                        className={`cursor-pointer border-b border-gray-50 transition-colors ${
+                        className={`border-b border-gray-50 transition-colors ${
+                          classeSelectionnee ? 'cursor-pointer' : 'cursor-default opacity-50'
+                        } ${
                           isSel
                             ? 'bg-[#2D1B2E]/5'
                             : i % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/50 hover:bg-gray-100/60'
@@ -233,6 +283,7 @@ export default function Generateur() {
                           <input
                             type="checkbox"
                             checked={isSel}
+                            disabled={!classeSelectionnee}
                             onChange={() => toggleOne(e.id)}
                             onClick={ev => ev.stopPropagation()}
                             className="accent-[#2D1B2E] w-4 h-4 cursor-pointer"

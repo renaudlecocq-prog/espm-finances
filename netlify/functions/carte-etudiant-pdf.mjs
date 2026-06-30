@@ -1,5 +1,5 @@
 // carte-etudiant-pdf.mjs
-// GET /.netlify/functions/carte-etudiant-pdf?ids=UUID,...&token=JWT
+// POST /.netlify/functions/carte-etudiant-pdf  body: { ids: [UUID,...], token: JWT }
 // Génère un PDF binaire avec pages exactement 69.8 × 54 mm (Dymo LabelWriter)
 // 2 pages par élève : recto (photo + champs + cases) + verso (QR + matricule)
 
@@ -232,11 +232,12 @@ async function buildVerso(pdfDoc, e, fb) {
 
 // ── Handler principal ─────────────────────────────────────────────────────────
 export default async function handler(req) {
-  if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
+  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
 
-  const url   = new URL(req.url)
-  const ids   = url.searchParams.get('ids')
-  const token = url.searchParams.get('token')
+  let body
+  try { body = await req.json() } catch { return new Response('JSON invalide', { status: 400 }) }
+  const ids   = Array.isArray(body.ids) ? body.ids.join(',') : body.ids
+  const token = body.token
 
   if (!ids || !token) return new Response('Parametres manquants', { status: 400 })
 
@@ -248,7 +249,7 @@ export default async function handler(req) {
   if (authErr || !user) return new Response('Non autorise', { status: 401 })
 
   // Données élèves
-  const idList = ids.split(',').map(s => s.trim()).filter(Boolean).slice(0, 200)
+  const idList = ids.split(',').map(s => s.trim()).filter(Boolean).slice(0, 700)
   const { data: eleves, error } = await sb.from('eleves')
     .select('id, nom, prenom, matricule, classe, photo_url, smartschool_internal_number, sortie_midi, licenciement, valeur_scanner')
     .in('id', idList).order('nom').order('prenom')

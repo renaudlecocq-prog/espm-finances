@@ -24,7 +24,7 @@ function jsonResp(statusCode, body, cors) {
 }
 
 // Rôles qui ne doivent jamais être écrasés par l'auto-détection Smartschool
-const PROTECTED_ROLES = ['admin', 'financier']
+const PROTECTED_ROLES = ['super_admin', 'admin', 'direction', 'financier', 'educatif', 'pedagogique']
 
 export const handler = async (event) => {
   const reqOrigin = event.headers.origin || event.headers.Origin || ALLOWED_ORIGINS[0]

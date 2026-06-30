@@ -1,3 +1,5 @@
+import { useIsMobile } from "../hooks/useIsMobile"
+import MobileUnavailable from "../components/layout/MobileUnavailable"
 // Compositions.jsx — v4 : liste projets + modal création + modal config
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
@@ -602,6 +604,8 @@ function ConfigForm({ allEleves, loading, onReload, filters, setFilters, exclude
 //  Page principale
 // ══════════════════════════════════════════════════════════════════════════════
 export default function Compositions() {
+  const isMobile = useIsMobile()
+  if (isMobile) return <MobileUnavailable pageName="Compositions" />
   const { profile } = useAuth()
 
   // ── Navigation ────────────────────────────────────────────────────────────

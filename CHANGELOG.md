@@ -2559,3 +2559,87 @@ git push origin main
 - Ne fetche getUserDetailsByNumber QUE pour les élèves sans valeur_scanner en DB (évite timeout sur 670 appels)
 - Ne jamais écraser un valeur_scanner existant avec null lors d'un sync suivant
 - Suppression du debug raw sample dans sync_log (plus nécessaire)
+
+## [v1.20.43] — Nouveaux rôles Pédagogique + Éducatif
+- Rôle `mdp` renommé en `Pédagogique` (pedagogique) partout dans le code et la DB
+- Nouveau rôle `Éducatif` (educatif) créé — même droits par défaut que Pédagogique, ajustables via la matrice
+- 8 profils existants migrés automatiquement de `mdp` → `pedagogique`
+- Fix matrice droits : toggleRolePerm gère maintenant les nouvelles lignes (insert + update state)
+- Retrait de la notice "La colonne Admin est verrouillée" (Admin absent de la matrice)
+- Boutons aperçu Admin mis à jour (Pédagogique + Éducatif)
+
+## [v1.20.44] — Fix HTTP 414 génération cartes (POST + blob download)
+- carte-etudiant-pdf : GET → POST avec body JSON (IDs en body, pas en query string)
+- Generateur.jsx : fetch blob + download automatique au lieu de window.open
+- Limite portée à 700 élèves par génération
+
+## [v1.20.45] — Générateur : sélection forcée par classe
+- La sélection d'élèves est désormais bloquée tant qu'aucune classe n'est choisie
+- Message explicatif + état vide illustré quand aucune classe n'est sélectionnée
+- La sélection est réinitialisée automatiquement au changement de classe
+- Nom du PDF inclut le nom de la classe (ex: cartes-1A.pdf)
+
+## [v1.20.46] — PWA : icônes corrigées (any + maskable séparés)
+- Sépare les icônes PWA en deux entrées distinctes : `any` (iOS/coins arrondis) et `maskable` (Android/masque circulaire)
+- Génère icon-maskable-192.png et icon-maskable-512.png avec fond plein et symbole centré dans la safe zone
+- Corrige l'affichage de l'icône installée sur mobile (plus de distorsion du masque Android)
+- Met à jour apple-touch-icon.png à 180px précis
+
+## [v1.20.47] — Version mobile : barre de navigation basse
+- Barre de navigation fixe en bas de l'écran sur mobile (< 768px) : Accueil, Élèves, Helpdesk, Salle des profs, + Plus
+- Tiroir "Plus" (slide-up) pour accéder aux autres pages : Activités, Paiements, Factures, Suivi social, Guidance, Articles, Profil
+- Sidebar masquée sur mobile, padding bottom automatique pour éviter la superposition
+- Compositions, Générateur, Module Économe : page "non disponible sur mobile"
+- Activités : lecture seule sur mobile (boutons +Activité et Rapport PDF masqués)
+- Salle des profs : grille adaptée en 1 colonne, kanban avec scroll horizontal natif et touch scrolling iOS
+
+## [v1.20.48] — Fix mobile : CSS media queries pures pour la navigation
+- Layout.jsx : utilise Tailwind hidden/md:flex au lieu du hook JS pour masquer/montrer Sidebar et MobileNav
+- Corrige l'affichage sur les PWA (Brave) où window.innerWidth peut être incorrect au démarrage
+- useIsMobile : initialisation à false + useEffect, évite les problèmes de timing viewport PWA
+
+## [v1.20.49] — Breakpoint mobile lg (1024px)
+- Layout: passage de md (768px) à lg (1024px) pour masquer la sidebar et afficher la barre mobile
+- useIsMobile: aligné sur (max-width: 1023px)
+- Corrige les appareils dont le viewport CSS dépasse 768px en mode PWA
+
+## [v1.20.50] — Breakpoint mobile xl (1280px) — compatibilité téléphone fold
+- Layout: passage à xl (1280px) pour couvrir les foldables (écran intérieur ~860px CSS)
+- useIsMobile: aligné sur (max-width: 1279px)
+- Seuls les desktops ≥ 1280px CSS affichent la sidebar
+
+## [v1.20.51] — Détection mobile pointer:coarse (Honor Magic V3 fix)
+- Abandonne les breakpoints CSS width (trop sensibles au DPR/viewport fold)
+- Nouvelle lib isMobile.js : détection synchrone via pointer:coarse + UA fallback
+- Layout.jsx : rendu conditionnel JS pur (sidebar vs MobileNav)
+- useIsMobile.js : retourne directement isMobileDevice, sans useEffect
+- Compatible fold, tablette, desktop quel que soit le DPR ou le mode Brave
+
+## [v1.20.52] — Détection mobile maxTouchPoints (fix mode Desktop Brave/Chrome)
+- isMobile.js : ajout du 3e niveau pointer:coarse → UA Android → maxTouchPoints > 0
+- Couvre le cas "Request Desktop Site" activé globalement (Honor Magic V3, foldables)
+- navigator.maxTouchPoints est la seule API non masquable en mode desktop
+
+## [v1.20.53] — Fix roleLabel Sidebar (mdp → Pédagogique)
+- Sidebar : mdp affiché "Pédagogique" au lieu de "MdP"
+- Ajout labels manquants : pedagogique, educatif, financier
+
+## [v1.20.54] — FIX CRITIQUE : PROTECTED_ROLES dans smartschool-callback
+- Bug : super_admin (et direction, educatif, pedagogique) non protégés contre l'écrasement Smartschool
+- Connexion via Smartschool OAuth réinitialisait le rôle au rôle Smartschool (ex: mdp)
+- Fix : PROTECTED_ROLES = ['super_admin', 'admin', 'direction', 'financier', 'educatif', 'pedagogique']
+- Rôle de Renaud Lecocq restauré manuellement en super_admin en base
+
+## [v1.20.56] — Toggle manuel mobile/desktop (fix Honor Magic V3)
+- isMobile.js : override localStorage prioritaire (espm_layout_mode: mobile|desktop|auto)
+- Layout.jsx : bouton 📱/💻 discret en bas à droite pour forcer le mode
+- setLayoutMode() : change le mode et recharge la page
+- Fallback automatique si aucun override défini
+
+## [v1.20.57] — Fix toggle mobile : bouton dans le bon Layout (App.jsx)
+- Le toggle 📱 Mobile / 💻 Desktop était dans src/components/layout/Layout.jsx qui n'est pas utilisé
+- Déplacé dans le Layout réel de src/App.jsx (celui utilisé par toutes les routes)
+- MobileNav et isMobileDevice branchés sur le bon composant
+
+## [v1.20.58] — Supprimer Layout.jsx orphelin
+- src/components/layout/Layout.jsx supprimé (jamais importé, remplacé par Layout dans App.jsx)
