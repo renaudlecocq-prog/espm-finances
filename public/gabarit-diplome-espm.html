@@ -181,5 +181,29 @@
     </div>
   </div>
 
+<script>
+/* Auto-scale le nom pour tenir sur 1 ligne (min 44px) */
+(function () {
+  function fitNames() {
+    document.querySelectorAll('.d-name').forEach(function (el) {
+      var maxSize = 82, minSize = 44, size = maxSize;
+      el.style.fontSize = size + 'px';
+      while (size > minSize) {
+        if (el.scrollHeight <= size * 1.3) break;
+        size -= 2;
+        el.style.fontSize = size + 'px';
+      }
+    });
+  }
+  /* Lance après chargement des fonts Google */
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(fitNames);
+  }
+  /* Fallbacks pour window.open + document.write */
+  setTimeout(fitNames, 600);
+  setTimeout(fitNames, 1600);
+})();
+</script>
+
 </body>
 </html>

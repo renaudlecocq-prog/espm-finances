@@ -1,3 +1,7 @@
+## [v1.20.63] — Diplôme : auto-scale nom long sur 1 ligne
+- gabarit-diplome-espm.html : script fitNames() — réduit la police de 82px → 44px pour tenir sur 1 ligne
+- Déclenché sur document.fonts.ready + 2 fallbacks setTimeout (600ms / 1600ms)
+
 ## [v1.20.62] — Générateur : Diplôme de proclamation A4 paysage
 - Nouveau document "Diplôme de proclamation" dans le Générateur (panneau gauche)
 - Même UX de sélection par classe que les cartes d'étudiant
