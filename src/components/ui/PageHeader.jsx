@@ -1,13 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { Search, X, MoreHorizontal } from 'lucide-react'
+import { isMobileDevice } from '../../lib/isMobile'
 
 /**
- * PageHeader — ligne unique, overflow par menu "⋯"
- *
- * [Titre] | [leftActions] [tabs] [search] [filters] [info] ··· [⋯] | [actions]
- *  fixe       scrollable centre (overflow:hidden) + bouton ⋯ si ça dépasse     fixe
- *
- * Quand le centre déborde → bouton ⋯ apparaît → dropdown avec tous les items
+ * PageHeader — desktop : ligne unique + overflow ⋯
+ *             mobile  : bi-niveaux (titre+action / tabs / search+chips)
  */
 export default function PageHeader({
   title, subtitle,
@@ -18,13 +15,101 @@ export default function PageHeader({
   info,
   actions,
 }) {
+  // ── Mobile ─────────────────────────────────────────────────────────────────
+  if (isMobileDevice) {
+    return (
+      <header
+        className="sticky top-0 z-40 bg-[#2D1B2E] px-4 pb-3.5"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        {/* Ligne 1 — titre + action principale */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-[23px] font-bold text-white leading-none tracking-tight truncate">{title}</h1>
+            {subtitle && <p className="text-[12.5px] mt-1 truncate" style={{ color: 'rgba(255,255,255,0.55)' }}>{subtitle}</p>}
+            {info && <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.40)' }}>{info}</p>}
+          </div>
+          {/* Bouton d'action principal (premier de `actions`) */}
+          {actions && (
+            <div className="flex items-center gap-2 shrink-0 mt-0.5">
+              {actions}
+            </div>
+          )}
+        </div>
+
+        {/* Ligne 2 — tabs scrollables */}
+        {tabs && (
+          <div className="flex gap-2 mt-3.5 overflow-x-auto no-scrollbar">
+            {tabs.map(t => {
+              const isActive = activeTab === t.key
+              return (
+                <button key={t.key}
+                  onClick={() => onTabChange?.(t.key)}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-[11px] text-sm whitespace-nowrap transition-all ${
+                    isActive
+                      ? 'bg-white text-[#2D1B2E] font-semibold'
+                      : 'bg-white/10 text-white/60 font-normal'
+                  }`}>
+                  {t.label}
+                  {t.count !== undefined && (
+                    <span className={`text-xs font-bold tabular-nums ${
+                      isActive
+                        ? t.color === 'orange' ? 'text-orange-500'
+                          : t.color === 'red'  ? 'text-red-500'
+                          : 'text-emerald-600'
+                        : 'text-white/40'
+                    }`}>{t.count}</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Ligne 3 — chips de filtre (leftActions) OU barre de recherche */}
+        {leftActions && (
+          <div className="flex gap-2 mt-2.5 overflow-x-auto no-scrollbar">
+            {leftActions}
+          </div>
+        )}
+        {search !== undefined && (
+          <div className="mt-2.5 flex gap-2">
+            <div className="relative flex-1">
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'rgba(255,255,255,0.40)' }} />
+              <input
+                type="text"
+                placeholder={searchPlaceholder || 'Rechercher…'}
+                value={search}
+                onChange={e => onSearch?.(e.target.value)}
+                className="w-full pl-8 pr-8 py-2.5 text-sm rounded-xl text-white outline-none"
+                style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)' }}
+              />
+              {search && (
+                <button onClick={() => onSearch?.('')} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-55">
+                  <X size={13} className="text-white" />
+                </button>
+              )}
+            </div>
+            {filters && <div className="shrink-0 flex items-center">{filters}</div>}
+          </div>
+        )}
+        {/* filters seuls sans search (ex: dropdown classe) */}
+        {search === undefined && filters && (
+          <div className="mt-2.5">
+            {filters}
+          </div>
+        )}
+      </header>
+    )
+  }
+
+  // ── Desktop (original) ─────────────────────────────────────────────────────
   const centerRef  = useRef(null)
   const menuRef    = useRef(null)
   const moreRef    = useRef(null)
   const [hasOverflow, setHasOverflow] = useState(false)
   const [menuOpen,    setMenuOpen]    = useState(false)
 
-  // Détection overflow dans la zone centrale
   useEffect(() => {
     const el = centerRef.current
     if (!el) return
@@ -35,7 +120,6 @@ export default function PageHeader({
     return () => ro.disconnect()
   }, [leftActions, tabs, search, filters, info])
 
-  // Fermer le menu si clic en dehors
   useEffect(() => {
     if (!menuOpen) return
     const handler = e => { if (!menuRef.current?.contains(e.target) && !moreRef.current?.contains(e.target)) setMenuOpen(false) }
@@ -99,19 +183,12 @@ export default function PageHeader({
 
   return (
     <div className="sticky top-0 z-40" style={{ backgroundColor:'#2D1B2E', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-
-      {/* ── Barre principale ── */}
       <div style={{ display:'flex', alignItems:'center', height:'48px', paddingLeft:'16px', paddingRight:'12px', gap:'0px', overflow:'hidden' }}>
-
-        {/* Titre */}
         <div style={{ flexShrink:0, maxWidth:'220px', marginRight:'12px' }}>
           <h1 className="text-sm font-bold text-white leading-tight truncate">{title}</h1>
           {subtitle && <p className="text-[10px] leading-tight truncate" style={{ color:'rgba(255,255,255,0.42)' }}>{subtitle}</p>}
         </div>
-
         {hasCenter && sep(12)}
-
-        {/* Zone centrale — overflow:hidden, le bouton ⋯ prend toujours la place */}
         {hasCenter && (
           <div ref={centerRef} style={{ flex:'1 1 0', display:'flex', alignItems:'center', gap:'8px', overflow:'hidden', minWidth:0 }}>
             {leftActions  && <div style={{ display:'flex', alignItems:'center', gap:'6px', flexShrink:0 }}>{leftActions}</div>}
@@ -121,31 +198,18 @@ export default function PageHeader({
             {info         && <span style={{ fontSize:'11px', whiteSpace:'nowrap', color:'rgba(255,255,255,0.40)', flexShrink:0 }}>{info}</span>}
           </div>
         )}
-
-        {/* Bouton ⋯ — toujours dans le DOM pour stabiliser le layout, visible seulement si overflow */}
         {hasCenter && (
-          <button
-            ref={moreRef}
-            onClick={() => setMenuOpen(v => !v)}
-            style={{
-              flexShrink:0, marginLeft:'4px',
-              width:'28px', height:'28px', borderRadius:'8px',
+          <button ref={moreRef} onClick={() => setMenuOpen(v => !v)}
+            style={{ flexShrink:0, marginLeft:'4px', width:'28px', height:'28px', borderRadius:'8px',
               display:'flex', alignItems:'center', justifyContent:'center',
               backgroundColor: menuOpen ? 'rgba(255,255,255,0.14)' : 'transparent',
-              border:'1px solid transparent',
-              opacity: hasOverflow ? 1 : 0,
-              pointerEvents: hasOverflow ? 'auto' : 'none',
-              transition:'opacity 0.15s',
-              cursor:'pointer',
-              color:'rgba(255,255,255,0.75)',
-            }}
-            title="Plus d'options"
-          >
+              border:'1px solid transparent', opacity: hasOverflow ? 1 : 0,
+              pointerEvents: hasOverflow ? 'auto' : 'none', transition:'opacity 0.15s',
+              cursor:'pointer', color:'rgba(255,255,255,0.75)' }}
+            title="Plus d'options">
             <MoreHorizontal size={15} />
           </button>
         )}
-
-        {/* Actions */}
         {actions && (
           <>
             {hasCenter && sep(0, 10)}
@@ -155,20 +219,11 @@ export default function PageHeader({
           </>
         )}
       </div>
-
-      {/* ── Dropdown overflow ── */}
       {menuOpen && hasOverflow && (
         <div ref={menuRef}
-          style={{
-            position:'absolute', left:0, right:0, top:'100%',
-            backgroundColor:'#2D1B2E',
-            borderBottom:'2px solid rgba(255,255,255,0.10)',
-            boxShadow:'0 12px 32px rgba(0,0,0,0.35)',
-            padding:'10px 16px 12px',
-            display:'flex', flexWrap:'wrap', alignItems:'center', gap:'8px',
-            zIndex:50,
-          }}
-        >
+          style={{ position:'absolute', left:0, right:0, top:'100%', backgroundColor:'#2D1B2E',
+            borderBottom:'2px solid rgba(255,255,255,0.10)', boxShadow:'0 12px 32px rgba(0,0,0,0.35)',
+            padding:'10px 16px 12px', display:'flex', flexWrap:'wrap', alignItems:'center', gap:'8px', zIndex:50 }}>
           {leftActions  && <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>{leftActions}</div>}
           {renderTabsWidget(true)}
           {renderSearchWidget()}
@@ -176,7 +231,6 @@ export default function PageHeader({
           {info         && <span style={{ fontSize:'11px', color:'rgba(255,255,255,0.50)' }}>{info}</span>}
         </div>
       )}
-
     </div>
   )
 }

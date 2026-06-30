@@ -7,7 +7,7 @@ import { SettingsProvider, useSettings } from './contexts/SettingsContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import Sidebar from './components/layout/Sidebar'
 import MobileNav from './components/layout/MobileNav'
-import { isMobileDevice, setLayoutMode } from './lib/isMobile'
+import { isMobileDevice } from './lib/isMobile'
 import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
 import Home from './pages/Home'
@@ -52,22 +52,7 @@ const DEMO_ROLES = [
   { key: 'responsable', label: 'Responsable' },
 ]
 
-function LayoutToggle() {
-  return (
-    <button
-      onClick={() => setLayoutMode(isMobileDevice ? 'desktop' : 'mobile')}
-      title={isMobileDevice ? 'Passer en mode desktop' : 'Passer en mode mobile'}
-      style={{
-        position: 'fixed', bottom: isMobileDevice ? 80 : 16, right: 12,
-        zIndex: 1000, background: '#2D1B2E', color: '#fff',
-        border: '2px solid #F16410', borderRadius: 20,
-        padding: '6px 12px', fontSize: 12, cursor: 'pointer', opacity: 0.85
-      }}
-    >
-      {isMobileDevice ? '💻 Desktop' : '📱 Mobile'}
-    </button>
-  )
-}
+
 
 function Layout({ children }) {
   const { previewRole, setPreviewRole, role, previewEleveId, setPreviewEleveId } = useAuth()
@@ -106,7 +91,6 @@ function Layout({ children }) {
       </div>
 
       {isMobileDevice && <MobileNav />}
-      <LayoutToggle />
 
       {/* ── Bannière mode démo (avec switcher de rôle) ── */}
       {demoMode && (
