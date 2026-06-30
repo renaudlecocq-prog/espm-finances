@@ -14,7 +14,13 @@ function getAnneeEtude(classe) {
   return `${n}${n === 1 ? 'ère' : 'ème'} année`
 }
 
-// ── Icône Carte ───────────────────────────────────────────────────────────────
+function anneeScolaireAuto() {
+  const m = new Date().getMonth() + 1
+  const y = new Date().getFullYear()
+  return m >= 8 ? `${y}-${y + 1}` : `${y - 1}-${y}`
+}
+
+// ── Icônes ────────────────────────────────────────────────────────────────────
 function CardIcon() {
   return (
     <svg viewBox="0 0 24 24" width="26" height="26" fill="none"
@@ -26,12 +32,26 @@ function CardIcon() {
   )
 }
 
+function DiplomaIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none"
+      stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="9" y1="13" x2="15" y2="13"/>
+      <line x1="9" y1="17" x2="12" y2="17"/>
+      <circle cx="9" cy="9" r="0" fill="none"/>
+    </svg>
+  )
+}
+
 // ── Composant principal ───────────────────────────────────────────────────────
 export default function Generateur() {
   const isMobile = useIsMobile()
   if (isMobile) return <MobileUnavailable pageName="Générateur de documents" />
   const { token } = useAuth()
 
+  const [docType, setDocType]           = useState('cartes')  // 'cartes' | 'diplomes'
   const [eleves, setEleves]             = useState([])
   const [loading, setLoading]           = useState(true)
   const [search, setSearch]             = useState('')
@@ -39,10 +59,14 @@ export default function Generateur() {
   const [selected, setSelected]         = useState(new Set())
   const [generating, setGenerating]     = useState(false)
 
+  // Champs propres aux diplômes
+  const [anneeScolaire, setAnneeScolaire]         = useState(anneeScolaireAuto())
+  const [dateProclamation, setDateProclamation]   = useState('')
+
   useEffect(() => { loadEleves() }, [])
 
-  // Reset sélection à chaque changement de classe
-  useEffect(() => { setSelected(new Set()) }, [filterClasse])
+  // Reset sélection à chaque changement de classe ou de type de document
+  useEffect(() => { setSelected(new Set()) }, [filterClasse, docType])
 
   async function loadEleves() {
     setLoading(true)
@@ -58,6 +82,7 @@ export default function Generateur() {
   // ── Dérivés ─────────────────────────────────────────────────────────────────
   const classes = [...new Set(eleves.map(e => e.classe).filter(Boolean))].sort()
 
+  // Pour les diplômes, pré-filtrer sur les 6ème par défaut (mais modifiable)
   const classeSelectionnee = filterClasse !== 'all'
 
   const filtered = eleves.filter(e => {
@@ -73,9 +98,9 @@ export default function Generateur() {
   const allFilteredIds      = filtered.map(e => e.id)
   const allFilteredSelected = classeSelectionnee && allFilteredIds.length > 0 && allFilteredIds.every(id => selected.has(id))
   const selectedCount       = selected.size
-  const pageCount           = selectedCount * 2
+  const pageCount           = selectedCount * 2  // cartes : 2 pages (recto + verso)
 
-  // ── Sélection — bloquée si aucune classe choisie ──────────────────────────
+  // ── Sélection ────────────────────────────────────────────────────────────────
   function toggleOne(id) {
     if (!classeSelectionnee) return
     setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -91,7 +116,7 @@ export default function Generateur() {
     })
   }
 
-  // ── Génération ───────────────────────────────────────────────────────────────
+  // ── Génération cartes ────────────────────────────────────────────────────────
   async function genererCartes() {
     if (selected.size === 0 || !classeSelectionnee) return
     setGenerating(true)
@@ -114,7 +139,35 @@ export default function Generateur() {
     }
   }
 
-  // ── Styles select sombre (PageHeader) ────────────────────────────────────────
+  // ── Génération diplômes ──────────────────────────────────────────────────────
+  async function genererDiplomes() {
+    if (selected.size === 0 || !classeSelectionnee) return
+    setGenerating(true)
+    try {
+      const res = await fetch('/.netlify/functions/diplome-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: [...selected],
+          token,
+          annee_scolaire:    anneeScolaire,
+          date_proclamation: dateProclamation,
+        }),
+      })
+      if (!res.ok) { alert('Erreur génération PDF : ' + res.status); return }
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `diplomes-${filterClasse.replace(/\s+/g, '-')}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  // ── Styles ───────────────────────────────────────────────────────────────────
   const selectStyle = {
     height: '28px', fontSize: '12px', borderRadius: '8px',
     backgroundColor: 'rgba(255,255,255,0.09)',
@@ -122,6 +175,20 @@ export default function Generateur() {
     color: 'white', padding: '0 8px', outline: 'none', cursor: 'pointer',
     appearance: 'none', WebkitAppearance: 'none', minWidth: '150px',
   }
+
+  const inputStyle = {
+    height: '28px', fontSize: '12px', borderRadius: '8px',
+    backgroundColor: 'rgba(255,255,255,0.09)',
+    border: '1px solid rgba(255,255,255,0.11)',
+    color: 'white', padding: '0 8px', outline: 'none',
+    width: '130px',
+  }
+
+  const isDiplomes     = docType === 'diplomes'
+  const canGenerate    = selectedCount > 0 && classeSelectionnee
+  const btnLabel       = generating
+    ? 'Génération…'
+    : isDiplomes ? 'Imprimer les diplômes' : 'Imprimer les cartes'
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
   return (
@@ -133,31 +200,55 @@ export default function Generateur() {
         onSearch={setSearch}
         searchPlaceholder="Rechercher un élève…"
         filters={
-          <select value={filterClasse} onChange={e => setFilterClasse(e.target.value)} style={selectStyle}>
-            <option value="all" style={{ background: '#2D1B2E' }}>— Choisir une classe —</option>
-            {classes.map(c => (
-              <option key={c} value={c} style={{ background: '#2D1B2E' }}>{c}</option>
-            ))}
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <select value={filterClasse} onChange={e => setFilterClasse(e.target.value)} style={selectStyle}>
+              <option value="all" style={{ background: '#2D1B2E' }}>— Choisir une classe —</option>
+              {classes.map(c => (
+                <option key={c} value={c} style={{ background: '#2D1B2E' }}>{c}</option>
+              ))}
+            </select>
+            {isDiplomes && (
+              <>
+                <input
+                  type="text"
+                  value={anneeScolaire}
+                  onChange={e => setAnneeScolaire(e.target.value)}
+                  placeholder="Année scolaire"
+                  style={inputStyle}
+                  title="Année scolaire (ex. 2025-2026)"
+                />
+                <input
+                  type="text"
+                  value={dateProclamation}
+                  onChange={e => setDateProclamation(e.target.value)}
+                  placeholder="Date de proclamation"
+                  style={{ ...inputStyle, width: '160px' }}
+                  title="Date de proclamation (ex. 27 juin 2026)"
+                />
+              </>
+            )}
+          </div>
         }
         actions={
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {classeSelectionnee && selectedCount > 0 && (
               <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)', whiteSpace: 'nowrap' }}>
-                <strong style={{ color: 'white' }}>{selectedCount}</strong> élève{selectedCount > 1 ? 's' : ''} ·{' '}
-                <strong style={{ color: 'white' }}>{pageCount}</strong> page{pageCount > 1 ? 's' : ''}
+                <strong style={{ color: 'white' }}>{selectedCount}</strong> élève{selectedCount > 1 ? 's' : ''}
+                {!isDiplomes && (
+                  <> · <strong style={{ color: 'white' }}>{pageCount}</strong> page{pageCount > 1 ? 's' : ''}</>
+                )}
               </span>
             )}
             <button
-              onClick={genererCartes}
-              disabled={selectedCount === 0 || generating || !classeSelectionnee}
+              onClick={isDiplomes ? genererDiplomes : genererCartes}
+              disabled={!canGenerate || generating}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
                 height: '28px', padding: '0 12px', borderRadius: '8px',
                 fontSize: '12px', fontWeight: '600',
-                cursor: (selectedCount === 0 || !classeSelectionnee) ? 'default' : 'pointer',
-                backgroundColor: (selectedCount === 0 || !classeSelectionnee) ? 'rgba(255,255,255,0.1)' : '#F16410',
-                color: (selectedCount === 0 || !classeSelectionnee) ? 'rgba(255,255,255,0.35)' : 'white',
+                cursor: !canGenerate ? 'default' : 'pointer',
+                backgroundColor: !canGenerate ? 'rgba(255,255,255,0.1)' : '#F16410',
+                color: !canGenerate ? 'rgba(255,255,255,0.35)' : 'white',
                 border: 'none', transition: 'background 0.15s',
               }}
             >
@@ -167,7 +258,7 @@ export default function Generateur() {
                 <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
                 <rect x="6" y="14" width="12" height="8"/>
               </svg>
-              {generating ? 'Génération…' : 'Imprimer les cartes'}
+              {btnLabel}
             </button>
           </div>
         }
@@ -177,16 +268,41 @@ export default function Generateur() {
         {/* Panneau gauche — liste des générateurs */}
         <aside className="w-52 flex-none border-r border-gray-200 bg-gray-50 overflow-y-auto p-3">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2 px-2">Documents</p>
-          <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left bg-[#2D1B2E] text-white">
-            <span className="text-[#F16410]"><CardIcon /></span>
+
+          {/* Carte d'étudiant */}
+          <button
+            onClick={() => setDocType('cartes')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left mb-1.5 transition-colors ${
+              docType === 'cartes'
+                ? 'bg-[#2D1B2E] text-white'
+                : 'hover:bg-gray-100 text-gray-700'
+            }`}
+          >
+            <span style={{ color: docType === 'cartes' ? '#F16410' : '#9ca3af' }}><CardIcon /></span>
             <div className="min-w-0">
               <div className="font-semibold text-sm leading-tight">Carte d'étudiant</div>
-              <div className="text-xs mt-0.5 text-gray-300">Dymo LabelWriter</div>
+              <div className={`text-xs mt-0.5 ${docType === 'cartes' ? 'text-gray-300' : 'text-gray-400'}`}>Dymo LabelWriter</div>
+            </div>
+          </button>
+
+          {/* Diplôme de proclamation */}
+          <button
+            onClick={() => setDocType('diplomes')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-colors ${
+              docType === 'diplomes'
+                ? 'bg-[#2D1B2E] text-white'
+                : 'hover:bg-gray-100 text-gray-700'
+            }`}
+          >
+            <span style={{ color: docType === 'diplomes' ? '#F16410' : '#9ca3af' }}><DiplomaIcon /></span>
+            <div className="min-w-0">
+              <div className="font-semibold text-sm leading-tight">Diplôme</div>
+              <div className={`text-xs mt-0.5 ${docType === 'diplomes' ? 'text-gray-300' : 'text-gray-400'}`}>Proclamation A4 paysage</div>
             </div>
           </button>
         </aside>
 
-        {/* Panneau droit — liste des élèves */}
+        {/* Panneau droit */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Bandeau info */}
           {!classeSelectionnee ? (
@@ -199,6 +315,18 @@ export default function Generateur() {
               </svg>
               <span className="text-xs text-blue-700">
                 Sélectionnez une classe dans le filtre ci-dessus pour pouvoir choisir des élèves.
+              </span>
+            </div>
+          ) : isDiplomes ? (
+            <div className="flex items-center gap-2 px-5 py-2 bg-purple-50 border-b border-purple-100 flex-none">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none"
+                stroke="#7c3aed" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span className="text-xs text-purple-700">
+                Format A4 paysage · Un diplôme par page · Polices Cormorant Garamond + Pinyon Script
               </span>
             </div>
           ) : (
@@ -234,7 +362,7 @@ export default function Generateur() {
                   <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
                 </svg>
                 <p className="text-sm font-medium text-gray-500">Choisissez une classe pour commencer</p>
-                <p className="text-xs text-gray-400">Les cartes sont générées classe par classe</p>
+                <p className="text-xs text-gray-400">Les documents sont générés classe par classe</p>
               </div>
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -259,9 +387,13 @@ export default function Generateur() {
                     </th>
                     <th className="py-2.5 px-3 text-left font-semibold text-gray-500 text-xs uppercase tracking-wide">Élève</th>
                     <th className="py-2.5 px-3 text-left font-semibold text-gray-500 text-xs uppercase tracking-wide">Classe</th>
-                    <th className="py-2.5 px-3 text-left font-semibold text-gray-500 text-xs uppercase tracking-wide">Matricule</th>
-                    <th className="py-2.5 px-3 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Sortie midi</th>
-                    <th className="py-2.5 px-3 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Licenc.</th>
+                    {!isDiplomes && (
+                      <>
+                        <th className="py-2.5 px-3 text-left font-semibold text-gray-500 text-xs uppercase tracking-wide">Matricule</th>
+                        <th className="py-2.5 px-3 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Sortie midi</th>
+                        <th className="py-2.5 px-3 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Licenc.</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -294,23 +426,27 @@ export default function Generateur() {
                           <span className="text-gray-500 ml-1">{e.prenom}</span>
                         </td>
                         <td className="py-2 px-3 text-gray-600 text-sm">{e.classe || '—'}</td>
-                        <td className="py-2 px-3 text-gray-500 font-mono text-xs">{e.matricule || '—'}</td>
-                        <td className="py-2 px-3 text-center">
-                          {e.sortie_midi === null || e.sortie_midi === undefined
-                            ? <span className="text-gray-300 text-xs">—</span>
-                            : e.sortie_midi
-                              ? <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Oui</span>
-                              : <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Non</span>
-                          }
-                        </td>
-                        <td className="py-2 px-3 text-center">
-                          {e.licenciement === null || e.licenciement === undefined
-                            ? <span className="text-gray-300 text-xs">—</span>
-                            : e.licenciement
-                              ? <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Oui</span>
-                              : <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Non</span>
-                          }
-                        </td>
+                        {!isDiplomes && (
+                          <>
+                            <td className="py-2 px-3 text-gray-500 font-mono text-xs">{e.matricule || '—'}</td>
+                            <td className="py-2 px-3 text-center">
+                              {e.sortie_midi === null || e.sortie_midi === undefined
+                                ? <span className="text-gray-300 text-xs">—</span>
+                                : e.sortie_midi
+                                  ? <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Oui</span>
+                                  : <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Non</span>
+                              }
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              {e.licenciement === null || e.licenciement === undefined
+                                ? <span className="text-gray-300 text-xs">—</span>
+                                : e.licenciement
+                                  ? <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Oui</span>
+                                  : <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Non</span>
+                              }
+                            </td>
+                          </>
+                        )}
                       </tr>
                     )
                   })}

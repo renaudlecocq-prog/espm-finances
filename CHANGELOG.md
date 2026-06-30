@@ -1,3 +1,11 @@
+## [v1.20.62] — Générateur : Diplôme de proclamation A4 paysage
+- Nouveau document "Diplôme de proclamation" dans le Générateur (panneau gauche)
+- Même UX de sélection par classe que les cartes d'étudiant
+- Champs "Année scolaire" et "Date de proclamation" dans le header
+- Netlify function diplome-pdf.mjs : Puppeteer + gabarit HTML Claude Design
+- Gabarit : fonts Cormorant Garamond + Pinyon Script, logo ESPM+ base64
+- package.json : ajout @sparticuz/chromium + puppeteer-core
+
 ## [v1.20.61] — UX mobile : PageHeader bi-niveaux, vue séquentielle Guidance, cards Suivi social
 
 - **PageHeader** : détection `isMobileDevice` → header bi-niveaux (titre + action / tabs scrollables / search+filtres)
