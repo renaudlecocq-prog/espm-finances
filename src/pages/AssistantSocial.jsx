@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { isMobileDevice } from '../lib/isMobile'
 import { useAuth } from '../context/AuthContext'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 import FicheEleve from '../components/ui/FicheEleve'
@@ -766,8 +767,74 @@ function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, 
         <EchelonnementForm eleves={eleves} onSaved={reload} onClose={() => onToggleForm?.(false)} />
       )}
 
-      {/* Table */}
-      <div className="card p-0 overflow-x-auto">
+      {/* Liste — cards mobile / table desktop */}
+      {isMobileDevice ? (
+        /* ── MOBILE : cards ── */
+        <div className="pb-20">
+          {filtered.length === 0 ? (
+            <p className="py-10 text-center text-gray-400 text-sm">Aucun échelonnement</p>
+          ) : filtered.map(r => {
+            const echeances = echeancesMap[r.id] || []
+            const paiements = paiementsMap[r.eleve_id] || []
+            const alert     = computeAlertStatus(r, echeances, paiements)
+            const dateFin   = r.date_debut && r.nombre_echeances
+              ? addMonths(r.date_debut, r.nombre_echeances - 1) : ''
+            const s         = STATUT_ECH[r.statut]
+            return (
+              <article key={r.id}
+                onClick={() => setDetailId(detailId === r.id ? null : r.id)}
+                className="bg-white border border-gray-200 rounded-2xl p-[15px] mb-3 cursor-pointer">
+                <div className="flex items-start justify-between gap-2.5">
+                  <div>
+                    <h3 className="text-[16.5px] font-bold text-gray-900">
+                      {r.eleve?.nom} {r.eleve?.prenom}
+                    </h3>
+                    <span className="inline-flex mt-1.5 text-[11.5px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                      {r.eleve?.classe}
+                    </span>
+                  </div>
+                  {s && (
+                    <span className={`text-[11.5px] font-semibold px-2.5 py-1 rounded-md whitespace-nowrap shrink-0 ${s.cls}`}>
+                      {s.label}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-baseline gap-2.5 mt-3.5">
+                  <span className="text-[21px] font-bold text-[#F16410] tracking-tight">{fmtEur(r.montant)}</span>
+                  <span className="text-gray-300">·</span>
+                  <span className="text-[13.5px] text-gray-500">{r.nombre_echeances} mois</span>
+                </div>
+                <p className="flex items-center gap-1.5 mt-2 text-[12.5px] text-gray-500">
+                  <Calendar size={12} /> {fmtDate(r.date_debut)} → {fmtDate(dateFin)}
+                </p>
+                <div className="flex items-center justify-between gap-2.5 mt-3 pt-3 border-t border-gray-100">
+                  <span className="text-[12.5px]">
+                    {alert.type === 'ok'   && <span className="flex items-center gap-1.5 font-semibold text-green-600"><CheckCircle2 size={13}/>À jour</span>}
+                    {alert.type === 'late' && <span className="flex items-center gap-1.5 font-semibold text-red-600"><AlertTriangle size={13}/>−{fmtEur(alert.montantRetard)}</span>}
+                    {(alert.type === 'upcoming' || alert.type === 'not_started') && <span className="flex items-center gap-1.5 text-gray-400"><Clock size={13}/>{alert.type === 'not_started' ? 'Non démarré' : 'À venir'}</span>}
+                    {alert.type === 'no_echeances' && <span className="text-gray-300">—</span>}
+                  </span>
+                  <div className="flex gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+                    <a href={token ? `${window.location.origin}/.netlify/functions/echelonnements-rapport-pdf?echId=${r.id}&token=${token}` : '#'}
+                      target="_blank" rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-[9px] border border-gray-200 flex items-center justify-center text-gray-400">
+                      <FileText size={14} />
+                    </a>
+                    {isAllowed && (
+                      <button onClick={() => del(r.id)}
+                        className="w-8 h-8 rounded-[9px] border border-gray-200 flex items-center justify-center text-red-400">
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      ) : (
+        /* ── DESKTOP : table ── */
+        <div className="card p-0 overflow-x-auto">
         <table className="w-full text-sm" style={{ minWidth: 860 }}>
           <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
             <tr>
@@ -856,7 +923,8 @@ function TabEchelonnements({ isAllowed, openEleveId, search, onSearch, filters, 
             })}
           </tbody>
         </table>
-      </div>
+        </div>
+      )}
 
       {detail && (
         <EchelonnementDetail

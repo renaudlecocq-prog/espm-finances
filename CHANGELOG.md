@@ -1,3 +1,10 @@
+## [v1.20.61] — UX mobile : PageHeader bi-niveaux, vue séquentielle Guidance, cards Suivi social
+
+- **PageHeader** : détection `isMobileDevice` → header bi-niveaux (titre + action / tabs scrollables / search+filtres)
+- **Conseils de guidance** : vue séquentielle sur mobile — liste élèves (tap → formulaire) + bouton Retour ; desktop : split panel inchangé
+- **Suivi social / Échelonnements** : table remplacée par des cards sur mobile (montant, statut, alerte retard, boutons PDF/suppr)
+- **index.css** : utilitaire `.no-scrollbar` pour les rangées de tabs et chips horizontaux
+
 ## [v1.20.41] — Debug sync : raw sample getUserDetailsByNumber dans sync_log
 
 - Stocke le raw object du premier utilisateur dans sync_log.details pour identifier le vrai nom du champ barcodevalue

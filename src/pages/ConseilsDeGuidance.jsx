@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { isMobileDevice } from '../lib/isMobile'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
 import {
@@ -394,34 +395,283 @@ export default function ConseilsDeGuidance() {
         </div>
       )}
 
-      {/* Corps */}
-      <div className="flex flex-1 gap-0 overflow-hidden">
-
-        {/* ── Colonne gauche : liste élèves ─────────────────────────────────── */}
-        <div className="w-72 flex-shrink-0 border-r border-gray-100 dark:border-gray-700 flex flex-col overflow-hidden">
-          <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400 font-medium flex justify-between">
-            <span>{filteredEleves.length} élève{filteredEleves.length > 1 ? 's' : ''}</span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {filteredEleves.map(e => (
-              <EleveRow key={e.id} eleve={e}
-                encoding={encodings[e.id + '_' + period]}
-                status={getStatus(e.id)}
-                active={selectedId === e.id}
-                onClick={() => setSelectedId(e.id)} />
-            ))}
-          </div>
-        </div>
-
-        {/* ── Colonne droite : formulaire d'encodage ───────────────────────── */}
-        <div className="flex-1 overflow-y-auto">
+      {/* Corps — mobile : séquentiel / desktop : split panel */}
+      {isMobileDevice ? (
+        /* ── MOBILE ── */
+        <div className="flex-1 overflow-y-auto pb-20">
           {!selectedId ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 gap-3">
-              <Users size={48} className="text-gray-200 dark:text-gray-700" />
-              <p className="text-sm">Sélectionne un élève pour commencer l'encodage</p>
+            /* Vue 1 : liste des élèves */
+            <div className="p-3">
+              <p className="text-xs text-gray-400 px-1 pb-2">
+                {filteredEleves.length} élève{filteredEleves.length > 1 ? 's' : ''}
+              </p>
+              {filteredEleves.map(e => {
+                const enc = encodings[e.id + '_' + period] || {}
+                const hasData = enc.cas || Object.keys(enc.subject_status || {}).length > 0 || enc.freins || enc.forces
+                return (
+                  <button key={e.id} onClick={() => setSelectedId(e.id)}
+                    className="w-full flex items-center gap-3 bg-white border border-gray-100 rounded-2xl px-3.5 py-3 mb-2 text-left">
+                    <span className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-sm font-bold shrink-0 bg-gray-100 text-gray-600">
+                      {e.prenom?.charAt(0)}{e.nom?.charAt(0)}
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[15.5px] font-semibold text-gray-900 truncate">{e.nom} {e.prenom}</span>
+                      <span className="block text-[12.5px] text-gray-400 mt-0.5">{e.classe}</span>
+                    </span>
+                    {hasData && (
+                      <span className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                        <CheckCircle2 size={12} className="text-white" />
+                      </span>
+                    )}
+                    <ChevronRight size={18} className="text-gray-300 shrink-0" />
+                  </button>
+                )
+              })}
             </div>
           ) : (
+            /* Vue 2 : formulaire élève */
+            <div>
+              <button onClick={() => setSelectedId(null)}
+                className="flex items-center gap-1.5 text-sm font-medium text-[#2D1B2E] px-4 pt-3 pb-1">
+                <ChevronRight size={16} className="rotate-180" />
+                Retour à la liste
+              </button>
+            <div className="p-6 max-w-3xl space-y-6">
+
+              {/* Header élève */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                    {currentEleve?.nom} {currentEleve?.prenom}
+                  </h2>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">
+                    {currentEleve?.classe} · Degré {currentDegree} · {period}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  {saving && <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1"><RefreshCw size={12} className="animate-spin"/>Enreg…</span>}
+                  <select value={enc.status_id || ''}
+                    onChange={e => update({ status_id: e.target.value || null })}
+                    className="input text-sm py-1.5 w-36">
+                    <option value="">Statut…</option>
+                    {taskStatuses.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* ── Cas ──────────────────────────────────────────────────────── */}
+              <section className="card p-4">
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">Situation de l'élève</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { cas: 1, label: 'Bonne situation',   color: 'green',  desc: 'Résultats satisfaisants' },
+                    { cas: 2, label: 'Difficultés',       color: 'yellow', desc: 'Quelques points d\'attention' },
+                    { cas: 3, label: 'Préoccupant',       color: 'red',    desc: 'Difficultés importantes' },
+                  ].map(({ cas, label, color, desc }) => (
+                    <button key={cas} onClick={() => update({ cas })}
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                        enc.cas === cas
+                          ? color === 'green'  ? 'border-green-500  bg-green-50 dark:bg-green-950  text-green-700 dark:text-green-300'
+                          : color === 'yellow' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-300'
+                          :                      'border-red-500    bg-red-50 dark:bg-red-950    text-red-700 dark:text-red-300'
+                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 text-gray-600 dark:text-gray-300'
+                      }`}>
+                      <div className="font-medium text-sm">{cas}. {label}</div>
+                      <div className="text-xs opacity-70 mt-0.5">{desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {/* ── Matières ─────────────────────────────────────────────────── */}
+              <section className="card p-4">
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">Matières</h3>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {currentSubjects.map(s => {
+                    const st = enc.subject_status?.[s.id]
+                    return (
+                      <div key={s.id} className="flex items-center gap-2">
+                        <span className="text-sm text-gray-700 dark:text-gray-200 w-40 flex-shrink-0">{s.name}</span>
+                        <div className="flex gap-1">
+                          {[
+                            { key: 'echec',      label: 'Échec',      bg: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-300'       },
+                            { key: 'difficulte', label: 'Difficulté', bg: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-300' },
+                            { key: 'NE',         label: 'NE',         bg: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-500'    },
+                          ].map(({ key, label, bg }) => (
+                            <button key={key} onClick={() => toggleSubject(s.id, key)}
+                              className={`text-xs px-2 py-0.5 rounded-full border transition-all ${
+                                st === key ? bg : 'border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-gray-300'
+                              }`}>
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+
+              {/* ── Compétences transversales ─────────────────────────────────── */}
+              <section className="card p-4">
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">Compétences transversales</h3>
+                <div className="flex flex-wrap gap-2">
+                  {currentComps.map(c => {
+                    const checked = enc.competencies?.[c.id]
+                    return (
+                      <button key={c.id} onClick={() => toggleComp(c.id)}
+                        className={`text-sm px-3 py-1.5 rounded-lg border transition-all ${
+                          checked
+                            ? 'bg-primary text-white border-primary'
+                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-primary/40'
+                        }`}>
+                        {checked && <Check size={12} className="inline mr-1" />}{c.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+
+              {/* ── Travail autonome ─────────────────────────────────────────── */}
+              <section className="card p-4">
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">Travail autonome (TA)</h3>
+                <div className="flex gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={enc.ta_force} onChange={e => update({ ta_force: e.target.checked })}
+                      className="w-4 h-4 rounded accent-green-500" />
+                    <span className="text-sm text-green-700 dark:text-green-300 font-medium">Force</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={enc.ta_faiblesse} onChange={e => update({ ta_faiblesse: e.target.checked })}
+                      className="w-4 h-4 rounded accent-orange-500" />
+                    <span className="text-sm text-orange-700 dark:text-orange-300 font-medium">Faiblesse</span>
+                  </label>
+                </div>
+                <textarea value={enc.ta_manual_text || ''} onChange={e => update({ ta_manual_text: e.target.value })}
+                  placeholder="Précision libre sur le TA…" rows={2}
+                  className="input mt-2 resize-none text-sm" />
+              </section>
+
+              {/* ── Champs libres ─────────────────────────────────────────────── */}
+              <section className="card p-4 space-y-3">
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300">Notes libres</h3>
+                <div>
+                  <label className="label">Freins</label>
+                  <textarea value={enc.freins || ''} onChange={e => update({ freins: e.target.value })}
+                    rows={2} className="input resize-none text-sm" placeholder="Obstacles observés…" />
+                </div>
+                <div>
+                  <label className="label">Forces</label>
+                  <textarea value={enc.forces || ''} onChange={e => update({ forces: e.target.value })}
+                    rows={2} className="input resize-none text-sm" placeholder="Points positifs…" />
+                </div>
+                <div>
+                  <label className="label">Conseils</label>
+                  <textarea value={enc.conseils || ''} onChange={e => update({ conseils: e.target.value })}
+                    rows={2} className="input resize-none text-sm" placeholder="Recommandations du conseil…" />
+                </div>
+              </section>
+
+              {/* ── Suivi ─────────────────────────────────────────────────────── */}
+              <section className="card p-4 space-y-3">
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300">Suivi</h3>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={enc.suivi_necessaire}
+                    onChange={e => update({ suivi_necessaire: e.target.checked })}
+                    className="w-4 h-4 rounded accent-primary" />
+                  <span className="text-sm text-gray-700 dark:text-gray-200">Suivi nécessaire</span>
+                </label>
+                {enc.suivi_necessaire && (
+                  <textarea value={enc.suivi_raisons || ''} onChange={e => update({ suivi_raisons: e.target.value })}
+                    rows={2} className="input resize-none text-sm" placeholder="Raisons du suivi…" />
+                )}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">Personne ressource 1</label>
+                    <select value={enc.resource_person_1_id || ''}
+                      onChange={e => update({ resource_person_1_id: e.target.value || null })}
+                      className="input text-sm">
+                      <option value="">—</option>
+                      {resourcePersons.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">Personne ressource 2</label>
+                    <select value={enc.resource_person_2_id || ''}
+                      onChange={e => update({ resource_person_2_id: e.target.value || null })}
+                      className="input text-sm">
+                      <option value="">—</option>
+                      {resourcePersons.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </section>
+
+              {/* ── Commentaire généré ──────────────────────────────────────── */}
+              <section className="card p-4 space-y-3 border-l-4 border-accent">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                    <MessageSquare size={16} className="text-accent" />
+                    Commentaire de bulletin généré
+                  </h3>
+                </div>
+                {comment ? (
+                  <p className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                    {comment}
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-400 dark:text-gray-500 italic">
+                    Remplis les champs ci-dessus pour générer le commentaire automatiquement.
+                  </p>
+                )}
+
+                {comment && (
+                  <div className="border-t border-gray-100 dark:border-gray-700 pt-3 flex justify-end">
+                    <button onClick={copyComment}
+                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all ${
+                        copied ? 'bg-green-100 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
+                      }`}>
+                      {copied ? <><Check size={12}/>Copié !</> : <><Copy size={12}/>Copier le commentaire</>}
+                    </button>
+                  </div>
+                )}
+              </section>
+
+              </div>
+              {saving && (
+                <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-white/90 border-t border-gray-100 backdrop-blur-sm z-30 flex items-center gap-2 justify-center text-sm text-gray-500">
+                  <RefreshCw size={14} className="animate-spin" />Enregistrement…
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* ── DESKTOP : split panel ── */
+        <div className="flex flex-1 gap-0 overflow-hidden">
+          {/* Colonne gauche */}
+          <div className="w-72 flex-shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+            <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 text-xs text-gray-500 font-medium flex justify-between">
+              <span>{filteredEleves.length} élève{filteredEleves.length > 1 ? 's' : ''}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {filteredEleves.map(e => (
+                <EleveRow key={e.id} eleve={e}
+                  encoding={encodings[e.id + '_' + period]}
+                  status={getStatus(e.id)}
+                  active={selectedId === e.id}
+                  onClick={() => setSelectedId(e.id)} />
+              ))}
+            </div>
+          </div>
+          {/* Colonne droite */}
+          <div className="flex-1 overflow-y-auto">
+            {!selectedId ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+                <Users size={48} className="text-gray-200" />
+                <p className="text-sm">Sélectionne un élève pour commencer l'encodage</p>
+              </div>
+            ) : (
             <div className="p-6 max-w-3xl space-y-6">
 
               {/* Header élève */}
@@ -624,9 +874,11 @@ export default function ConseilsDeGuidance() {
               </section>
 
             </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
+
