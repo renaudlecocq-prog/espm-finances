@@ -2650,3 +2650,7 @@ git push origin main
 - Notes stockées dans la colonne `data` de `compositions_projets` (Supabase) → visibles par tous
 - Auto-sauvegarde via le mécanisme existant (debounce 500ms)
 - applyCompositionData + confirmCreate + doSave mis à jour
+
+## [v1.20.60] — Suppression bouton toggle Mobile/Desktop
+- Retiré LayoutToggle (bouton fixe bas-droite) — détection automatique suffit
+- Retiré setLayoutMode de l'import isMobile.js dans App.jsx
