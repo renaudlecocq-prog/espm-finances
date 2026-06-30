@@ -617,6 +617,7 @@ export default function Compositions() {
 
   // ── Config composition active ─────────────────────────────────────────────
   const [compositionName, setCompositionName] = useState('Nouvelle composition')
+  const [notes, setNotes]                     = useState('')
   const [filters, setFilters]                 = useState({})
   const [excludedIds, setExcludedIds]         = useState(new Set())
   const [includedIds, setIncludedIds]         = useState(new Set())
@@ -749,7 +750,7 @@ export default function Compositions() {
       const data = {
         name: compositionName, date: now, filters, excludedIds: [...excludedIds], includedIds: [...includedIds],
         fields: Object.fromEntries(Object.entries(fields).map(([k,v]) => [k,v.enabled])),
-        customFields, groups, assignments, linkedSets: linkedSets.map(s => [...s]), separatedSets: separatedSets.map(s => [...s]),
+        customFields, notes, groups, assignments, linkedSets: linkedSets.map(s => [...s]), separatedSets: separatedSets.map(s => [...s]),
       }
       const pid = currentProjectId.current
       if (!pid) { pendingSave.current = false; setHasPending(false); return } // pas encore de projet créé
@@ -783,14 +784,14 @@ export default function Compositions() {
       setHasPending(true)  // indicateur immédiat — OK car sync assignments retourne `prev` (pas de boucle)
       autoSaveTimer.current = setTimeout(save, 500)
     }
-  }, [compositionName, filters, excludedIds, includedIds, fields, customFields, groups, assignments, linkedSets])
+  }, [compositionName, filters, excludedIds, includedIds, fields, customFields, notes, groups, assignments, linkedSets])
 
   useEffect(() => {
     if (justLoaded.current) { justLoaded.current = false; return } // skip le save inutile après chargement
     if (justAppliedRemote.current) { justAppliedRemote.current = false; return } // skip le save inutile après update distant
     if (view === 'board') doSave()
     return () => clearTimeout(autoSaveTimer.current)
-  }, [compositionName, filters, excludedIds, fields, customFields, groups, assignments, linkedSets]) // eslint-disable-line
+  }, [compositionName, filters, excludedIds, fields, customFields, notes, groups, assignments, linkedSets]) // eslint-disable-line
 
   // ── DnD ───────────────────────────────────────────────────────────────────
   const sensors = useSensors(
@@ -985,6 +986,7 @@ export default function Compositions() {
     if (d.assignments)  setAssignments(d.assignments)
     if (d.linkedSets)   setLinkedSets(d.linkedSets.map(s => new Set(s)))
     if (d.separatedSets) setSeparatedSets(d.separatedSets.map(s => new Set(s)))
+    if (d.notes !== undefined) setNotes(d.notes)
     // cardMode intentionnellement exclu — préférence locale uniquement
   }, [])
 
@@ -1046,7 +1048,7 @@ export default function Compositions() {
       name: draftName, date: now, filters: draftFilters,
       excludedIds: [...draftExcludedIds], includedIds: [...draftIncludedIds],
       fields: Object.fromEntries(Object.entries(draftFields).map(([k,v]) => [k,v.enabled])),
-      customFields: draftCustomFields, groups: [], assignments: {}, linkedSets: [], separatedSets: [],
+      customFields: draftCustomFields, notes: '', groups: [], assignments: {}, linkedSets: [], separatedSets: [],
     }
     const { data: rows, error } = await supabase.from('compositions_projets')
       .insert({ nom: draftName, updated_at: now, data })
@@ -1384,25 +1386,41 @@ export default function Compositions() {
       {/* ── Modal Configuration ──────────────────────────────────────── */}
       {showConfigModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowConfigModal(false)}>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0">
-              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Configuration — {compositionName}</h3>
-
-                <button onClick={() => setShowConfigModal(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X size={16} /></button>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <h3 className="text-sm font-bold text-gray-800">Configuration — {compositionName}</h3>
+              <button onClick={() => setShowConfigModal(false)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              <ConfigForm
-                allEleves={allEleves} loading={loading} onReload={loadEleves}
-                filters={filters} setFilters={setFilters}
-                excludedIds={excludedIds} setExcludedIds={setExcludedIds}
-                includedIds={includedIds} setIncludedIds={setIncludedIds}
-                fields={fields} setFields={setFields}
-                customFields={customFields} setCustomFields={setCustomFields}
-                compositionName={compositionName} setCompositionName={setCompositionName}
-                showName onExport={exportXLSX} onImport={importXLSX}
-              />
+            <div className="flex-1 flex overflow-hidden min-h-0">
+              {/* Colonne gauche — Config */}
+              <div className="flex-1 overflow-y-auto p-6 border-r border-gray-100">
+                <ConfigForm
+                  allEleves={allEleves} loading={loading} onReload={loadEleves}
+                  filters={filters} setFilters={setFilters}
+                  excludedIds={excludedIds} setExcludedIds={setExcludedIds}
+                  includedIds={includedIds} setIncludedIds={setIncludedIds}
+                  fields={fields} setFields={setFields}
+                  customFields={customFields} setCustomFields={setCustomFields}
+                  compositionName={compositionName} setCompositionName={setCompositionName}
+                  showName onExport={exportXLSX} onImport={importXLSX}
+                />
+              </div>
+              {/* Colonne droite — Notes partagées */}
+              <div className="w-72 shrink-0 flex flex-col p-5 bg-amber-50">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><polyline points="15 3 15 9 21 9"/></svg>
+                  <span className="text-xs font-semibold text-amber-700">Notes partagées</span>
+                </div>
+                <p className="text-[10px] text-amber-600 mb-3 leading-relaxed">Visibles par tous les utilisateurs ayant accès à ce projet.</p>
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Ajoutez des notes, consignes ou remarques sur cette composition..."
+                  className="flex-1 text-xs text-gray-700 resize-none rounded-lg p-3 bg-white border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-300 leading-relaxed"
+                />
+              </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end shrink-0">
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end shrink-0">
               <button onClick={() => setShowConfigModal(false)}
                 className="text-sm font-semibold bg-indigo-600 text-white px-5 py-2 rounded-xl hover:bg-indigo-700">
                 Fermer
