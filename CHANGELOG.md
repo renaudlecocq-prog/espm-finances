@@ -2643,3 +2643,10 @@ git push origin main
 
 ## [v1.20.58] — Supprimer Layout.jsx orphelin
 - src/components/layout/Layout.jsx supprimé (jamais importé, remplacé par Layout dans App.jsx)
+
+## [v1.20.59] — Notes partagées dans la config Compositions
+- Modal Configuration élargi (max-w-4xl) avec layout 2 colonnes
+- Colonne droite : panneau "Notes partagées" (textarea fond ambre)
+- Notes stockées dans la colonne `data` de `compositions_projets` (Supabase) → visibles par tous
+- Auto-sauvegarde via le mécanisme existant (debounce 500ms)
+- applyCompositionData + confirmCreate + doSave mis à jour
