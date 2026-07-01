@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import FicheEleve from '../components/ui/FicheEleve'
 import { ChevronDown, ChevronUp, ChevronsUpDown, Plus, FileText } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
+import { isMobileDevice } from '../lib/isMobile'
 import MasterFilter, { ActiveFilterChips } from '../components/ui/MasterFilter'
 
 // ── Column config (onglet Groupes) ─────────────────────────────────────────
@@ -416,6 +417,47 @@ function NoteModal({ eleve, user, profile, note: editingNote, onClose, onSaved }
   )
 }
 
+
+// ── Mobile helpers ──────────────────────────────────────────────────────────
+const AVATAR_PALETTE = ['#7C3AED','#2563EB','#0891B2','#059669','#D97706','#DC2626','#DB2777','#7C3AED']
+function avatarColor(name = '') {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length]
+}
+function MobileEleveRow({ row, onClick }) {
+  const initials = `${(row.nom||'')[0]||''}${(row.prenom||'')[0]||''}`.toUpperCase()
+  const bg = avatarColor((row.nom||'') + (row.prenom||''))
+  return (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+      padding: '11px 16px', background: 'none', border: 'none', cursor: 'pointer',
+      borderBottom: '1px solid #F3F4F6', textAlign: 'left'
+    }}>
+      <div style={{ width: 38, height: 38, borderRadius: 999, backgroundColor: bg, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#fff', fontSize: 13, fontWeight: 700 }}>{initials}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, fontSize: 14, color: '#111827', whiteSpace: 'nowrap',
+          overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.nom} {row.prenom}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+          {row.classe && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#6B7280',
+              backgroundColor: '#F3F4F6', borderRadius: 5, padding: '1px 6px' }}>{row.classe}</span>
+          )}
+          {row.amenagements_raisonnables && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#4338CA',
+              backgroundColor: '#EEF2FF', borderRadius: 5, padding: '1px 6px' }}>AR</span>
+          )}
+        </div>
+      </div>
+      <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="#D1D5DB" strokeWidth={2}>
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </button>
+  )
+}
+
 export default function Groupes() {
   const { user, profile, role, can } = useAuth()
   const [rows,    setRows]    = useState([])
@@ -434,6 +476,7 @@ export default function Groupes() {
   const [noteModalOpen,   setNoteModalOpen]   = useState(false)
   const [notesPanelKey,   setNotesPanelKey]   = useState(0)
   const [notesClassFilter, setNotesClassFilter] = useState([])
+  const [searchOpen, setSearchOpen] = useState(false)
 
   useEffect(() => {
     supabase.from('eleves').select('*').eq('actif', true).order('nom')
@@ -496,6 +539,132 @@ export default function Groupes() {
   if (loading) return <div className="p-8 text-center text-gray-400 dark:text-gray-500">Chargement…</div>
 
   const selectedNoteEleve = rows.find(e => e.id === notesSelectedId)
+
+  // ── Mobile header icon buttons style helper
+  const iconBtn = (active) => ({
+    width: 42, height: 42, borderRadius: 11, border: 'none', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: active ? '#fff' : 'rgba(255,255,255,0.10)',
+    color: active ? '#2D1B2E' : 'rgba(255,255,255,0.55)',
+    flexShrink: 0,
+  })
+
+  if (isMobileDevice) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        {/* ── Mobile header ── */}
+        <div style={{
+          background: 'linear-gradient(135deg,#2D1B2E 0%,#4a2257 100%)',
+          paddingTop: 'max(env(safe-area-inset-top),12px)',
+          paddingLeft: 16, paddingRight: 16, paddingBottom: 12,
+          flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h1 style={{ color: '#fff', fontSize: 23, fontWeight: 700, margin: 0 }}>Élèves</h1>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {/* Loupe — recherche */}
+              <button onClick={() => setSearchOpen(true)} style={iconBtn(searchOpen)} aria-label="Rechercher">
+                <svg viewBox="0 0 24 24" width={19} height={19} fill="none" stroke="currentColor" strokeWidth={2.2}>
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </button>
+              {/* Grille — onglet Groupes */}
+              <button onClick={() => setActiveTab('groupes')} style={iconBtn(activeTab === 'groupes' && !searchOpen)} aria-label="Groupes">
+                <svg viewBox="0 0 24 24" width={19} height={19} fill="none" stroke="currentColor" strokeWidth={2.2}>
+                  <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                </svg>
+              </button>
+              {/* Crayon — onglet Notes */}
+              {can('notes_eleves') && (
+                <button onClick={() => setActiveTab('notes')} style={iconBtn(activeTab === 'notes' && !searchOpen)} aria-label="Notes">
+                  <svg viewBox="0 0 24 24" width={19} height={19} fill="none" stroke="currentColor" strokeWidth={2.2}>
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Overlay recherche plein écran ── */}
+        {searchOpen && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 999,
+            background: '#fff', display: 'flex', flexDirection: 'column' }}>
+            {/* barre de recherche */}
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #F3F4F6',
+              display: 'flex', alignItems: 'center', gap: 10,
+              paddingTop: 'max(env(safe-area-inset-top),12px)' }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8,
+                backgroundColor: '#F3F4F6', borderRadius: 10, padding: '8px 12px' }}>
+                <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="#9CA3AF" strokeWidth={2}>
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input autoFocus value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Rechercher un élève…"
+                  style={{ flex: 1, border: 'none', background: 'none', outline: 'none',
+                    fontSize: 15, color: '#111827' }} />
+                {search && (
+                  <button onClick={() => setSearch('')} style={{ background:'none',border:'none',cursor:'pointer',
+                    color:'#9CA3AF',fontSize:18,lineHeight:1,padding:0 }}>×</button>
+                )}
+              </div>
+              <button onClick={() => { setSearchOpen(false); setSearch('') }}
+                style={{ background:'none',border:'none',cursor:'pointer',
+                  color:'#6B7280',fontSize:14,fontWeight:600,padding:'4px 0',whiteSpace:'nowrap' }}>
+                Annuler
+              </button>
+            </div>
+            {/* Résultats */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {filtered.length === 0 ? (
+                <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF', fontSize: 14 }}>Aucun résultat</div>
+              ) : filtered.map(row => (
+                <MobileEleveRow key={row.id} row={row} onClick={() => { setFicheId(row.id); setSearchOpen(false) }} />
+              ))}
+            </div>
+            <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
+          </div>
+        )}
+
+        {/* ── Contenu principal ── */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {activeTab === 'groupes' ? (
+            <>
+              {filtered.map(row => (
+                <MobileEleveRow key={row.id} row={row} onClick={() => setFicheId(row.id)} />
+              ))}
+              {filtered.length === 0 && (
+                <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF', fontSize: 14 }}>Aucun élève</div>
+              )}
+              <FicheEleve eleveId={ficheId} onClose={() => setFicheId(null)} />
+            </>
+          ) : (
+            <NotesPanel
+              key={notesPanelKey}
+              eleves={notesEleves}
+              onOpenFiche={id => setFicheId(id)}
+              setSelectedIdUp={setNotesSelectedId}
+              search={notesSearch}
+              userId={user?.id}
+              userRole={role}
+              canManageAll={can('notes_manage_all')}
+            />
+          )}
+        </div>
+        {noteModalOpen && selectedNoteEleve && (
+          <NoteModal
+            eleve={selectedNoteEleve}
+            user={user}
+            profile={profile}
+            onClose={() => setNoteModalOpen(false)}
+            onSaved={() => { setNoteModalOpen(false); setNotesPanelKey(k => k + 1) }}
+          />
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="h-full flex flex-col">

@@ -1530,8 +1530,26 @@ export default function SalleDProfs() {
     <>
       <PageHeader
         title={headerTitle}
-        subtitle={headerSubtitle}
-        leftActions={(currentFolder || openBoard || openListe) ? (
+        subtitle={isMobile ? undefined : headerSubtitle}
+        leftActions={isMobile ? (
+          /* Mobile : back arrow only, no breadcrumb text */
+          (currentFolder || openBoard || openListe || openColDoc) ? (
+            <button onClick={() => {
+              if (openBoard) { setOpenBoard(null); return }
+              if (openColDoc) { setOpenColDoc(null); return }
+              if (openListe) { setOpenListe(null); return }
+              if (folderPath.length > 1) { navigateToIndex(folderPath.length - 2) }
+              else { navigateToRoot() }
+            }}
+              style={{ width: 36, height: 36, borderRadius: 9, border: 'none', cursor: 'pointer',
+                backgroundColor: 'rgba(255,255,255,0.10)', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={2.2}>
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+          ) : undefined
+        ) : (currentFolder || openBoard || openListe) ? (
           <div style={{display:'flex',alignItems:'center',gap:0}}>
             {/* Breadcrumb */}
             <button onClick={() => { navigateToRoot(); setOpenBoard(null); setOpenColDoc(null) }}
@@ -1562,19 +1580,62 @@ export default function SalleDProfs() {
             <div style={{width:1,height:16,backgroundColor:'rgba(255,255,255,0.20)',margin:'0 6px'}}/>
           </div>
         ) : undefined}
-        tabs={(!currentFolder && !openBoard && !openListe) ? tabs : undefined}
+        tabs={isMobile
+          ? undefined  /* mobile: onglets remplacés par icônes dans actions */
+          : (!currentFolder && !openBoard && !openListe) ? tabs : undefined}
         activeTab={tab}
         onTabChange={(!currentFolder && !openBoard && !openListe) ? setTab : undefined}
         actions={
           <div style={{display:'flex',gap:8}}>
-            {currentFolder && !openBoard && !openColDoc && !openListe && (
+            {/* Mobile racine : icônes Salle / Casier / + Dossier */}
+            {isMobile && !currentFolder && !openBoard && !openColDoc && !openListe && (
+              <>
+                <button onClick={() => setTab('shared')}
+                  style={{ width:42,height:42,borderRadius:11,border:'none',cursor:'pointer',
+                    backgroundColor: tab==='shared' ? '#fff' : 'rgba(255,255,255,0.10)',
+                    color: tab==='shared' ? '#2D1B2E' : 'rgba(255,255,255,0.55)',
+                    display:'flex',alignItems:'center',justifyContent:'center' }}>
+                  <svg viewBox="0 0 24 24" width={19} height={19} fill="none" stroke="currentColor" strokeWidth={2.2}>
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </button>
+                <button onClick={() => setTab('personal')}
+                  style={{ width:42,height:42,borderRadius:11,border:'none',cursor:'pointer',
+                    backgroundColor: tab==='personal' ? '#fff' : 'rgba(255,255,255,0.10)',
+                    color: tab==='personal' ? '#2D1B2E' : 'rgba(255,255,255,0.55)',
+                    display:'flex',alignItems:'center',justifyContent:'center' }}>
+                  <svg viewBox="0 0 24 24" width={19} height={19} fill="none" stroke="currentColor" strokeWidth={2.2}>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </button>
+                <button onClick={()=>setFolderModal(true)}
+                  style={{ width:42,height:42,borderRadius:11,border:'none',cursor:'pointer',
+                    backgroundColor:'#F16410',color:'#fff',
+                    display:'flex',alignItems:'center',justifyContent:'center' }}>
+                  <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth={2.5}>
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </button>
+              </>
+            )}
+            {/* Mobile dans dossier : bouton + Élément orange */}
+            {isMobile && currentFolder && !openBoard && !openColDoc && !openListe && (
+              <button onClick={()=>setAddItemModal(true)}
+                style={{padding:'8px 16px',borderRadius:10,border:'none',
+                  backgroundColor:'#F16410',color:'#fff',cursor:'pointer',fontSize:13,fontWeight:700}}>
+                + Élément
+              </button>
+            )}
+            {/* Desktop actions */}
+            {!isMobile && currentFolder && !openBoard && !openColDoc && !openListe && (
               <button onClick={()=>setAddItemModal(true)}
                 style={{padding:'7px 14px',borderRadius:8,border:'1.5px solid rgba(255,255,255,0.4)',
                   backgroundColor:'transparent',color:'#fff',cursor:'pointer',fontSize:13,fontWeight:600}}>
                 + Élément
               </button>
             )}
-            {!currentFolder && !openBoard && !openColDoc && !openListe && (
+            {!isMobile && !currentFolder && !openBoard && !openColDoc && !openListe && (
               <button onClick={()=>setFolderModal(true)}
                 style={{padding:'7px 16px',borderRadius:8,border:'none',
                   backgroundColor:'#fff',color:'#2D1B2E',cursor:'pointer',fontSize:13,fontWeight:700}}>

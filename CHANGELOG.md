@@ -1,3 +1,11 @@
+## [v1.20.64] — Sprint 2 UX mobile : 5 pages redessinées
+
+- **Home.jsx** : tuiles financières 2×2 couleur solide (rouge/orange/ambre/vert) sur mobile ; sous-titre remplacé par chip année dans le header
+- **Groupes.jsx** : header mobile 3 icônes (loupe, grille, crayon) ; overlay recherche plein écran avec initiales colorées et badge AR ; vue liste avec avatar initiales
+- **Helpdesk.jsx** : header mobile 2 lignes — icônes (personne, filtre, +) en ligne 1 ; catégories défilantes en ligne 2 avec icône + libellé 10px
+- **HelpdeskDetail.jsx** : vues switchables Messages / Infos ; barre de saisie sticky avec trombone + input arrondi + bouton envoi orange ; vue Infos empilée avec bouton Fermer rouge
+- **SalleDProfs.jsx** : header simplifié — icônes dossier/cadenas/+ à la racine, flèche retour seule dans les sous-dossiers, sous-titre masqué sur mobile
+
 ## [v1.20.63] — Diplôme : auto-scale nom long sur 1 ligne
 - gabarit-diplome-espm.html : script fitNames() — réduit la police de 82px → 44px pour tenir sur 1 ligne
 - Déclenché sur document.fonts.ready + 2 fallbacks setTimeout (600ms / 1600ms)

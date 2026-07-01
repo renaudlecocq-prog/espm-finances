@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { isMobileDevice } from '../lib/isMobile'
 import { useDemo } from '../context/DemoContext'
 import demoData from '../data/demoData'
 
@@ -124,6 +125,22 @@ function HomeMdp() {
     </>
   )
 }
+
+function MobileTileCard({ label, value, to, bg, textColor = '#fff', chipBg = 'rgba(255,255,255,0.20)', icon }) {
+  const inner = (
+    <div style={{ backgroundColor: bg, padding: 15, borderRadius: 16, color: textColor,
+      display: 'flex', flexDirection: 'column', minHeight: 122 }}>
+      <div style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: chipBg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div style={{ marginTop: 'auto', fontWeight: 700, fontSize: 22, lineHeight: 1.1 }}>{value}</div>
+      <div style={{ fontSize: 12.5, opacity: 0.85, marginTop: 3 }}>{label}</div>
+    </div>
+  )
+  return to ? <Link to={to}>{inner}</Link> : inner
+}
+
 function HomeFinancier() {
   const { isAdmin } = useAuth()
   const [loading, setLoading] = useState(true)
@@ -195,20 +212,42 @@ function HomeFinancier() {
   const totF = facture.frais + facture.materiel + facture.activites + facture.autres
   return (
     <>
-    <PageHeader title="Tableau de bord" subtitle={`Année scolaire ${as}`} />
+    <PageHeader
+      title="Tableau de bord"
+      subtitle={isMobileDevice ? undefined : `Année scolaire ${as}`}
+      actions={isMobileDevice ? (
+        <div style={{ padding: '4px 10px', borderRadius: 8,
+          backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
+          {as}
+        </div>
+      ) : undefined}
+    />
     <div className="p-6 max-w-screen-xl mx-auto space-y-10">
       <section>
         <SectionTitle icon="💰" title="Vue financière" subtitle={`Année scolaire ${as}`} />
-        <div className="grid grid-cols-4 gap-4">
-          <StatCard icon="⚠️" label="Impayés" value={fmtShort(impayes)}
-            sub="Soldes négatifs cumulés" to="/soldes?solde=negatif" color="red" />
-          <StatCard icon="📋" label="Échelonnements" value={fmtShort(echMontant)}
-            sub="Montant en cours / non respecté" to="/soldes?suivi=echelonnement" color="orange" />
-          <StatCard icon="🤝" label="Organismes tiers" value={fmtShort(orgMontant)}
-            sub="Demandes actives (en cours / validé)" to="/soldes?suivi=organisme" color="amber" />
-          <StatCard icon="🏦" label="En réserve" value={fmtShort(enReserve)}
-            sub="Soldes positifs cumulés" to="/soldes?solde=positif" color="green" />
-        </div>
+        {isMobileDevice ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11 }}>
+            <MobileTileCard icon="⚠️" label="Impayés" value={fmtShort(impayes)}
+              to="/soldes?solde=negatif" bg="#e1483f" />
+            <MobileTileCard icon="📋" label="Échelonnements" value={fmtShort(echMontant)}
+              to="/soldes?suivi=echelonnement" bg="#ef7c1b" />
+            <MobileTileCard icon="🤝" label="Org. tiers" value={fmtShort(orgMontant)}
+              to="/soldes?suivi=organisme" bg="#f1a81b" textColor="#4a2f06" chipBg="rgba(0,0,0,0.15)" />
+            <MobileTileCard icon="🏦" label="En réserve" value={fmtShort(enReserve)}
+              to="/soldes?solde=positif" bg="#1fa856" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-4">
+            <StatCard icon="⚠️" label="Impayés" value={fmtShort(impayes)}
+              sub="Soldes négatifs cumulés" to="/soldes?solde=negatif" color="red" />
+            <StatCard icon="📋" label="Échelonnements" value={fmtShort(echMontant)}
+              sub="Montant en cours / non respecté" to="/soldes?suivi=echelonnement" color="orange" />
+            <StatCard icon="🤝" label="Organismes tiers" value={fmtShort(orgMontant)}
+              sub="Demandes actives (en cours / validé)" to="/soldes?suivi=organisme" color="amber" />
+            <StatCard icon="🏦" label="En réserve" value={fmtShort(enReserve)}
+              sub="Soldes positifs cumulés" to="/soldes?solde=positif" color="green" />
+          </div>
+        )}
       </section>
       <section>
         <div className="flex items-center justify-between mb-4">

@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
+import { isMobileDevice } from '../lib/isMobile'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const STATUTS = {
@@ -147,6 +148,7 @@ export default function HelpdeskDetail() {
   const [updating,  setUpdating]  = useState(false)
   const [error,     setError]     = useState('')
   const [showAddParticipant, setShowAddParticipant] = useState(false)
+  const [ticketView, setTicketView] = useState('messages')  // 'messages' | 'infos'
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -283,6 +285,235 @@ export default function HelpdeskDetail() {
     !(ticket.participant_ids || []).includes(p.id) &&
     p.id !== ticket.created_by
   )
+
+  if (isMobileDevice) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+        {/* ── Mobile header ── */}
+        <div style={{
+          background: 'linear-gradient(135deg,#2D1B2E 0%,#4a2257 100%)',
+          paddingTop: 'max(env(safe-area-inset-top),12px)',
+          paddingLeft: 16, paddingRight: 16, paddingBottom: 0, flexShrink: 0,
+        }}>
+          {/* Ligne 1 : ← · titre · pill statut */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <button onClick={() => navigate('/helpdesk')}
+              style={{ width: 36, height: 36, borderRadius: 9, border: 'none', cursor: 'pointer',
+                backgroundColor: 'rgba(255,255,255,0.10)', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={2.2}>
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <h1 style={{ flex: 1, color: '#fff', fontSize: 16, fontWeight: 700, margin: 0,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ticket.titre}</h1>
+            <Tag label={statut.label} color={statut.color} bg={statut.bg} />
+          </div>
+          {/* Ligne 2 : segmented Messages / Infos */}
+          <div style={{ display: 'flex', gap: 6, paddingBottom: 0 }}>
+            <button onClick={() => setTicketView('messages')}
+              style={{ flex: 1, height: 38, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                backgroundColor: ticketView === 'messages' ? '#fff' : 'rgba(255,255,255,0.10)',
+                color: ticketView === 'messages' ? '#2D1B2E' : 'rgba(255,255,255,0.70)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
+              <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={2.2}>
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Messages
+            </button>
+            <button onClick={() => setTicketView('infos')}
+              style={{ flex: 1, height: 38, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                backgroundColor: ticketView === 'infos' ? '#fff' : 'rgba(255,255,255,0.10)',
+                color: ticketView === 'infos' ? '#2D1B2E' : 'rgba(255,255,255,0.70)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
+              <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={2.2}>
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              Infos
+            </button>
+          </div>
+        </div>
+
+        {/* ── Vue Messages ── */}
+        {ticketView === 'messages' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 8px' }}>
+              <FormDataSummary formFields={cat?.form_fields} formData={ticket.form_data} />
+              {messages.length === 0 && (
+                <div style={{ textAlign: 'center', color: '#9CA3AF', fontSize: 13, padding: '40px 0' }}>
+                  Aucun message.
+                </div>
+              )}
+              {messages.map(msg => (
+                <MessageBubble key={msg.id} msg={msg} isOwn={msg.author_id === user?.id} />
+              ))}
+              <div ref={bottomRef} />
+            </div>
+            {/* Barre saisie sticky */}
+            {ticket.statut !== 'ferme' ? (
+              <div style={{ borderTop: '1px solid #F3F4F6', padding: '10px 12px',
+                paddingBottom: 'max(env(safe-area-inset-bottom),10px)',
+                backgroundColor: '#fff', flexShrink: 0 }}>
+                {error && (
+                  <div style={{ backgroundColor: '#FEE2E2', color: '#DC2626', padding: '6px 10px',
+                    borderRadius: 6, fontSize: 12, marginBottom: 8 }}>{error}</div>
+                )}
+                {files.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+                    {files.map((f, i) => (
+                      <span key={i} style={{ backgroundColor: '#F3F4F6', borderRadius: 5,
+                        padding: '3px 8px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        📎 {f.name}
+                        <button type="button" onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))}
+                          style={{ background:'none',border:'none',cursor:'pointer',color:'#9CA3AF',padding:0 }}>×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <form onSubmit={handleSend} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button type="button" onClick={() => fileRef.current?.click()}
+                    style={{ background:'none',border:'none',cursor:'pointer',
+                      color:'#9CA3AF',padding:'4px',flexShrink:0,display:'flex',alignItems:'center' }}>
+                    <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                    </svg>
+                  </button>
+                  <input ref={fileRef} type="file" multiple style={{ display: 'none' }}
+                    accept="image/*,.pdf,.doc,.docx"
+                    onChange={e => { setFiles(prev => [...prev, ...Array.from(e.target.files)]); e.target.value = '' }} />
+                  <input value={content} onChange={e => setContent(e.target.value)}
+                    placeholder="Votre message…"
+                    style={{ flex: 1, padding: '9px 14px', borderRadius: 20,
+                      border: '1.5px solid #E5E7EB', outline: 'none', fontSize: 14, color: '#111' }} />
+                  <button type="submit" disabled={sending || (!content.trim() && files.length === 0)}
+                    style={{ width: 38, height: 38, borderRadius: 999, border: 'none',
+                      backgroundColor: (sending || (!content.trim() && files.length === 0)) ? '#E5E7EB' : '#F16410',
+                      color: '#fff', cursor: 'pointer', display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                    <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={2.5}>
+                      <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div style={{ padding: '12px 16px', backgroundColor: '#F9FAFB', borderTop: '1px solid #E5E7EB',
+                textAlign: 'center', color: '#9CA3AF', fontSize: 13, flexShrink: 0 }}>
+                Ce ticket est fermé.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Vue Infos ── */}
+        {ticketView === 'infos' && (
+          <div style={{ flex: 1, overflowY: 'auto', padding: 16,
+            paddingBottom: 'max(env(safe-area-inset-bottom),16px)' }}>
+            {/* Statut */}
+            <div style={{ marginBottom: 20 }}>
+              <SectionLabel>Statut</SectionLabel>
+              <select value={ticket.statut} onChange={e => updateField('statut', e.target.value)}
+                disabled={updating || !isAdmin}
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 14,
+                  border: '1.5px solid #E5E7EB', backgroundColor: '#fff', color: '#111', cursor: 'pointer' }}>
+                {Object.entries(STATUTS).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+            </div>
+            {/* Priorité */}
+            <div style={{ marginBottom: 20 }}>
+              <SectionLabel>Priorité</SectionLabel>
+              <select value={ticket.priorite} onChange={e => updateField('priorite', e.target.value)}
+                disabled={updating || !isAdmin}
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 14,
+                  border: '1.5px solid #E5E7EB', backgroundColor: '#fff', color: '#111', cursor: 'pointer' }}>
+                {Object.entries(PRIORITES).map(([k, v]) => (
+                  <option key={k} value={k}>{v.icon} {v.label}</option>
+                ))}
+              </select>
+            </div>
+            {/* Informations */}
+            <div style={{ marginBottom: 20, padding: '12px 14px', backgroundColor: '#F9FAFB',
+              borderRadius: 10, border: '1px solid #E5E7EB' }}>
+              <SectionLabel>Informations</SectionLabel>
+              <InfoRow label="Ticket" value={numStr} />
+              <InfoRow label="Créé le" value={new Date(ticket.created_at).toLocaleDateString('fr-BE', {
+                day: '2-digit', month: 'short', year: 'numeric' })} />
+              <InfoRow label="Mis à jour" value={new Date(ticket.updated_at).toLocaleDateString('fr-BE', {
+                day: '2-digit', month: 'short' })} />
+              {ticket.closed_at && (
+                <InfoRow label="Fermé le" value={new Date(ticket.closed_at).toLocaleDateString('fr-BE', {
+                  day: '2-digit', month: 'short', year: 'numeric' })} />
+              )}
+            </div>
+            {/* Participants */}
+            {isAdmin && (
+              <div style={{ marginBottom: 20 }}>
+                <SectionLabel>Participants</SectionLabel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: '#E0D4E7',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#2D1B2E', flexShrink: 0 }}>
+                    {creator?.prenom?.[0]}{creator?.nom?.[0]}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{creator?.prenom} {creator?.nom}</div>
+                    <div style={{ fontSize: 11, color: '#9CA3AF' }}>Demandeur</div>
+                  </div>
+                </div>
+                {participantProfiles.map(p => (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: '#E0D4E7',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#2D1B2E', flexShrink: 0 }}>
+                      {p.prenom?.[0]}{p.nom?.[0]}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{p.prenom} {p.nom}</div>
+                    </div>
+                    <button onClick={() => removeParticipant(p.id)}
+                      style={{ background:'none',border:'none',cursor:'pointer',color:'#9CA3AF',fontSize:18 }}>×</button>
+                  </div>
+                ))}
+                {availableToAdd.length > 0 && (
+                  showAddParticipant ? (
+                    <div>
+                      <select defaultValue="" onChange={e => { if (e.target.value) addParticipant(e.target.value) }}
+                        style={{ width:'100%',padding:'8px 10px',borderRadius:8,fontSize:13,
+                          border:'1.5px solid #E5E7EB',backgroundColor:'#fff',color:'#111',cursor:'pointer' }}>
+                        <option value="">Choisir…</option>
+                        {availableToAdd.map(p => <option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}
+                      </select>
+                      <button onClick={() => setShowAddParticipant(false)}
+                        style={{ fontSize:12,color:'#9CA3AF',background:'none',border:'none',cursor:'pointer',padding:'4px 0' }}>Annuler</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setShowAddParticipant(true)}
+                      style={{ fontSize:13,color:'#6B7280',background:'none',border:'none',cursor:'pointer',padding:0 }}>
+                      + Ajouter un·e collègue
+                    </button>
+                  )
+                )}
+              </div>
+            )}
+            {/* Bouton Fermer */}
+            {isAdmin && ticket.statut !== 'ferme' && (
+              <button onClick={() => updateField('statut', 'ferme')} disabled={updating}
+                style={{ width: '100%', padding: '13px', borderRadius: 10, border: '1px solid #FECACA',
+                  backgroundColor: '#FEF2F2', color: '#DC2626', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                Fermer le ticket
+              </button>
+            )}
+            {ticket.statut === 'ferme' && isAdmin && (
+              <button onClick={() => updateField('statut', 'nouveau')} disabled={updating}
+                style={{ width: '100%', padding: '13px', borderRadius: 10, border: '1.5px solid #E5E7EB',
+                  backgroundColor: '#F9FAFB', color: '#374151', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                Réouvrir le ticket
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>

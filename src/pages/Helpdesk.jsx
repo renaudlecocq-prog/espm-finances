@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import PageHeader from '../components/ui/PageHeader'
+import { isMobileDevice } from '../lib/isMobile'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const STATUTS = {
@@ -595,28 +596,108 @@ export default function Helpdesk() {
     </div>
   ) : null
 
+  const iconBtnHD = (active) => ({
+    width: 42, height: 42, borderRadius: 11, border: 'none', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: active ? '#fff' : 'rgba(255,255,255,0.10)',
+    color: active ? '#2D1B2E' : 'rgba(255,255,255,0.55)',
+    flexShrink: 0, position: 'relative',
+  })
+
   return (
     <>
-      <PageHeader
-        title="Helpdesk"
-        subtitle={`${actifs.length} actif${actifs.length !== 1 ? 's' : ''}${unreadCount > 0 ? ` · ${unreadCount} non lu${unreadCount > 1 ? 's' : ''}` : ''}`}
-        leftActions={leftActions}
-        tabs={tabs}
-        activeTab={filterStatut}
-        onTabChange={setFilterStatut}
-        filters={catFilters}
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Rechercher un ticket..."
-        actions={
-          <button onClick={() => setShowModal(true)}
-            style={{ padding: '7px 16px', borderRadius: 8, border: 'none',
-              backgroundColor: dark ? '#1F2937' : '#fff', color: '#2D1B2E', cursor: 'pointer',
-              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
-            + Nouveau ticket
-          </button>
-        }
-      />
+      {/* ── Mobile header ── */}
+      {isMobileDevice ? (
+        <div style={{
+          background: 'linear-gradient(135deg,#2D1B2E 0%,#4a2257 100%)',
+          paddingTop: 'max(env(safe-area-inset-top),12px)',
+          paddingLeft: 16, paddingRight: 16, paddingBottom: 0,
+          flexShrink: 0,
+        }}>
+          {/* Ligne 1 : titre + 3 icônes */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <h1 style={{ color: '#fff', fontSize: 23, fontWeight: 700, margin: 0 }}>Helpdesk</h1>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {/* Mes tickets toggle */}
+              <button onClick={() => setFilterMine(v => !v)} style={iconBtnHD(filterMine)} aria-label="Mes tickets">
+                <svg viewBox="0 0 24 24" width={19} height={19} fill="none" stroke="currentColor" strokeWidth={2.2}>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </button>
+              {/* Filtre statut */}
+              <button onClick={() => setFilterStatut(s => s === 'actifs' ? 'ferme' : s === 'ferme' ? 'tous' : 'actifs')}
+                style={{ ...iconBtnHD(filterStatut !== 'actifs') }} aria-label="Statut">
+                <svg viewBox="0 0 24 24" width={19} height={19} fill="none" stroke="currentColor" strokeWidth={2.2}>
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </svg>
+                {filterStatut !== 'actifs' && (
+                  <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8,
+                    borderRadius: 999, backgroundColor: '#F16410', border: '1.5px solid #2D1B2E' }} />
+                )}
+              </button>
+              {/* + Nouveau ticket */}
+              <button onClick={() => setShowModal(true)}
+                style={{ ...iconBtnHD(false), backgroundColor: '#F16410', color: '#fff' }} aria-label="Nouveau ticket">
+                <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          {/* Ligne 2 : catégories défilantes */}
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', height: 52,
+            alignItems: 'center', paddingBottom: 0, scrollbarWidth: 'none' }}
+            className="no-scrollbar">
+            {/* Tous */}
+            <button onClick={() => setFilterCatId(null)}
+              style={{
+                flexShrink: 0, height: 36, padding: '0 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                backgroundColor: filterCatId === null ? '#fff' : 'rgba(255,255,255,0.10)',
+                color: filterCatId === null ? '#2D1B2E' : 'rgba(255,255,255,0.70)',
+                display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700,
+              }}>
+              Tous
+            </button>
+            {categories.map(cat => {
+              const active = filterCatId === cat.id
+              return (
+                <button key={cat.id} onClick={() => setFilterCatId(active ? null : cat.id)}
+                  style={{
+                    flexShrink: 0, height: 36, padding: '0 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                    backgroundColor: active ? '#fff' : 'rgba(255,255,255,0.10)',
+                    color: active ? '#2D1B2E' : 'rgba(255,255,255,0.70)',
+                    display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600,
+                  }}>
+                  <CatIcon cat={cat} size={15} />
+                  <span style={{ fontSize: 10, whiteSpace: 'nowrap' }}>{cat.nom}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ) : (
+        <PageHeader
+          title="Helpdesk"
+          subtitle={`${actifs.length} actif${actifs.length !== 1 ? 's' : ''}${unreadCount > 0 ? ` · ${unreadCount} non lu${unreadCount > 1 ? 's' : ''}` : ''}`}
+          leftActions={leftActions}
+          tabs={tabs}
+          activeTab={filterStatut}
+          onTabChange={setFilterStatut}
+          filters={catFilters}
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Rechercher un ticket..."
+          actions={
+            <button onClick={() => setShowModal(true)}
+              style={{ padding: '7px 16px', borderRadius: 8, border: 'none',
+                backgroundColor: dark ? '#1F2937' : '#fff', color: '#2D1B2E', cursor: 'pointer',
+                fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
+              + Nouveau ticket
+            </button>
+          }
+        />
+      )}
 
       <div className="p-6 max-w-screen-xl mx-auto">
         {loading ? (
